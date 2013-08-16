@@ -1,0 +1,5 @@
+C:\Users\timd\Documents\Visual Studio 2012\WebCola\WebCola\bin\WebCola.dll
+C:\Users\timd\Documents\Visual Studio 2012\WebCola\WebCola\bin\WebCola.pdb
+C:\Users\timd\Documents\Visual Studio 2012\WebCola\WebCola\obj\Release\WebCola.dll
+C:\Users\timd\Documents\Visual Studio 2012\WebCola\WebCola\obj\Release\WebCola.pdb
+C:\Users\timd\Documents\Visual Studio 2012\WebCola\WebCola\obj\Release\WebCola.csprojResolveAssemblyReference.cache

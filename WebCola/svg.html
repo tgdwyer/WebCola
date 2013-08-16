@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <title>A clock built with the svg.js library, inspired by the Swiss Railway clock</title>
+    <meta name="description" content="Inspired by the Swiss Railway Clock, a plugin for the svg.js library." />
+    
+    <style type="text/css" media="screen">
+      html, body { background-color: #EBEBE0; width: 100%; height: 100%; overflow: hidden; margin: 0; padding: 0; font-family: 'Helvetica Neue, Helvetica', Arial, sans-serif; font-weight: 300; }
+      html, a { color: #A6A6A4; }
+      #canvas { position: relative; height: 80%; top: 10%; margin: 0 5% 0 5%; }
+      #copyright { width: 600px; margin-left: -300px; left: 50%; bottom: 0px; text-align: center; font-size: 10px; position: absolute; }
+      
+    </style>
+    
+  </head>
+  
+  <body>
+    <figure id="canvas"></figure>
+    
+    <p id="copyright">
+      This is <a href="https://github.com/wout/svg.clock.js">a plugin</a> for <a href="http://svgjs.com">svg.js</a>, a lightweight svg JavaScript library - The Swiss Railway clock design &copy; <a href="http://en.wikipedia.org/wiki/Hans_Hilfiker" target="_blank">Hans Hilfiker</a>
+    </p>
+  </body>
+  
+  <script src="https://s3-eu-west-1.amazonaws.com/svgjs/svg.js" type="text/javascript" charset="utf-8"></script>
+  <script src="http://svgjs.com/clock/lib/svg.easing.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="http://svgjs.com/clock/svg.clock.min.js" type="text/javascript" charset="utf-8"></script>
+  <script type="text/javascript" charset="utf-8">
+    SVG('canvas').clock('100%').start()
+  </script>
+  
+</html>

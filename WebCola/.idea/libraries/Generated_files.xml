@@ -1,0 +1,19 @@
+<component name="libraryTable">
+  <library name="Generated files" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/rectangle.js" />
+        <item url="file://$PROJECT_DIR$/rbtree.d.js" />
+        <item url="file://$PROJECT_DIR$/shortestpaths.js" />
+        <item url="file://$PROJECT_DIR$/vpsc.js" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/rectangle.js" />
+      <root url="file://$PROJECT_DIR$/rbtree.d.js" />
+      <root url="file://$PROJECT_DIR$/shortestpaths.js" />
+      <root url="file://$PROJECT_DIR$/vpsc.js" />
+    </CLASSES>
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,18 @@
+﻿<html>
+<head>
+    <script src="svg.js"></script>
+    <script src="svg.draggable.js"></script>
+    <script src="vpsc.js"></script>
+    <script src="rbtree.js"></script>
+    <script src="rectangle.js"></script>
+    <script src="rectangletest.js"></script>
+</head>
+<body>
+    <button type="button" onclick="rs = drawRects()">Reset</button>
+    <button type="button" onclick="removeOverlaps(rs)">Remove overlaps</button>
+    <button type="button" onclick="undo()">undo</button>
+    <div id="canvas"></div>
+    <div id="dump"></div>
+    <script>init(); rs = drawRects()</script>
+</body>
+</html>
