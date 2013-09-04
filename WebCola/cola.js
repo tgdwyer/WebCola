@@ -14,10 +14,6 @@ d3.layout.cola = function() {
         drag,
         alpha,
         lastStress,
-        friction = 0.9,
-        charge = -30,
-        gravity = 0.1,
-        theta = 0.8,
         nodes = [],
         links = [],
         constraints = [],
@@ -76,39 +72,6 @@ d3.layout.cola = function() {
     cola.size = function(x) {
         if (!arguments.length) return size;
         size = x;
-        return cola;
-    };
-
-    cola.linkDistance = function(x) {
-        if (!arguments.length) return linkDistance;
-        linkDistance = typeof x === "function" ? x : +x;
-        return cola;
-    };
-
-    // For backwards-compatibility.
-    cola.distance = cola.linkDistance;
-
-    cola.linkStrength = function(x) {
-        if (!arguments.length) return linkStrength;
-        linkStrength = typeof x === "function" ? x : +x;
-        return cola;
-    };
-
-    cola.friction = function(x) {
-        if (!arguments.length) return friction;
-        friction = +x;
-        return cola;
-    };
-
-    cola.charge = function(x) {
-        if (!arguments.length) return charge;
-        charge = typeof x === "function" ? x : +x;
-        return cola;
-    };
-
-    cola.theta = function(x) {
-        if (!arguments.length) return theta;
-        theta = +x;
         return cola;
     };
 
