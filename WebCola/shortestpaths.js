@@ -19,6 +19,14 @@ var ShortestPaths;
     }
     ShortestPaths.johnsons = johnsons;
 
+    var Neighbour = (function () {
+        function Neighbour(id, distance) {
+            this.id = id;
+            this.distance = distance;
+        }
+        return Neighbour;
+    })();
+
     var Node = (function () {
         function Node(id) {
             this.id = id;
@@ -37,8 +45,9 @@ var ShortestPaths;
         while (i--) {
             var e = es[i];
             var u = e.source, v = e.target;
-            neighbours[u].neighbours.push(v);
-            neighbours[v].neighbours.push(u);
+            var d = typeof e.length !== 'undefined' ? e.length : 1;
+            neighbours[u].neighbours.push(new Neighbour(v, d));
+            neighbours[v].neighbours.push(new Neighbour(u, d));
         }
         return neighbours;
     }
@@ -60,9 +69,9 @@ var ShortestPaths;
             d[u.id] = u.d;
             i = u.neighbours.length;
             while (i--) {
-                var v = neighbours[u.neighbours[i]];
-                var w = 1;
-                var t = u.d + w;
+                var neighbour = u.neighbours[i];
+                var v = neighbours[neighbour.id];
+                var t = u.d + neighbour.distance;
                 if (u.d !== Number.MAX_VALUE && v.d > t) {
                     v.d = t;
                     v.q = q.reduceKey(v.q, v);

@@ -3,6 +3,7 @@ module ShortestPaths {
     export declare class Edge {
         source: number;
         target: number;
+        length: number;
     }
 
     export function dijkstra(n: number, es: Edge[], start: number): number[] {
@@ -21,13 +22,22 @@ module ShortestPaths {
         return D;
     }
 
+    class Neighbour {
+        constructor(id: number, distance: number) {
+            this.id = id;
+            this.distance = distance;
+        }
+        id: number;
+        distance: number;
+    }
+
     class Node {
         constructor(id: number) {
             this.id = id;
             this.neighbours = [];
         }
         id: number;
-        neighbours: number[];
+        neighbours: Neighbour[];
         d: number;
         q: PairingHeap<Node>;
     }
@@ -39,8 +49,9 @@ module ShortestPaths {
         i = es.length; while (i--) {
             var e = es[i];
             var u: number = e.source, v: number = e.target;
-            neighbours[u].neighbours.push(v);
-            neighbours[v].neighbours.push(u);
+            var d = typeof e.length !== 'undefined' ? e.length : 1;
+            neighbours[u].neighbours.push(new Neighbour(v, d));
+            neighbours[v].neighbours.push(new Neighbour(u, d));
         }
         return neighbours;
     };
@@ -57,9 +68,9 @@ module ShortestPaths {
             var u = q.pop();
             d[u.id] = u.d;
             i = u.neighbours.length; while (i--) {
-                var v = neighbours[u.neighbours[i]];
-                var w = 1;
-                var t = u.d + w;
+                var neighbour = u.neighbours[i];
+                var v = neighbours[neighbour.id];
+                var t = u.d + neighbour.distance;
                 if (u.d !== Number.MAX_VALUE && v.d > t) {
                     v.d = t;
                     v.q = q.reduceKey(v.q, v);

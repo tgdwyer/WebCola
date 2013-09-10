@@ -165,6 +165,8 @@ var Descent = (function () {
                 var dx = this.x[u] - this.x[v], dy = this.y[u] - this.y[v];
                 var l = Math.sqrt(dx * dx + dy * dy);
                 var d = this.D[u][v];
+                if (!isFinite(d))
+                    continue;
                 var d2 = d * d;
                 var rl = d - l;
                 stress += rl * rl / d2;
