@@ -74,6 +74,10 @@ class Descent {
                 var dy2 = dy * dy;
                 var l: number = Math.sqrt(dx2 + dy2);
                 var d: number = this.D[u][v];
+                if (!isFinite(d)) {
+                    this.Hy[u][v] = this.Hx[u][v] = 0;
+                    continue;
+                }
                 var d2: number = d * d;
                 var gs: number = (l - d) / (d2 * l);
                 this.gx[u] += dx * gs;
@@ -107,7 +111,7 @@ class Descent {
         Descent.rightMultiply(this.Hx, dx, this.Hdx);
         Descent.rightMultiply(this.Hy, dy, this.Hdy);
         var denominator = Descent.dotProd(dx, this.Hdx) + Descent.dotProd(dy, this.Hdy);
-        if (denominator === 0) return 0;
+        if (denominator === 0 || !isFinite(denominator)) return 0;
         return numerator / denominator;
     }
 

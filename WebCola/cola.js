@@ -11,6 +11,8 @@ d3.layout.cola = function() {
     var cola = {},
         event = d3.dispatch("start", "tick", "end"),
         size = [1, 1],
+        linkDistance = 20,
+        avoidOverlaps = false,
         drag,
         alpha,
         lastStress,
@@ -57,6 +59,12 @@ d3.layout.cola = function() {
         return cola;
     };
 
+    cola.avoidOverlaps = function (v) {
+        if (!arguments.length) return avoidOverlaps;
+        avoidOverlaps = v;
+        return cola;
+    }
+
     cola.links = function(x) {
         if (!arguments.length) return links;
         links = x;
@@ -72,6 +80,12 @@ d3.layout.cola = function() {
     cola.size = function(x) {
         if (!arguments.length) return size;
         size = x;
+        return cola;
+    };
+
+    cola.linkDistance = function (x) {
+        if (!arguments.length) return linkDistance;
+        linkDistance = typeof x === "function" ? x : +x;
         return cola;
     };
 
@@ -107,32 +121,42 @@ d3.layout.cola = function() {
         //});
         xbuffer = x;
     }
-    cola.yproject = function (y) {
-        var vs = y.map(function (d, i) {
-            var w = 1;
-            if (nodes[i].fixed) {
-                w = 1000;
-                d = nodes[i].py;
-            }
-            return new vpsc.Variable(d, w);
-        });
-        var cs = constraints.map(function (c) {
-            return new vpsc.Constraint(vs[c.left], vs[c.right], c.gap, c.equality);
-        });
-        solver = new vpsc.Solver(vs, cs);
-        solver.solve();
-        vs.forEach(function (v, i) {
-            y[i] = v.position();
-        });
+    cola.yproject_disabled = function (y) {
+        if (typeof constraints !== "undefined" && constraints.length > 0) {
+            var vs = y.map(function (d, i) {
+                var w = 1;
+                if (nodes[i].fixed) {
+                    w = 1000;
+                    d = nodes[i].py;
+                }
+                return new vpsc.Variable(d, w);
+            });
+            var cs = constraints.filter(function (c) {
+                c.axis === "y"
+            }).map(function (c) {
+                return new vpsc.Constraint(vs[c.left], vs[c.right], c.gap, c.equality);
+            });
+            solver = new vpsc.Solver(vs, cs);
+            solver.solve();
+            vs.forEach(function (v, i) {
+                y[i] = v.position();
+            });
+        }
     }
 
-    cola.yproject_disabled = function (y) {
+    cola.yproject = function (y) {
+        var userConstraints = typeof constraints !== "undefined" && constraints.length > 0;
+        if (!avoidOverlaps && !userConstraints) return;
+
         var x = xbuffer;
         var n = x.length;
         var rs = new Array(n);
         for (var i = 0; i < n; ++i) {
             var cx = x[i], cy = y[i];
-            rs[i] = new vpsc.Rectangle(cx - 5, cx + 5, cy - 5, cy + 5);
+            var v = nodes[i];
+            var w2 = v.width / 2;
+            var h2 = v.height / 2;
+            rs[i] = new vpsc.Rectangle(cx - w2, cx + w2, cy - h2, cy + h2);
         }
         var vs = x.map(function (d, i) {
             var w = 1;
@@ -142,7 +166,7 @@ d3.layout.cola = function() {
             }
             return new vpsc.Variable(d, w);
         });
-        var cs = vpsc.generateXConstraints(rs, vs);
+        var cs = avoidOverlaps ? vpsc.generateXConstraints(rs, vs) : [];
         var solver = new vpsc.Solver(vs, cs);
         solver.solve();
         vs.forEach(function (v, i) {
@@ -158,10 +182,18 @@ d3.layout.cola = function() {
             }
             return new vpsc.Variable(d, w);
         });
-        var cs = constraints.map(function (c) {
-            return new vpsc.Constraint(vs[c.left], vs[c.right], c.gap, c.equality);
-        });
-        cs = cs.concat(vpsc.generateYConstraints(rs, vs));
+        
+        var cs = [];
+        if (typeof constraints !== "undefined" && constraints.length > 0) {
+            cs = constraints.filter(function (c) {
+                return c.axis === "y"
+            }).map(function (c) {
+                return new vpsc.Constraint(vs[c.left], vs[c.right], c.gap, c.equality);
+            });
+        }
+        if (avoidOverlaps) {
+            cs = cs.concat(vpsc.generateYConstraints(rs, vs));
+        }
         solver = new vpsc.Solver(vs, cs);
         solver.solve();
         vs.forEach(function (v, i) {
@@ -186,7 +218,7 @@ d3.layout.cola = function() {
         var D = ShortestPaths.johnsons(n, links);
         for (var i = 0; i < n; ++i) {
             for (var j = 0; j < n; ++j) {
-                D[i][j] *= 20;
+                D[i][j] *= linkDistance;
             }
         }
         var x = new Array(n), y = new Array(n);

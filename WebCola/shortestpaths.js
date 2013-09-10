@@ -12,8 +12,8 @@ var ShortestPaths;
         var D = new Array(n);
         var N = getNeighbours(n, es);
         for (var i = 0; i < n; ++i) {
-            D[i] = new Array(n);
-            dijkstraNeighbours(N, i, D[i]);
+            var d = D[i] = new Array(n);
+            dijkstraNeighbours(N, i, d);
         }
         return D;
     }

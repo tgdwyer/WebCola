@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="canonical" href="http://d3js.org/">
+<title>WebCoLa: Constraint-based Layout in the Browser</title>
+<style>
+
+@import url(style.css);
+
+#examples {
+  width: 960px;
+  height: 189px;
+  margin-bottom: 2em;
+}
+
+.example img {
+  float: left;
+  margin-bottom: 13px;
+  width: 226px;
+  height: 180px;
+  border: solid 2px #ccc;
+}
+
+.example:hover img {
+  border-color: steelblue;
+}
+
+.example:not(:nth-child(4n)) img {
+  margin-right: 13px;
+}
+
+</style>
+
+<div id="body">
+
+<header>.
+  <b><a href="./">Overview</a></b>
+  <a style="margin-left:1em;" href="https://github.com/tgdwyer/WebCola/wiki/Gallery">Examples</a>
+  <a style="margin-left:1em;" href="https://github.com/tgdwyer/WebCola/wiki">Documentation</a>
+  <a style="margin-left:1em;" href="https://github.com/tgdwyer/WebCola">Source</a>
+</header>
+
+<h1>WebCoLa</h1>
+<h2>Constraint-Based Layout in the Browser</h2>
+
+<div id="examples"></div>
+
+<script src="d3.v3.min.js?3.0.0rc1"></script>
+<script>
+
+var examples = [
+{name: "downwardedges", url: "http://marvl.infotech.monash.edu/webcola/downwardedges.html"},
+{name: "unconstrained", url: "http://marvl.infotech.monash.edu/webcola/unconstrained.html"},
+{name: "nonoverlapping", url: "http://marvl.infotech.monash.edu/webcola/nonoverlapping.html"},
+{name: "smallnonoverlappinggraph", url: "http://marvl.infotech.monash.edu/webcola/smallnonoverlappinggraph.html"},
+];
+
+function shuffle(array) {
+  var m = array.length, t, i;
+
+  // While there remain elements to shuffle.
+  while (m) {
+
+    // Pick a remaining element.
+    i = Math.floor(Math.random() * m--);
+
+    // And swap it with the current element.
+    t = array[m];
+    array[m] = array[i];
+    array[i] = t;
+  }
+
+  return array;
+}
+
+d3.select("#examples").selectAll(".example")
+    .data(shuffle(examples).slice(0, 4))
+  .enter().append("a")
+    .attr("class", "example")
+    .attr("href", function(d) { return d.url; })
+  .append("img")
+    .attr("src", function(d) { return d.name + ".png"; });
+
+</script>
+
+<p><aside>See <a href="https://github.com/mbostock/d3/wiki/Gallery">more examples</a>.</aside>
+
+<p><b>WebCola.js</b> is a JavaScript library for arranging your HTML5 documents and diagrams using constraint-based optimization techniques.
+
+<!--<p>Download the latest version here:
+
+<ul>
+  <li><a href="d3.v3.zip">d3.v3.zip</a>
+</ul>-->
+</div>

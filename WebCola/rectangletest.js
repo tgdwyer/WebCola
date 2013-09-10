@@ -2,6 +2,7 @@
 var canvasheight = 600;
 var rectminsize = 60;
 var rectmaxsize = 100;
+var rectcount = 10;
 var draw;
 var rs;
 var undoStack = [];
@@ -24,12 +25,17 @@ function init() {
         y = w.innerHeight || e.clientHeight || g.clientHeight;
     draw = SVG('canvas').size(canvaswidth = x, canvasheight = y);
 }
+
+function updateRectCount(n) {
+    rectcount = n;
+    rs = drawRects();
+}
 function drawRects() {
     draw.clear();
     var r = Math.random;
     var rs = [];
     var dims = [];
-    for (var i = 0; i < 5; ++i) {
+    for (var i = 0; i < rectcount; ++i) {
         var w = rectminsize + (rectmaxsize - rectminsize) * r();
         var h = rectminsize + (rectmaxsize - rectminsize) * r();
         var d = {

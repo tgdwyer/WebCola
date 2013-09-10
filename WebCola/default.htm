@@ -22,9 +22,6 @@
 <script src="d3.v3.js"></script>
 <script src="pqueue.js"></script>
 <script src="shortestpaths.js"></script>
-<script src="vpsc.js"></script>
-<script src="rbtree.js"></script>
-<script src="rectangle.js"></script>
 <script src="descent.js"></script>
 <script src="cola.js"></script>
 <script>
@@ -34,6 +31,7 @@
     var color = d3.scale.category20();
 
     var force = d3.layout.cola()
+        .charge(-120)
         .linkDistance(30)
         .size([width, height]);
 
@@ -45,7 +43,6 @@
         force
             .nodes(graph.nodes)
             .links(graph.links)
-            .constraints(graph.constraints)
             .start();
 
         var link = svg.selectAll(".link")

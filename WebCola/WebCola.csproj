@@ -20,7 +20,11 @@
     <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="chris.js" />
+    <Content Include="downwardedges.png" />
+    <Content Include="index.html" />
+    <Content Include="nonoverlapping.png" />
+    <Content Include="smallnonoverlappinggraph.html" />
+    <None Include="graphdata\chris.json" />
     <Content Include="cola.js" />
     <Content Include="d3layout.htm" />
     <Content Include="d3.v3.js" />
@@ -28,10 +32,13 @@
     <Content Include="descent.min.js">
       <DependentUpon>descent.ts</DependentUpon>
     </Content>
+    <Content Include="graphdata\rectangles.js" />
     <Content Include="rectangletest.js" />
+    <Content Include="smallnonoverlappinggraph.png" />
+    <Content Include="style.css" />
     <Content Include="svg.draggable.js" />
     <Content Include="svg.js" />
-    <Content Include="rectangletest.html" />
+    <Content Include="nonoverlapping.html" />
     <Content Include="qunit.css" />
     <TypeScriptCompile Include="vpsc.ts" />
     <TypeScriptCompile Include="rbtree.d.ts" />
@@ -46,6 +53,8 @@
     <Content Include="shortestpaths.min.js">
       <DependentUpon>shortestpaths.ts</DependentUpon>
     </Content>
+    <Content Include="unconstrained.html" />
+    <Content Include="unconstrained.png" />
     <Content Include="vpsc.js">
       <DependentUpon>vpsc.ts</DependentUpon>
     </Content>
@@ -53,13 +62,15 @@
       <DependentUpon>vpsc.ts</DependentUpon>
     </Content>
     <Content Include="vpsctests.js" />
-    <Content Include="webcola.htm" />
+    <Content Include="downwardedges.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <TypeScriptCompile Include="descent.ts" />
     <Content Include="descent.js">
       <DependentUpon>descent.ts</DependentUpon>
     </Content>
     <Content Include="force.js" />
-    <Content Include="miserables.js" />
+    <Content Include="graphdata\miserables.js" />
     <Content Include="pqueue.js">
       <DependentUpon>pqueue.ts</DependentUpon>
     </Content>
@@ -75,7 +86,7 @@
     <Content Include="stpaths.js" />
     <Content Include="test.html" />
     <Content Include="tests.js" />
-    <Content Include="triangle.js" />
+    <None Include="graphdata\fivenodesdisconnected.json" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="pqueue.js.map">
@@ -103,6 +114,7 @@
       <DependentUpon>web.config</DependentUpon>
     </None>
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
@@ -116,7 +128,7 @@
     <VisualStudio>
       <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
         <WebProjectProperties>
-          <UseIIS>True</UseIIS>
+          <UseIIS>False</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>2426</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
@@ -135,6 +147,7 @@
     <TypeScriptIncludeComments>true</TypeScriptIncludeComments>
     <TypeScriptSourceMap>true</TypeScriptSourceMap>
     <TypeScriptModuleKind>AMD</TypeScriptModuleKind>
+    <FilesToIncludeForPublish>AllFilesInTheProject</FilesToIncludeForPublish>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <TypeScriptTarget>ES3</TypeScriptTarget>
