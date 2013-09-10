@@ -27,7 +27,7 @@ module ShortestPaths {
             this.neighbours = [];
         }
         id: number;
-        neighbours: Node[];
+        neighbours: number[];
         d: number;
         q: PairingHeap<Node>;
     }
@@ -38,7 +38,7 @@ module ShortestPaths {
 
         i = es.length; while (i--) {
             var e = es[i];
-            var u = e.source, v = e.target;
+            var u: number = e.source, v: number = e.target;
             neighbours[u].neighbours.push(v);
             neighbours[v].neighbours.push(u);
         }
@@ -46,9 +46,8 @@ module ShortestPaths {
     };
 
     function dijkstraNeighbours(neighbours: Node[], start: number, d: number[]): void {
-        var n = neighbours.length, i;
         var q = new PriorityQueue<Node>((a, b)=> a.d <= b.d);
-        for (i = 0; i < n; ++i) {
+        var i = neighbours.length; while (i--) {
             var node: Node = neighbours[i];
             node.d = i === start ? 0 : Number.MAX_VALUE;
             node.q = q.push(node);
@@ -57,8 +56,7 @@ module ShortestPaths {
             // console.log(q.toString(function (u) { return u.id + "=" + (u.d === Number.MAX_VALUE ? "\u221E" : u.d) }));
             var u = q.pop();
             d[u.id] = u.d;
-            var ul = u.neighbours.length;
-            for (i = 0; i < ul; ++i) {
+            i = u.neighbours.length; while (i--) {
                 var v = neighbours[u.neighbours[i]];
                 var w = 1;
                 var t = u.d + w;

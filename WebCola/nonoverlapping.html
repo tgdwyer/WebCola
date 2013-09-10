@@ -8,10 +8,11 @@
     <script src="rectangletest.js"></script>
 </head>
 <body>
-    Try dragging the rectangles...
+    Try dragging the rectangles... 
     <button type="button" onclick="rs = drawRects()">Reset</button>
     <button type="button" onclick="removeOverlaps(rs)">Remove overlaps</button>
-    <button type="button" onclick="undo()">undo</button>
+    <!--<button type="button" onclick="undo()">undo</button>-->
+    Use the slider to make more...
     <input id="rectCountSlider" type="range" min="5" max="50" value="10" onchange="updateRectCount(this.value)"/>
     <div id="canvas"></div>
     <div id="dump"></div>

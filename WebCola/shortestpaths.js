@@ -45,11 +45,11 @@ var ShortestPaths;
     ;
 
     function dijkstraNeighbours(neighbours, start, d) {
-        var n = neighbours.length, i;
         var q = new PriorityQueue(function (a, b) {
             return a.d <= b.d;
         });
-        for (i = 0; i < n; ++i) {
+        var i = neighbours.length;
+        while (i--) {
             var node = neighbours[i];
             node.d = i === start ? 0 : Number.MAX_VALUE;
             node.q = q.push(node);
@@ -58,8 +58,8 @@ var ShortestPaths;
             // console.log(q.toString(function (u) { return u.id + "=" + (u.d === Number.MAX_VALUE ? "\u221E" : u.d) }));
             var u = q.pop();
             d[u.id] = u.d;
-            var ul = u.neighbours.length;
-            for (i = 0; i < ul; ++i) {
+            i = u.neighbours.length;
+            while (i--) {
                 var v = neighbours[u.neighbours[i]];
                 var w = 1;
                 var t = u.d + w;
