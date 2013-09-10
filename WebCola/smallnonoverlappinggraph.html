@@ -43,7 +43,7 @@
 
     var color = d3.scale.category20();
 
-    var cola = d3.layout.cola()
+    var cola = cola.d3adaptor()
         .linkDistance(120)
         .avoidOverlaps(true)
         .size([width, height]);
@@ -94,7 +94,7 @@
             label.attr("x", function (d) { return d.x; })
                  .attr("y", function (d) {
                      var h = this.getBBox().height;
-                     return d.y + h/3;
+                     return d.y + h/4;
                  });
         });
     });

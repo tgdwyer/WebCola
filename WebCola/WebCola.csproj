@@ -32,7 +32,6 @@
     <Content Include="descent.min.js">
       <DependentUpon>descent.ts</DependentUpon>
     </Content>
-    <Content Include="graphdata\rectangles.js" />
     <Content Include="rectangletest.js" />
     <Content Include="smallnonoverlappinggraph.png" />
     <Content Include="style.css" />
@@ -70,7 +69,7 @@
       <DependentUpon>descent.ts</DependentUpon>
     </Content>
     <Content Include="force.js" />
-    <Content Include="graphdata\miserables.js" />
+    <None Include="graphdata\miserables.json" />
     <Content Include="pqueue.js">
       <DependentUpon>pqueue.ts</DependentUpon>
     </Content>

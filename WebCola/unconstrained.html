@@ -31,7 +31,7 @@
 
     var color = d3.scale.category20();
 
-    var cola = d3.layout.cola()
+    var cola = cola.d3adaptor()
         .linkDistance(20)
         .size([width, height]);
 
