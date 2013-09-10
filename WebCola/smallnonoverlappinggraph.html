@@ -29,6 +29,7 @@
 </style>
 </head>
 <body>
+    <h1>Disconnected graph with non-overlap constraints</h1>
 <script src="d3.v3.js"></script>
 <script src="pqueue.js"></script>
 <script src="shortestpaths.js"></script>
@@ -100,5 +101,9 @@
     });
 
 </script>
+    <p>Since node 'e' is not connected to the rest of the graph, it does not influence the layout of the connected component
+        except through constraints.  In this case, we generate constraints to prevent node boxes from overlapping.  Try dragging 'e'
+        so that it collides with the other nodes.
+    </p>
 </body>
 </html>

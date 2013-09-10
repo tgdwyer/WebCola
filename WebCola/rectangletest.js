@@ -6,6 +6,11 @@ var rectcount = 10;
 var draw;
 var rs;
 var undoStack = [];
+var animate = false;
+function toggleAnimation() {
+    animate = !animate;
+}
+
 function undo() {
     if (undoStack.length > 0) {
         draw.clear();
@@ -23,7 +28,7 @@ function init() {
         g = d.getElementsByTagName('body')[0],
         x = w.innerWidth || e.clientWidth || g.clientWidth,
         y = w.innerHeight || e.clientHeight || g.clientHeight;
-    draw = SVG('canvas').size(canvaswidth = x, canvasheight = y);
+    draw = SVG('canvas').size(canvaswidth = x - 30, canvasheight = y - 100);
 }
 
 function updateRectCount(n) {
@@ -68,8 +73,12 @@ function removeOverlaps(rects) {
     undoStack.push(dims);
     vpsc.removeOverlaps(rs);
     rects.forEach(function (r, i) {
-        var o = rs[i];
-        r.move(o.x, o.y);
+        var t = rs[i];
+        if (animate) {
+            r.animate().move(t.x, t.y);
+        } else {
+            r.move(t.x, t.y);
+        }
     });
     //o.vs.forEach(function (v, i) {
     //    v.id = i;
