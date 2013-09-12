@@ -20,10 +20,13 @@
     <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="brainnetwork.html" />
     <Content Include="downwardedges.png" />
     <Content Include="index.html" />
     <Content Include="nonoverlapping.png" />
     <Content Include="smallnonoverlappinggraph.html" />
+    <Content Include="graphdata\CCsum.csv" />
+    <Content Include="graphdata\affil.csv" />
     <None Include="graphdata\chris.json" />
     <Content Include="cola.js" />
     <Content Include="d3layout.htm" />
@@ -53,6 +56,7 @@
       <DependentUpon>shortestpaths.ts</DependentUpon>
     </Content>
     <Content Include="unconstrained.html" />
+    <Content Include="unconstrainedsmallworld.html" />
     <Content Include="unconstrained.png" />
     <Content Include="vpsc.js">
       <DependentUpon>vpsc.ts</DependentUpon>

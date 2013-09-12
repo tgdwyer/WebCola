@@ -55,6 +55,15 @@ var Descent = (function () {
                 }
                 var d2 = d * d;
                 var gs = (l - d) / (d2 * l);
+                if (!isFinite(gs)) {
+                    console.log(gs);
+                }
+                if (!isFinite(dx)) {
+                    console.log(gs);
+                }
+                if (!isFinite(dy)) {
+                    console.log(gs);
+                }
                 this.gx[u] += dx * gs;
                 this.gy[u] += dy * gs;
                 var hs = d / (l * l * l);

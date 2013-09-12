@@ -80,6 +80,15 @@ class Descent {
                 }
                 var d2: number = d * d;
                 var gs: number = (l - d) / (d2 * l);
+                if (!isFinite(gs)) {
+                    console.log(gs);
+                }
+                if (!isFinite(dx)) {
+                    console.log(gs);
+                }
+                if (!isFinite(dy)) {
+                    console.log(gs);
+                }
                 this.gx[u] += dx * gs;
                 this.gy[u] += dy * gs;
                 var hs: number = d / (l * l * l);

@@ -20,6 +20,7 @@ cola = function () {
             nodes = [],
             links = [],
             constraints = [],
+            distanceMatrix = [],
             distances,
             strengths,
             charges;
@@ -75,6 +76,12 @@ cola = function () {
         d3adaptor.constraints = function (x) {
             if (!arguments.length) return constraints;
             constraints = x;
+            return d3adaptor;
+        }
+
+        d3adaptor.distanceMatrix = function (d) {
+            if (!arguments.length) return distanceMatrix;
+            distanceMatrix = d;
             return d3adaptor;
         }
 
@@ -201,6 +208,64 @@ cola = function () {
                 y[i] = v.position();
             });
         }
+        function unionCount(a, b) {
+            var u = {};
+            for (var i in a) u[i] = {};
+            for (var i in b) u[i] = {};
+            return Object.keys(u).length;
+        }
+
+        function intersectionCount(a, b) {
+            var n = 0;
+            for (var i in a) if (typeof b[i] !== 'undefined') ++n;
+            return n;
+        }
+
+        d3adaptor.symmetricDiffLinkLengths = function () {
+            var w = 1;
+            if (arguments.length > 0) {
+                w = arguments[0];
+            }
+            computeLinkLengths(w, function (a, b) {
+                return Math.sqrt(unionCount(a, b) - intersectionCount(a, b));
+            });
+            return d3adaptor;
+        }
+
+        d3adaptor.jaccardLinkLengths = function () {
+            var w = 1;
+            if (arguments.length > 0) {
+                w = arguments[0];
+            }
+            computeLinkLengths(w, function (a, b) {
+                if (Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1) return 0;
+                return intersectionCount(a, b) / unionCount(a, b);
+            });
+            return d3adaptor;
+        }
+
+        computeLinkLengths = function (w, f) {
+            var n = nodes.length;
+            var neighbours = new Array(n);
+            for (var i = 0; i < n; ++i) {
+                neighbours[i] = {};
+            }
+            links.forEach(function (e) {
+                neighbours[e.source][e.target] = {};
+                neighbours[e.target][e.source] = {};
+            });
+            links.forEach(function (l) {
+                var a = neighbours[l.source];
+                var b = neighbours[l.target];
+                //var jaccard = intersectionCount(a, b) / unionCount(a, b);
+                //if (Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1) {
+                //    jaccard = 0;
+                //}
+                //l.length = 1 + w * jaccard;
+                l.length = 1 + w * f(a,b);
+            });
+            return d3adaptor;
+        }
 
         d3adaptor.start = function () {
             var i,
@@ -216,17 +281,22 @@ cola = function () {
                 o.weight = 0;
             }
 
-            var D = ShortestPaths.johnsons(n, links);
+            if (distanceMatrix.length != n) {
+                distanceMatrix = ShortestPaths.johnsons(n, links);
+            }
+            var D = new Array(n);
             for (var i = 0; i < n; ++i) {
+                D[i] = new Array(n);
                 for (var j = 0; j < n; ++j) {
-                    D[i][j] *= linkDistance;
+                    D[i][j] = distanceMatrix[i][j] * linkDistance;
                 }
             }
             var x = new Array(n), y = new Array(n);
+
             for (var i = 0; i < n; ++i) {
                 var v = nodes[i];
-                x[i] = v.x = w / 2;
-                y[i] = v.y = h / 2;
+                x[i] = v.x = w / 2 + 10 * Math.random();
+                y[i] = v.y = h / 2 + 10 * Math.random();
             }
             descent = new Descent(x, y, D);
             descent.xproject = d3adaptor.xproject;
@@ -236,8 +306,6 @@ cola = function () {
                 if (typeof o.source == "number") o.source = nodes[o.source];
                 if (typeof o.target == "number") o.target = nodes[o.target];
             }
-
-
             return d3adaptor.resume();
         };
 

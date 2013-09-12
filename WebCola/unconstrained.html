@@ -5,7 +5,8 @@
     <meta charset="utf-8" />
     <title>Unconstrained Layout</title>
     <style>
-
+        
+@import url(style.css);
 .node {
   stroke: #fff;
   stroke-width: 1.5px;
@@ -33,7 +34,7 @@
     var color = d3.scale.category20();
 
     var cola = cola.d3adaptor()
-        .linkDistance(20)
+        .linkDistance(5)
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")
@@ -44,6 +45,7 @@
         cola
             .nodes(graph.nodes)
             .links(graph.links)
+            .symmetricDiffLinkLengths(1)
             .start();
 
         var link = svg.selectAll(".link")
@@ -77,9 +79,11 @@
 </script>
     <p>There are no constraints in this graph.  This is what happens if you use CoLa as a drop-in replacement for d3 Force layout.
         You should notice that compared to D3 Force layout, CoLa has much nicer convergence properties.  That is, it glides smoothly
-        to a local minimum in the layout objective function with no "jitter".  That is, it monotonically reduces the "stress" of the layout.
+        to a local minimum in the layout objective function with no "jitter".</p>
+    <p>To be precise, it monotonically reduces the "stress" of the layout.
     It also does a noticably better job of finding a layout in which the edges are closer to their ideal lengths.  In this case, you will notice that
         the edges are fairly uniform in length (since they are all using the default ideal length).
     </p>
+    <p>Compare to <a href="downwardedges.html">this constrained version</a> of the same graph.</p>
 </body>
 </html>

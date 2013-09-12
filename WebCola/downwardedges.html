@@ -5,6 +5,7 @@
 <meta charset="utf-8" />
 <title>Downward Edges</title>
 <style>
+@import url(style.css);
 
 .node {
   stroke: #fff;
@@ -38,7 +39,7 @@
     var color = d3.scale.category20();
 
     var cola = cola.d3adaptor()
-        .linkDistance(20)
+        .linkDistance(8)
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")
@@ -49,6 +50,7 @@
         cola
             .nodes(graph.nodes)
             .links(graph.links)
+            .symmetricDiffLinkLengths()
             .constraints(graph.constraints)
             .start();
 
@@ -105,6 +107,7 @@
 </script>
 
 <p>Pairs of nodes connected by an edge have a vertical separation constraint, requiring that the source be a minimum distance above the target.
+    The unconstrained layout of the same graph looks like <a href="unconstrained.html">this</a>.
     </p>
 </body>
 </html>
