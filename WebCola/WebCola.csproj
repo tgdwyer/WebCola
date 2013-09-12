@@ -27,6 +27,8 @@
     <Content Include="graphdata\signed_weighted.txt" />
     <Content Include="graphdata\signed_weighted_affil.txt" />
     <Content Include="index.html" />
+    <Content Include="modifyinggraph.html" />
+    <Content Include="modifyinggraph.png" />
     <Content Include="nonoverlapping.png" />
     <Content Include="smallnonoverlappinggraph.html" />
     <Content Include="graphdata\CCsum.txt" />
@@ -62,6 +64,7 @@
     <Content Include="unconstrained.html" />
     <Content Include="unconstrainedsmallworld.html" />
     <Content Include="unconstrained.png" />
+    <Content Include="unconstrainedsmallworld.png" />
     <Content Include="vpsc.js">
       <DependentUpon>vpsc.ts</DependentUpon>
     </Content>

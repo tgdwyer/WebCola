@@ -21,9 +21,7 @@ cola = function () {
             links = [],
             constraints = [],
             distanceMatrix = [],
-            distances,
-            strengths,
-            charges;
+            distances;
 
         d3adaptor.tick = function () {
             if (alpha < 0.00001) {
@@ -78,6 +76,13 @@ cola = function () {
             constraints = x;
             return d3adaptor;
         }
+
+        // the following does nothing, it's just here so that if people forget to remove the call when they switch from
+        // d3 to cola, it does break the chaining.
+        d3adaptor.charge = function (x) {
+            if (!arguments.length) return 0;
+            return d3adaptor;
+        };
 
         d3adaptor.distanceMatrix = function (d) {
             if (!arguments.length) return distanceMatrix;
@@ -282,8 +287,15 @@ cola = function () {
             }
 
             if (distanceMatrix.length != n) {
-                distanceMatrix = ShortestPaths.johnsons(n, links);
+                var edges = links;
+                if (edges.length > 0 && typeof edges[0].source != 'number') {
+                    edges = edges.map(function (e) {
+                        return { source: e.source.index, target: e.target.index };
+                    });
+                }
+                distanceMatrix = ShortestPaths.johnsons(n, edges);
             }
+
             var D = new Array(n);
             for (var i = 0; i < n; ++i) {
                 D[i] = new Array(n);
@@ -295,8 +307,12 @@ cola = function () {
 
             for (var i = 0; i < n; ++i) {
                 var v = nodes[i];
-                x[i] = v.x = w / 2 + 10 * Math.random();
-                y[i] = v.y = h / 2 + 10 * Math.random();
+                if (typeof v.x === 'undefined') {
+                    v.x = w / 2 + 10 * Math.random();
+                    v.y = h / 2 + 10 * Math.random();
+                }
+                x[i] = v.x;
+                y[i] = v.y;
             }
             descent = new Descent(x, y, D);
             descent.xproject = d3adaptor.xproject;
@@ -325,14 +341,14 @@ cola = function () {
         d3adaptor.drag = function () {
             if (!drag) drag = d3.behavior.drag()
                 .origin(d3_identity)
-                .on("dragstart.d3adaptor", d3_layout_forceDragstart)
+                .on("dragstart.d3adaptor", colaDragstart)
                 .on("drag.d3adaptor", dragmove)
-                .on("dragend.d3adaptor", d3_layout_forceDragend);
+                .on("dragend.d3adaptor", colaDragend);
 
             if (!arguments.length) return drag;
 
-            this.on("mouseover.d3adaptor", d3_layout_forceMouseover)
-                .on("mouseout.d3adaptor", d3_layout_forceMouseout)
+            this.on("mouseover.d3adaptor", colaMouseover)
+                .on("mouseout.d3adaptor", colaMouseout)
                 .call(drag);
         };
 
@@ -350,20 +366,20 @@ cola = function () {
     // Bit 3 stores the hover state, from mouseover to mouseout.
     // Dragend is a special case: it also clears the hover state.
 
-    function d3_layout_forceDragstart(d) {
+    function colaDragstart(d) {
         d.fixed |= 2; // set bit 2
     }
 
-    function d3_layout_forceDragend(d) {
+    function colaDragend(d) {
         d.fixed &= ~6; // unset bits 2 and 3
     }
 
-    function d3_layout_forceMouseover(d) {
+    function colaMouseover(d) {
         d.fixed |= 4; // set bit 3
         d.px = d.x, d.py = d.y; // set velocity to zero
     }
 
-    function d3_layout_forceMouseout(d) {
+    function colaMouseout(d) {
         d.fixed &= ~4; // unset bit 3
     }
     return cola;
