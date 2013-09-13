@@ -21,7 +21,8 @@ cola = function () {
             links = [],
             constraints = [],
             distanceMatrix = [],
-            distances;
+            distances = {},
+            descent = {};
 
         d3adaptor.tick = function () {
             if (alpha < 0.00001) {
