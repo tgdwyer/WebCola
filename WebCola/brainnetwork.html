@@ -40,7 +40,6 @@
     var svg = d3.select("body").append("svg")
         .attr("width", width)
         .attr("height", height);
-
     var linkLayer = svg.append("g");
     var nodeLayer = svg.append("g");
 
@@ -51,13 +50,13 @@
     var edgeMinLength = Number.MAX_VALUE;
     var edgeMaxLength = 0;
 
-    d3.text("graphdata/signed_weighted.txt",
+    d3.text("graphdata/CCsum.txt",
         function (error, text) {
             var lines = text.split('\n').map(function (s) { return s.trim() });
             lines.forEach(function (l) {
                 if (l.length > 0) {
                     matrix.push(l.split(',').map(function (d) {
-                        var l = 15 / (Number(d) + 1);
+                        var l = 300 / (Number(d) + 1);
                         edgeMinLength = Math.min(edgeMinLength, l);
                         edgeMaxLength = Math.max(edgeMaxLength, l);
                         return l;
@@ -67,9 +66,9 @@
             loaded();
         });
 
-    d3.text("graphdata/signed_weighted_affil.txt",
+    d3.text("graphdata/affil.txt",
         function (error, text) {
-            var lines = text.split(',').map(function (s) { return s.trim() });
+            var lines = text.split('\n').map(function (s) { return s.trim() });
             nodes = lines.map(function (l, i) {
                 return { id: i, group: Number(l) };
             });
@@ -121,6 +120,7 @@
             }
         });
     }
+
     var previousThreshold = 0;
     var linkid = 0;
     function setEdgeThreshold(t) {
@@ -155,8 +155,6 @@
 <input id="edgeThresholdSlider" type="range" min="0" max="500" value="0" onchange="setEdgeThreshold(this.value)"/>
 All Links</p>
 
-<p>
-a single subject resting-state connectivity matrix that is +/- signed and weighted ('signed_weighted.txt') along with an affiliation vector ('signed_weighted_affil.txt') from a single run of a Q* modularity analysis (Rubinov & Sporns).
-</p>
+    CCsum matrix (CCsum.txt) and community affiliation vector (affil.txt). 
 </body>
 </html>
