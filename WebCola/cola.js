@@ -291,12 +291,13 @@ cola = function () {
             }
 
             if (distanceMatrix.length != n) {
-                var edges = links;
-                if (edges.length > 0 && typeof edges[0].source != 'number') {
-                    edges = edges.map(function (e) {
-                        return { source: e.source.index, target: e.target.index };
-                    });
-                }
+                var edges = links.map(function (e, i) {
+                    return {
+                        source: typeof e.source === 'number' ? e.source : e.source.index,
+                        target: typeof e.target === 'number' ? e.target : e.target.index,
+                        length: typeof e.length !== 'undefined' ? e.length : 1
+                    };
+                });
                 distanceMatrix = ShortestPaths.johnsons(n, edges);
             }
 
@@ -312,8 +313,8 @@ cola = function () {
             for (var i = 0; i < n; ++i) {
                 var v = nodes[i];
                 if (typeof v.x === 'undefined') {
-                    v.x = w / 2 + 10 * Math.random();
-                    v.y = h / 2 + 10 * Math.random();
+                    v.x = w / 2;
+                    v.y = h / 2;
                 }
                 x[i] = v.x;
                 y[i] = v.y;

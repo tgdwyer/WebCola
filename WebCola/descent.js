@@ -32,6 +32,27 @@ var Descent = (function () {
             this.xtmp[i] = new Array(n);
         }
     }
+    Descent.randomDir = function (k) {
+        var u = new Array(k);
+        var rand = function () {
+            var r = 0;
+            while (r < 1) {
+                var r = Math.random() - 0.5;
+                r *= 100;
+            }
+            return r;
+        };
+        var l = 0;
+        for (var i = 0; i < k; ++i) {
+            var x = u[i] = rand();
+            l += x * x;
+        }
+        l = Math.sqrt(l);
+        return u.map(function (x) {
+            return x /= l;
+        });
+    };
+
     Descent.prototype.computeDerivatives = function (x) {
         var n = this.n;
         if (n <= 1)
@@ -54,8 +75,9 @@ var Descent = (function () {
                     }
                     if (sd2 > 1e-9)
                         break;
+                    var rd = Descent.randomDir(this.k);
                     for (i = 0; i < this.k; ++i)
-                        x[i][v] += Math.random();
+                        x[i][v] += rd[i];
                 }
                 var l = Math.sqrt(sd2);
                 var D = this.D[u][v];
@@ -179,8 +201,8 @@ var Descent = (function () {
                 var d = this.D[u][v];
                 if (!isFinite(d))
                     continue;
-                var d2 = d * d;
                 var rl = d - l;
+                var d2 = d * d;
                 stress += rl * rl / d2;
             }
         }

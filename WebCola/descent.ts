@@ -54,6 +54,25 @@ class Descent {
         }
     }
 
+    public static randomDir(k: number): number[]{
+        var u = new Array(k);
+        var rand = () => {
+            var r = 0;
+            while (r < 1) {
+                var r = Math.random() - 0.5;
+                r *= 100;
+            }
+            return r;
+        };
+        var l = 0;
+        for (var i = 0; i < k; ++i) {
+            var x = u[i] = rand();
+            l += x * x;
+        }
+        l = Math.sqrt(l);
+        return u.map(x=> x /= l);
+    }
+
     public computeDerivatives(x: number[][]) {
         var n = this.n;
         if (n <= 1) return;
@@ -72,7 +91,8 @@ class Descent {
                         sd2 += d2[i] = dx * dx;
                     }
                     if (sd2 > 1e-9) break;
-                    for (i = 0; i < this.k; ++i) x[i][v] += Math.random();
+                    var rd = Descent.randomDir(this.k);
+                    for (i = 0; i < this.k; ++i) x[i][v] += rd[i];
                 }
                 var l: number = Math.sqrt(sd2);
                 var D: number = this.D[u][v];
@@ -190,8 +210,8 @@ class Descent {
                 l = Math.sqrt(l);
                 var d = this.D[u][v];
                 if (!isFinite(d)) continue;
-                var d2 = d * d;
                 var rl = d - l;
+                var d2 = d * d;
                 stress += rl * rl / d2;
             } 
         }
