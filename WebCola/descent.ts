@@ -11,15 +11,13 @@ class Descent {
 
     // pool of arrays of size n used internally, allocated in constructor
     private Hd: number[][];
-    private x0: number[];
-    private a: number[];
-    private b: number[];
-    private c: number[];
-    private d: number[];
-    private ia: number[];
-    private ib: number[];
-    private xtmp: number[];
-    private ytmp: number[];
+    private a: number[][];
+    private b: number[][];
+    private c: number[][];
+    private d: number[][];
+    private ia: number[][];
+    private ib: number[][];
+    private xtmp: number[][];
     
     public xproject: (x: number[]) => void;
     public yproject: (y: number[]) => void;
@@ -30,25 +28,30 @@ class Descent {
         this.k = 2;
         var n = this.n = x.length;
         this.H = new Array(this.k);
-        this.Hd = new Array(this.k);
         this.g = new Array(this.k);
+        this.Hd = new Array(this.k);
+        this.a = new Array(this.k);
+        this.b = new Array(this.k);
+        this.c = new Array(this.k);
+        this.d = new Array(this.k);
+        this.ia = new Array(this.k);
+        this.ib = new Array(this.k);
+        this.xtmp = new Array(this.k);
         var i = this.k;
         while (i--) {
             this.g[i] = new Array(n);
             this.H[i] = new Array(n);
-            this.Hd[i] = new Array(n);
             var j = n;
             while (j--) this.H[i][j] = new Array(n);
+            this.Hd[i] = new Array(n);
+            this.a[i] = new Array(n);
+            this.b[i] = new Array(n);
+            this.c[i] = new Array(n);
+            this.d[i] = new Array(n);
+            this.ia[i] = new Array(n);
+            this.ib[i] = new Array(n);
+            this.xtmp[i] = new Array(n);
         }
-        this.x0 = new Array(this.k * n);
-        this.a = new Array(this.k * n);
-        this.b = new Array(this.k * n);
-        this.c = new Array(this.k * n);
-        this.d = new Array(this.k * n);
-        this.ia = new Array(this.k * n);
-        this.ib = new Array(this.k * n);
-        this.xtmp = new Array(n);
-        this.ytmp = new Array(n);
     }
 
     public computeDerivatives(x: number[][]) {
@@ -123,55 +126,49 @@ class Descent {
         return this.computeStress();
     }
 
-    // copies the first half of x into a, the second half into b
-    private static split(x: number[], a: number[], b: number[]): void {
-        for (var i = 0, n = a.length; i < n; ++i) {
-            a[i] = x[i];
-            b[i] = x[i + n];
-        }
-    }
-    // copies x and y into r
-    private static unsplit(x: number[], y: number[], r: number[]): void {
-        for (var i = 0, n = x.length; i < n; ++i) {
-            r[i] = x[i];
-            r[i + n] = y[i];
+    private static copy(x1: number[][], x2: number[][]): void {
+        var m = x1.length, n = x1[0].length;
+        for (var i = 0; i < m; ++i) {
+            for (var j = 0; j < n; ++j) {
+                x2[i][j] = x1[i][j];
+            }
         }
     }
 
-    private computeNextPosition(x0: number[], r: number[]): void {
-        Descent.split(x0, this.xtmp, this.ytmp);
-        this.computeDerivatives([this.xtmp, this.ytmp]);
+    private computeNextPosition(x0: number[][], r: number[][]): void {
+        Descent.copy(x0, r);
+        this.computeDerivatives(r);
         var alpha = this.computeStepSize(this.g)
-        this.takeDescentStep(this.xtmp, this.g[0], alpha);
+        this.takeDescentStep(r[0], this.g[0], alpha);
         if (this.xproject) {
-            this.xproject(this.xtmp);
+            this.xproject(r[0]);
         }
-        this.takeDescentStep(this.ytmp, this.g[1], alpha);
+        this.takeDescentStep(r[1], this.g[1], alpha);
         if (this.yproject) {
-            this.yproject(this.ytmp);
+            this.yproject(r[1]);
         }
-        Descent.unsplit(this.xtmp, this.ytmp, r);
     }
     private rungeKutta(): number {
-        Descent.unsplit(this.x[0], this.x[1], this.x0);
-        this.computeNextPosition(this.x0, this.a);
-        Descent.mid(this.x0, this.a, this.ia);
+        this.computeNextPosition(this.x, this.a);
+        Descent.mid(this.x, this.a, this.ia);
         this.computeNextPosition(this.ia, this.b);
-        Descent.mid(this.x0, this.b, this.ib);
+        Descent.mid(this.x, this.b, this.ib);
         this.computeNextPosition(this.ib, this.c);
         this.computeNextPosition(this.c, this.d);
-        for (var i = 0; i < this.n; ++i) {
-            this.x[0][i] = (this.a[i] + 2.0 * this.b[i] + 2.0 * this.c[i] + this.d[i]) / 6.0;
-            var j = i + this.n;
-            this.x[1][i] = (this.a[j] + 2.0 * this.b[j] + 2.0 * this.c[j] + this.d[j]) / 6.0;
+        for (var i = 0; i < this.k; ++i) {
+            for (var j = 0; j < this.n; ++j) {
+                this.x[i][j] = (this.a[i][j] + 2.0 * this.b[i][j] + 2.0 * this.c[i][j] + this.d[i][j]) / 6.0;
+            }
         }
         return this.computeStress();
     }
 
-    private static mid(a: number[], b: number[], m: number[]): void {
-        var n = a.length;
-        for (var i = 0; i < n; ++i) {
-            m[i] = a[i] + (b[i] - a[i]) / 2.0;
+    private static mid(a: number[][], b: number[][], m: number[][]): void {
+        var k = a.length, n = a[0].length;
+        for (var i = 0; i < k; ++i) {
+            for (var j = 0; j < n; ++j) {
+                m[i][j] = a[i][j] + (b[i][j] - a[i][j]) / 2.0;
+            }
         }
     }
 

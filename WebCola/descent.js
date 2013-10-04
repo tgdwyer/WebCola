@@ -6,26 +6,31 @@ var Descent = (function () {
         this.k = 2;
         var n = this.n = x.length;
         this.H = new Array(this.k);
-        this.Hd = new Array(this.k);
         this.g = new Array(this.k);
+        this.Hd = new Array(this.k);
+        this.a = new Array(this.k);
+        this.b = new Array(this.k);
+        this.c = new Array(this.k);
+        this.d = new Array(this.k);
+        this.ia = new Array(this.k);
+        this.ib = new Array(this.k);
+        this.xtmp = new Array(this.k);
         var i = this.k;
         while (i--) {
             this.g[i] = new Array(n);
             this.H[i] = new Array(n);
-            this.Hd[i] = new Array(n);
             var j = n;
             while (j--)
                 this.H[i][j] = new Array(n);
+            this.Hd[i] = new Array(n);
+            this.a[i] = new Array(n);
+            this.b[i] = new Array(n);
+            this.c[i] = new Array(n);
+            this.d[i] = new Array(n);
+            this.ia[i] = new Array(n);
+            this.ib[i] = new Array(n);
+            this.xtmp[i] = new Array(n);
         }
-        this.x0 = new Array(this.k * n);
-        this.a = new Array(this.k * n);
-        this.b = new Array(this.k * n);
-        this.c = new Array(this.k * n);
-        this.d = new Array(this.k * n);
-        this.ia = new Array(this.k * n);
-        this.ib = new Array(this.k * n);
-        this.xtmp = new Array(n);
-        this.ytmp = new Array(n);
     }
     Descent.prototype.computeDerivatives = function (x) {
         var n = this.n;
@@ -109,56 +114,49 @@ var Descent = (function () {
         return this.computeStress();
     };
 
-    Descent.split = // copies the first half of x into a, the second half into b
-    function (x, a, b) {
-        for (var i = 0, n = a.length; i < n; ++i) {
-            a[i] = x[i];
-            b[i] = x[i + n];
-        }
-    };
-
-    Descent.unsplit = // copies x and y into r
-    function (x, y, r) {
-        for (var i = 0, n = x.length; i < n; ++i) {
-            r[i] = x[i];
-            r[i + n] = y[i];
+    Descent.copy = function (x1, x2) {
+        var m = x1.length, n = x1[0].length;
+        for (var i = 0; i < m; ++i) {
+            for (var j = 0; j < n; ++j) {
+                x2[i][j] = x1[i][j];
+            }
         }
     };
 
     Descent.prototype.computeNextPosition = function (x0, r) {
-        Descent.split(x0, this.xtmp, this.ytmp);
-        this.computeDerivatives([this.xtmp, this.ytmp]);
+        Descent.copy(x0, r);
+        this.computeDerivatives(r);
         var alpha = this.computeStepSize(this.g);
-        this.takeDescentStep(this.xtmp, this.g[0], alpha);
+        this.takeDescentStep(r[0], this.g[0], alpha);
         if (this.xproject) {
-            this.xproject(this.xtmp);
+            this.xproject(r[0]);
         }
-        this.takeDescentStep(this.ytmp, this.g[1], alpha);
+        this.takeDescentStep(r[1], this.g[1], alpha);
         if (this.yproject) {
-            this.yproject(this.ytmp);
+            this.yproject(r[1]);
         }
-        Descent.unsplit(this.xtmp, this.ytmp, r);
     };
     Descent.prototype.rungeKutta = function () {
-        Descent.unsplit(this.x[0], this.x[1], this.x0);
-        this.computeNextPosition(this.x0, this.a);
-        Descent.mid(this.x0, this.a, this.ia);
+        this.computeNextPosition(this.x, this.a);
+        Descent.mid(this.x, this.a, this.ia);
         this.computeNextPosition(this.ia, this.b);
-        Descent.mid(this.x0, this.b, this.ib);
+        Descent.mid(this.x, this.b, this.ib);
         this.computeNextPosition(this.ib, this.c);
         this.computeNextPosition(this.c, this.d);
-        for (var i = 0; i < this.n; ++i) {
-            this.x[0][i] = (this.a[i] + 2.0 * this.b[i] + 2.0 * this.c[i] + this.d[i]) / 6.0;
-            var j = i + this.n;
-            this.x[1][i] = (this.a[j] + 2.0 * this.b[j] + 2.0 * this.c[j] + this.d[j]) / 6.0;
+        for (var i = 0; i < this.k; ++i) {
+            for (var j = 0; j < this.n; ++j) {
+                this.x[i][j] = (this.a[i][j] + 2.0 * this.b[i][j] + 2.0 * this.c[i][j] + this.d[i][j]) / 6.0;
+            }
         }
         return this.computeStress();
     };
 
     Descent.mid = function (a, b, m) {
-        var n = a.length;
-        for (var i = 0; i < n; ++i) {
-            m[i] = a[i] + (b[i] - a[i]) / 2.0;
+        var k = a.length, n = a[0].length;
+        for (var i = 0; i < k; ++i) {
+            for (var j = 0; j < n; ++j) {
+                m[i][j] = a[i][j] + (b[i][j] - a[i][j]) / 2.0;
+            }
         }
     };
 

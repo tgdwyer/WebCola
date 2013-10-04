@@ -102,6 +102,16 @@
             node.attr("cx", function (d) { return d.x; })
                 .attr("cy", function (d) { return d.y; });
         });
+        // turn on overlap avoidance after first convergence
+        //cola.on("end", function () {
+        //    if (!cola.avoidOverlaps()) {
+        //        graph.nodes.forEach(function (v) {
+        //            v.width = v.height = 10;
+        //        });
+        //        cola.avoidOverlaps(true);
+        //        cola.start();
+        //    }
+        //});
     });
 
 </script>
