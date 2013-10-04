@@ -3,9 +3,9 @@ class Descent {
     public D: number[][];
     public H: number[][][];
     public g: number[][];
-    public x: number[];
-    public y: number[];
+    public x: number[][];
     public n: number;
+    public k: number;
 
     private static zeroDistance: number = 1e-10;
 
@@ -26,11 +26,11 @@ class Descent {
 
     constructor(x: number[], y: number[], D: number[][]) {
         this.D = D;
-        this.x = x;
-        this.y = y;
+        this.x = [x, y];
+        this.k = 2;
         var n = this.n = x.length;
-        this.H = new Array(2);
-        var i = 2;
+        this.H = new Array(this.k);
+        var i = this.k;
         while (i--) {
             this.H[i] = new Array(n);
             var j = n;
@@ -38,13 +38,13 @@ class Descent {
         }
         this.g = [new Array(n), new Array(n)];
         this.Hd = [new Array(n), new Array(n)];
-        this.x0 = new Array(2 * n);
-        this.a = new Array(2 * n);
-        this.b = new Array(2 * n);
-        this.c = new Array(2 * n);
-        this.d = new Array(2 * n);
-        this.ia = new Array(2 * n);
-        this.ib = new Array(2 * n);
+        this.x0 = new Array(this.k * n);
+        this.a = new Array(this.k * n);
+        this.b = new Array(this.k * n);
+        this.c = new Array(this.k * n);
+        this.d = new Array(this.k * n);
+        this.ia = new Array(this.k * n);
+        this.ib = new Array(this.k * n);
         this.xtmp = new Array(n);
         this.ytmp = new Array(n);
     }
@@ -52,27 +52,27 @@ class Descent {
     public computeDerivatives(x: number[][]) {
         var n = this.n;
         if (n <= 1) return;
-        var i, k = 2;
-        var d: number[] = new Array(k);
-        var d2: number[] = new Array(k);
-        var Huu: number[] = new Array(k);
+        var i;
+        var d: number[] = new Array(this.k);
+        var d2: number[] = new Array(this.k);
+        var Huu: number[] = new Array(this.k);
         for (var u: number = 0; u < n; ++u) {
-            for (i = 0; i < k; ++i) Huu[i] = this.g[i][u] = 0;
+            for (i = 0; i < this.k; ++i) Huu[i] = this.g[i][u] = 0;
             for (var v = 0; v < n; ++v) {
                 if (u === v) continue;
                 while (true) {
                     var sd2 = 0;
-                    for (i = 0; i < k; ++i) {
+                    for (i = 0; i < this.k; ++i) {
                         var dx = d[i] = x[i][u] - x[i][v];
                         sd2 += d2[i] = dx * dx;
                     }
                     if (sd2 > 1e-9) break;
-                    for (i = 0; i < k; ++i) x[i][v] += Math.random();
+                    for (i = 0; i < this.k; ++i) x[i][v] += Math.random();
                 }
                 var l: number = Math.sqrt(sd2);
                 var D: number = this.D[u][v];
                 if (!isFinite(D)) {
-                    for (i = 0; i < k; ++i) this.H[i][u][v] = 0;
+                    for (i = 0; i < this.k; ++i) this.H[i][u][v] = 0;
                     continue;
                 }
                 var D2: number = D * D;
@@ -80,12 +80,12 @@ class Descent {
                 var hs: number = -1 / (D2 * l * l * l);
                 if (!isFinite(gs)) 
                     console.log(gs);
-                for (i = 0; i < k; ++i) {
+                for (i = 0; i < this.k; ++i) {
                     this.g[i][u] += d[i] * gs;
                     Huu[i] -= this.H[i][u][v] = hs * (D * (d2[i] - sd2) + l * sd2);
                 }
             }
-            for (i = 0; i < k; ++i) this.H[i][u][u] = Huu[i];
+            for (i = 0; i < this.k; ++i) this.H[i][u][u] = Huu[i];
         }
     }
 
@@ -113,10 +113,11 @@ class Descent {
     }
 
     public reduceStress(): number {
-        this.computeDerivatives([this.x, this.y]);
+        this.computeDerivatives(this.x);
         var alpha = this.computeStepSize(this.g);
-        this.takeDescentStep(this.x, this.g[0], alpha);
-        this.takeDescentStep(this.y, this.g[1], alpha);
+        for (var i = 0; i < this.k; ++i) {
+            this.takeDescentStep(this.x[i], this.g[i], alpha);
+        }
         return this.computeStress();
     }
 
@@ -150,7 +151,7 @@ class Descent {
         Descent.unsplit(this.xtmp, this.ytmp, r);
     }
     private rungeKutta(): number {
-        Descent.unsplit(this.x, this.y, this.x0);
+        Descent.unsplit(this.x[0], this.x[1], this.x0);
         this.computeNextPosition(this.x0, this.a);
         Descent.mid(this.x0, this.a, this.ia);
         this.computeNextPosition(this.ia, this.b);
@@ -158,9 +159,9 @@ class Descent {
         this.computeNextPosition(this.ib, this.c);
         this.computeNextPosition(this.c, this.d);
         for (var i = 0; i < this.n; ++i) {
-            this.x[i] = (this.a[i] + 2.0 * this.b[i] + 2.0 * this.c[i] + this.d[i]) / 6.0;
+            this.x[0][i] = (this.a[i] + 2.0 * this.b[i] + 2.0 * this.c[i] + this.d[i]) / 6.0;
             var j = i + this.n;
-            this.y[i] = (this.a[j] + 2.0 * this.b[j] + 2.0 * this.c[j] + this.d[j]) / 6.0;
+            this.x[1][i] = (this.a[j] + 2.0 * this.b[j] + 2.0 * this.c[j] + this.d[j]) / 6.0;
         }
         return this.computeStress();
     }
@@ -182,7 +183,7 @@ class Descent {
         var stress = 0;
         for (var u = 0, nMinus1 = this.n - 1; u < nMinus1; ++u) {
             for (var v = u + 1, n = this.n; v < n; ++v) {
-                var dx = this.x[u] - this.x[v], dy = this.y[u] - this.y[v];
+                var dx = this.x[0][u] - this.x[0][v], dy = this.x[1][u] - this.x[1][v];
                 var l = Math.sqrt(dx * dx + dy * dy);
                 var d = this.D[u][v];
                 if (!isFinite(d)) continue;

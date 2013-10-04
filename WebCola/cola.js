@@ -46,11 +46,11 @@ cola = function () {
             for (var o, i = 0; i < n; ++i) {
                 o = nodes[i];
                 if (o.fixed) {
-                    descent.x[i] = o.x = o.px;
-                    descent.y[i] = o.y = o.py;
+                    descent.x[0][i] = o.x = o.px;
+                    descent.x[1][i] = o.y = o.py;
                 } else {
-                    o.x = descent.x[i];
-                    o.y = descent.y[i];
+                    o.x = descent.x[0][i];
+                    o.y = descent.x[1][i];
                 }
             }
 
