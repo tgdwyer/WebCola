@@ -6,15 +6,17 @@ var Descent = (function () {
         this.k = 2;
         var n = this.n = x.length;
         this.H = new Array(this.k);
+        this.Hd = new Array(this.k);
+        this.g = new Array(this.k);
         var i = this.k;
         while (i--) {
+            this.g[i] = new Array(n);
             this.H[i] = new Array(n);
+            this.Hd[i] = new Array(n);
             var j = n;
             while (j--)
                 this.H[i][j] = new Array(n);
         }
-        this.g = [new Array(n), new Array(n)];
-        this.Hd = [new Array(n), new Array(n)];
         this.x0 = new Array(this.k * n);
         this.a = new Array(this.k * n);
         this.b = new Array(this.k * n);
