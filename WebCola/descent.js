@@ -170,8 +170,12 @@ var Descent = (function () {
         var stress = 0;
         for (var u = 0, nMinus1 = this.n - 1; u < nMinus1; ++u) {
             for (var v = u + 1, n = this.n; v < n; ++v) {
-                var dx = this.x[0][u] - this.x[0][v], dy = this.x[1][u] - this.x[1][v];
-                var l = Math.sqrt(dx * dx + dy * dy);
+                var l = 0;
+                for (var i = 0; i < this.k; ++i) {
+                    var dx = this.x[i][u] - this.x[i][v];
+                    l += dx * dx;
+                }
+                l = Math.sqrt(l);
                 var d = this.D[u][v];
                 if (!isFinite(d))
                     continue;
