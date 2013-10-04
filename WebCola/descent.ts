@@ -1,10 +1,8 @@
 // Module
 class Descent {
     public D: number[][];
-    public Hx: number[][];
-    public Hy: number[][];
-    public gx: number[];
-    public gy: number[];
+    public H: number[][][];
+    public g: number[][];
     public x: number[];
     public y: number[];
     public n: number;
@@ -12,8 +10,7 @@ class Descent {
     private static zeroDistance: number = 1e-10;
 
     // pool of arrays of size n used internally, allocated in constructor
-    private Hdx: number[];
-    private Hdy: number[];
+    private Hd: number[][];
     private x0: number[];
     private a: number[];
     private b: number[];
@@ -32,16 +29,15 @@ class Descent {
         this.x = x;
         this.y = y;
         var n = this.n = x.length;
-        this.Hx = new Array(n);
-        this.Hy = new Array(n);
-        for (var i = 0; i < n; ++i) {
-            this.Hx[i] = new Array(n);
-            this.Hy[i] = new Array(n);
+        this.H = new Array(2);
+        var i = 2;
+        while (i--) {
+            this.H[i] = new Array(n);
+            var j = n;
+            while (j--) this.H[i][j] = new Array(n);
         }
-        this.gx = new Array(n);
-        this.gy = new Array(n);
-        this.Hdx = new Array(n);
-        this.Hdy = new Array(n);
+        this.g = [new Array(n), new Array(n)];
+        this.Hd = [new Array(n), new Array(n)];
         this.x0 = new Array(2 * n);
         this.a = new Array(2 * n);
         this.b = new Array(2 * n);
@@ -53,82 +49,74 @@ class Descent {
         this.ytmp = new Array(n);
     }
 
-    public computeDerivatives(x: number[], y: number[]) {
+    public computeDerivatives(x: number[][]) {
         var n = this.n;
         if (n <= 1) return;
+        var i, k = 2;
+        var d: number[] = new Array(k);
+        var d2: number[] = new Array(k);
+        var Huu: number[] = new Array(k);
         for (var u: number = 0; u < n; ++u) {
-            var Huux: number = this.gx[u] = 0;
-            var Huuy: number = this.gy[u] = 0;
+            for (i = 0; i < k; ++i) Huu[i] = this.g[i][u] = 0;
             for (var v = 0; v < n; ++v) {
                 if (u === v) continue;
-                var dx: number, dy: number;
                 while (true) {
-                    dx = x[u] - x[v];
-                    dy = y[u] - y[v];
-                    if (dx === 0 && dy === 0) {
-                        x[v] += Math.random();
-                        y[v] += Math.random();
-                    } else break;
+                    var sd2 = 0;
+                    for (i = 0; i < k; ++i) {
+                        var dx = d[i] = x[i][u] - x[i][v];
+                        sd2 += d2[i] = dx * dx;
+                    }
+                    if (sd2 > 1e-9) break;
+                    for (i = 0; i < k; ++i) x[i][v] += Math.random();
                 }
-                var dx2 = dx * dx;
-                var dy2 = dy * dy;
-                var l: number = Math.sqrt(dx2 + dy2);
-                var d: number = this.D[u][v];
-                if (!isFinite(d)) {
-                    this.Hy[u][v] = this.Hx[u][v] = 0;
+                var l: number = Math.sqrt(sd2);
+                var D: number = this.D[u][v];
+                if (!isFinite(D)) {
+                    for (i = 0; i < k; ++i) this.H[i][u][v] = 0;
                     continue;
                 }
-                var d2: number = d * d;
-                var gs: number = (l - d) / (d2 * l);
-                if (!isFinite(gs)) {
+                var D2: number = D * D;
+                var gs: number = (l - D) / (D2 * l);
+                var hs: number = -1 / (D2 * l * l * l);
+                if (!isFinite(gs)) 
                     console.log(gs);
+                for (i = 0; i < k; ++i) {
+                    this.g[i][u] += d[i] * gs;
+                    Huu[i] -= this.H[i][u][v] = hs * (D * (d2[i] - sd2) + l * sd2);
                 }
-                if (!isFinite(dx)) {
-                    console.log(gs);
-                }
-                if (!isFinite(dy)) {
-                    console.log(gs);
-                }
-                this.gx[u] += dx * gs;
-                this.gy[u] += dy * gs;
-                var hs: number = d / (l * l * l);
-                Huux -= this.Hx[u][v] = (hs * dy2  - 1) / d2;
-                Huuy -= this.Hy[u][v] = (hs * dx2  - 1) / d2;
             }
-            this.Hx[u][u] = Huux;
-            this.Hy[u][u] = Huuy;
+            for (i = 0; i < k; ++i) this.H[i][u][u] = Huu[i];
         }
     }
 
     private static dotProd(a: number[], b: number[]): number {
-        var x = 0;
-        for (var i = 0, n = a.length; i < n; ++i) {
-            x += a[i] * b[i];
-        }
+        var x = 0, i = a.length;
+        while (i--) x += a[i] * b[i];
         return x;
     }
 
     // result r = matrix m * vector v
-    private static rightMultiply(m: number[][], v: number[], r: number[]){
-        for (var i = 0, n = m.length; i < n; ++i) {
-            r[i] = Descent.dotProd(m[i], v);
-        }
+    private static rightMultiply(m: number[][], v: number[], r: number[]) {
+        var i = m.length;
+        while (i--) r[i] = Descent.dotProd(m[i], v);
     }
 
-    public computeStepSize(dx: number[], dy: number[]): number {
-        var numerator = Descent.dotProd(this.gx, dx) + Descent.dotProd(this.gy, dy);
-        Descent.rightMultiply(this.Hx, dx, this.Hdx);
-        Descent.rightMultiply(this.Hy, dy, this.Hdy);
-        var denominator = Descent.dotProd(dx, this.Hdx) + Descent.dotProd(dy, this.Hdy);
+    public computeStepSize(d: number[][]): number {
+        var numerator = 0, denominator = 0;
+        for (var i = 0; i < 2; ++i) {
+            numerator += Descent.dotProd(this.g[i], d[i]);
+            Descent.rightMultiply(this.H[i], d[i], this.Hd[i]);
+            denominator += Descent.dotProd(d[i], this.Hd[i]);
+        }
         if (denominator === 0 || !isFinite(denominator)) return 0;
         return numerator / denominator;
     }
 
     public reduceStress(): number {
-        this.computeDerivatives(this.x, this.y);
-        var alpha = this.computeStepSize(this.gx, this.gy)
-        this.takeDescentStep(this.x, this.gx, alpha);
-        this.takeDescentStep(this.y, this.gy, alpha);
+        this.computeDerivatives([this.x, this.y]);
+        var alpha = this.computeStepSize(this.g);
+        this.takeDescentStep(this.x, this.g[0], alpha);
+        this.takeDescentStep(this.y, this.g[1], alpha);
         return this.computeStress();
     }
 
@@ -149,13 +137,13 @@ class Descent {
 
     private computeNextPosition(x0: number[], r: number[]): void {
         Descent.split(x0, this.xtmp, this.ytmp);
-        this.computeDerivatives(this.xtmp, this.ytmp);
-        var alpha = this.computeStepSize(this.gx, this.gy)
-        this.takeDescentStep(this.xtmp, this.gx, alpha);
+        this.computeDerivatives([this.xtmp, this.ytmp]);
+        var alpha = this.computeStepSize(this.g)
+        this.takeDescentStep(this.xtmp, this.g[0], alpha);
         if (this.xproject) {
             this.xproject(this.xtmp);
         }
-        this.takeDescentStep(this.ytmp, this.gy, alpha);
+        this.takeDescentStep(this.ytmp, this.g[1], alpha);
         if (this.yproject) {
             this.yproject(this.ytmp);
         }

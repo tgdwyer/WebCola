@@ -1,11 +1,13 @@
-﻿//import "../behavior/drag";
-//import "../core/identity";
-//import "../core/rebind";
-//import "../event/event";
-//import "../event/dispatch";
-//import "../event/timer";
-//import "../geom/quadtree";
-//import "layout";
+﻿// to do:
+//  - refactor x/yproject out of here
+//  - in project functions use previous position as starting variable pos and descent pos as desired pos
+//    o create variables with desired positions as previous positions and pass into solver constructor
+//    o update desired positions for each var
+//    o then call solve
+//  - makefeasible:
+//    o apply user constraints, then generated constraints
+//  - autogenerate downward edge constraints with strongly connected components detection
+//  - 3D! (add a third dimension to descent.ts and try out with three.js)
 cola = function () {
     var cola = {};
     cola.d3adaptor = function () {
@@ -35,6 +37,7 @@ cola = function () {
                 m = links.length;
 
             var s1 = descent.rungeKutta();
+            //var s1 = descent.reduceStress();
             if (typeof lastStress !== 'undefined' && lastStress > s1) {
                 alpha = lastStress / s1 - 1;
             }

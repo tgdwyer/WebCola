@@ -34,7 +34,7 @@
     var color = d3.scale.category20();
 
     var cola = cola.d3adaptor()
-        .linkDistance(5)
+        .linkDistance(25)
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")
@@ -45,7 +45,7 @@
         cola
             .nodes(graph.nodes)
             .links(graph.links)
-            .symmetricDiffLinkLengths(1)
+            //.symmetricDiffLinkLengths(1)
             .start();
 
         var link = svg.selectAll(".link")
