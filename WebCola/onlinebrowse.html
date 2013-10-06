@@ -81,11 +81,9 @@
         update();
     });
     function getNode(name) {
-        var node;
-        modelgraph.nodes.forEach(function (v, i) {
-            if (v.name === name) node = v;
-        });
-        return node;
+        var v, i = modelgraph.nodes.length;
+        while (i--) if ((v = modelgraph.nodes[i]).name === name) return v;
+        return null;
     }
     function click(node) {
         var focus = getNode(node.name);
