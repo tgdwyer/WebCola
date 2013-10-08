@@ -42,18 +42,18 @@
         .attr("width", width)
         .attr("height", height);
 
-    var defs = svg.append('svg:defs');
-    defs.append('svg:pattern')
-        .attr('id', 'C00002')
-        .attr('width', 20)
-        .attr('height', 10)
-        .append('svg:image')
-        .attr('xlink:href', 'graphdata/biological_images/C00002.gif');
-
     var edgesLayer = svg.append("g");
     var nodesLayer = svg.append("g");
 
     var modelgraph, viewgraph = { nodes: [], links: [] };
+
+    d3.json("graphdata/biological.json", function (error, g) {
+        modelgraph = g;
+        var startNode = getNode("79");
+        addViewNode(startNode);
+        refocus(startNode);
+        update();
+    });
 
     function refocus(focus) {
         modelgraph.links.forEach(function (l) {
@@ -70,9 +70,11 @@
             if (!inView(u) && inView(v)) v.colour = "red";
         });
     }
+
     function inView(v) {
         return typeof v.viewgraphid !== 'undefined';
     }
+
     function addViewNode(v, startpos) {
         v.viewgraphid = viewgraph.nodes.length;
         if (typeof startpos !== 'undefined') {
@@ -81,23 +83,27 @@
         }
         viewgraph.nodes.push(v);
     }
-    d3.json("graphdata/biological.json", function (error, g) {
-        modelgraph = g;
-        var startNode = getNode("1");
-        addViewNode(startNode);
-        refocus(startNode);
-        update();
-    });
+
     function getNode(name) {
         var v, i = modelgraph.nodes.length;
         while (i--) if ((v = modelgraph.nodes[i]).name == name) return v;
         return null;
     }
+
     function click(node) {
+        if (node.colour == "blue") return;
         var focus = getNode(node.name);
         refocus(focus);
         update();
     }
+
+    function zoomImage(img, scale) {
+        d3.select(img)
+            .transition()
+            .attr("width", function (d) { return scale * d.width; })
+            .attr("height", function (d) { return scale * d.height; });
+    }
+
     function update() {
         cola.nodes(viewgraph.nodes)
             .links(viewgraph.links)
@@ -118,11 +124,7 @@
         var enter = node.enter().append("g")
             .attr("class", function (d) { return "node" + ('image' in d ? ' imagenode' : '') });
 
-        var onload = function () {
-            console.log("loaded");
-        };
-
-        var imagenode = nodesLayer.selectAll(".imagenode")
+        nodesLayer.selectAll(".imagenode")
             .attr("class", "node")
             .append("image")
             .attr("xlink:href", function (d) {
@@ -130,36 +132,24 @@
                 var simg = this;
                 var img = new Image();
                 img.onload = function () {
-                    d.width = this.width/4;
-                    d.height = this.height/4;
+                    d.width = this.width / 4;
+                    d.height = this.height / 4;
                     simg.setAttribute("width", d.width);
                     simg.setAttribute("height", d.height);
                 }
                 img.src = url;
                 return url;
             })
-            .on("mouseover", function () {
-                d3.select(this)
-                    .transition()
-                    .attr("width", function (d) { return d.width * 4; })
-                    .attr("height", function (d) { return d.height * 4; });
-            })
-            .on("mouseout", function () {
-                d3.select(this)
-                    .transition()
-                    .attr("width", function (d) { return d.width; })
-                    .attr("height", function (d) { return d.height; });
-            });
-
+            .on("mouseover", function () { zoomImage(this, 4) })
+            .on("mouseout", function () { zoomImage(this, 1) });
         
         enter.append("circle")
-        .attr("r", 7)
-        .on("click", function (d) { click(d) })
-        .call(cola.drag);
+            .attr("r", 7)
+            .call(cola.drag)
+            .on("click", function (d) { click(d) });
 
-        node.style("fill", function (d) { return d.colour; });
-
-        node.append("title")
+        node.style("fill", function (d) { return d.colour; })
+            .append("title")
             .text(function (d) { return d.label; });
 
         cola.on("tick", function () {
@@ -168,8 +158,6 @@
                 .attr("x2", function (d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
 
-            //node.attr("cx", function (d) { return d.x; })
-            //    .attr("cy", function (d) { return d.y; });
             node.attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; });
         });
     }
