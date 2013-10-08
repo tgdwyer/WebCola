@@ -31,7 +31,7 @@ class PairingHeap<T> {
         return this.elem;
     }
 
-    public empty() : bool {
+    public empty() : boolean {
         return this.elem == null;
     }
 
@@ -51,12 +51,12 @@ class PairingHeap<T> {
         }
     }
 
-    public removeMin(lessThan: (a: T, b: T) => bool): PairingHeap<T> {
+    public removeMin(lessThan: (a: T, b: T) => boolean): PairingHeap<T> {
         if (this.empty()) return null;
         else return this.mergePairs(lessThan);
     }
 
-    public mergePairs(lessThan: (a: T, b: T) => bool) : PairingHeap<T> {
+    public mergePairs(lessThan: (a: T, b: T) => boolean) : PairingHeap<T> {
         if (this.subheaps.length == 0) return new PairingHeap<T>(null);
         else if (this.subheaps.length == 1) { return this.subheaps[0]; }
         else {
@@ -65,7 +65,7 @@ class PairingHeap<T> {
             return firstPair.merge(remaining, lessThan);
         }
     }
-    public decreaseKey(subheap: PairingHeap<T>, newValue: T, lessThan: (a: T, b: T) => bool): { root: PairingHeap<T>; newNode: PairingHeap<T> } {
+    public decreaseKey(subheap: PairingHeap<T>, newValue: T, lessThan: (a: T, b: T) => boolean): { root: PairingHeap<T>; newNode: PairingHeap<T> } {
         var newHeap = subheap.removeMin(lessThan);
         //reassign subheap values to preserve tree
         subheap.elem = newHeap.elem;
@@ -78,8 +78,8 @@ class PairingHeap<T> {
 
 class PriorityQueue<T> {
     private root : PairingHeap<T>;
-    private lessThan: (a: T, b: T) => bool;
-    constructor(lessThan: (a: T, b: T) => bool) { this.lessThan = lessThan; }
+    private lessThan: (a: T, b: T) => boolean;
+    constructor(lessThan: (a: T, b: T) => boolean) { this.lessThan = lessThan; }
     public top() : T {
         if (this.empty()) { return null; }
         return this.root.elem;
@@ -93,7 +93,7 @@ class PriorityQueue<T> {
         }
         return pairingNode;
     }
-    public empty(): bool {
+    public empty(): boolean {
         return !this.root || !this.root.elem;
     }
     public pop(): T {

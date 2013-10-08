@@ -4,8 +4,8 @@ declare class Iterator<T> {
 }
 declare class RBTree<T> {
     constructor(comparator: (a: T, b: T) => number);
-    insert(data: T): bool;
-    remove(data: T): bool;
+    insert(data: T): boolean;
+    remove(data: T): boolean;
     findIter(data: T): Iterator<T>;
     iterator(): Iterator<T>;
     size: number;

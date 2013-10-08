@@ -211,4 +211,4 @@ var Descent = (function () {
     Descent.zeroDistance = 1e-10;
     return Descent;
 })();
-//@ sourceMappingURL=descent.js.map
+//# sourceMappingURL=descent.js.map

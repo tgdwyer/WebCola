@@ -41,6 +41,15 @@
     var svg = d3.select("body").append("svg")
         .attr("width", width)
         .attr("height", height);
+
+    var defs = svg.append('svg:defs');
+    defs.append('svg:pattern')
+        .attr('id', 'C00002')
+        .attr('width', 20)
+        .attr('height', 10)
+        .append('svg:image')
+        .attr('xlink:href', 'graphdata/biological_images/C00002.gif');
+
     var edgesLayer = svg.append("g");
     var nodesLayer = svg.append("g");
 
@@ -72,17 +81,16 @@
         }
         viewgraph.nodes.push(v);
     }
-    d3.json("graphdata/miserables.json", function (error, g) {
-    //d3.json("graphdata/chris.json", function (error, g) {
+    d3.json("graphdata/biological.json", function (error, g) {
         modelgraph = g;
-        var startNode = getNode("Valjean"); //getNode("Toprato");
+        var startNode = getNode("1");
         addViewNode(startNode);
         refocus(startNode);
         update();
     });
     function getNode(name) {
         var v, i = modelgraph.nodes.length;
-        while (i--) if ((v = modelgraph.nodes[i]).name === name) return v;
+        while (i--) if ((v = modelgraph.nodes[i]).name == name) return v;
         return null;
     }
     function click(node) {
@@ -100,23 +108,59 @@
 
         link.enter().append("line")
             .attr("class", "link")
-            .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+            .style("stroke-width", 2);
 
         link.exit().remove();
 
         var node = nodesLayer.selectAll(".node")
             .data(viewgraph.nodes, function (d) { return d.viewgraphid; });
 
-        node.enter().append("circle")
+        var enter = node.enter().append("g")
+            .attr("class", function (d) { return "node" + ('image' in d ? ' imagenode' : '') });
+
+        var onload = function () {
+            console.log("loaded");
+        };
+
+        var imagenode = nodesLayer.selectAll(".imagenode")
             .attr("class", "node")
-            .attr("r", 5)
-            .on("click", function (d) { click(d) })
-            .call(cola.drag);
+            .append("image")
+            .attr("xlink:href", function (d) {
+                var url = "graphdata/" + d['image'] + ".gif";
+                var simg = this;
+                var img = new Image();
+                img.onload = function () {
+                    d.width = this.width/4;
+                    d.height = this.height/4;
+                    simg.setAttribute("width", d.width);
+                    simg.setAttribute("height", d.height);
+                }
+                img.src = url;
+                return url;
+            })
+            .on("mouseover", function () {
+                d3.select(this)
+                    .transition()
+                    .attr("width", function (d) { return d.width * 4; })
+                    .attr("height", function (d) { return d.height * 4; });
+            })
+            .on("mouseout", function () {
+                d3.select(this)
+                    .transition()
+                    .attr("width", function (d) { return d.width; })
+                    .attr("height", function (d) { return d.height; });
+            });
+
+        
+        enter.append("circle")
+        .attr("r", 7)
+        .on("click", function (d) { click(d) })
+        .call(cola.drag);
 
         node.style("fill", function (d) { return d.colour; });
 
         node.append("title")
-            .text(function (d) { return d.name; });
+            .text(function (d) { return d.label; });
 
         cola.on("tick", function () {
             link.attr("x1", function (d) { return d.source.x; })
@@ -124,11 +168,21 @@
                 .attr("x2", function (d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
 
-            node.attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; });
+            //node.attr("cx", function (d) { return d.x; })
+            //    .attr("cy", function (d) { return d.y; });
+            node.attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; });
         });
     }
 
 </script>
+<p>
+    This example introduces the notion of a "model" graph and a "view" graph.  The model graph is too large to sensibly display in one go.
+    Instead we begin with just a small neighbourhood showing in the view graph which is bound to SVG visuals following the usual
+    D3 pattern.  The red nodes have neighbours in the model graph
+    that are not shown in the view graph.  Clicking on a red node causes its invisible neighbours to be added to the view and
+    we use D3's enter/exit selections to update the display as usual.
+    </p><p>
+    The stability of WebCoLa layout makes this type of dynamic graph layout much less chaotic than is possible with the D3 force layout.
+</p>
 </body>
 </html>

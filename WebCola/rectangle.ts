@@ -62,11 +62,11 @@ module vpsc {
     }
 
     class Event {
-        isOpen: bool;
+        isOpen: boolean;
         v: Node;
         pos: number;
 
-        constructor(isOpen: bool, v: Node, p: number) {
+        constructor(isOpen: boolean, v: Node, p: number) {
             this.isOpen = isOpen;
             this.v = v;
             this.pos = p;

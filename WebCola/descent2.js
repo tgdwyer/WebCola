@@ -22,4 +22,4 @@ var Shapes;
 // Local variables
 var p = new Shapes.Point(3, 4);
 var dist = p.getDist();
-//@ sourceMappingURL=descent2.js.map
+//# sourceMappingURL=descent2.js.map

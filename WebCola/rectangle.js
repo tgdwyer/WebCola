@@ -1,3 +1,5 @@
+///<reference path="vpsc.ts"/>
+///<reference path="rbtree.d.ts"/>
 var vpsc;
 (function (vpsc) {
     var Rectangle = (function () {
@@ -76,6 +78,7 @@ var vpsc;
             return -1;
         }
         if (a.isOpen) {
+            // open must come before close
             return -1;
         }
         return 0;
@@ -108,6 +111,7 @@ var vpsc;
                 scanline.insert(v);
                 findNeighbours(v, scanline);
             } else {
+                // close event
                 scanline.remove(v);
                 var makeConstraint = function (l, r) {
                     var sep = (getSize(l.r) + getSize(r.r)) / 2 + minSep;

@@ -258,6 +258,10 @@ var vpsc;
             DEBUG */
             b.blockInd = this.list.length;
             this.list.push(b);
+            /* DEBUG
+            console.log("insert block: " + b.blockInd);
+            this.contains(b);
+            DEBUG */
         };
 
         Blocks.prototype.remove = function (b) {
@@ -271,6 +275,9 @@ var vpsc;
             if (b !== swapBlock) {
                 this.list[b.blockInd] = swapBlock;
                 swapBlock.blockInd = b.blockInd;
+                /* DEBUG
+                console.assert(this.contains(swapBlock));
+                DEBUG */
             }
         };
 
@@ -290,6 +297,10 @@ var vpsc;
                 l.mergeAcross(r, c, -dist);
                 this.remove(r);
             }
+            /* DEBUG
+            console.assert(Math.abs(c.slack()) < 1e-6, "Error: Constraint should be at equality after merge!");
+            console.log("merged on " + c);
+            DEBUG */
         };
 
         Blocks.prototype.forEach = function (f) {
@@ -316,6 +327,10 @@ var vpsc;
                     });
                     _this.remove(b);
                     inactive.push(v);
+                    /* DEBUG
+                    console.assert(this.contains(v.left.block));
+                    console.assert(this.contains(v.right.block));
+                    DEBUG */
                 }
             });
         };
@@ -328,11 +343,17 @@ var vpsc;
             this.vs = vs;
             vs.forEach(function (v) {
                 v.cIn = [], v.cOut = [];
+                /* DEBUG
+                v.toString = () => "v" + vs.indexOf(v);
+                DEBUG */
             });
             this.cs = cs;
             cs.forEach(function (c) {
                 c.left.cOut.push(c);
                 c.right.cIn.push(c);
+                /* DEBUG
+                c.toString = () => c.left + "+" + c.gap + "<=" + c.right + " slack=" + c.slack() + " active=" + c.active;
+                DEBUG */
             });
             this.inactive = cs.map(function (c) {
                 c.active = false;
@@ -447,7 +468,15 @@ var vpsc;
                         this.bs.merge(v);
                     }
                 }
+                /* DEBUG
+                this.bs.contains(v.left.block);
+                this.bs.contains(v.right.block);
+                this.checkInactive();
+                DEBUG */
             }
+            /* DEBUG
+            this.checkSatisfied();
+            DEBUG */
         };
 
         // repeatedly build and split block structure until we converge to an optimal solution
@@ -467,4 +496,4 @@ var vpsc;
     })();
     vpsc.Solver = Solver;
 })(vpsc || (vpsc = {}));
-//@ sourceMappingURL=vpsc.js.map
+//# sourceMappingURL=vpsc.js.map

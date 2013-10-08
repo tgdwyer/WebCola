@@ -31,11 +31,11 @@ module vpsc {
         right: Variable;
         gap: number;
         lm: number;
-        active: bool;
-        equality: bool;
-        unsatisfiable: bool;
+        active: boolean;
+        equality: boolean;
+        unsatisfiable: boolean;
 
-        constructor(left: Variable, right: Variable, gap: number, equality: bool = false) {
+        constructor(left: Variable, right: Variable, gap: number, equality: boolean = false) {
             this.left = left;
             this.right = right;
             this.gap = gap;
@@ -165,7 +165,7 @@ module vpsc {
             return m;
         }
 
-        private findPath(v: Variable, prev: Variable, to: Variable, visit: (c: Constraint, next:Variable)=>void): bool {
+        private findPath(v: Variable, prev: Variable, to: Variable, visit: (c: Constraint, next:Variable)=>void): boolean {
             var endFound = false;
             v.visitNeighbours(prev, (c, next) => {
                 if (!endFound && (next === to || this.findPath(next, v, to, visit)))
@@ -179,7 +179,7 @@ module vpsc {
         
         // Search active constraint tree from u to see if there is a directed path to v.
         // Returns true if path is found.
-        isActiveDirectedPathBetween(u: Variable, v: Variable) : bool {
+        isActiveDirectedPathBetween(u: Variable, v: Variable) : boolean {
             if (u === v) return true;
             var i = u.cOut.length;
             while(i--) {
@@ -348,7 +348,7 @@ DEBUG */
         
 /* DEBUG
         // checks b is in the block, and does a sanity check over list index integrity
-        contains(b: Block): bool {
+        contains(b: Block): boolean {
             var result = false;
             this.list.forEach((bb, i) => {
                 if (bb.blockInd !== i) {
