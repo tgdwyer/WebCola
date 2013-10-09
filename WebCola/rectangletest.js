@@ -72,41 +72,79 @@ function drawRects() {
     return rs;
 }
 
-var dragRect = null;
+var dragRects = {};
 
-function getTouchPoint(e, o) {
+function getTouchPoint(e, o, id) {
     var m = o.getScreenCTM();
     var p = draw.node.createSVGPoint();
-    p.x = e.clientX || e.targetTouches[0].clientX;
+    if (!e.clientX) {
+        for (var i = 0; i < e.targetTouches.length; ++i) {
+            var t = e.targetTouches[i];
+            if (t.identifier == id) {
+                e = t;
+                break;
+            }
+        }
+    }
+    p.x = e.clientX || e.changedTouches[0].clientX;
     p.y = e.clientY || e.targetTouches[0].clientY;
     return p.matrixTransform(m.inverse());
 }
 
+function getTouchId(e) {
+    if (typeof e.pointerId !== 'undefined') {
+        return e.pointerId;
+    }
+    if (typeof e.identifier !== 'undefined') {
+        return e.identifier;
+    }
+    return e.changedTouches[0].identifier;
+}
+
 function onTouchStart(e) {
-    dragRect = e.srcElement;
-    var p = getTouchPoint(e, dragRect);
-    var rx = Number(dragRect.getAttribute("x"));
-    var ry = Number(dragRect.getAttribute("y"));
+    var touchId = getTouchId(e);
+    var o = dragRects[touchId] = e.srcElement;
+    var p = getTouchPoint(e, o, touchId);
+    var rx = Number(o.getAttribute("x"));
+    var ry = Number(o.getAttribute("y"));
     offset = { x: p.x - rx, y: p.y - ry };
-    dragRect.setAttribute("fill", "green");
+    o.setAttribute("fill", "green");
 }
 
 function onTouchMove(e) {
-    if (dragRect != null) {
-        var re = dragRect;
-        var p = getTouchPoint(e, dragRect);
-        re.setAttribute("x", p.x - offset.x);
-        re.setAttribute("y", p.y - offset.y);
-        removeOverlaps(rs);
-        e.preventDefault();
+    var handleTouch = function (t) {
+        var tid = getTouchId(t);
+        if (tid in dragRects) {
+            var re = dragRects[tid];
+            var p = getTouchPoint(t, re, tid);
+            re.setAttribute("x", p.x - offset.x);
+            re.setAttribute("y", p.y - offset.y);
+            removeOverlaps(rs);
+            e.preventDefault();
+        }
+    }
+    if (e.changedTouches) {
+        var i = e.changedTouches.length;
+        while (i--) handleTouch(e.changedTouches[i]);
+    } else {
+        handleTouch(e);
     }
 }
 
 function onTouchEnd(e) {
-    if (dragRect != null) {
-        var re = dragRect;
-        re.setAttribute("fill", "black");
-        dragRect = null;
+    var tid = getTouchId(e);
+    var handleTouch = function (t) {
+        if (tid in dragRects) {
+            var re = dragRects[tid];
+            re.setAttribute("fill", "black");
+            delete dragRects[tid];
+        }
+    }
+    if (e.changedTouches) {
+        var i = e.changedTouches.length;
+        while (i--) handleTouch(e.changedTouches[i]);
+    } else {
+        handleTouch(e);
     }
 }
 

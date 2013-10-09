@@ -3,6 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Incremental exploration of a large graph</title>
 <style>
 @import url(style.css);
@@ -33,6 +34,7 @@
 <script src="vpsc.js"></script>
 <script src="descent.js"></script>
 <script src="cola.js"></script>
+<script src="fullscreen.js"></script>
 <script>
     var width = 960,
         height = 500;
@@ -50,8 +52,8 @@
 
     outer.append('rect')
         .attr('class', 'background')
-        .attr('width', width)
-        .attr('height', height)
+        .attr('width', "100%")
+        .attr('height', "100%")
         .call(d3.behavior.zoom().on("zoom", redraw));
 
     var vis = outer
@@ -117,10 +119,14 @@
         update();
     }
 
-    function zoomImage(img, scale) {
+    function toggleImageZoom(img) {
+        var scale = 1;
         d3.select(img)
             .transition()
-            .attr("width", function (d) { return scale * d.width; })
+            .attr("width", function (d) {
+                if (Math.abs(img.width.baseVal.value - d.width) < 1) scale = 4;
+                return scale * d.width;
+            })
             .attr("height", function (d) { return scale * d.height; });
     }
 
@@ -143,11 +149,10 @@
 
         var enter = node.enter().append("g")
             .attr("class", function (d) { return "node" + ('image' in d ? ' imagenode' : '') })
-            .on("mousedown", function (d) {
-                nodeMouseDown = true;
-            })
-            .on("mouseup", function (d) {
-                nodeMouseDown = false;
+            .on("mousedown", function () { nodeMouseDown = true; })
+            .on("mouseup", function () { nodeMouseDown = false; })
+            .on("touchmove", function () {
+                d3.event.preventDefault()
             })
             .call(cola.drag);
 
@@ -164,15 +169,16 @@
                     simg.setAttribute("width", d.width);
                     simg.setAttribute("height", d.height);
                 }
-                img.src = url;
-                return url;
+                return img.src = url;
             })
-            .on("mouseover", function () { zoomImage(this, 4) })
-            .on("mouseout", function () { zoomImage(this, 1) });
+            .on("mouseover", function () { toggleImageZoom(this) })
+            .on("touchend", function () { toggleImageZoom(this) })
+            .on("mouseout", function () { toggleImageZoom(this) });
         
         enter.append("circle")
             .attr("r", 7)
-            .on("click", function (d) { click(d) });
+            .on("click", function (d) { click(d) })
+            .on("touchend", function (d) { click(d) });
 
         node.style("fill", function (d) { return d.colour; })
             .append("title")
@@ -187,8 +193,8 @@
             node.attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; });
         });
     }
-
 </script>
+<button onclick="fullScreen(outer[0][0])">Full screen</button>
 Mouse wheel zooms, left-mouse-button drag on the background to pan.
 <p>
     This example introduces the notion of a "model" graph and a "view" graph.  The model graph is too large to sensibly display in one go.
