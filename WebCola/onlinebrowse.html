@@ -7,6 +7,11 @@
 <style>
 @import url(style.css);
 
+.background {
+    stroke: gray;
+    stroke-width: 1px;
+    fill: white;
+}
 .node {
   stroke: #fff;
   stroke-width: 1.5px;
@@ -38,12 +43,29 @@
         .linkDistance(60)
         .size([width, height]);
 
-    var svg = d3.select("body").append("svg")
+    var outer = d3.select("body").append("svg")
         .attr("width", width)
-        .attr("height", height);
+        .attr("height", height)
+        .attr("pointer-events", "all");
 
-    var edgesLayer = svg.append("g");
-    var nodesLayer = svg.append("g");
+    outer.append('rect')
+        .attr('class', 'background')
+        .attr('width', width)
+        .attr('height', height)
+        .call(d3.behavior.zoom().on("zoom", redraw));
+
+    var vis = outer
+        .append('g');
+
+    var nodeMouseDown = false;
+
+    function redraw() {
+        if (nodeMouseDown) return;
+        vis.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+    }
+
+    var edgesLayer = vis.append("g");
+    var nodesLayer = vis.append("g");
 
     var modelgraph, viewgraph = { nodes: [], links: [] };
 
@@ -71,9 +93,7 @@
         });
     }
 
-    function inView(v) {
-        return typeof v.viewgraphid !== 'undefined';
-    }
+    function inView(v) { return typeof v.viewgraphid !== 'undefined'; }
 
     function addViewNode(v, startpos) {
         v.viewgraphid = viewgraph.nodes.length;
@@ -122,7 +142,14 @@
             .data(viewgraph.nodes, function (d) { return d.viewgraphid; });
 
         var enter = node.enter().append("g")
-            .attr("class", function (d) { return "node" + ('image' in d ? ' imagenode' : '') });
+            .attr("class", function (d) { return "node" + ('image' in d ? ' imagenode' : '') })
+            .on("mousedown", function (d) {
+                nodeMouseDown = true;
+            })
+            .on("mouseup", function (d) {
+                nodeMouseDown = false;
+            })
+            .call(cola.drag);
 
         nodesLayer.selectAll(".imagenode")
             .attr("class", "node")
@@ -145,7 +172,6 @@
         
         enter.append("circle")
             .attr("r", 7)
-            .call(cola.drag)
             .on("click", function (d) { click(d) });
 
         node.style("fill", function (d) { return d.colour; })
@@ -163,6 +189,7 @@
     }
 
 </script>
+Mouse wheel zooms, left-mouse-button drag on the background to pan.
 <p>
     This example introduces the notion of a "model" graph and a "view" graph.  The model graph is too large to sensibly display in one go.
     Instead we begin with just a small neighbourhood showing in the view graph which is bound to SVG visuals following the usual

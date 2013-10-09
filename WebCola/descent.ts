@@ -8,6 +8,7 @@ class Descent {
     public k: number;
 
     private static zeroDistance: number = 1e-10;
+    private minD: number;
 
     // pool of arrays of size n used internally, allocated in constructor
     private Hd: number[][];
@@ -37,12 +38,19 @@ class Descent {
         this.ia = new Array(this.k);
         this.ib = new Array(this.k);
         this.xtmp = new Array(this.k);
+        this.minD = Number.MAX_VALUE;
         var i = this.k;
         while (i--) {
             this.g[i] = new Array(n);
             this.H[i] = new Array(n);
             var j = n;
-            while (j--) this.H[i][j] = new Array(n);
+            while (j--) {
+                this.H[i][j] = new Array(n);
+                var d = D[i][j];
+                if (d > 0 && d < this.minD) {
+                    this.minD = d;
+                }
+            }
             this.Hd[i] = new Array(n);
             this.a[i] = new Array(n);
             this.b[i] = new Array(n);
@@ -54,23 +62,23 @@ class Descent {
         }
     }
 
-    public static randomDir(k: number): number[]{
-        var u = new Array(k);
+    private offsetDir(): number[] {
+        var u = new Array(this.k);
         var rand = () => {
             var r = 0;
-            while (r < 1) {
+            while (r * r < 1) {
                 var r = Math.random() - 0.5;
                 r *= 100;
             }
             return r;
         };
         var l = 0;
-        for (var i = 0; i < k; ++i) {
+        for (var i = 0; i < this.k; ++i) {
             var x = u[i] = rand();
             l += x * x;
         }
         l = Math.sqrt(l);
-        return u.map(x=> x /= l);
+        return u.map(x=> x *= this.minD/l);
     }
 
     public computeDerivatives(x: number[][]) {
@@ -91,7 +99,7 @@ class Descent {
                         sd2 += d2[i] = dx * dx;
                     }
                     if (sd2 > 1e-9) break;
-                    var rd = Descent.randomDir(this.k);
+                    var rd = this.offsetDir();
                     for (i = 0; i < this.k; ++i) x[i][v] += rd[i];
                 }
                 var l: number = Math.sqrt(sd2);

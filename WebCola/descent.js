@@ -15,13 +15,19 @@ var Descent = (function () {
         this.ia = new Array(this.k);
         this.ib = new Array(this.k);
         this.xtmp = new Array(this.k);
+        this.minD = Number.MAX_VALUE;
         var i = this.k;
         while (i--) {
             this.g[i] = new Array(n);
             this.H[i] = new Array(n);
             var j = n;
-            while (j--)
+            while (j--) {
                 this.H[i][j] = new Array(n);
+                var d = D[i][j];
+                if (d > 0 && d < this.minD) {
+                    this.minD = d;
+                }
+            }
             this.Hd[i] = new Array(n);
             this.a[i] = new Array(n);
             this.b[i] = new Array(n);
@@ -32,24 +38,25 @@ var Descent = (function () {
             this.xtmp[i] = new Array(n);
         }
     }
-    Descent.randomDir = function (k) {
-        var u = new Array(k);
+    Descent.prototype.offsetDir = function () {
+        var _this = this;
+        var u = new Array(this.k);
         var rand = function () {
             var r = 0;
-            while (r < 1) {
+            while (r * r < 1) {
                 var r = Math.random() - 0.5;
                 r *= 100;
             }
             return r;
         };
         var l = 0;
-        for (var i = 0; i < k; ++i) {
+        for (var i = 0; i < this.k; ++i) {
             var x = u[i] = rand();
             l += x * x;
         }
         l = Math.sqrt(l);
         return u.map(function (x) {
-            return x /= l;
+            return x *= _this.minD / l;
         });
     };
 
@@ -75,7 +82,7 @@ var Descent = (function () {
                     }
                     if (sd2 > 1e-9)
                         break;
-                    var rd = Descent.randomDir(this.k);
+                    var rd = this.offsetDir();
                     for (i = 0; i < this.k; ++i)
                         x[i][v] += rd[i];
                 }
