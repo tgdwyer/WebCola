@@ -51,6 +51,9 @@
     var edgeMinLength = Number.MAX_VALUE;
     var edgeMaxLength = 0;
 
+    var percentiles = new Array(101);
+    var orderedWeights = [];
+
     d3.text("graphdata/signed_weighted.txt",
         function (error, text) {
             var lines = text.split('\n').map(function (s) { return s.trim() });
@@ -64,6 +67,18 @@
                     }));
                 }
             });
+            for (var i = 0; i < matrix.length; ++i) {
+                var row = matrix[i];
+                for (var j = 0; j < row.length; ++j) {
+                    orderedWeights.push(row[j]);
+                }
+            }
+            orderedWeights.sort(function (a, b) { return a - b });
+            var k = orderedWeights.length / 100;
+            for (var i = 0; i < 100; ++i) {
+                percentiles[i] = orderedWeights[Math.floor(i * k)];
+            }
+            percentiles[100] = orderedWeights[orderedWeights.length - 1];
             loaded();
         });
 
@@ -123,7 +138,8 @@
     }
     var previousThreshold = 0;
     var linkid = 0;
-    function setEdgeThreshold(t) {
+    function setEdgeThreshold(p) {
+        var t = percentiles[p];
         if (links) {
             links = links.filter(function (l) {
                 return l.length < t;
@@ -151,10 +167,17 @@
         }
     }
 </script>
+<script>
+    function sliderChange(v) {
+        var l = document.getElementById("sliderLabel");
+        l.textContent = v;
+        setEdgeThreshold(v);
+    }
+</script>
+Showing <label id="sliderLabel">0</label>th percentile
 <p>No Links
-<input id="edgeThresholdSlider" type="range" min="0" max="500" value="0" onchange="setEdgeThreshold(this.value)"/>
+<input id="edgeThresholdSlider" type="range" min="0" max="100" value="0" onchange="sliderChange(this.value)"/>
 All Links</p>
-
 <p>
 a single subject resting-state connectivity matrix that is +/- signed and weighted ('signed_weighted.txt') along with an affiliation vector ('signed_weighted_affil.txt') from a single run of a Q* modularity analysis (Rubinov & Sporns).
 </p>

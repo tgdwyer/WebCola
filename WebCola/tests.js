@@ -4,7 +4,7 @@
 /// <reference path="descent.js"/>
 
 asyncTest("all-pairs shortest paths", function () {
-    var d3cola = d3.layout.cola();
+    var d3cola = cola.d3adaptor();
 
     d3.json("triangle.js", function (error, graph) {
         d3cola
