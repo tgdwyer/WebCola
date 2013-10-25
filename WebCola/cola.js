@@ -322,6 +322,10 @@ cola = function () {
             descent = new Descent(x, y, D);
             descent.xproject = d3adaptor.xproject;
             descent.yproject = d3adaptor.yproject;
+            var initialIterations = arguments.length > 0 ? arguments[0] : 0;
+            for (i = 0; i < initialIterations; ++i) {
+                descent.rungeKutta();
+            }
             for (i = 0; i < m; ++i) {
                 o = links[i];
                 if (typeof o.source == "number") o.source = nodes[o.source];

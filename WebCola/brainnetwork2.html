@@ -20,7 +20,6 @@
 </style>
 </head>
 <body>
-    <h1>Brain network MDS</h1>
 <script src="d3.v3.js"></script>
 <script src="pqueue.js"></script>
 <script src="shortestpaths.js"></script>
@@ -28,21 +27,31 @@
 <script src="descent.js"></script>
 <script src="cola.js"></script>
 <script>
-    var width = 960,
+    var width = 1000,
         height = 500;
 
     var color = d3.scale.category20();
+    GraphCanvas = function () {
+        var gc = {};
+        gc.init = function (id, width, height, linkDistance) {
+            gc.cola = cola.d3adaptor()
+                    .linkDistance(linkDistance)
+                    .size([width, height]);
 
-    var cola = cola.d3adaptor()
-        .linkDistance(10)
-        .size([width, height]);
+            gc.svg = d3.select("body").append("svg")
+                    .attr("id", id)
+                    .attr("width", width)
+                    .attr("height", height);
 
-    var svg = d3.select("body").append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
-    var linkLayer = svg.append("g");
-    var nodeLayer = svg.append("g");
+            gc.linkLayer = gc.svg.append("g");
+            gc.nodeLayer = gc.svg.append("g");
+            return gc;
+        }
+        return gc;
+    };
+    var gc1 = GraphCanvas().init("mdsview", 400, height, 10);
+    d3.select("body").append("button").attr("id", "relaxButton").attr("disabled","true").text("Relax Edges").on("click", relaxEdges);
+    var gc2 = GraphCanvas().init("graphview", 400, height, 25);
 
     var matrix = [];
     var nodes = [];
@@ -103,37 +112,29 @@
     function loaded() {
         if (nodes.length == 0 || matrix.length == 0 || labels.length == 0) return;
 
-        svg.select("#edgeThresholdSlider").attr("max", edgeMaxLength);
-        svg.select("#edgeThresholdSlider").attr("min", edgeMinLength - 1);
+        gc1.svg.select("#edgeThresholdSlider").attr("max", edgeMaxLength);
+        gc1.svg.select("#edgeThresholdSlider").attr("min", edgeMinLength - 1);
 
-        cola
+        gc1.cola
             .distanceMatrix(matrix)
             .nodes(nodes)
-            .start();
+            .start(100);
 
         links = [];
 
-        var node = nodeLayer.selectAll(".node")
+        var node = gc1.nodeLayer.selectAll(".node")
             .data(nodes)
           .enter().append("circle")
             .attr("class", "node")
             .attr("r", 5)
             .style("fill", function (d) { return color(d.group); })
-            .call(cola.drag);
+            .call(gc1.cola.drag);
 
         node.append("title")
             .text(function (d) { return labels[d.id]; });
 
-        cola.on("tick", function () {
-            node.attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; });
-
-            if (linkSelection) {
-                linkSelection.attr("x1", function (d) { return d.source.x; })
-                    .attr("y1", function (d) { return d.source.y; })
-                    .attr("x2", function (d) { return d.target.x; })
-                    .attr("y2", function (d) { return d.target.y; });
-            }
+        gc1.cola.on("tick", function () {
+            updatePositions(node, linkSelection);
         });
     }
     var previousThreshold = 0;
@@ -145,6 +146,10 @@
                 return l.length < t;
             });
 
+            if (links.length > 0) {
+                d3.select("#relaxButton").attr("disabled", null);
+            }
+
             var n = nodes.length;
             for (var i = 0; i < n - 1; ++i) {
                 for (var j = i + 1; j < n; ++j) {
@@ -155,16 +160,118 @@
                 }
             }
             previousThreshold = t;
-            linkSelection = linkLayer.selectAll(".link").data(links, function (l) { return l.id });
+            linkSelection = gc1.linkLayer.selectAll(".link").data(links, function (l) { return l.id });
             linkSelection.exit().remove();
-            linkSelection.enter().append("line")
+            updatePositions(null, linkSelection.enter().append("line")
+                .attr("class", "link")
+                .style("stroke-width", function (d) { return Math.sqrt(d.value); }));
+        }
+    }
+
+    function updatePositions(circles, lines) {
+        if (circles) {
+            circles
+                .attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; })
+        }
+        if (lines) {
+            lines.attr("x1", function (d) { return d.source.x; })
+                 .attr("y1", function (d) { return d.source.y; })
+                 .attr("x2", function (d) { return d.target.x; })
+                 .attr("y2", function (d) { return d.target.y; });
+        }
+    }
+
+    function updatePositionsAnimated(circles, lines) {
+        if (circles) {
+            circles.transition().duration(2000)
+                .attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; })
+        }
+        if (lines) {
+            lines.transition().duration(2000)
                 .attr("x1", function (d) { return d.source.x; })
                 .attr("y1", function (d) { return d.source.y; })
                 .attr("x2", function (d) { return d.target.x; })
-                .attr("y2", function (d) { return d.target.y; })
-                .attr("class", "link")
-                .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+                .attr("y2", function (d) { return d.target.y; });
         }
+    }
+
+    function movex(e, delay, dx) {
+        e.style("transition", "transform " + delay)
+         .style("transform", "translateX(" + dx + "px)")
+         .style("-webkit-transition", "-webkit-transform " + delay)
+         .style("-webkit-transform", "translate(" + dx + "px, 0px)");
+    }
+    var relaxedGraph = null;
+    function relaxEdges() {
+        if (!relaxedGraph) {
+            relaxedGraph = {};
+        }
+        gc2.cola.stop();
+        gc2.cola.on("tick", null);
+
+        var dx = gc1.svg[0][0].getBoundingClientRect().left - gc2.svg[0][0].getBoundingClientRect().left;
+        var transitionEndCallback = function () {
+            gc2.svg.style("visibility", "visible");
+            gc2.svg.on('webkitTransitionEnd', null).on('transitionend', null);
+            updatePositionsAnimated(relaxedGraph.circles, relaxedGraph.lines);
+            gc2.cola.on("tick", function () {
+                updatePositions(relaxedGraph.circles, relaxedGraph.lines);
+            });
+            movex(gc2.svg, "1s", 0);
+        }
+        gc2.svg.on('webkitTransitionEnd', transitionEndCallback).on('transitionend', transitionEndCallback);
+        gc2.svg.style("visibility", "hidden");
+        movex(gc2.svg, "0.01s", dx);
+
+        relaxedGraph.nodes = nodes.map(function (u) {
+            return { id: u.id, group: u.group, x: u.x, y: u.y };
+        });
+
+        var neighbours = {};
+        relaxedGraph.links = links.map(function (l) {
+            neighbours[l.source.id] = true;
+            neighbours[l.target.id] = true;
+            return { source: relaxedGraph.nodes[l.source.id], target: relaxedGraph.nodes[l.target.id], id: l.id };
+        });
+
+        relaxedGraph.nodes = relaxedGraph.nodes.filter(function (v) {
+            if (v.id in neighbours) return true;
+            return false;
+        });
+
+        var linkQuery = gc2.linkLayer.selectAll(".link")
+            .data(relaxedGraph.links, function (d) { return d.id });
+
+        linkQuery.enter().append("line")
+            .attr("class", "link")
+            .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+
+        linkQuery.exit().remove();
+
+        var nodeQuery = gc2.nodeLayer.selectAll(".node")
+            .data(relaxedGraph.nodes, function (d) { return d.id });
+            
+        nodeQuery.enter().append("circle")
+            .attr("class", "node")
+            .attr("r", 5)
+            .style("fill", function (d) { return color(d.group); })
+            .call(gc2.cola.drag)
+            .append("title")
+            .text(function (d) { return labels[d.id]; });
+
+        nodeQuery.exit().remove();
+
+        updatePositions(
+            relaxedGraph.circles = gc2.nodeLayer.selectAll(".node"),
+            relaxedGraph.lines = gc2.linkLayer.selectAll(".link"));
+
+        gc2.cola
+            .nodes(relaxedGraph.nodes)
+            .links(relaxedGraph.links)
+            //.symmetricDiffLinkLengths(1)
+            .start(100);
     }
 </script>
 <script>
@@ -174,7 +281,7 @@
         setEdgeThreshold(v);
     }
 </script>
-Showing <label id="sliderLabel">0</label>th percentile
+<p>Showing <label id="sliderLabel">0</label>th percentile</p>
 <p>No Links
 <input id="edgeThresholdSlider" type="range" min="0" max="100" value="0" onchange="sliderChange(this.value)"/>
 All Links</p>
