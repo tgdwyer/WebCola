@@ -359,21 +359,32 @@ var vpsc;
                 c.active = false;
                 return c;
             });
-            this.bs = new Blocks(vs);
+            this.bs = null;
         }
         Solver.prototype.cost = function () {
             return this.bs.cost();
         };
 
-        /* DEBUG
         // set starting positions without changing desired positions.
-        // not useful except for testing since it throws away block structure.
-        setStartingPositions(ps: number[]): void {
-        this.inactive = this.cs.map(c=> { c.active = false; return c; });
-        this.bs = new Blocks(this.vs);
-        this.bs.forEach((b, i) => b.posn = ps[i]);
-        }
-        
+        // Note: it throws away any previous block structure.
+        Solver.prototype.setStartingPositions = function (ps) {
+            this.inactive = this.cs.map(function (c) {
+                c.active = false;
+                return c;
+            });
+            this.bs = new Blocks(this.vs);
+            this.bs.forEach(function (b, i) {
+                return b.posn = ps[i];
+            });
+        };
+
+        Solver.prototype.setDesiredPositions = function (ps) {
+            this.vs.forEach(function (v, i) {
+                return v.desiredPosition = ps[i];
+            });
+        };
+
+        /* DEBUG
         private getId(v: Variable): number {
         return this.vs.indexOf(v);
         }
@@ -424,6 +435,10 @@ var vpsc;
         // satisfy constraints by building block structure over violated constraints
         // and moving the blocks to their desired positions
         Solver.prototype.satisfy = function () {
+            if (this.bs == null) {
+                this.bs = new Blocks(this.vs);
+            }
+
             /* DEBUG
             console.log("satisfy: " + this.bs);
             DEBUG */

@@ -31,6 +31,30 @@ asyncTest("all-pairs shortest paths", function () {
     ok(true);
 });
 
+test("foreach test", function () {
+    var now = window.performance ? function () { return window.performance.now(); } : function () { };
+    var a = new Array(1000000);
+    var expect = 0;
+    for (var i = 0; i < a.length; ++i) {
+        expect += a[i] = i;
+    }
+    var startTime = now();
+    var sum = 0;
+    for (var i = 0, n = a.length; i < n; ++i) {
+        sum += i;
+    }
+    var t1 = now() - startTime;
+    startTime = now();
+    sum = 0;
+    for (var i in a) {
+        sum += i;
+    }
+    var t2 = now() - startTime;
+    console.log("t1 = " + t1 + " t2 = " + t2);
+    ok(sum == expect);
+    
+});
+
 test("matrix perf test", function () {
     ok(true); return; // disable
 

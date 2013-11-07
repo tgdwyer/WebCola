@@ -20,8 +20,8 @@ class Descent {
     private ib: number[][];
     private xtmp: number[][];
     
-    public xproject: (x: number[]) => void;
-    public yproject: (y: number[]) => void;
+    public xproject: (x0: number[], x: number[]) => void;
+    public yproject: (y0: number[], y: number[]) => void;
 
     constructor(x: number[], y: number[], D: number[][]) {
         this.D = D;
@@ -169,11 +169,11 @@ class Descent {
         var alpha = this.computeStepSize(this.g)
         this.takeDescentStep(r[0], this.g[0], alpha);
         if (this.xproject) {
-            this.xproject(r[0]);
+            this.xproject(x0[0], r[0]);
         }
         this.takeDescentStep(r[1], this.g[1], alpha);
         if (this.yproject) {
-            this.yproject(r[1]);
+            this.yproject(x0[1], r[1]);
         }
     }
     private rungeKutta(): number {

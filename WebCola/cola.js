@@ -121,8 +121,8 @@ cola = function () {
             return d3adaptor;
         };
 
-        var xbuffer;
-        d3adaptor.xproject = function (x) {
+        var xbuffer, x0buffer;
+        d3adaptor.xproject = function (x0, x) {
             //var vs = x.map(function (d, i) {
             //    var w = 1;
             //    if (nodes[i].fixed) {
@@ -136,6 +136,7 @@ cola = function () {
             //vs.forEach(function (v, i) {
             //    x[i] = v.position();
             //});
+            x0buffer = x0;
             xbuffer = x;
         }
         d3adaptor.yproject_disabled = function (y) {
@@ -161,15 +162,15 @@ cola = function () {
             }
         }
 
-        d3adaptor.yproject = function (y) {
+        d3adaptor.yproject = function (y0, y) {
             var userConstraints = typeof constraints !== "undefined" && constraints.length > 0;
             if (!avoidOverlaps && !userConstraints) return;
 
-            var x = xbuffer;
+            var x = xbuffer, x0 = x0buffer;
             var n = x.length;
             var rs = new Array(n);
             for (var i = 0; i < n; ++i) {
-                var cx = x[i], cy = y[i];
+                var cx = x0[i], cy = y0[i];
                 var v = nodes[i];
                 var w2 = v.width / 2;
                 var h2 = v.height / 2;
@@ -179,12 +180,14 @@ cola = function () {
                 var w = 1;
                 if (nodes[i].fixed) {
                     w = 1000;
-                    d = nodes[i].px;
+                    x[i] = d = nodes[i].px;
                 }
                 return new vpsc.Variable(d, w);
             });
             var cs = avoidOverlaps ? vpsc.generateXConstraints(rs, vs) : [];
             var solver = new vpsc.Solver(vs, cs);
+            solver.setStartingPositions(x0);
+            solver.setDesiredPositions(x);
             solver.solve();
             vs.forEach(function (v, i) {
                 var pos = v.position();
@@ -195,7 +198,7 @@ cola = function () {
                 var w = 1;
                 if (nodes[i].fixed) {
                     w = 1000;
-                    d = nodes[i].py;
+                    y[i] = d = nodes[i].py;
                 }
                 return new vpsc.Variable(d, w);
             });
@@ -212,6 +215,8 @@ cola = function () {
                 cs = cs.concat(vpsc.generateYConstraints(rs, vs));
             }
             solver = new vpsc.Solver(vs, cs);
+            solver.setStartingPositions(y0);
+            solver.setDesiredPositions(y);
             solver.solve();
             vs.forEach(function (v, i) {
                 y[i] = v.position();
@@ -319,9 +324,22 @@ cola = function () {
                 x[i] = v.x;
                 y[i] = v.y;
             }
+            var initialIterations = arguments.length > 0 ? arguments[0] : 0;
+            var ao = this.avoidOverlaps();
+            this.avoidOverlaps(false);
             descent = new Descent(x, y, D);
+            // apply initialIterations without user constraints or nonoverlap constraints
+            for (i = 0; i < initialIterations; ++i) {
+                descent.rungeKutta();
+            }
+            // apply initialIterations with user constraints but no noverlap constraints
             descent.xproject = d3adaptor.xproject;
             descent.yproject = d3adaptor.yproject;
+            for (i = 0; i < initialIterations; ++i) {
+                descent.rungeKutta();
+            }
+            // subsequent iterations will apply all constraints
+            this.avoidOverlaps(ao);
             for (i = 0; i < m; ++i) {
                 o = links[i];
                 if (typeof o.source == "number") o.source = nodes[o.source];

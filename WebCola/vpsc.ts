@@ -392,22 +392,26 @@ DEBUG */
 DEBUG */
             });
             this.inactive = cs.map(c=> { c.active = false; return c; });
-            this.bs = new Blocks(vs);
+            this.bs = null;
         }
 
         cost(): number {
             return this.bs.cost();
         }
 
-/* DEBUG
         // set starting positions without changing desired positions.
-        // not useful except for testing since it throws away block structure.
+        // Note: it throws away any previous block structure.
         setStartingPositions(ps: number[]): void {
             this.inactive = this.cs.map(c=> { c.active = false; return c; });
             this.bs = new Blocks(this.vs);
             this.bs.forEach((b, i) => b.posn = ps[i]);
         }
 
+        setDesiredPositions(ps: number[]): void {
+            this.vs.forEach((v, i) => v.desiredPosition = ps[i]);
+        }
+
+/* DEBUG
         private getId(v: Variable): number {
             return this.vs.indexOf(v);
         }
@@ -460,6 +464,9 @@ DEBUG */
         // satisfy constraints by building block structure over violated constraints
         // and moving the blocks to their desired positions
         satisfy(): void {
+            if (this.bs == null) {
+                this.bs = new Blocks(this.vs);
+            }
 /* DEBUG
             console.log("satisfy: " + this.bs);
 DEBUG */

@@ -40,6 +40,7 @@
 
     var cola = cola.d3adaptor()
         .linkDistance(8)
+        .avoidOverlaps(true)
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")
@@ -47,12 +48,16 @@
         .attr("height", height);
 
     d3.json("graphdata/chris.json", function (error, graph) {
+        var nodeRadius = 5;
+
+        graph.nodes.forEach(function (v) { v.height = v.width = 2 * nodeRadius; });
+
         cola
             .nodes(graph.nodes)
             .links(graph.links)
             .symmetricDiffLinkLengths()
             .constraints(graph.constraints)
-            .start();
+            .start(20);
 
         // define arrow markers for graph links
         svg.append('svg:defs').append('svg:marker')
@@ -75,7 +80,7 @@
             .data(graph.nodes)
           .enter().append("circle")
             .attr("class", "node")
-            .attr("r", 5)
+            .attr("r", nodeRadius)
             .style("fill", function (d) { return color(d.group); })
             .call(cola.drag);
 
@@ -90,8 +95,8 @@
                     dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
                     normX = deltaX / dist,
                     normY = deltaY / dist,
-                    sourcePadding = 5,
-                    targetPadding = 7,
+                    sourcePadding = nodeRadius,
+                    targetPadding = nodeRadius + 2,
                     sourceX = d.source.x + (sourcePadding * normX),
                     sourceY = d.source.y + (sourcePadding * normY),
                     targetX = d.target.x - (targetPadding * normX),
@@ -117,7 +122,8 @@
 </script>
 
 <p>Pairs of nodes connected by an edge have a vertical separation constraint, requiring that the source be a minimum distance above the target.
-    The unconstrained layout of the same graph looks like <a href="unconstrained.html">this</a>.
+   We also require that node bounding boxes cannot overlap.
+     The unconstrained layout of the same graph looks like <a href="unconstrained.html">this</a>.
     </p>
 </body>
 </html>

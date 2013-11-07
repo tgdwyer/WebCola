@@ -158,11 +158,11 @@ var Descent = (function () {
         var alpha = this.computeStepSize(this.g);
         this.takeDescentStep(r[0], this.g[0], alpha);
         if (this.xproject) {
-            this.xproject(r[0]);
+            this.xproject(x0[0], r[0]);
         }
         this.takeDescentStep(r[1], this.g[1], alpha);
         if (this.yproject) {
-            this.yproject(r[1]);
+            this.yproject(x0[1], r[1]);
         }
     };
     Descent.prototype.rungeKutta = function () {
