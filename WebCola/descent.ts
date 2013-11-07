@@ -39,17 +39,23 @@ class Descent {
         this.ib = new Array(this.k);
         this.xtmp = new Array(this.k);
         this.minD = Number.MAX_VALUE;
-        var i = this.k;
+        var i = n, j;
         while (i--) {
-            this.g[i] = new Array(n);
-            this.H[i] = new Array(n);
-            var j = n;
-            while (j--) {
-                this.H[i][j] = new Array(n);
+            j = n;
+            while (--j > i) {
                 var d = D[i][j];
                 if (d > 0 && d < this.minD) {
                     this.minD = d;
                 }
+            }
+        }
+        i = this.k;
+        while (i--) {
+            this.g[i] = new Array(n);
+            this.H[i] = new Array(n);
+            j = n;
+            while (j--) {
+                this.H[i][j] = new Array(n);
             }
             this.Hd[i] = new Array(n);
             this.a[i] = new Array(n);
