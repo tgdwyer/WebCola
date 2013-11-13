@@ -1,6 +1,7 @@
 // Module
 class Descent {
     public D: number[][];
+    public G: number[][];
     public H: number[][][];
     public g: number[][];
     public x: number[][];
@@ -23,8 +24,9 @@ class Descent {
     public xproject: (x0: number[], x: number[]) => void;
     public yproject: (y0: number[], y: number[]) => void;
 
-    constructor(x: number[], y: number[], D: number[][]) {
+    constructor(x: number[], y: number[], D: number[][], G: number[][] = null) {
         this.D = D;
+        this.G = G;
         this.x = [x, y];
         this.k = 2;
         var n = this.n = x.length;
@@ -66,6 +68,17 @@ class Descent {
             this.ib[i] = new Array(n);
             this.xtmp[i] = new Array(n);
         }
+    }
+
+    public static createSquareMatrix(n: number, f: (i: number, j: number) => number): number[][] {
+        var M = new Array(n);
+        for (var i = 0; i < n; ++i) {
+            M[i] = new Array(n);
+            for (var j = 0; j < n; ++j) {
+                M[i][j] = f(i, j);
+            }
+        }
+        return M;
     }
 
     private offsetDir(): number[] {
@@ -110,7 +123,8 @@ class Descent {
                 }
                 var l: number = Math.sqrt(sd2);
                 var D: number = this.D[u][v];
-                if (!isFinite(D)) {
+
+                if (this.G != null && this.G[u][v] > 1 && l > D || !isFinite(D)) {
                     for (i = 0; i < this.k; ++i) this.H[i][u][v] = 0;
                     continue;
                 }

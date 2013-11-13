@@ -1,7 +1,9 @@
 // Module
 var Descent = (function () {
-    function Descent(x, y, D) {
+    function Descent(x, y, D, G) {
+        if (typeof G === "undefined") { G = null; }
         this.D = D;
+        this.G = G;
         this.x = [x, y];
         this.k = 2;
         var n = this.n = x.length;
@@ -44,6 +46,17 @@ var Descent = (function () {
             this.xtmp[i] = new Array(n);
         }
     }
+    Descent.createSquareMatrix = function (n, f) {
+        var M = new Array(n);
+        for (var i = 0; i < n; ++i) {
+            M[i] = new Array(n);
+            for (var j = 0; j < n; ++j) {
+                M[i][j] = f(i, j);
+            }
+        }
+        return M;
+    };
+
     Descent.prototype.offsetDir = function () {
         var _this = this;
         var u = new Array(this.k);
@@ -94,7 +107,8 @@ var Descent = (function () {
                 }
                 var l = Math.sqrt(sd2);
                 var D = this.D[u][v];
-                if (!isFinite(D)) {
+
+                if (this.G != null && this.G[u][v] > 1 && l > D || !isFinite(D)) {
                     for (i = 0; i < this.k; ++i)
                         this.H[i][u][v] = 0;
                     continue;

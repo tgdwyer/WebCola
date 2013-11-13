@@ -18,6 +18,19 @@ module Shapes {
         static origin = new Point(0, 0);
     }
 
+    export class A {
+        public b: B;
+        constructor(b: B) {
+            this.b = b;
+        }
+    }
+
+    export class B {
+        public a: A;
+        constructor() {
+            this.a = new A(this);
+        }
+    }
 }
 
 // Local variables

@@ -39,7 +39,7 @@
     var color = d3.scale.category20();
 
     var cola = cola.d3adaptor()
-        .linkDistance(8)
+        .linkDistance(6)
         .avoidOverlaps(true)
         .size([width, height]);
 
@@ -57,7 +57,7 @@
             .links(graph.links)
             .symmetricDiffLinkLengths()
             .constraints(graph.constraints)
-            .start(20);
+            .start(10,20,30);
 
         // define arrow markers for graph links
         svg.append('svg:defs').append('svg:marker')

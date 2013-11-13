@@ -295,6 +295,8 @@ cola = function () {
                 o.weight = 0;
             }
 
+            var G = null;
+
             if (distanceMatrix.length != n) {
                 var edges = links.map(function (e, i) {
                     return {
@@ -304,15 +306,16 @@ cola = function () {
                     };
                 });
                 distanceMatrix = ShortestPaths.johnsons(n, edges);
+                var G = Descent.createSquareMatrix(n, function () { return 2 });
+                edges.forEach(function (e) {
+                    G[e.source][e.target] = G[e.target][e.source] = 1;
+                });
             }
 
-            var D = new Array(n);
-            for (var i = 0; i < n; ++i) {
-                D[i] = new Array(n);
-                for (var j = 0; j < n; ++j) {
-                    D[i][j] = distanceMatrix[i][j] * linkDistance;
-                }
-            }
+            var D = Descent.createSquareMatrix(n, function (i, j) {
+                return distanceMatrix[i][j] * linkDistance;
+            });
+
             var x = new Array(n), y = new Array(n);
 
             for (var i = 0; i < n; ++i) {
@@ -324,22 +327,30 @@ cola = function () {
                 x[i] = v.x;
                 y[i] = v.y;
             }
-            var initialIterations = arguments.length > 0 ? arguments[0] : 0;
+            var initialUnconstrainedIterations = arguments.length > 0 ? arguments[0] : 0;
+            var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;
+            var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;
             var ao = this.avoidOverlaps();
             this.avoidOverlaps(false);
             descent = new Descent(x, y, D);
             // apply initialIterations without user constraints or nonoverlap constraints
-            for (i = 0; i < initialIterations; ++i) {
+            for (i = 0; i < initialUnconstrainedIterations; ++i) {
                 descent.rungeKutta();
             }
             // apply initialIterations with user constraints but no noverlap constraints
             descent.xproject = d3adaptor.xproject;
             descent.yproject = d3adaptor.yproject;
-            for (i = 0; i < initialIterations; ++i) {
+            for (i = 0; i < initialUserConstraintIterations; ++i) {
                 descent.rungeKutta();
             }
             // subsequent iterations will apply all constraints
             this.avoidOverlaps(ao);
+            // allow not immediately connected nodes to relax apart (p-stress)
+            descent.G = G;
+            for (i = 0; i < initialAllConstraintsIterations; ++i) {
+                descent.rungeKutta();
+            }
+
             for (i = 0; i < m; ++i) {
                 o = links[i];
                 if (typeof o.source == "number") o.source = nodes[o.source];
