@@ -1,4 +1,3 @@
-// Module
 var Descent = (function () {
     function Descent(x, y, D, G) {
         if (typeof G === "undefined") { G = null; }
@@ -178,13 +177,14 @@ var Descent = (function () {
         var alpha = this.computeStepSize(this.g);
         this.takeDescentStep(r[0], this.g[0], alpha);
         if (this.xproject) {
-            this.xproject(x0[0], r[0]);
+            this.xproject(x0[0], x0[1], r[0]);
         }
         this.takeDescentStep(r[1], this.g[1], alpha);
         if (this.yproject) {
-            this.yproject(x0[1], r[1]);
+            this.yproject(r[0], x0[1], r[1]);
         }
     };
+
     Descent.prototype.rungeKutta = function () {
         this.computeNextPosition(this.x, this.a);
         Descent.mid(this.x, this.a, this.ia);

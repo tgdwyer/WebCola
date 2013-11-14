@@ -121,54 +121,13 @@ cola = function () {
             return d3adaptor;
         };
 
-        var xbuffer, x0buffer;
-        d3adaptor.xproject = function (x0, x) {
-            //var vs = x.map(function (d, i) {
-            //    var w = 1;
-            //    if (nodes[i].fixed) {
-            //        w = 1000;
-            //        d = nodes[i].px;
-            //    }
-            //    return new vpsc.Variable(d, w);
-            //});
-            //var solver = new vpsc.Solver(vs, cs);
-            //solver.solve();
-            //vs.forEach(function (v, i) {
-            //    x[i] = v.position();
-            //});
-            x0buffer = x0;
-            xbuffer = x;
-        }
-        d3adaptor.yproject_disabled = function (y) {
-            if (typeof constraints !== "undefined" && constraints.length > 0) {
-                var vs = y.map(function (d, i) {
-                    var w = 1;
-                    if (nodes[i].fixed) {
-                        w = 1000;
-                        d = nodes[i].py;
-                    }
-                    return new vpsc.Variable(d, w);
-                });
-                var cs = constraints.filter(function (c) {
-                    c.axis === "y"
-                }).map(function (c) {
-                    return new vpsc.Constraint(vs[c.left], vs[c.right], c.gap, c.equality);
-                });
-                solver = new vpsc.Solver(vs, cs);
-                solver.solve();
-                vs.forEach(function (v, i) {
-                    y[i] = v.position();
-                });
-            }
-        }
-
-        d3adaptor.yproject = function (y0, y) {
+        var rs;
+        d3adaptor.xproject = function (x0, y0, x) {
             var userConstraints = typeof constraints !== "undefined" && constraints.length > 0;
             if (!avoidOverlaps && !userConstraints) return;
 
-            var x = xbuffer, x0 = x0buffer;
             var n = x.length;
-            var rs = new Array(n);
+            rs = new Array(n);
             for (var i = 0; i < n; ++i) {
                 var cx = x0[i], cy = y0[i];
                 var v = nodes[i];
@@ -194,6 +153,12 @@ cola = function () {
                 rs[i].setXCentre(pos);
                 x[i] = pos;
             });
+        }
+
+        d3adaptor.yproject = function (x0, y0, y) {
+            var userConstraints = typeof constraints !== "undefined" && constraints.length > 0;
+            if (!avoidOverlaps && !userConstraints) return;
+
             var vs = y.map(function (d, i) {
                 var w = 1;
                 if (nodes[i].fixed) {
@@ -222,6 +187,7 @@ cola = function () {
                 y[i] = v.position();
             });
         }
+
         function unionCount(a, b) {
             var u = {};
             for (var i in a) u[i] = {};

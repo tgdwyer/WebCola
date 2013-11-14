@@ -1,4 +1,3 @@
-// Module
 class Descent {
     public D: number[][];
     public G: number[][];
@@ -21,8 +20,8 @@ class Descent {
     private ib: number[][];
     private xtmp: number[][];
     
-    public xproject: (x0: number[], x: number[]) => void;
-    public yproject: (y0: number[], y: number[]) => void;
+    public xproject: (x0: number[], y0: number[], x: number[]) => void;
+    public yproject: (x0: number[], y0: number[], y: number[]) => void;
 
     constructor(x: number[], y: number[], D: number[][], G: number[][] = null) {
         this.D = D;
@@ -189,13 +188,14 @@ class Descent {
         var alpha = this.computeStepSize(this.g)
         this.takeDescentStep(r[0], this.g[0], alpha);
         if (this.xproject) {
-            this.xproject(x0[0], r[0]);
+            this.xproject(x0[0], x0[1], r[0]);
         }
         this.takeDescentStep(r[1], this.g[1], alpha);
         if (this.yproject) {
-            this.yproject(x0[1], r[1]);
+            this.yproject(r[0], x0[1], r[1]);
         }
     }
+
     private rungeKutta(): number {
         this.computeNextPosition(this.x, this.a);
         Descent.mid(this.x, this.a, this.ia);
