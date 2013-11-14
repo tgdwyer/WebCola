@@ -70,6 +70,7 @@
             .attr("class", "node")
             .attr("width", function (d) { return d.width; })
             .attr("height", function (d) { return d.height; })
+            .attr("rx", 5).attr("ry", 5)
             .style("fill", function (d) { return color(1); })
             .call(cola.drag);
 
