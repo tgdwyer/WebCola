@@ -13,8 +13,6 @@ module vpsc {
         groups: Group[];
         minVar: Variable;
         maxVar: Variable;
-        minRect: Rectangle;
-        maxRect: Rectangle;
     }
 
     export function computeGroupBounds(g: Group): Rectangle {
@@ -170,12 +168,14 @@ module vpsc {
         var i = 0;
         if (isContained) {
             var b: Rectangle = root.bounds;
-            var c = f.getCentre(b), s = f.getSize(b) / 2, open = f.getOpen(b), close = f.getClose(b);
-            rs[i] = root.minRect = f.makeRect(open, close, c - s, padding);
-            root.minVar.desiredPosition = f.getCentre(root.minRect);
+            var c = f.getCentre(b), s = f.getSize(b) / 2,
+                open = f.getOpen(b), close = f.getClose(b),
+                min = c - s, max = c + s;
+            rs[i] = f.makeRect(open, close, min, padding);
+            root.minVar.desiredPosition = min;
             vs[i++] = root.minVar;
-            rs[i] = root.maxRect = f.makeRect(open, close, c + s, padding);
-            root.minVar.desiredPosition = f.getCentre(root.maxRect);
+            rs[i] = f.makeRect(open, close, max, padding);
+            root.maxVar.desiredPosition = max;
             vs[i++] = root.maxVar;
         }
         if (ln) root.leaves.forEach(l => {
@@ -184,7 +184,7 @@ module vpsc {
         });
         if (gn) root.groups.forEach(g => {
             var b: Rectangle = g.bounds;
-            rs[i] = g.minRect = f.makeRect(f.getOpen(b), f.getClose(b), f.getCentre(b), f.getSize(b));
+            rs[i] = f.makeRect(f.getOpen(b), f.getClose(b), f.getCentre(b), f.getSize(b));
             vs[i++] = g.minVar;
         });
         var cs = generateConstraints(rs, vs, f, minSep);

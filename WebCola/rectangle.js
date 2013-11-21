@@ -156,26 +156,27 @@ var vpsc;
         findNeighbours: findYNeighbours
     };
 
-    function generateGroupConstraints(root, rect, minSep, isContained) {
+    function generateGroupConstraints(root, f, minSep, isContained) {
         if (typeof isContained === "undefined") { isContained = false; }
         var padding = typeof root.padding === 'undefined' ? 1 : root.padding;
         var childConstraints = [];
         var gn = typeof root.groups !== 'undefined' ? root.groups.length : 0, ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0;
         if (gn)
             root.groups.forEach(function (g) {
-                childConstraints = childConstraints.concat(generateGroupConstraints(g, rect, minSep, true));
+                childConstraints = childConstraints.concat(generateGroupConstraints(g, f, minSep, true));
             });
         var n = (isContained ? 2 : 0) + ln + gn;
         var vs = new Array(n);
         var rs = new Array(n);
         var i = 0;
         if (isContained) {
-            var c = rect.getCentre(root.bounds), s = rect.getSize(root.bounds) / 2, open = rect.getOpen(root.bounds), close = rect.getClose(root.bounds);
-            rs[i] = root.minRect = rect.makeRect(open, close, c - s, padding);
-            root.minVar.desiredPosition = rect.getCentre(root.minRect);
+            var b = root.bounds;
+            var c = f.getCentre(b), s = f.getSize(b) / 2, open = f.getOpen(b), close = f.getClose(b), min = c - s, max = c + s;
+            rs[i] = f.makeRect(open, close, min, padding);
+            root.minVar.desiredPosition = min;
             vs[i++] = root.minVar;
-            rs[i] = root.maxRect = rect.makeRect(open, close, c + s, padding);
-            root.minVar.desiredPosition = rect.getCentre(root.maxRect);
+            rs[i] = f.makeRect(open, close, max, padding);
+            root.maxVar.desiredPosition = max;
             vs[i++] = root.maxVar;
         }
         if (ln)
@@ -185,10 +186,11 @@ var vpsc;
             });
         if (gn)
             root.groups.forEach(function (g) {
-                rs[i] = g.minRect = rect.makeRect(rect.getOpen(g.bounds), rect.getClose(g.bounds), rect.getCentre(g.bounds), rect.getSize(g.bounds));
+                var b = g.bounds;
+                rs[i] = f.makeRect(f.getOpen(b), f.getClose(b), f.getCentre(b), f.getSize(b));
                 vs[i++] = g.minVar;
             });
-        var cs = generateConstraints(rs, vs, rect, minSep);
+        var cs = generateConstraints(rs, vs, f, minSep);
         if (gn) {
             vs.forEach(function (v) {
                 v.cOut = [], v.cIn = [];
@@ -197,7 +199,7 @@ var vpsc;
                 c.left.cOut.push(c), c.right.cIn.push(c);
             });
             root.groups.forEach(function (g) {
-                var gapAdjustment = (padding - rect.getSize(g.bounds)) / 2;
+                var gapAdjustment = (padding - f.getSize(g.bounds)) / 2;
                 g.minVar.cIn.forEach(function (c) {
                     return c.gap += gapAdjustment;
                 });
