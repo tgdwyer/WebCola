@@ -50,6 +50,7 @@ class Descent {
                 }
             }
         }
+        if (this.minD === Number.MAX_VALUE) this.minD = 1;
         i = this.k;
         while (i--) {
             this.g[i] = new Array(n);
@@ -122,14 +123,14 @@ class Descent {
                 }
                 var l: number = Math.sqrt(sd2);
                 var D: number = this.D[u][v];
-
-                if (this.G != null && this.G[u][v] > 1 && l > D || !isFinite(D)) {
+                var weight = this.G != null ? this.G[u][v] : 1;
+                if (weight > 1 && l > D || !isFinite(D)) {
                     for (i = 0; i < this.k; ++i) this.H[i][u][v] = 0;
                     continue;
                 }
                 var D2: number = D * D;
-                var gs: number = (l - D) / (D2 * l);
-                var hs: number = -1 / (D2 * l * l * l);
+                var gs: number = weight * (l - D) / (D2 * l);
+                var hs: number = -weight / (D2 * l * l * l);
                 if (!isFinite(gs)) 
                     console.log(gs);
                 for (i = 0; i < this.k; ++i) {

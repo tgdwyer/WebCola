@@ -1,18 +1,43 @@
 ///<reference path="vpsc.ts"/>
 ///<reference path="rbtree.d.ts"/>
 module vpsc {
+    export interface Leaf {
+        bounds: Rectangle;
+        variable: Variable;
+    }
+
+    export interface Group {
+        bounds: Rectangle;
+        padding: number;
+        leaves: Leaf[];
+        groups: Group[];
+        minVar: Variable;
+        maxVar: Variable;
+        minRect: Rectangle;
+        maxRect: Rectangle;
+    }
+
+    export function computeGroupBounds(g: Group): Rectangle {
+        g.bounds = g.leaves.reduce((r, c) => c.bounds.union(r), Rectangle.empty());
+        if (typeof g.groups !== "undefined")
+            g.bounds = g.groups.reduce((r, c) => computeGroupBounds(c).union(r), g.bounds);
+        return g.bounds;
+    }
+
     export class Rectangle {
         x: number;
         X: number;
         y: number;
         Y: number;
 
-        constructor (x: number, X: number, y: number, Y: number) {
+        constructor(x: number, X: number, y: number, Y: number) {
             this.x = x;
             this.X = X;
             this.y = y;
             this.Y = Y;
         }
+
+        static empty(): Rectangle { return new Rectangle(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY); }
 
         cx(): number { return (this.x + this.X) / 2; }
 
@@ -42,6 +67,18 @@ module vpsc {
             var dy = cy - this.cy();
             this.y += dy;
             this.Y += dy;
+        }
+
+        width(): number {
+            return this.X - this.x;
+        }
+
+        height(): number {
+            return this.Y - this.y;
+        }
+
+        union(r: Rectangle): Rectangle {
+            return new Rectangle(Math.min(this.x, r.x), Math.max(this.X, r.X), Math.min(this.y, r.y), Math.max(this.Y, r.Y));
         }
     }
 
@@ -91,13 +128,89 @@ module vpsc {
         return new RBTree<Node>((a, b) => a.pos - b.pos);
     }
 
-    function generateConstraints(rs: Rectangle[], vars: Variable[], minSep: number,
-        getCentre: (r: Rectangle) => number,
-        getOpen: (r: Rectangle) => number,
-        getClose: (r: Rectangle) => number,
-        getSize: (r: Rectangle) => number,
-        findNeighbours: (v: Node, scanline: RBTree<Node>) => void
-        ): Constraint[]
+    interface RectAccessors {
+        getCentre: (r: Rectangle) => number;
+        getOpen: (r: Rectangle) => number;
+        getClose: (r: Rectangle) => number;
+        getSize: (r: Rectangle) => number;
+        makeRect: (open: number, close: number, center: number, size: number) => Rectangle;
+        findNeighbours: (v: Node, scanline: RBTree<Node>) => void;
+    }
+
+    var xRect: RectAccessors = {
+        getCentre: r=> r.cx(),
+        getOpen: r=> r.y,
+        getClose: r=> r.Y,
+        getSize: r=> r.width(),
+        makeRect: (open, close, center, size) => new Rectangle(center - size / 2, center + size / 2, open, close) ,
+        findNeighbours: findXNeighbours
+    };
+
+    var yRect: RectAccessors = {
+        getCentre: r=> r.cy(),
+        getOpen: r=> r.x,
+        getClose: r=> r.X,
+        getSize: r=> r.height(),
+        makeRect: (open, close, center, size) => new Rectangle(open, close, center - size / 2, center + size / 2),
+        findNeighbours: findYNeighbours
+    };
+
+    function generateGroupConstraints(root: Group, rect: RectAccessors, minSep: number, isContained: boolean = false): Constraint[]
+    {
+        var padding = typeof root.padding === 'undefined' ? 1 : root.padding;
+        var childConstraints: Constraint[] = [];
+        var gn = typeof root.groups !== 'undefined' ? root.groups.length : 0,
+            ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0;
+        if (gn) root.groups.forEach(g => {
+            childConstraints = childConstraints.concat(generateGroupConstraints(g, rect, minSep, true));
+        });
+        var n = (isContained ? 2 : 0) + ln + gn;
+        var vs: Variable[] = new Array(n);
+        var rs: Rectangle[] = new Array(n);
+        var i = 0;
+        if (isContained) {
+            var c = rect.getCentre(root.bounds),
+                s = rect.getSize(root.bounds) / 2;
+            rs[i] = root.minRect = rect.makeRect(rect.getOpen(root.bounds), rect.getClose(root.bounds), c - s, padding);
+            root.minVar.desiredPosition = rect.getCentre(root.minRect);
+            vs[i++] = root.minVar;
+            rs[i] = root.maxRect = rect.makeRect(rect.getOpen(root.bounds), rect.getClose(root.bounds), c + s, padding);
+            root.minVar.desiredPosition = rect.getCentre(root.maxRect);
+            vs[i++] = root.maxVar;
+        }
+        if (ln) root.leaves.forEach(l => {
+            rs[i] = l.bounds;
+            vs[i++] = l.variable;
+        });
+        if (gn) root.groups.forEach(g => {
+            rs[i] = g.minRect = rect.makeRect(rect.getOpen(g.bounds), rect.getClose(g.bounds), rect.getCentre(g.bounds), rect.getSize(g.bounds));
+            vs[i++] = g.minVar;
+        });
+        var cs = generateConstraints(rs, vs, rect, minSep);
+        if (gn) {
+            vs.forEach(v => {
+                v.cOut = [];
+                v.cIn = [];
+            });
+            cs.forEach(c => {
+                c.left.cOut.push(c);
+                c.right.cIn.push(c);
+            });
+            root.groups.forEach(g => {
+                g.minVar.cIn.forEach(c => {
+                    c.gap += (padding - rect.getSize(g.bounds)) / 2;
+                });
+                g.minVar.cOut.forEach(c => {
+                    c.left = g.maxVar;
+                    c.gap += (padding - rect.getSize(g.bounds)) / 2;
+                });
+            });
+        }
+        return childConstraints.concat(cs);
+    }
+
+    function generateConstraints(rs: Rectangle[], vars: Variable[],
+        rect: RectAccessors, minSep: number): Constraint[]
     {
         var i, n = rs.length;
         var N = 2 * n;
@@ -105,9 +218,9 @@ module vpsc {
         var events = new Array<Event>(N);
         for (i = 0; i < n; ++i) {
             var r = rs[i];
-            var v = new Node(vars[i], r, getCentre(r));
-            events[i] = new Event(true, v, getOpen(r));
-            events[i + n] = new Event(false, v, getClose(r));
+            var v = new Node(vars[i], r, rect.getCentre(r));
+            events[i] = new Event(true, v, rect.getOpen(r));
+            events[i + n] = new Event(false, v, rect.getClose(r));
         }
         events.sort(compareEvents);
         var cs = new Array<Constraint>();
@@ -117,12 +230,12 @@ module vpsc {
             var v = e.v;
             if (e.isOpen) {
                 scanline.insert(v);
-                findNeighbours(v, scanline);
+                rect.findNeighbours(v, scanline);
             } else {
                 // close event
                 scanline.remove(v);
                 var makeConstraint = (l, r) => {
-                    var sep = (getSize(l.r) + getSize(r.r)) / 2 + minSep;
+                    var sep = (rect.getSize(l.r) + rect.getSize(r.r)) / 2 + minSep;
                     cs.push(new Constraint(l.v, r.v, sep));
                 };
                 var visitNeighbours = (forward, reverse, mkcon) => {
@@ -172,11 +285,19 @@ module vpsc {
     }
 
     export function generateXConstraints(rs: Rectangle[], vars: Variable[]): Constraint[] {
-        return generateConstraints(rs, vars, 1e-6, r=> r.cx(), r=> r.y, r=> r.Y, r=> r.X - r.x, findXNeighbours);
+        return generateConstraints(rs, vars, xRect, 1e-6);
     }
 
     export function generateYConstraints(rs: Rectangle[], vars: Variable[]): Constraint[] {
-        return generateConstraints(rs, vars, 1e-6, r=> r.cy(), r=> r.x, r=> r.X, r=> r.Y - r.y, findYNeighbours);
+        return generateConstraints(rs, vars, yRect, 1e-6);
+    }
+
+    export function generateXGroupConstraints(root: Group): Constraint[] {
+        return generateGroupConstraints(root, xRect, 1e-6);
+    }
+
+    export function generateYGroupConstraints(root: Group): Constraint[] {
+        return generateGroupConstraints(root, yRect, 1e-6);
     }
 
     export function removeOverlaps(rs: Rectangle[]): void {

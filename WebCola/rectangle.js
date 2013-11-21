@@ -2,6 +2,18 @@
 ///<reference path="rbtree.d.ts"/>
 var vpsc;
 (function (vpsc) {
+    function computeGroupBounds(g) {
+        g.bounds = g.leaves.reduce(function (r, c) {
+            return c.bounds.union(r);
+        }, Rectangle.empty());
+        if (typeof g.groups !== "undefined")
+            g.bounds = g.groups.reduce(function (r, c) {
+                return computeGroupBounds(c).union(r);
+            }, g.bounds);
+        return g.bounds;
+    }
+    vpsc.computeGroupBounds = computeGroupBounds;
+
     var Rectangle = (function () {
         function Rectangle(x, X, y, Y) {
             this.x = x;
@@ -9,6 +21,10 @@ var vpsc;
             this.y = y;
             this.Y = Y;
         }
+        Rectangle.empty = function () {
+            return new Rectangle(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY);
+        };
+
         Rectangle.prototype.cx = function () {
             return (this.x + this.X) / 2;
         };
@@ -45,6 +61,18 @@ var vpsc;
             var dy = cy - this.cy();
             this.y += dy;
             this.Y += dy;
+        };
+
+        Rectangle.prototype.width = function () {
+            return this.X - this.x;
+        };
+
+        Rectangle.prototype.height = function () {
+            return this.Y - this.y;
+        };
+
+        Rectangle.prototype.union = function (r) {
+            return new Rectangle(Math.min(this.x, r.x), Math.max(this.X, r.X), Math.min(this.y, r.y), Math.max(this.Y, r.Y));
         };
         return Rectangle;
     })();
@@ -90,16 +118,109 @@ var vpsc;
         });
     }
 
-    function generateConstraints(rs, vars, minSep, getCentre, getOpen, getClose, getSize, findNeighbours) {
+    var xRect = {
+        getCentre: function (r) {
+            return r.cx();
+        },
+        getOpen: function (r) {
+            return r.y;
+        },
+        getClose: function (r) {
+            return r.Y;
+        },
+        getSize: function (r) {
+            return r.width();
+        },
+        makeRect: function (open, close, center, size) {
+            return new Rectangle(center - size / 2, center + size / 2, open, close);
+        },
+        findNeighbours: findXNeighbours
+    };
+
+    var yRect = {
+        getCentre: function (r) {
+            return r.cy();
+        },
+        getOpen: function (r) {
+            return r.x;
+        },
+        getClose: function (r) {
+            return r.X;
+        },
+        getSize: function (r) {
+            return r.height();
+        },
+        makeRect: function (open, close, center, size) {
+            return new Rectangle(open, close, center - size / 2, center + size / 2);
+        },
+        findNeighbours: findYNeighbours
+    };
+
+    function generateGroupConstraints(root, rect, minSep, isContained) {
+        if (typeof isContained === "undefined") { isContained = false; }
+        var padding = typeof root.padding === 'undefined' ? 1 : root.padding;
+        var childConstraints = [];
+        var gn = typeof root.groups !== 'undefined' ? root.groups.length : 0, ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0;
+        if (gn)
+            root.groups.forEach(function (g) {
+                childConstraints = childConstraints.concat(generateGroupConstraints(g, rect, minSep, true));
+            });
+        var n = (isContained ? 2 : 0) + ln + gn;
+        var vs = new Array(n);
+        var rs = new Array(n);
+        var i = 0;
+        if (isContained) {
+            var c = rect.getCentre(root.bounds), s = rect.getSize(root.bounds) / 2;
+            rs[i] = root.minRect = rect.makeRect(rect.getOpen(root.bounds), rect.getClose(root.bounds), c - s, padding);
+            root.minVar.desiredPosition = rect.getCentre(root.minRect);
+            vs[i++] = root.minVar;
+            rs[i] = root.maxRect = rect.makeRect(rect.getOpen(root.bounds), rect.getClose(root.bounds), c + s, padding);
+            root.minVar.desiredPosition = rect.getCentre(root.maxRect);
+            vs[i++] = root.maxVar;
+        }
+        if (ln)
+            root.leaves.forEach(function (l) {
+                rs[i] = l.bounds;
+                vs[i++] = l.variable;
+            });
+        if (gn)
+            root.groups.forEach(function (g) {
+                rs[i] = g.minRect = rect.makeRect(rect.getOpen(g.bounds), rect.getClose(g.bounds), rect.getCentre(g.bounds), rect.getSize(g.bounds));
+                vs[i++] = g.minVar;
+            });
+        var cs = generateConstraints(rs, vs, rect, minSep);
+        if (gn) {
+            vs.forEach(function (v) {
+                v.cOut = [];
+                v.cIn = [];
+            });
+            cs.forEach(function (c) {
+                c.left.cOut.push(c);
+                c.right.cIn.push(c);
+            });
+            root.groups.forEach(function (g) {
+                g.minVar.cIn.forEach(function (c) {
+                    c.gap += (padding - rect.getSize(g.bounds)) / 2;
+                });
+                g.minVar.cOut.forEach(function (c) {
+                    c.left = g.maxVar;
+                    c.gap += (padding - rect.getSize(g.bounds)) / 2;
+                });
+            });
+        }
+        return childConstraints.concat(cs);
+    }
+
+    function generateConstraints(rs, vars, rect, minSep) {
         var i, n = rs.length;
         var N = 2 * n;
         console.assert(vars.length >= n);
         var events = new Array(N);
         for (i = 0; i < n; ++i) {
             var r = rs[i];
-            var v = new Node(vars[i], r, getCentre(r));
-            events[i] = new Event(true, v, getOpen(r));
-            events[i + n] = new Event(false, v, getClose(r));
+            var v = new Node(vars[i], r, rect.getCentre(r));
+            events[i] = new Event(true, v, rect.getOpen(r));
+            events[i + n] = new Event(false, v, rect.getClose(r));
         }
         events.sort(compareEvents);
         var cs = new Array();
@@ -109,12 +230,12 @@ var vpsc;
             var v = e.v;
             if (e.isOpen) {
                 scanline.insert(v);
-                findNeighbours(v, scanline);
+                rect.findNeighbours(v, scanline);
             } else {
                 // close event
                 scanline.remove(v);
                 var makeConstraint = function (l, r) {
-                    var sep = (getSize(l.r) + getSize(r.r)) / 2 + minSep;
+                    var sep = (rect.getSize(l.r) + rect.getSize(r.r)) / 2 + minSep;
                     cs.push(new vpsc.Constraint(l.v, r.v, sep));
                 };
                 var visitNeighbours = function (forward, reverse, mkcon) {
@@ -168,30 +289,24 @@ var vpsc;
     }
 
     function generateXConstraints(rs, vars) {
-        return generateConstraints(rs, vars, 1e-6, function (r) {
-            return r.cx();
-        }, function (r) {
-            return r.y;
-        }, function (r) {
-            return r.Y;
-        }, function (r) {
-            return r.X - r.x;
-        }, findXNeighbours);
+        return generateConstraints(rs, vars, xRect, 1e-6);
     }
     vpsc.generateXConstraints = generateXConstraints;
 
     function generateYConstraints(rs, vars) {
-        return generateConstraints(rs, vars, 1e-6, function (r) {
-            return r.cy();
-        }, function (r) {
-            return r.x;
-        }, function (r) {
-            return r.X;
-        }, function (r) {
-            return r.Y - r.y;
-        }, findYNeighbours);
+        return generateConstraints(rs, vars, yRect, 1e-6);
     }
     vpsc.generateYConstraints = generateYConstraints;
+
+    function generateXGroupConstraints(root) {
+        return generateGroupConstraints(root, xRect, 1e-6);
+    }
+    vpsc.generateXGroupConstraints = generateXGroupConstraints;
+
+    function generateYGroupConstraints(root) {
+        return generateGroupConstraints(root, yRect, 1e-6);
+    }
+    vpsc.generateYGroupConstraints = generateYGroupConstraints;
 
     function removeOverlaps(rs) {
         var vs = rs.map(function (r) {
@@ -215,3 +330,4 @@ var vpsc;
     }
     vpsc.removeOverlaps = removeOverlaps;
 })(vpsc || (vpsc = {}));
+//# sourceMappingURL=rectangle.js.map
