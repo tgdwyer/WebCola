@@ -70,6 +70,7 @@
         var group = svg.selectAll(".group")
             .data(graph.groups)
           .enter().append("rect")
+            .attr("rx", 8).attr("ry", 8)
             .attr("class", "group")
             .style("fill", function (d, i) { return color(i); });
 
@@ -78,12 +79,13 @@
           .enter().append("line")
             .attr("class", "link");
 
+        var pad = 3;
         var node = svg.selectAll(".node")
             .data(graph.nodes)
           .enter().append("rect")
             .attr("class", "node")
-            .attr("width", function (d) { return d.width; })
-            .attr("height", function (d) { return d.height; })
+            .attr("width", function (d) { return d.width - 2 * pad; })
+            .attr("height", function (d) { return d.height - 2 * pad; })
             .attr("rx", 5).attr("ry", 5)
             .style("fill", function (d) { return color(graph.groups.length); })
             .call(cola.drag);
@@ -104,8 +106,8 @@
                 .attr("x2", function (d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
 
-            node.attr("x", function (d) { return d.x - d.width / 2; })
-                .attr("y", function (d) { return d.y - d.height / 2; });
+            node.attr("x", function (d) { return d.x - d.width / 2 + pad; })
+                .attr("y", function (d) { return d.y - d.height / 2 + pad; });
             
             group.attr("x", function (d) { return d.bounds.x; })
                  .attr("y", function (d) { return d.bounds.y; })
