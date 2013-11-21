@@ -2,7 +2,7 @@
 var canvasheight = 600;
 var rectminsize = 60;
 var rectmaxsize = 100;
-var rectcount = 10;
+var rectcount = 20;
 var draw;
 var rs;
 var undoStack = [];

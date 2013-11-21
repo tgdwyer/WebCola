@@ -140,10 +140,15 @@ cola = function () {
             if (!avoidOverlaps && !userConstraints) return;
 
             nodes.forEach(function (v, i) {
-                v.variable.weight = v.fixed ? 1000 : 1;
+                if (v.fixed) {
+                    v.variable.weight = 1000;
+                    x[i] = nodes[i].px;
+                } else {
+                    v.variable.weight = 1;
+                }
                 var w = v.width / 2, h = v.height / 2;
-                var x = x0[i], y = y0[i];
-                v.bounds = new vpsc.Rectangle(x - w, x + w, y - h, y + h);
+                var ix = x0[i], iy = y0[i];
+                v.bounds = new vpsc.Rectangle(ix - w, ix + w, iy - h, iy + h);
             });
             vpsc.computeGroupBounds(rootGroup);
             var cs = avoidOverlaps ? vpsc.generateXGroupConstraints(rootGroup) : [];
@@ -177,6 +182,9 @@ cola = function () {
             }
             solver = new vpsc.Solver(variables, cs);
             solver.setStartingPositions(y0);
+            nodes.forEach(function (v, i) {
+                if (v.fixed) y[i] = nodes[i].py;
+            });
             solver.setDesiredPositions(y);
             solver.solve();
             nodes.forEach(function (v) {

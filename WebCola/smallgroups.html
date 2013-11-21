@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Non-overlapping Layout</title>
+    <title>Grouped Layout</title>
     <style>
 
 .node {
@@ -15,11 +15,12 @@
 .group {
   stroke: #fff;
   stroke-width: 1.5px;
-    cursor: move;
+  cursor: move;
+  opacity: 0.7;
 }
 
 .link {
-  stroke: #999;
+  stroke: #7a4e4e;
   stroke-width: 3px;
   stroke-opacity: 1;
 }
@@ -35,7 +36,7 @@
 </style>
 </head>
 <body>
-    <h1>Disconnected graph with non-overlap constraints</h1>
+    <h1>Layout with hierarchical grouping</h1>
 <script src="d3.v3.js"></script>
 <script src="pqueue.js"></script>
 <script src="shortestpaths.js"></script>
@@ -59,19 +60,18 @@
         .attr("width", width)
         .attr("height", height);
 
-    d3.json("graphdata/fivenodesdisconnected.json", function (error, graph) {
+    d3.json("graphdata/smallgrouped.json", function (error, graph) {
         cola
             .nodes(graph.nodes)
             .links(graph.links)
             .groups(graph.groups)
-            .start();
+            .start(10,10,10);
 
         var group = svg.selectAll(".group")
             .data(graph.groups)
           .enter().append("rect")
             .attr("class", "group")
-            .style("fill", function (d, i) { return color(i); })
-            .style("opacity", 0.5);
+            .style("fill", function (d, i) { return color(i); });
 
         var link = svg.selectAll(".link")
             .data(graph.links)
@@ -121,9 +121,8 @@
     });
 
 </script>
-    <p>Since node 'e' is not connected to the rest of the graph, it does not influence the layout of the connected component
-        except through constraints.  In this case, we generate constraints to prevent node boxes from overlapping.  Try dragging 'e'
-        so that it collides with the other nodes.
+    <p>This graph has a hierarchical grouping defined over the nodes.  We generate constraints to keep the bounding boxes of
+        disjoint groups from overlapping and to keep nested groups fully contained with their parents' bounding boxes.
     </p>
 </body>
 </html>
