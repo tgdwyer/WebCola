@@ -158,20 +158,11 @@ var vpsc;
 
     function generateGroupConstraints(root, f, minSep, isContained) {
         if (typeof isContained === "undefined") { isContained = false; }
-        var padding = typeof root.padding === 'undefined' ? 1 : root.padding;
-        var childConstraints = [];
-        var gn = typeof root.groups !== 'undefined' ? root.groups.length : 0, ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0;
-        if (gn)
-            root.groups.forEach(function (g) {
-                childConstraints = childConstraints.concat(generateGroupConstraints(g, f, minSep, true));
-            });
-        var n = (isContained ? 2 : 0) + ln + gn;
-        var vs = new Array(n);
-        var rs = new Array(n);
-        var i = 0;
+        var padding = typeof root.padding === 'undefined' ? 1 : root.padding, gn = typeof root.groups !== 'undefined' ? root.groups.length : 0, ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0, childConstraints = !gn ? [] : root.groups.reduce(function (ccs, g) {
+            return ccs.concat(generateGroupConstraints(g, f, minSep, true));
+        }, []), n = (isContained ? 2 : 0) + ln + gn, vs = new Array(n), rs = new Array(n), i = 0;
         if (isContained) {
-            var b = root.bounds;
-            var c = f.getCentre(b), s = f.getSize(b) / 2, open = f.getOpen(b), close = f.getClose(b), min = c - s, max = c + s;
+            var b = root.bounds, c = f.getCentre(b), s = f.getSize(b) / 2, open = f.getOpen(b), close = f.getClose(b), min = c - s, max = c + s;
             rs[i] = f.makeRect(open, close, min, padding);
             root.minVar.desiredPosition = min;
             vs[i++] = root.minVar;

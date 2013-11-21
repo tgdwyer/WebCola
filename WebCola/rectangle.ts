@@ -155,20 +155,18 @@ module vpsc {
 
     function generateGroupConstraints(root: Group, f: RectAccessors, minSep: number, isContained: boolean = false): Constraint[]
     {
-        var padding = typeof root.padding === 'undefined' ? 1 : root.padding;
-        var childConstraints: Constraint[] = [];
-        var gn = typeof root.groups !== 'undefined' ? root.groups.length : 0,
-            ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0;
-        if (gn) root.groups.forEach(g => {
-            childConstraints = childConstraints.concat(generateGroupConstraints(g, f, minSep, true));
-        });
-        var n = (isContained ? 2 : 0) + ln + gn;
-        var vs: Variable[] = new Array(n);
-        var rs: Rectangle[] = new Array(n);
-        var i = 0;
+        var padding = typeof root.padding === 'undefined' ? 1 : root.padding,
+            gn = typeof root.groups !== 'undefined' ? root.groups.length : 0,
+            ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0,
+            childConstraints: Constraint[] = !gn ? []
+                : root.groups.reduce((ccs, g) => ccs.concat(generateGroupConstraints(g, f, minSep, true)), []),
+            n = (isContained ? 2 : 0) + ln + gn,
+            vs: Variable[] = new Array(n),
+            rs: Rectangle[] = new Array(n),
+            i = 0;
         if (isContained) {
-            var b: Rectangle = root.bounds;
-            var c = f.getCentre(b), s = f.getSize(b) / 2,
+            var b: Rectangle = root.bounds,
+                c = f.getCentre(b), s = f.getSize(b) / 2,
                 open = f.getOpen(b), close = f.getClose(b),
                 min = c - s, max = c + s;
             rs[i] = f.makeRect(open, close, min, padding);

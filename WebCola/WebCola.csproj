@@ -20,8 +20,107 @@
     <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="brain3d.html" />
     <Content Include="brainnetwork.html" />
     <Content Include="brainnetwork2.html" />
+    <Content Include="brainnetworkmultiview.html" />
+    <TypeScriptCompile Include="cola2.ts" />
+    <Content Include="cola.js" />
+    <Content Include="cola2.js">
+      <DependentUpon>cola2.ts</DependentUpon>
+    </Content>
+    <Content Include="harmony-collections.js" />
+    <Content Include="smallgroups.html" />
+    <Content Include="fullscreen.js" />
+    <Content Include="graphdata\biological_images\C00002.gif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="graphdata\biological_images\C00003.gif" />
+    <Content Include="graphdata\biological_images\C00004.gif" />
+    <Content Include="graphdata\biological_images\C00005.gif" />
+    <Content Include="graphdata\biological_images\C00006.gif" />
+    <Content Include="graphdata\biological_images\C00008.gif" />
+    <Content Include="graphdata\biological_images\C00011.gif" />
+    <Content Include="graphdata\biological_images\C00014.gif" />
+    <Content Include="graphdata\biological_images\C00020.gif" />
+    <Content Include="graphdata\biological_images\C00022.gif" />
+    <Content Include="graphdata\biological_images\C00024.gif" />
+    <Content Include="graphdata\biological_images\C00025.gif" />
+    <Content Include="graphdata\biological_images\C00026.gif" />
+    <Content Include="graphdata\biological_images\C00036.gif" />
+    <Content Include="graphdata\biological_images\C00041.gif" />
+    <Content Include="graphdata\biological_images\C00042.gif" />
+    <Content Include="graphdata\biological_images\C00049.gif" />
+    <Content Include="graphdata\biological_images\C00062.gif" />
+    <Content Include="graphdata\biological_images\C00064.gif" />
+    <Content Include="graphdata\biological_images\C00065.gif" />
+    <Content Include="graphdata\biological_images\C00073.gif" />
+    <Content Include="graphdata\biological_images\C00074.gif" />
+    <Content Include="graphdata\biological_images\C00078.gif" />
+    <Content Include="graphdata\biological_images\C00079.gif" />
+    <Content Include="graphdata\biological_images\C00082.gif" />
+    <Content Include="graphdata\biological_images\C00091.gif" />
+    <Content Include="graphdata\biological_images\C00092.gif" />
+    <Content Include="graphdata\biological_images\C00097.gif" />
+    <Content Include="graphdata\biological_images\C00101.gif" />
+    <Content Include="graphdata\biological_images\C00108.gif" />
+    <Content Include="graphdata\biological_images\C00109.gif" />
+    <Content Include="graphdata\biological_images\C00111.gif" />
+    <Content Include="graphdata\biological_images\C00119.gif" />
+    <Content Include="graphdata\biological_images\C00122.gif" />
+    <Content Include="graphdata\biological_images\C00123.gif" />
+    <Content Include="graphdata\biological_images\C00135.gif" />
+    <Content Include="graphdata\biological_images\C00141.gif" />
+    <Content Include="graphdata\biological_images\C00148.gif" />
+    <Content Include="graphdata\biological_images\C00152.gif" />
+    <Content Include="graphdata\biological_images\C00155.gif" />
+    <Content Include="graphdata\biological_images\C00169.gif" />
+    <Content Include="graphdata\biological_images\C00183.gif" />
+    <Content Include="graphdata\biological_images\C00188.gif" />
+    <Content Include="graphdata\biological_images\C00233.gif" />
+    <Content Include="graphdata\biological_images\C00254.gif" />
+    <Content Include="graphdata\biological_images\C00279.gif" />
+    <Content Include="graphdata\biological_images\C00283.gif" />
+    <Content Include="graphdata\biological_images\C00327.gif" />
+    <Content Include="graphdata\biological_images\C00440.gif" />
+    <Content Include="graphdata\biological_images\C00441.gif" />
+    <Content Include="graphdata\biological_images\C00493.gif" />
+    <Content Include="graphdata\biological_images\C00624.gif" />
+    <Content Include="graphdata\biological_images\C00680.gif" />
+    <Content Include="graphdata\biological_images\C00711.gif" />
+    <Content Include="graphdata\biological_images\C00826.gif" />
+    <Content Include="graphdata\biological_images\C00860.gif" />
+    <Content Include="graphdata\biological_images\C00900.gif" />
+    <Content Include="graphdata\biological_images\C00944.gif" />
+    <Content Include="graphdata\biological_images\C00979.gif" />
+    <Content Include="graphdata\biological_images\C01100.gif" />
+    <Content Include="graphdata\biological_images\C01102.gif" />
+    <Content Include="graphdata\biological_images\C01165.gif" />
+    <Content Include="graphdata\biological_images\C01250.gif" />
+    <Content Include="graphdata\biological_images\C01267.gif" />
+    <Content Include="graphdata\biological_images\C01269.gif" />
+    <Content Include="graphdata\biological_images\C01602.gif" />
+    <Content Include="graphdata\biological_images\C02291.gif" />
+    <Content Include="graphdata\biological_images\C02504.gif" />
+    <Content Include="graphdata\biological_images\C02637.gif" />
+    <Content Include="graphdata\biological_images\C02739.gif" />
+    <Content Include="graphdata\biological_images\C02741.gif" />
+    <Content Include="graphdata\biological_images\C03082.gif" />
+    <Content Include="graphdata\biological_images\C03340.gif" />
+    <Content Include="graphdata\biological_images\C03406.gif" />
+    <Content Include="graphdata\biological_images\C03912.gif" />
+    <Content Include="graphdata\biological_images\C03972.gif" />
+    <Content Include="graphdata\biological_images\C04104.gif" />
+    <Content Include="graphdata\biological_images\C04236.gif" />
+    <Content Include="graphdata\biological_images\C04411.gif" />
+    <Content Include="graphdata\biological_images\C04677.gif" />
+    <Content Include="graphdata\biological_images\C04876.gif" />
+    <Content Include="graphdata\biological_images\C04896.gif" />
+    <Content Include="graphdata\biological_images\C04916.gif" />
+    <Content Include="graphdata\biological_images\C15061.gif" />
+    <Content Include="graphdata\biological_images\C16374.gif" />
+    <Content Include="graphdata\biological_images\C16434.gif" />
+    <Content Include="onlinebrowse.html" />
     <Content Include="downwardedges.png" />
     <Content Include="graphdata\labels.txt" />
     <Content Include="graphdata\signed_weighted.txt" />
@@ -30,11 +129,14 @@
     <Content Include="modifyinggraph.html" />
     <Content Include="modifyinggraph.png" />
     <Content Include="nonoverlapping.png" />
+    <Content Include="onlinebrowse.png" />
+    <Content Include="smallgroups.png" />
     <Content Include="smallnonoverlappinggraph.html" />
     <Content Include="graphdata\CCsum.txt" />
     <Content Include="graphdata\affil.txt" />
+    <Content Include="graphdata\BrainLSDecimated0.01.obj" />
+    <Content Include="graphdata\biological.json" />
     <None Include="graphdata\chris.json" />
-    <Content Include="cola.js" />
     <Content Include="d3layout.htm" />
     <Content Include="d3.v3.js" />
     <Content Include="d3.v3.min.js" />
@@ -57,10 +159,15 @@
     <Content Include="rectangle.min.js">
       <DependentUpon>rectangle.ts</DependentUpon>
     </Content>
-    <Content Include="rectangle.ts" />
+    <TypeScriptCompile Include="rectangle.ts" />
     <Content Include="shortestpaths.min.js">
       <DependentUpon>shortestpaths.ts</DependentUpon>
     </Content>
+    <Content Include="three\Detector.js" />
+    <Content Include="three\OBJLoader.js" />
+    <Content Include="three\three.js" />
+    <Content Include="three\three.min.js" />
+    <Content Include="three\TrackballControls.js" />
     <Content Include="unconstrained.html" />
     <Content Include="unconstrainedsmallworld.html" />
     <Content Include="unconstrained.png" />
@@ -80,6 +187,9 @@
       <DependentUpon>descent.ts</DependentUpon>
     </Content>
     <Content Include="force.js" />
+    <Content Include="graphdata\coordinates.csv" />
+    <Content Include="graphdata\fivenodesdisconnected.json" />
+    <Content Include="graphdata\smallgrouped.json" />
     <None Include="graphdata\miserables.json" />
     <Content Include="pqueue.js">
       <DependentUpon>pqueue.ts</DependentUpon>
@@ -96,7 +206,7 @@
     <Content Include="stpaths.js" />
     <Content Include="test.html" />
     <Content Include="tests.js" />
-    <None Include="graphdata\fivenodesdisconnected.json" />
+    <None Include="graphdata\test1.json" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="pqueue.js.map">
