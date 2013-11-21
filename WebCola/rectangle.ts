@@ -155,27 +155,27 @@ module vpsc {
         findNeighbours: findYNeighbours
     };
 
-    function generateGroupConstraints(root: Group, rect: RectAccessors, minSep: number, isContained: boolean = false): Constraint[]
+    function generateGroupConstraints(root: Group, f: RectAccessors, minSep: number, isContained: boolean = false): Constraint[]
     {
         var padding = typeof root.padding === 'undefined' ? 1 : root.padding;
         var childConstraints: Constraint[] = [];
         var gn = typeof root.groups !== 'undefined' ? root.groups.length : 0,
             ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0;
         if (gn) root.groups.forEach(g => {
-            childConstraints = childConstraints.concat(generateGroupConstraints(g, rect, minSep, true));
+            childConstraints = childConstraints.concat(generateGroupConstraints(g, f, minSep, true));
         });
         var n = (isContained ? 2 : 0) + ln + gn;
         var vs: Variable[] = new Array(n);
         var rs: Rectangle[] = new Array(n);
         var i = 0;
         if (isContained) {
-            var c = rect.getCentre(root.bounds),
-                s = rect.getSize(root.bounds) / 2;
-            rs[i] = root.minRect = rect.makeRect(rect.getOpen(root.bounds), rect.getClose(root.bounds), c - s, padding);
-            root.minVar.desiredPosition = rect.getCentre(root.minRect);
+            var b: Rectangle = root.bounds;
+            var c = f.getCentre(b), s = f.getSize(b) / 2, open = f.getOpen(b), close = f.getClose(b);
+            rs[i] = root.minRect = f.makeRect(open, close, c - s, padding);
+            root.minVar.desiredPosition = f.getCentre(root.minRect);
             vs[i++] = root.minVar;
-            rs[i] = root.maxRect = rect.makeRect(rect.getOpen(root.bounds), rect.getClose(root.bounds), c + s, padding);
-            root.minVar.desiredPosition = rect.getCentre(root.maxRect);
+            rs[i] = root.maxRect = f.makeRect(open, close, c + s, padding);
+            root.minVar.desiredPosition = f.getCentre(root.maxRect);
             vs[i++] = root.maxVar;
         }
         if (ln) root.leaves.forEach(l => {
@@ -183,27 +183,18 @@ module vpsc {
             vs[i++] = l.variable;
         });
         if (gn) root.groups.forEach(g => {
-            rs[i] = g.minRect = rect.makeRect(rect.getOpen(g.bounds), rect.getClose(g.bounds), rect.getCentre(g.bounds), rect.getSize(g.bounds));
+            var b: Rectangle = g.bounds;
+            rs[i] = g.minRect = f.makeRect(f.getOpen(b), f.getClose(b), f.getCentre(b), f.getSize(b));
             vs[i++] = g.minVar;
         });
-        var cs = generateConstraints(rs, vs, rect, minSep);
+        var cs = generateConstraints(rs, vs, f, minSep);
         if (gn) {
-            vs.forEach(v => {
-                v.cOut = [];
-                v.cIn = [];
-            });
-            cs.forEach(c => {
-                c.left.cOut.push(c);
-                c.right.cIn.push(c);
-            });
+            vs.forEach(v => { v.cOut = [], v.cIn = [] });
+            cs.forEach(c => { c.left.cOut.push(c), c.right.cIn.push(c) });
             root.groups.forEach(g => {
-                g.minVar.cIn.forEach(c => {
-                    c.gap += (padding - rect.getSize(g.bounds)) / 2;
-                });
-                g.minVar.cOut.forEach(c => {
-                    c.left = g.maxVar;
-                    c.gap += (padding - rect.getSize(g.bounds)) / 2;
-                });
+                var gapAdjustment = (padding - f.getSize(g.bounds)) / 2;
+                g.minVar.cIn.forEach(c => c.gap += gapAdjustment);
+                g.minVar.cOut.forEach(c => { c.left = g.maxVar; c.gap += gapAdjustment; });
             });
         }
         return childConstraints.concat(cs);

@@ -170,11 +170,11 @@ var vpsc;
         var rs = new Array(n);
         var i = 0;
         if (isContained) {
-            var c = rect.getCentre(root.bounds), s = rect.getSize(root.bounds) / 2;
-            rs[i] = root.minRect = rect.makeRect(rect.getOpen(root.bounds), rect.getClose(root.bounds), c - s, padding);
+            var c = rect.getCentre(root.bounds), s = rect.getSize(root.bounds) / 2, open = rect.getOpen(root.bounds), close = rect.getClose(root.bounds);
+            rs[i] = root.minRect = rect.makeRect(open, close, c - s, padding);
             root.minVar.desiredPosition = rect.getCentre(root.minRect);
             vs[i++] = root.minVar;
-            rs[i] = root.maxRect = rect.makeRect(rect.getOpen(root.bounds), rect.getClose(root.bounds), c + s, padding);
+            rs[i] = root.maxRect = rect.makeRect(open, close, c + s, padding);
             root.minVar.desiredPosition = rect.getCentre(root.maxRect);
             vs[i++] = root.maxVar;
         }
@@ -191,20 +191,19 @@ var vpsc;
         var cs = generateConstraints(rs, vs, rect, minSep);
         if (gn) {
             vs.forEach(function (v) {
-                v.cOut = [];
-                v.cIn = [];
+                v.cOut = [], v.cIn = [];
             });
             cs.forEach(function (c) {
-                c.left.cOut.push(c);
-                c.right.cIn.push(c);
+                c.left.cOut.push(c), c.right.cIn.push(c);
             });
             root.groups.forEach(function (g) {
+                var gapAdjustment = (padding - rect.getSize(g.bounds)) / 2;
                 g.minVar.cIn.forEach(function (c) {
-                    c.gap += (padding - rect.getSize(g.bounds)) / 2;
+                    return c.gap += gapAdjustment;
                 });
                 g.minVar.cOut.forEach(function (c) {
                     c.left = g.maxVar;
-                    c.gap += (padding - rect.getSize(g.bounds)) / 2;
+                    c.gap += gapAdjustment;
                 });
             });
         }

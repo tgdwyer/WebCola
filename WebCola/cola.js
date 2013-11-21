@@ -293,8 +293,8 @@ cola = function () {
             var x = new Array(N), y = new Array(N);
             variables = new Array(N);
 
-            var makeVariable = function (i) {
-                var v = variables[i] = new vpsc.Variable();
+            var makeVariable = function (i, w) {
+                var v = variables[i] = new vpsc.Variable(0, w);
                 v.index = i;
                 return v;
             }
@@ -305,7 +305,7 @@ cola = function () {
                     v.x = w / 2, v.y = h / 2;
                 }
                 if (typeof v.variable === 'undefined') {
-                    v.variable = makeVariable(i);
+                    v.variable = makeVariable(i, 1);
                 }
                 if (typeof v.width !== 'undefined' && typeof v.bounds === 'undefined') {
                     var w2 = v.width / 2, h2 = v.height / 2;
@@ -318,13 +318,15 @@ cola = function () {
             if (rootGroup) {
                 vpsc.computeGroupBounds(rootGroup);
                 var i = n;
+                var makeGroupVar = function (gx, gy) {
+                    x[i] = gx; y[i] = gy;
+                    return makeVariable(i++, 0.01);
+                }
                 groups.forEach(function(g) {
-                    G[i][i + 1] = G[i + 1][i] = 0.00000001;
+                    G[i][i + 1] = G[i + 1][i] = 1e-6;
                     D[i][i + 1] = D[i + 1][i] = 0.1;
-                    g.minVar = makeVariable(i);
-                    x[i] = g.bounds.x, y[i++] = g.bounds.y;
-                    g.maxVar = makeVariable(i);
-                    x[i] = g.bounds.X, y[i++] = g.bounds.Y;
+                    g.minVar = makeGroupVar(g.bounds.x, g.bounds.y);
+                    g.maxVar = makeGroupVar(g.bounds.X, g.bounds.Y);
                 });
             } else {
                 rootGroup = { leaves: nodes };
