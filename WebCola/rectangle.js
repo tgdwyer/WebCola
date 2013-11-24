@@ -160,26 +160,25 @@ var vpsc;
         if (typeof isContained === "undefined") { isContained = false; }
         var padding = typeof root.padding === 'undefined' ? 1 : root.padding, gn = typeof root.groups !== 'undefined' ? root.groups.length : 0, ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0, childConstraints = !gn ? [] : root.groups.reduce(function (ccs, g) {
             return ccs.concat(generateGroupConstraints(g, f, minSep, true));
-        }, []), n = (isContained ? 2 : 0) + ln + gn, vs = new Array(n), rs = new Array(n), i = 0;
+        }, []), n = (isContained ? 2 : 0) + ln + gn, vs = new Array(n), rs = new Array(n), i = 0, add = function (r, v) {
+            rs[i] = r;
+            vs[i++] = v;
+        };
         if (isContained) {
             var b = root.bounds, c = f.getCentre(b), s = f.getSize(b) / 2, open = f.getOpen(b), close = f.getClose(b), min = c - s, max = c + s;
-            rs[i] = f.makeRect(open, close, min, padding);
             root.minVar.desiredPosition = min;
-            vs[i++] = root.minVar;
-            rs[i] = f.makeRect(open, close, max, padding);
+            add(f.makeRect(open, close, min, padding), root.minVar);
             root.maxVar.desiredPosition = max;
-            vs[i++] = root.maxVar;
+            add(f.makeRect(open, close, max, padding), root.maxVar);
         }
         if (ln)
             root.leaves.forEach(function (l) {
-                rs[i] = l.bounds;
-                vs[i++] = l.variable;
+                return add(l.bounds, l.variable);
             });
         if (gn)
             root.groups.forEach(function (g) {
                 var b = g.bounds;
-                rs[i] = f.makeRect(f.getOpen(b), f.getClose(b), f.getCentre(b), f.getSize(b));
-                vs[i++] = g.minVar;
+                add(f.makeRect(f.getOpen(b), f.getClose(b), f.getCentre(b), f.getSize(b)), g.minVar);
             });
         var cs = generateConstraints(rs, vs, f, minSep);
         if (gn) {

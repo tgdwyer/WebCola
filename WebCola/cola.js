@@ -271,6 +271,8 @@ cola = function () {
 
             var G = null;
 
+            var ao = this.avoidOverlaps();
+
             if (distanceMatrix.length != N) {
                 var edges = links.map(function (e, i) {
                     return {
@@ -307,7 +309,7 @@ cola = function () {
                 if (typeof v.variable === 'undefined') {
                     v.variable = makeVariable(i, 1);
                 }
-                if (typeof v.width !== 'undefined' && typeof v.bounds === 'undefined') {
+                if (ao && typeof v.width !== 'undefined' && typeof v.bounds === 'undefined') {
                     var w2 = v.width / 2, h2 = v.height / 2;
                     v.bounds = new vpsc.Rectangle(v.x - w2, v.x + w2, v.y - h2, v.y + h2);
                 }
@@ -315,7 +317,7 @@ cola = function () {
                 x[i] = v.x, y[i] = v.y;
             }
 
-            if (rootGroup) {
+            if (rootGroup && typeof rootGroup.groups !== 'undefined') {
                 vpsc.computeGroupBounds(rootGroup);
                 var i = n;
                 var makeGroupVar = function (gx, gy) {
@@ -335,7 +337,6 @@ cola = function () {
             var initialUnconstrainedIterations = arguments.length > 0 ? arguments[0] : 0;
             var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;
             var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;
-            var ao = this.avoidOverlaps();
             this.avoidOverlaps(false);
             descent = new Descent(x, y, D);
             // apply initialIterations without user constraints or nonoverlap constraints
