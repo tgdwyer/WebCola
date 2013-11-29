@@ -7,17 +7,13 @@ module ShortestPaths {
     }
 
     export function dijkstra(n: number, es: Edge[], start: number): number[] {
-        var d = new Array(n);
-        dijkstraNeighbours(getNeighbours(n, es), start, d);
-        return d;
+        return dijkstraNeighbours(getNeighbours(n, es), start);
     }
 
     export function johnsons(n: number, es: Edge[]): number[][] {
-        var D = new Array(n);
-        var N = getNeighbours(n, es);
+        var D = new Array(n), N = getNeighbours(n, es);
         for (var i = 0; i < n; ++i) {
-            var d = D[i] = new Array(n);
-            dijkstraNeighbours(N, i, d);
+            D[i] = dijkstraNeighbours(N, i);
         }
         return D;
     }
@@ -56,9 +52,11 @@ module ShortestPaths {
         return neighbours;
     };
 
-    function dijkstraNeighbours(neighbours: Node[], start: number, d: number[]): void {
-        var q = new PriorityQueue<Node>((a, b)=> a.d <= b.d);
-        var i = neighbours.length; while (i--) {
+    function dijkstraNeighbours(neighbours: Node[], start: number): number[] {
+        var q = new PriorityQueue<Node>((a, b) => a.d <= b.d),
+            i = neighbours.length,
+            d: number[] = new Array(i);
+        while (i--) {
             var node: Node = neighbours[i];
             node.d = i === start ? 0 : Number.MAX_VALUE;
             node.q = q.push(node);
@@ -77,5 +75,6 @@ module ShortestPaths {
                 }
             }
         }
-    };
+        return d;
+    }
 }

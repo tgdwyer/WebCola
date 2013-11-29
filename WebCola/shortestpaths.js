@@ -2,18 +2,14 @@
 var ShortestPaths;
 (function (ShortestPaths) {
     function dijkstra(n, es, start) {
-        var d = new Array(n);
-        dijkstraNeighbours(getNeighbours(n, es), start, d);
-        return d;
+        return dijkstraNeighbours(getNeighbours(n, es), start);
     }
     ShortestPaths.dijkstra = dijkstra;
 
     function johnsons(n, es) {
-        var D = new Array(n);
-        var N = getNeighbours(n, es);
+        var D = new Array(n), N = getNeighbours(n, es);
         for (var i = 0; i < n; ++i) {
-            var d = D[i] = new Array(n);
-            dijkstraNeighbours(N, i, d);
+            D[i] = dijkstraNeighbours(N, i);
         }
         return D;
     }
@@ -53,11 +49,10 @@ var ShortestPaths;
     }
     ;
 
-    function dijkstraNeighbours(neighbours, start, d) {
+    function dijkstraNeighbours(neighbours, start) {
         var q = new PriorityQueue(function (a, b) {
             return a.d <= b.d;
-        });
-        var i = neighbours.length;
+        }), i = neighbours.length, d = new Array(i);
         while (i--) {
             var node = neighbours[i];
             node.d = i === start ? 0 : Number.MAX_VALUE;
@@ -78,7 +73,7 @@ var ShortestPaths;
                 }
             }
         }
+        return d;
     }
-    ;
 })(ShortestPaths || (ShortestPaths = {}));
 //# sourceMappingURL=shortestpaths.js.map

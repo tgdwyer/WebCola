@@ -262,16 +262,35 @@ cola = function () {
                 N = n + 2 * groups.length,
                 m = links.length,
                 w = size[0],
-                h = size[1],
-                o;
+                h = size[1];
 
-            for (i = 0; i < n; ++i) {
-                (o = nodes[i]).index = i;
+            var x = new Array(N), y = new Array(N);
+            variables = new Array(N);
+
+            var makeVariable = function (i, w) {
+                var v = variables[i] = new vpsc.Variable(0, w);
+                v.index = i;
+                return v;
             }
 
             var G = null;
 
             var ao = this.avoidOverlaps();
+
+            nodes.forEach(function (v, i) {
+                v.index = i;
+                if (typeof v.x === 'undefined') {
+                    v.x = w / 2, v.y = h / 2;
+                }
+                if (typeof v.variable === 'undefined') {
+                    v.variable = makeVariable(i, 1);
+                }
+                if (ao && typeof v.width !== 'undefined' && typeof v.bounds === 'undefined') {
+                    var w2 = v.width / 2, h2 = v.height / 2;
+                    v.bounds = new vpsc.Rectangle(v.x - w2, v.x + w2, v.y - h2, v.y + h2);
+                }
+                x[i] = v.x, y[i] = v.y;
+            });
 
             if (distanceMatrix.length != N) {
                 var edges = links.map(function (e, i) {
@@ -292,30 +311,6 @@ cola = function () {
                 return distanceMatrix[i][j] * linkDistance;
             });
 
-            var x = new Array(N), y = new Array(N);
-            variables = new Array(N);
-
-            var makeVariable = function (i, w) {
-                var v = variables[i] = new vpsc.Variable(0, w);
-                v.index = i;
-                return v;
-            }
-
-            for (var i = 0; i < n; ++i) {
-                var v = nodes[i];
-                if (typeof v.x === 'undefined') {
-                    v.x = w / 2, v.y = h / 2;
-                }
-                if (typeof v.variable === 'undefined') {
-                    v.variable = makeVariable(i, 1);
-                }
-                if (ao && typeof v.width !== 'undefined' && typeof v.bounds === 'undefined') {
-                    var w2 = v.width / 2, h2 = v.height / 2;
-                    v.bounds = new vpsc.Rectangle(v.x - w2, v.x + w2, v.y - h2, v.y + h2);
-                }
-                
-                x[i] = v.x, y[i] = v.y;
-            }
 
             if (rootGroup && typeof rootGroup.groups !== 'undefined') {
                 vpsc.computeGroupBounds(rootGroup);
@@ -357,11 +352,14 @@ cola = function () {
                 descent.rungeKutta();
             }
 
-            for (i = 0; i < m; ++i) {
-                o = links[i];
-                if (typeof o.source == "number") o.source = nodes[o.source];
-                if (typeof o.target == "number") o.target = nodes[o.target];
-            }
+            links.forEach(function (l) {
+                if (typeof l.source == "number") l.source = nodes[l.source];
+                if (typeof l.target == "number") l.target = nodes[l.target];
+            });
+            nodes.forEach(function (v, i) {
+                v.x = x[i], v.y = y[i];
+            });
+
             return d3adaptor.resume();
         };
 

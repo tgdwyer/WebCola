@@ -24,11 +24,7 @@
     <Content Include="brainnetwork.html" />
     <Content Include="brainnetwork2.html" />
     <Content Include="brainnetworkmultiview.html" />
-    <TypeScriptCompile Include="cola2.ts" />
     <Content Include="cola.js" />
-    <Content Include="cola2.js">
-      <DependentUpon>cola2.ts</DependentUpon>
-    </Content>
     <Content Include="harmony-collections.js" />
     <Content Include="smallgroups.html" />
     <Content Include="fullscreen.js" />
@@ -168,6 +164,7 @@
     <Content Include="three\three.js" />
     <Content Include="three\three.min.js" />
     <Content Include="three\TrackballControls.js" />
+    <Content Include="graphdata\triangle.js" />
     <Content Include="unconstrained.html" />
     <Content Include="unconstrainedsmallworld.html" />
     <Content Include="unconstrained.png" />
@@ -203,7 +200,6 @@
     <Content Include="shortestpaths.js">
       <DependentUpon>shortestpaths.ts</DependentUpon>
     </Content>
-    <Content Include="stpaths.js" />
     <Content Include="test.html" />
     <Content Include="tests.js" />
     <None Include="graphdata\test1.json" />

@@ -6,7 +6,7 @@
 asyncTest("all-pairs shortest paths", function () {
     var d3cola = cola.d3adaptor();
 
-    d3.json("triangle.js", function (error, graph) {
+    d3.json("graphdata/triangle.js", function (error, graph) {
         d3cola
             .nodes(graph.nodes)
             .links(graph.links);
@@ -26,33 +26,18 @@ asyncTest("all-pairs shortest paths", function () {
         ok(s1 < s0);
         var s2 = cola.reduceStress();
         ok(s2 < s1);
+        d3cola.start(0,0,10);
+        var lengths = graph.links.map(function (l) {
+            var u = l.source, v = l.target;
+            var dx = u.x - v.x, dy = u.y - v.y;
+            return Math.sqrt(dx*dx + dy*dy);
+        }), avg = function (a) { return a.reduce(function (u, v) { return u + v }) / a.length },
+            mean = avg(lengths),
+            variance = avg(lengths.map(function (l) { var d = mean - l; return d * d; }));
+        ok(variance < 0.1);
         start();
     });
     ok(true);
-});
-
-test("foreach test", function () {
-    var now = window.performance ? function () { return window.performance.now(); } : function () { };
-    var a = new Array(1000000);
-    var expect = 0;
-    for (var i = 0; i < a.length; ++i) {
-        expect += a[i] = i;
-    }
-    var startTime = now();
-    var sum = 0;
-    for (var i = 0, n = a.length; i < n; ++i) {
-        sum += i;
-    }
-    var t1 = now() - startTime;
-    startTime = now();
-    sum = 0;
-    for (var i in a) {
-        sum += i;
-    }
-    var t2 = now() - startTime;
-    console.log("t1 = " + t1 + " t2 = " + t2);
-    ok(sum == expect);
-    
 });
 
 test("matrix perf test", function () {
