@@ -127,6 +127,7 @@
     <Content Include="nonoverlapping.png" />
     <Content Include="onlinebrowse.png" />
     <Content Include="smallgroups.png" />
+    <Content Include="xalignment.html" />
     <Content Include="smallnonoverlappinggraph.html" />
     <Content Include="graphdata\CCsum.txt" />
     <Content Include="graphdata\affil.txt" />
@@ -187,6 +188,7 @@
     <Content Include="graphdata\coordinates.csv" />
     <Content Include="graphdata\fivenodesdisconnected.json" />
     <Content Include="graphdata\smallgrouped.json" />
+    <Content Include="graphdata\alignmentconstraints.json" />
     <None Include="graphdata\miserables.json" />
     <Content Include="pqueue.js">
       <DependentUpon>pqueue.ts</DependentUpon>

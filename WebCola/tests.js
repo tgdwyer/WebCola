@@ -28,13 +28,35 @@ asyncTest("all-pairs shortest paths", function () {
         ok(s2 < s1);
         d3cola.start(0,0,10);
         var lengths = graph.links.map(function (l) {
-            var u = l.source, v = l.target;
-            var dx = u.x - v.x, dy = u.y - v.y;
+            var u = l.source, v = l.target,
+                dx = u.x - v.x, dy = u.y - v.y;
             return Math.sqrt(dx*dx + dy*dy);
         }), avg = function (a) { return a.reduce(function (u, v) { return u + v }) / a.length },
             mean = avg(lengths),
             variance = avg(lengths.map(function (l) { var d = mean - l; return d * d; }));
         ok(variance < 0.1);
+        start();
+    });
+    ok(true);
+});
+
+asyncTest("equality constraints", function () {
+    var d3cola = cola.d3adaptor();
+
+    d3.json("graphdata/triangle.js", function (error, graph) {
+        d3cola
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .constraints([{
+                type: "separation", axis: "x",
+                left: 0, right: 1, gap: 0, equality: true
+            }, {
+                type: "separation", axis: "y",
+                left: 0, right: 2, gap: 0, equality: true
+            }]);
+        d3cola.start(20, 20, 20);
+        ok(Math.abs(graph.nodes[0].x - graph.nodes[1].x) < 0.001);
+        ok(Math.abs(graph.nodes[0].y - graph.nodes[2].y) < 0.001);
         start();
     });
     ok(true);

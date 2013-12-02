@@ -298,4 +298,140 @@ module vpsc {
         solver.solve();
         vs.forEach((v, i) => rs[i].setYCentre(v.position()));
     }
+
+    export interface GraphNode extends Leaf {
+        fixed: boolean;
+        width: number;
+        height: number;
+        x: number;
+        y: number;
+        px: number;
+        py: number;
+    }
+
+    class IndexedVariable extends Variable {
+        index: number;
+        constructor(i: number, w: number) {
+            super(0, w);
+            this.index = i;
+        }
+    }
+
+    export class Projection {
+        private nodes: GraphNode[];
+        private rootGroup: Group;
+        private xConstraints: Constraint[];
+        private yConstraints: Constraint[];
+        private groups: Group[];
+        private variables: Variable[];
+        private avoidOverlaps: boolean;
+
+        constructor(nodes: GraphNode[],
+            groups: Group[],
+            rootGroup: Group = null,
+            constraints: any[]= null,
+            avoidOverlaps: boolean = false)
+        {
+            this.nodes = nodes;
+            this.rootGroup = rootGroup;
+            this.groups = groups;
+            this.avoidOverlaps = avoidOverlaps;
+            this.variables = nodes.map((v, i) => {
+                return v.variable = new IndexedVariable(i, 1);
+            });
+
+            if (avoidOverlaps && rootGroup && typeof rootGroup.groups !== 'undefined') {
+                nodes.forEach(v => {
+                    var w2 = v.width / 2, h2 = v.height / 2;
+                    v.bounds = new vpsc.Rectangle(v.x - w2, v.x + w2, v.y - h2, v.y + h2);
+                });
+                computeGroupBounds(rootGroup);
+                var i = nodes.length;
+                groups.forEach(g => {
+                    this.variables[i] = g.minVar = new IndexedVariable(i++, 0.01);
+                    this.variables[i] = g.maxVar = new IndexedVariable(i++, 0.01);
+                });
+            }
+
+            if (constraints) this.createConstraints(constraints);
+        }
+
+        private createSeparation(c: any) : Constraint {
+            return new Constraint(
+                this.nodes[c.left].variable,
+                this.nodes[c.right].variable,
+                c.gap,
+                typeof c.equality !== "undefined" ? c.equality : false);
+        }
+
+        private createConstraints(constraints: any[]) {
+            var isSep = c => typeof c.type === 'undefined' || c.type === 'separation';
+            this.xConstraints = constraints
+                .filter(c => c.axis === "x" && isSep(c))
+                .map(c => this.createSeparation(c));
+            this.yConstraints = constraints
+                .filter(c => c.axis === "y" && isSep(c))
+                .map(c => this.createSeparation(c));
+        }
+
+        private setupVariablesAndBounds(x0: number[], y0: number[], desired: number[], getDesired: (v:GraphNode) => number) {
+            this.nodes.forEach((v, i) => {
+                if (v.fixed) {
+                    v.variable.weight = 1000;
+                    desired[i] = getDesired(v);
+                } else {
+                    v.variable.weight = 1;
+                }
+                var w = v.width / 2, h = v.height / 2;
+                var ix = x0[i], iy = y0[i];
+                v.bounds = new Rectangle(ix - w, ix + w, iy - h, iy + h);
+            });
+        }
+
+        xProject(x0: number[], y0: number[], x: number[]) {
+            if (!this.rootGroup && !(this.avoidOverlaps || this.xConstraints)) return;
+            this.project(x0, y0, x0, x, v=> v.px, this.xConstraints, generateXGroupConstraints,
+                v => v.bounds.setXCentre(x[(<IndexedVariable>v.variable).index] = v.variable.position()),
+                g => {
+                    g.bounds.x = x[(<IndexedVariable>g.minVar).index] = g.minVar.position();
+                    g.bounds.X = x[(<IndexedVariable>g.maxVar).index] = g.maxVar.position();
+                });
+        }
+
+        yProject(x0: number[], y0: number[], y: number[]) {
+            if (!this.rootGroup && !this.yConstraints) return;
+            this.project(x0, y0, y0, y, v=> v.py, this.yConstraints, generateYGroupConstraints,
+                v => v.bounds.setYCentre(y[(<IndexedVariable>v.variable).index] = v.variable.position()),
+                g => {
+                    g.bounds.y = y[(<IndexedVariable>g.minVar).index] = g.minVar.position();
+                    g.bounds.Y = y[(<IndexedVariable>g.maxVar).index] = g.maxVar.position();
+                });
+        }
+
+        private project(x0: number[], y0: number[], start: number[], desired: number[], 
+            getDesired: (v: GraphNode) => number,
+            cs: Constraint[], 
+            generateConstraints: (g: Group) => Constraint[], 
+            updateNodeBounds: (v: GraphNode) => any,
+            updateGroupBounds: (g: Group) => any)
+        {
+            this.setupVariablesAndBounds(x0, y0, desired, getDesired);
+            if (this.rootGroup && this.avoidOverlaps) {
+                computeGroupBounds(this.rootGroup);
+                cs = cs.concat(generateConstraints(this.rootGroup));
+            }
+            this.solve(this.variables, cs, start, desired);
+            this.nodes.forEach(updateNodeBounds);
+            if (this.rootGroup && this.avoidOverlaps) {
+                this.groups.forEach(updateGroupBounds);
+            }
+        }
+
+        private solve(vs: Variable[], cs: Constraint[], starting: number[], desired: number[]) {
+            var solver = new vpsc.Solver(vs, cs);
+            solver.setStartingPositions(starting);
+            solver.setDesiredPositions(desired);
+            solver.solve();
+        }
+    }
 }
