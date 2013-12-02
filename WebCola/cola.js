@@ -265,15 +265,21 @@ cola = function () {
                 descent.rungeKutta();
             }
             // apply initialIterations with user constraints but no noverlap constraints
-            projection = new vpsc.Projection(nodes, groups, rootGroup, constraints);
-            descent.xproject = function (x0, y0, x) { projection.xProject(x0, y0, x) };
-            descent.yproject = function (x0, y0, y) { projection.yProject(x0, y0, y) };
+            if (constraints.length > 0) {
+                projection = new vpsc.Projection(nodes, groups, rootGroup, constraints);
+                descent.xproject = function (x0, y0, x) { projection.xProject(x0, y0, x) };
+                descent.yproject = function (x0, y0, y) { projection.yProject(x0, y0, y) };
+            }
             for (i = 0; i < initialUserConstraintIterations; ++i) {
                 descent.rungeKutta();
             }
             // subsequent iterations will apply all constraints
             this.avoidOverlaps(ao);
-            projection = new vpsc.Projection(nodes, groups, rootGroup, constraints, ao);
+            if (ao) {
+                projection = new vpsc.Projection(nodes, groups, rootGroup, constraints, ao);
+                descent.xproject = function (x0, y0, x) { projection.xProject(x0, y0, x) };
+                descent.yproject = function (x0, y0, y) { projection.yProject(x0, y0, y) };
+            }
             // allow not immediately connected nodes to relax apart (p-stress)
             descent.G = G;
             for (i = 0; i < initialAllConstraintsIterations; ++i) {

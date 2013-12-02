@@ -1,4 +1,4 @@
-
+﻿
 <!DOCTYPE html>
 <meta charset="utf-8">
 <link rel="canonical" href="http://d3js.org/">
@@ -49,14 +49,14 @@
 <script>
 
 var examples = [
-{ name: "downwardedges", url: "http://marvl.infotech.monash.edu/webcola/downwardedges.html" },
-{ name: "unconstrained", url: "http://marvl.infotech.monash.edu/webcola/unconstrained.html" },
-{ name: "unconstrainedsmallworld", url: "http://marvl.infotech.monash.edu/webcola/unconstrainedsmallworld.html" },
-{ name: "nonoverlapping", url: "http://marvl.infotech.monash.edu/webcola/nonoverlapping.html" },
-{ name: "smallnonoverlappinggraph", url: "http://marvl.infotech.monash.edu/webcola/smallnonoverlappinggraph.html" },
-{ name: "modifyinggraph", url: "http://marvl.infotech.monash.edu/webcola/modifyinggraph.html" },
-{ name: "onlinebrowse", url: "http://marvl.infotech.monash.edu/webcola/onlinebrowse.html" },
-{ name: "smallgroups", url: "http://marvl.infotech.monash.edu/webcola/smallgroups.html" },
+    "downwardedges",
+    "unconstrained", 
+    "unconstrainedsmallworld", 
+    "nonoverlapping", 
+    "smallnonoverlappinggraph", 
+    "modifyinggraph", 
+    "onlinebrowse", 
+    "smallgroups", 
 ];
 
 function shuffle(array) {
@@ -81,9 +81,9 @@ d3.select("#examples").selectAll(".example")
     .data(shuffle(examples).slice(0, 8))
   .enter().append("a")
     .attr("class", "example")
-    .attr("href", function(d) { return d.url; })
+    .attr("href", function(d) { return d + ".html"; })
   .append("img")
-    .attr("src", function(d) { return d.name + ".png"; });
+    .attr("src", function(d) { return d + ".png"; });
 
 </script>
 
