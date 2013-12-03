@@ -16,12 +16,12 @@ class Descent {
     private b: number[][];
     private c: number[][];
     private d: number[][];
+    private e: number[][];
     private ia: number[][];
     private ib: number[][];
     private xtmp: number[][];
     
-    public xproject: (x0: number[], y0: number[], x: number[]) => void;
-    public yproject: (x0: number[], y0: number[], y: number[]) => void;
+    public project: {(x0: number[], y0: number[], r: number[]): void }[] = null;
 
     constructor(x: number[], y: number[], D: number[][], G: number[][] = null) {
         this.D = D;
@@ -36,6 +36,7 @@ class Descent {
         this.b = new Array(this.k);
         this.c = new Array(this.k);
         this.d = new Array(this.k);
+        this.e = new Array(this.k);
         this.ia = new Array(this.k);
         this.ib = new Array(this.k);
         this.xtmp = new Array(this.k);
@@ -64,6 +65,7 @@ class Descent {
             this.b[i] = new Array(n);
             this.c[i] = new Array(n);
             this.d[i] = new Array(n);
+            this.e[i] = new Array(n);
             this.ia[i] = new Array(n);
             this.ib[i] = new Array(n);
             this.xtmp[i] = new Array(n);
@@ -174,51 +176,63 @@ class Descent {
         return this.computeStress();
     }
 
-    private static copy(x1: number[][], x2: number[][]): void {
-        var m = x1.length, n = x1[0].length;
+    private static copy(a: number[][], b: number[][]): void {
+        var m = a.length, n = b[0].length;
         for (var i = 0; i < m; ++i) {
             for (var j = 0; j < n; ++j) {
-                x2[i][j] = x1[i][j];
+                b[i][j] = a[i][j];
             }
         }
     }
 
-    private computeNextPosition(x0: number[][], r: number[][]): void {
+    private stepAndProject(x0: number[][], r: number[][], d: number[][], stepSize: number) {
         Descent.copy(x0, r);
-        this.computeDerivatives(r);
-        var alpha = this.computeStepSize(this.g)
-        this.takeDescentStep(r[0], this.g[0], alpha);
-        if (this.xproject) {
-            this.xproject(x0[0], x0[1], r[0]);
+        this.takeDescentStep(r[0], d[0], stepSize);
+        if (this.project) this.project[0](x0[0], x0[1], r[0]);
+        this.takeDescentStep(r[1], d[1], stepSize);
+        if (this.project) this.project[1](r[0], x0[1], r[1]);
+    }
+
+    private static mApply(m: number, n: number, f: (i: number, j: number) => any) {
+        var i = m; while (i-- > 0) {
+            var j = n; while (j-- > 0) f(i, j);
         }
-        this.takeDescentStep(r[1], this.g[1], alpha);
-        if (this.yproject) {
-            this.yproject(r[0], x0[1], r[1]);
+    }
+    private matrixApply(f: (i: number, j: number) => any) {
+        Descent.mApply(this.k, this.n, f);
+    }
+
+    private computeNextPosition(x0: number[][], r: number[][]): void {
+        this.computeDerivatives(x0);
+        var alpha = this.computeStepSize(this.g);
+        this.stepAndProject(x0, r, this.g, alpha);
+
+        if (this.project) {
+            this.matrixApply((i, j) => this.e[i][j] = x0[i][j] - r[i][j]);
+            var beta = this.computeStepSize(this.e);
+            beta = Math.max(0.2, Math.min(beta, 1));
+            this.stepAndProject(x0, r, this.e, beta);
         }
     }
 
-    private rungeKutta(): number {
+    run(iterations: number) {
+        while (iterations-- > 0) this.rungeKutta();
+    }
+
+    rungeKutta(): number {
         this.computeNextPosition(this.x, this.a);
         Descent.mid(this.x, this.a, this.ia);
         this.computeNextPosition(this.ia, this.b);
         Descent.mid(this.x, this.b, this.ib);
         this.computeNextPosition(this.ib, this.c);
         this.computeNextPosition(this.c, this.d);
-        for (var i = 0; i < this.k; ++i) {
-            for (var j = 0; j < this.n; ++j) {
-                this.x[i][j] = (this.a[i][j] + 2.0 * this.b[i][j] + 2.0 * this.c[i][j] + this.d[i][j]) / 6.0;
-            }
-        }
+        this.matrixApply((i, j) => this.x[i][j] = (this.a[i][j] + 2.0 * this.b[i][j] + 2.0 * this.c[i][j] + this.d[i][j]) / 6.0);
         return this.computeStress();
     }
 
     private static mid(a: number[][], b: number[][], m: number[][]): void {
-        var k = a.length, n = a[0].length;
-        for (var i = 0; i < k; ++i) {
-            for (var j = 0; j < n; ++j) {
-                m[i][j] = a[i][j] + (b[i][j] - a[i][j]) / 2.0;
-            }
-        }
+        Descent.mApply(a.length, a[0].length, (i,j) =>
+            m[i][j] = a[i][j] + (b[i][j] - a[i][j]) / 2.0);
     }
 
     public takeDescentStep(x: number[], d: number[], stepSize: number): void {

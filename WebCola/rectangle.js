@@ -350,6 +350,9 @@ var vpsc;
                 return v.variable = new IndexedVariable(i, 1);
             });
 
+            if (constraints)
+                this.createConstraints(constraints);
+
             if (avoidOverlaps && rootGroup && typeof rootGroup.groups !== 'undefined') {
                 nodes.forEach(function (v) {
                     var w2 = v.width / 2, h2 = v.height / 2;
@@ -362,12 +365,40 @@ var vpsc;
                     _this.variables[i] = g.maxVar = new IndexedVariable(i++, 0.01);
                 });
             }
-
-            if (constraints)
-                this.createConstraints(constraints);
         }
         Projection.prototype.createSeparation = function (c) {
             return new vpsc.Constraint(this.nodes[c.left].variable, this.nodes[c.right].variable, c.gap, typeof c.equality !== "undefined" ? c.equality : false);
+        };
+
+        Projection.prototype.makeFeasible = function (c) {
+            var _this = this;
+            if (!this.avoidOverlaps)
+                return;
+            var axis = 'x', dim = 'width';
+            if (c.axis === 'x')
+                axis = 'y', dim = 'height';
+            var vs = c.offsets.map(function (o) {
+                return _this.nodes[o.node];
+            }).sort(function (a, b) {
+                return a[axis] - b[axis];
+            });
+            var p = null;
+            vs.forEach(function (v) {
+                if (p)
+                    v[axis] = p[axis] + p[dim] + 1;
+                p = v;
+            });
+        };
+
+        Projection.prototype.createAlignment = function (c) {
+            var _this = this;
+            var u = this.nodes[c.offsets[0].node].variable;
+            this.makeFeasible(c);
+            var cs = c.axis === 'x' ? this.xConstraints : this.yConstraints;
+            c.offsets.slice(1).forEach(function (o) {
+                var v = _this.nodes[o.node].variable;
+                cs.push(new vpsc.Constraint(u, v, o.offset, true));
+            });
         };
 
         Projection.prototype.createConstraints = function (constraints) {
@@ -384,6 +415,11 @@ var vpsc;
                 return c.axis === "y" && isSep(c);
             }).map(function (c) {
                 return _this.createSeparation(c);
+            });
+            constraints.filter(function (c) {
+                return c.type === 'alignment';
+            }).forEach(function (c) {
+                return _this.createAlignment(c);
             });
         };
 
@@ -425,6 +461,18 @@ var vpsc;
                 g.bounds.y = y[(g.minVar).index] = g.minVar.position();
                 g.bounds.Y = y[(g.maxVar).index] = g.maxVar.position();
             });
+        };
+
+        Projection.prototype.projectFunctions = function () {
+            var _this = this;
+            return [
+                function (x0, y0, x) {
+                    return _this.xProject(x0, y0, x);
+                },
+                function (x0, y0, y) {
+                    return _this.yProject(x0, y0, y);
+                }
+            ];
         };
 
         Projection.prototype.project = function (x0, y0, start, desired, getDesired, cs, generateConstraints, updateNodeBounds, updateGroupBounds) {

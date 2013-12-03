@@ -260,31 +260,21 @@ cola = function () {
             var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;
             this.avoidOverlaps(false);
             descent = new Descent(x, y, D);
+
             // apply initialIterations without user constraints or nonoverlap constraints
-            for (i = 0; i < initialUnconstrainedIterations; ++i) {
-                descent.rungeKutta();
-            }
+            descent.run(initialUnconstrainedIterations);
+
             // apply initialIterations with user constraints but no noverlap constraints
-            if (constraints.length > 0) {
-                projection = new vpsc.Projection(nodes, groups, rootGroup, constraints);
-                descent.xproject = function (x0, y0, x) { projection.xProject(x0, y0, x) };
-                descent.yproject = function (x0, y0, y) { projection.yProject(x0, y0, y) };
-            }
-            for (i = 0; i < initialUserConstraintIterations; ++i) {
-                descent.rungeKutta();
-            }
+            if (constraints.length > 0) descent.project = new vpsc.Projection(nodes, groups, rootGroup, constraints).projectFunctions();
+            descent.run(initialUserConstraintIterations);
+
             // subsequent iterations will apply all constraints
             this.avoidOverlaps(ao);
-            if (ao) {
-                projection = new vpsc.Projection(nodes, groups, rootGroup, constraints, ao);
-                descent.xproject = function (x0, y0, x) { projection.xProject(x0, y0, x) };
-                descent.yproject = function (x0, y0, y) { projection.yProject(x0, y0, y) };
-            }
+            if (ao) descent.project = new vpsc.Projection(nodes, groups, rootGroup, constraints).projectFunctions();
+
             // allow not immediately connected nodes to relax apart (p-stress)
             descent.G = G;
-            for (i = 0; i < initialAllConstraintsIterations; ++i) {
-                descent.rungeKutta();
-            }
+            descent.run(initialAllConstraintsIterations);
 
             links.forEach(function (l) {
                 if (typeof l.source == "number") l.source = nodes[l.source];

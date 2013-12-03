@@ -20,6 +20,7 @@
     <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="alignment.png" />
     <Content Include="brain3d.html" />
     <Content Include="brainnetwork.html" />
     <Content Include="brainnetwork2.html" />
@@ -127,7 +128,7 @@
     <Content Include="nonoverlapping.png" />
     <Content Include="onlinebrowse.png" />
     <Content Include="smallgroups.png" />
-    <Content Include="xalignment.html" />
+    <Content Include="alignment.html" />
     <Content Include="smallnonoverlappinggraph.html" />
     <Content Include="graphdata\CCsum.txt" />
     <Content Include="graphdata\affil.txt" />

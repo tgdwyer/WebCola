@@ -340,6 +340,8 @@ module vpsc {
                 return v.variable = new IndexedVariable(i, 1);
             });
 
+            if (constraints) this.createConstraints(constraints);
+
             if (avoidOverlaps && rootGroup && typeof rootGroup.groups !== 'undefined') {
                 nodes.forEach(v => {
                     var w2 = v.width / 2, h2 = v.height / 2;
@@ -352,8 +354,6 @@ module vpsc {
                     this.variables[i] = g.maxVar = new IndexedVariable(i++, 0.01);
                 });
             }
-
-            if (constraints) this.createConstraints(constraints);
         }
 
         private createSeparation(c: any) : Constraint {
@@ -364,6 +364,28 @@ module vpsc {
                 typeof c.equality !== "undefined" ? c.equality : false);
         }
 
+        private makeFeasible(c: any) {
+            if (!this.avoidOverlaps) return;
+            var axis = 'x', dim = 'width';
+            if (c.axis === 'x') axis = 'y', dim = 'height';
+            var vs: GraphNode[] = c.offsets.map(o => this.nodes[o.node]).sort((a, b) => a[axis] - b[axis]);
+            var p: GraphNode = null;
+            vs.forEach(v => {
+                if (p) v[axis] = p[axis] + p[dim] + 1
+                p = v;
+            });
+        }
+
+        private createAlignment(c: any) {
+            var u = this.nodes[c.offsets[0].node].variable;
+            this.makeFeasible(c);
+            var cs = c.axis === 'x' ? this.xConstraints : this.yConstraints;
+            c.offsets.slice(1).forEach(o => {
+                var v = this.nodes[o.node].variable;
+                cs.push(new Constraint(u, v, o.offset, true));
+            });
+        }
+
         private createConstraints(constraints: any[]) {
             var isSep = c => typeof c.type === 'undefined' || c.type === 'separation';
             this.xConstraints = constraints
@@ -372,6 +394,9 @@ module vpsc {
             this.yConstraints = constraints
                 .filter(c => c.axis === "y" && isSep(c))
                 .map(c => this.createSeparation(c));
+            constraints
+                .filter(c => c.type === 'alignment')
+                .forEach(c => this.createAlignment(c));
         }
 
         private setupVariablesAndBounds(x0: number[], y0: number[], desired: number[], getDesired: (v:GraphNode) => number) {
@@ -406,6 +431,13 @@ module vpsc {
                     g.bounds.y = y[(<IndexedVariable>g.minVar).index] = g.minVar.position();
                     g.bounds.Y = y[(<IndexedVariable>g.maxVar).index] = g.maxVar.position();
                 });
+        }
+
+        projectFunctions(): { (x0: number[], y0: number[], r: number[]): void }[]{
+            return [
+                (x0, y0, x) => this.xProject(x0, y0, x),
+                (x0, y0, y) => this.yProject(x0, y0, y)
+            ];
         }
 
         private project(x0: number[], y0: number[], start: number[], desired: number[], 
