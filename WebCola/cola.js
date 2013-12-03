@@ -270,7 +270,7 @@ cola = function () {
 
             // subsequent iterations will apply all constraints
             this.avoidOverlaps(ao);
-            if (ao) descent.project = new vpsc.Projection(nodes, groups, rootGroup, constraints).projectFunctions();
+            if (ao) descent.project = new vpsc.Projection(nodes, groups, rootGroup, constraints, true).projectFunctions();
 
             // allow not immediately connected nodes to relax apart (p-stress)
             descent.G = G;
