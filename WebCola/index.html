@@ -41,97 +41,142 @@
 
 <div id="body">
 
-<header>.
-  <b><a href="./">Overview</a></b>
-  <a style="margin-left:1em;" href="https://github.com/tgdwyer/WebCola/wiki/Gallery">Examples</a>
-  <a style="margin-left:1em;" href="https://github.com/tgdwyer/WebCola/wiki">Documentation</a>
-  <a style="margin-left:1em;" href="https://github.com/tgdwyer/WebCola">Source</a>
-</header>
+    <header>
+        .
+        <b><a href="./">Overview</a></b>
+        <a style="margin-left:1em;" href="https://github.com/tgdwyer/WebCola/wiki/Gallery">Examples</a>
+        <a style="margin-left:1em;" href="https://github.com/tgdwyer/WebCola/wiki">Documentation</a>
+        <a style="margin-left:1em;" href="https://github.com/tgdwyer/WebCola">Source</a>
+    </header>
 
-<h1>WebCoLa</h1>
-<h2>Constraint-Based Layout in the Browser</h2>
+    <h1>WebCoLa</h1>
+    <h2>Constraint-Based Layout in the Browser</h2>
 
-<div id="examples"></div>
+    <div id="examples"></div>
 
-<script src="d3.v3.min.js?3.0.0rc1"></script>
-<link rel="stylesheet" href="http://yandex.st/highlightjs/7.5/styles/default.min.css">
-<script src="http://yandex.st/highlightjs/7.5/highlight.min.js"></script>
-<script>
-hljs.initHighlightingOnLoad();
+    <script src="d3.v3.min.js?3.0.0rc1"></script>
+    <link rel="stylesheet" href="http://yandex.st/highlightjs/7.5/styles/default.min.css">
+    <script src="http://yandex.st/highlightjs/7.5/highlight.min.js"></script>
+    <script>
+        hljs.initHighlightingOnLoad();
 
-var examples = [
-    "downwardedges",
-    "unconstrained", 
-    "unconstrainedsmallworld", 
-    "nonoverlapping", 
-    "smallnonoverlappinggraph", 
-    "modifyinggraph", 
-    "onlinebrowse",
-    "smallgroups", 
-    "alignment"
-];
+        var examples = [
+            "downwardedges",
+            "unconstrained",
+            "unconstrainedsmallworld",
+            "nonoverlapping",
+            "smallnonoverlappinggraph",
+            "modifyinggraph",
+            "onlinebrowse",
+            "smallgroups",
+            "alignment"
+        ];
 
-function shuffle(array) {
-  var m = array.length, t, i;
+        function shuffle(array) {
+            var m = array.length, t, i;
 
-  // While there remain elements to shuffle.
-  while (m) {
+            // While there remain elements to shuffle.
+            while (m) {
 
-    // Pick a remaining element.
-    i = Math.floor(Math.random() * m--);
+                // Pick a remaining element.
+                i = Math.floor(Math.random() * m--);
 
-    // And swap it with the current element.
-    t = array[m];
-    array[m] = array[i];
-    array[i] = t;
-  }
+                // And swap it with the current element.
+                t = array[m];
+                array[m] = array[i];
+                array[i] = t;
+            }
 
-  return array;
-}
+            return array;
+        }
 
-d3.select("#examples").selectAll(".example")
-    .data(shuffle(examples).slice(0, 8))
-  .enter().append("a")
-    .attr("class", "example")
-    .attr("href", function(d) { return d + ".html"; })
-  .append("img")
-    .attr("src", function(d) { return d + ".png"; });
+        d3.select("#examples").selectAll(".example")
+            .data(shuffle(examples).slice(0, 8))
+          .enter().append("a")
+            .attr("class", "example")
+            .attr("href", function (d) { return d + ".html"; })
+          .append("img")
+            .attr("src", function (d) { return d + ".png"; });
 
-</script>
+    </script>
 
-<!--<p><aside>See <a href="https://github.com/mbostock/d3/wiki/Gallery">more examples</a>.</aside>-->
+    <!--<p><aside>See <a href="https://github.com/mbostock/d3/wiki/Gallery">more examples</a>.</aside>-->
 
-<p><b>WebCola.js</b> is an <a href="https://github.com/tgdwyer/WebCola/blob/master/LICENSE">open-source</a> JavaScript library for arranging your HTML5 documents and diagrams using constraint-based optimization techniques.
+    <p><b>WebCola.js</b> is an <a href="https://github.com/tgdwyer/WebCola/blob/master/LICENSE">open-source</a> JavaScript library for arranging your HTML5 documents and diagrams using constraint-based optimization techniques.
 
-<p>It works well with libraries like <a href="http://d3js.org">D3.js</a> and <a href="http://www.svgjs.com">svg.js</a>.
-The core layout is based on a complete rewrite in Javascript of the C++ <a href="http://adaptagrams.org">libcola</a> library.</p>
-    
-<aside><p>
-WebCoLa is developed by <br/><a href="http://marvl.infotech.monash.edu/~dwyer">Tim Dwyer</a> at the <a href="http://marvl.infotech.monash.edu">Monash Adaptive Visualisation Lab.
-    <img src="http://marvl.infotech.monash.edu.au/wp-content/themes/marvl/marvl.png" width="155px" alt="MArVL Logo" /></a>
-</p></aside>
-<p>It has an adaptor for d3.js that allows you to use webcola as a drop-in replacement for the <a href="https://github.com/mbostock/d3/wiki/Force-Layout">D3 force layout</a>.
-The layout converges to a local optimum unlike the D3 force layout, which forces convergence through a simple annealing strategy.  
-Thus, compared to D3 force layout:
-    <ul> 
-        <li>CoLa achieves higher quality layout;</li>
-        <li>is much more stable in interactive applications (no "jitter");</li>
-        <li>it is less scalable to very large graphs.
-    </ul>
-However, it works well on an average machine on graphs with fewer than 100 nodes.
-</p>
-    <div id="left">
-<pre><code>var cola = cola.d3adaptor()
-    .linkDistance(120)
-    .avoidOverlaps(true)
-    .size([width, height]);
-</code></pre>
-    </div>
-    <div id="right">
+    <p>
+        It works well with libraries like <a href="http://d3js.org">D3.js</a> and <a href="http://www.svgjs.com">svg.js</a>.
+        The core layout is based on a complete rewrite in Javascript of the C++ <a href="http://adaptagrams.org">libcola</a> library.
+    </p>
+
+    <aside>
+        <p>
+            WebCoLa is developed by <br /><a href="http://marvl.infotech.monash.edu/~dwyer">Tim Dwyer</a> at the <a href="http://marvl.infotech.monash.edu">
+                Monash Adaptive Visualisation Lab.
+                <img src="http://marvl.infotech.monash.edu.au/wp-content/themes/marvl/marvl.png" width="155px" alt="MArVL Logo" />
+            </a>
+        </p>
+    </aside>
+    <p>
+        It has an adaptor for d3.js that allows you to use webcola as a drop-in replacement for the <a href="https://github.com/mbostock/d3/wiki/Force-Layout">D3 force layout</a>.
+        The layout converges to a local optimum unlike the D3 force layout, which forces convergence through a simple annealing strategy.
+        Thus, compared to D3 force layout:
+        <ul>
+            <li>CoLa achieves higher quality layout;</li>
+            <li>is much more stable in interactive applications (no "jitter");</li>
+            <li>it allows user specified constraints such as <a href="alignment.html">alignments</a> and <a href="smallgroups.html">grouping</a>;</li>
+            <li>it can automatically generate constraints to <a href="smallnonoverlappinggraph.html">avoid overlapping nodes</a>;</li>
+            <li>it is less scalable to very large graphs.
+        </ul>
+        However, it works well on an average machine on graphs with fewer than 100 nodes.
+    </p>
+    <p>Replacing D3 force layout with webcola is easy:</p>
+    <table>
+        <tr>
+            <td>D3 force setup:</td>
+            <td>Webcola setup:</td>
+        </tr>
+        <tr>
+            <td>
 <pre><code>var force = d3.layout.force()
     .charge(-120)
     .linkDistance(30)
     .size([width, height]);
 </code></pre>
-        </div>
+            </td>
+            <td>
+<pre><code>var cola = cola.d3adaptor()
+    .linkDistance(30)
+    .size([width, height]);
+</code></pre>
+            </td>
+        </tr>
+    </table>
+    <p>You then use <code>cola</code> as you would <code>force</code> (or just continue to call it <code>force</code> if you don't care what it's actually doing as much as me).</p>
+    <p>
+        Note that while with D3 force layout you may have to mess with parameters like "charge" to get reasonable node separation, cola should do a much better job of repecting the specified link distance in the final layout.
+        This is because cola is directly trying to minimize the variance between ideal link distance and the actual distance in the drawing.
+        In other words, just set linkDistance to something reasonable for the size of your nodes (in the same coordinate system).
+    </p>
+    <p>
+        There are some other optional parameters available.  In the <a href="downwardedges.html">downward pointing edges example</a>
+        we kick off layout like so:
+    </p>
+<pre><code>cola
+    .nodes(graph.nodes)
+    .links(graph.links)         
+    .constraints(graph.constraints)
+    .symmetricDiffLinkLengths()
+    .avoidOverlaps(true)
+    .start(10,15,20);
+</code></pre>
+    <p>We specify nodes and links exactly as in D3 force layout.  However, <code>constraints</code> is a new parameter.  It is an array containing constraints specified like so:<p>
+<p><pre><code>{"axis":"y", "left":0, "right":1, "gap":25}</code></pre></p>
+    <p>This says that the center of <code>graph.nodes[0]</code> must be at least 25 pixels above the center of <code>graph.nodes[1]</code>.  To be more precise, it is an inequality constraint that says: <pre><code>graph.nodes[0].y + gap <= graph.nodes[1].y</code></pre></p>
+    <p><code>avoidOverlaps(true)</code> dynamically generates constraints while layout progresses in order to prevent the bounding boxes of nodes from sliding over one another (see <a href="smallnonoverlappinggraph.html">this example</a>).</p>
+    <p><code>symmetricDiffLinkLengths()</code> adjusts the ideal lengths (from that specified by <code>linkDistance</code>) on each link to make extra space around high-degree nodes.  Alternately, you can specify individual lengths on each link which will override the default.</p>
+    <p>The <code>start()</code> method now includes up to three integer arguments.  In the example above, start will initially apply 10 iterations of layout with no constraints, 15 iterations with only structural (user-specified) constraints and 20 iterations of layout with all constraints including anti-overlap constraints.
+    Specifying such a schedule is useful to allow the graph to untangle before making it relatively "rigid" with constraints.</p>
+
+    <p>I'm currently working hard to add more options and to support more classes of constraints, so please watch this space - and don't be shy about <a href="http://marvl.infotech.monash.edu/~dwyer">sending me feedback</a>.</p>
 </div>
