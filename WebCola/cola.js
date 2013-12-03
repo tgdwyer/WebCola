@@ -4,8 +4,8 @@
 //    o apply user constraints, then generated constraints
 //  - autogenerate downward edge constraints with strongly connected components detection
 //  - 3D! (add a third dimension to descent.ts and try out with three.js)
-cola = function () {
-    var cola = {};
+var cola;
+(function (cola) {
     cola.d3adaptor = function () {
         var d3adaptor = {},
             event = d3.dispatch("start", "tick", "end"),
@@ -26,7 +26,7 @@ cola = function () {
             descent = {};
 
         d3adaptor.tick = function () {
-            if (alpha < 0.00001) {
+            if (alpha < descent.threshold) {
                 event.end({ type: "end", alpha: alpha = 0 });
                 delete lastStress;
                 return true;
@@ -233,13 +233,13 @@ cola = function () {
                     };
                 });
                 distanceMatrix = ShortestPaths.johnsons(N, edges);
-                var G = Descent.createSquareMatrix(N, function () { return 2 });
+                var G = cola.Descent.createSquareMatrix(N, function () { return 2 });
                 edges.forEach(function (e) {
                     G[e.source][e.target] = G[e.target][e.source] = 1;
                 });
             }
 
-            var D = Descent.createSquareMatrix(N, function (i, j) {
+            var D = cola.Descent.createSquareMatrix(N, function (i, j) {
                 return distanceMatrix[i][j] * linkDistance;
             });
 
@@ -259,7 +259,7 @@ cola = function () {
             var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;
             var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;
             this.avoidOverlaps(false);
-            descent = new Descent(x, y, D);
+            descent = new cola.Descent(x, y, D);
 
             // apply initialIterations without user constraints or nonoverlap constraints
             descent.run(initialUnconstrainedIterations);
@@ -345,4 +345,4 @@ cola = function () {
         d.fixed &= ~4; // unset bit 3
     }
     return cola;
-}();
+})(cola || (cola = {}));

@@ -28,6 +28,14 @@
 .example:not(:nth-child(4n)) img {
   margin-right: 13px;
 }
+    #left {
+        float: right;
+        width: 50%;
+    }
+
+    #right {
+        margin-right: 50%;
+    }
 
 </style>
 
@@ -46,7 +54,10 @@
 <div id="examples"></div>
 
 <script src="d3.v3.min.js?3.0.0rc1"></script>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/7.5/styles/default.min.css">
+<script src="http://yandex.st/highlightjs/7.5/highlight.min.js"></script>
 <script>
+hljs.initHighlightingOnLoad();
 
 var examples = [
     "downwardedges",
@@ -109,9 +120,18 @@ Thus, compared to D3 force layout:
     </ul>
 However, it works well on an average machine on graphs with fewer than 100 nodes.
 </p>
-<!--<p>Download the latest version here:
-
-<ul>
-  <li><a href="d3.v3.zip">d3.v3.zip</a>
-</ul>-->
+    <div id="left">
+<pre><code>var cola = cola.d3adaptor()
+    .linkDistance(120)
+    .avoidOverlaps(true)
+    .size([width, height]);
+</code></pre>
+    </div>
+    <div id="right">
+<pre><code>var force = d3.layout.force()
+    .charge(-120)
+    .linkDistance(30)
+    .size([width, height]);
+</code></pre>
+        </div>
 </div>

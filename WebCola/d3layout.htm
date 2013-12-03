@@ -39,7 +39,7 @@
         .attr("width", width)
         .attr("height", height);
 
-    d3.json("chris.js", function (error, graph) {
+    d3.json("graphdata/chris.json", function (error, graph) {
         force
             .nodes(graph.nodes)
             .links(graph.links)

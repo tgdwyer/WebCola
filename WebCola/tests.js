@@ -20,11 +20,11 @@ asyncTest("all-pairs shortest paths", function () {
             [2, 2, 1, 0],
         ]);
         var x = [0, 0, 1, 1], y = [1, 0, 0, 1];
-        var cola = new Descent(x, y, D);
-        var s0 = cola.reduceStress();
-        var s1 = cola.reduceStress();
+        var descent = new cola.Descent(x, y, D);
+        var s0 = descent.reduceStress();
+        var s1 = descent.reduceStress();
         ok(s1 < s0);
-        var s2 = cola.reduceStress();
+        var s2 = descent.reduceStress();
         ok(s2 < s1);
         d3cola.start(0,0,10);
         var lengths = graph.links.map(function (l) {
@@ -60,6 +60,16 @@ asyncTest("equality constraints", function () {
         start();
     });
     ok(true);
+});
+
+test("pseudo random number test", function () {
+    var rand = new cola.PseudoRandom();
+    for (var i = 0; i < 100; ++i) {
+        var r = rand.getNext();
+        ok(r <= 1, "r=" + r);
+        ok(r >= 0, "r=" + r);
+        console.log(r);
+    }
 });
 
 test("matrix perf test", function () {
