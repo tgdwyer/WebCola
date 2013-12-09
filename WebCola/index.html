@@ -55,8 +55,8 @@
     <div id="examples"></div>
 
     <script src="d3.v3.min.js?3.0.0rc1"></script>
-    <link rel="stylesheet" href="http://yandex.st/highlightjs/7.5/styles/default.min.css">
-    <script src="http://yandex.st/highlightjs/7.5/highlight.min.js"></script>
+    <link rel="stylesheet" href="hljs/styles/github.css">
+    <script src="hljs/highlight.pack.js"></script>
     <script>
         hljs.initHighlightingOnLoad();
 
@@ -68,8 +68,11 @@
             "smallnonoverlappinggraph",
             "modifyinggraph",
             "onlinebrowse",
+            "alignment",
             "smallgroups",
-            "alignment"
+            "smallgroups",
+            "sucrosebreakdown",
+            "sucrosebreakdown"
         ];
 
         function shuffle(array) {
@@ -91,7 +94,7 @@
         }
 
         d3.select("#examples").selectAll(".example")
-            .data(shuffle(examples).slice(0, 8))
+            .data(shuffle(examples).slice(0, 12))
           .enter().append("a")
             .attr("class", "example")
             .attr("href", function (d) { return d + ".html"; })
@@ -102,7 +105,7 @@
 
     <!--<p><aside>See <a href="https://github.com/mbostock/d3/wiki/Gallery">more examples</a>.</aside>-->
 
-    <p><b>WebCola.js</b> is an <a href="https://github.com/tgdwyer/WebCola/blob/master/LICENSE">open-source</a> JavaScript library for arranging your HTML5 documents and diagrams using constraint-based optimization techniques.
+    <p><b>WebCola.js</b> is an <a href="https://raw.github.com/tgdwyer/WebCola/master/LICENSE">open-source</a> JavaScript library for arranging your HTML5 documents and diagrams using constraint-based optimization techniques.
 
     <p>
         It works well with libraries like <a href="http://d3js.org">D3.js</a> and <a href="http://www.svgjs.com">svg.js</a>.
@@ -172,7 +175,7 @@
 </code></pre>
     <p>We specify nodes and links exactly as in D3 force layout.  However, <code>constraints</code> is a new parameter.  It is an array containing constraints specified like so:<p>
 <p><pre><code>{"axis":"y", "left":0, "right":1, "gap":25}</code></pre></p>
-    <p>This says that the center of <code>graph.nodes[0]</code> must be at least 25 pixels above the center of <code>graph.nodes[1]</code>.  To be more precise, it is an inequality constraint that says: <pre><code>graph.nodes[0].y + gap <= graph.nodes[1].y</code></pre></p>
+    <p>This says that the center of <code>graph.nodes[0]</code> must be at least 25 pixels above the center of <code>graph.nodes[1]</code>.  To be more precise, it is an inequality constraint that requires: <pre><code>graph.nodes[0].y + gap <= graph.nodes[1].y</code></pre></p>
     <p><code>avoidOverlaps(true)</code> dynamically generates constraints while layout progresses in order to prevent the bounding boxes of nodes from sliding over one another (see <a href="smallnonoverlappinggraph.html">this example</a>).</p>
     <p><code>symmetricDiffLinkLengths()</code> adjusts the ideal lengths (from that specified by <code>linkDistance</code>) on each link to make extra space around high-degree nodes.  Alternately, you can specify individual lengths on each link which will override the default.</p>
     <p>The <code>start()</code> method now includes up to three integer arguments.  In the example above, start will initially apply 10 iterations of layout with no constraints, 15 iterations with only structural (user-specified) constraints and 20 iterations of layout with all constraints including anti-overlap constraints.

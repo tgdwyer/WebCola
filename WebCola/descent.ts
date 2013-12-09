@@ -6,8 +6,8 @@ module cola {
         public H: number[][][];
         public g: number[][];
         public x: number[][];
-        public n: number;
         public k: number;
+        public n: number;
 
         private static zeroDistance: number = 1e-10;
         private minD: number;

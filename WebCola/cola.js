@@ -23,7 +23,8 @@ var cola;
             constraints = [],
             distanceMatrix = [],
             distances = {},
-            descent = {};
+            descent = {},
+            threshold;
 
         d3adaptor.tick = function () {
             if (alpha < descent.threshold) {

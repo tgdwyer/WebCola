@@ -20,6 +20,10 @@
     <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="aca.html" />
+    <Content Include="graphdata\SucroseBreakdownDicots-flowlayout.svg" />
+    <Content Include="sucrosebreakdown-handdrawn.png" />
+    <Content Include="SucroseBreakdown.html" />
     <Content Include="alignment.png" />
     <Content Include="brain3d.html" />
     <Content Include="brainnetwork.html" />
@@ -27,6 +31,43 @@
     <Content Include="brainnetworkmultiview.html" />
     <Content Include="cola.js" />
     <Content Include="harmony-collections.js" />
+    <Content Include="hljs\classref.txt" />
+    <Content Include="hljs\highlight.pack.js" />
+    <Content Include="hljs\styles\arta.css" />
+    <Content Include="hljs\styles\ascetic.css" />
+    <Content Include="hljs\styles\brown_paper.css" />
+    <Content Include="hljs\styles\brown_papersq.png" />
+    <Content Include="hljs\styles\dark.css" />
+    <Content Include="hljs\styles\default.css" />
+    <Content Include="hljs\styles\docco.css" />
+    <Content Include="hljs\styles\far.css" />
+    <Content Include="hljs\styles\foundation.css" />
+    <Content Include="hljs\styles\github.css" />
+    <Content Include="hljs\styles\googlecode.css" />
+    <Content Include="hljs\styles\idea.css" />
+    <Content Include="hljs\styles\ir_black.css" />
+    <Content Include="hljs\styles\magula.css" />
+    <Content Include="hljs\styles\mono-blue.css" />
+    <Content Include="hljs\styles\monokai.css" />
+    <Content Include="hljs\styles\monokai_sublime.css" />
+    <Content Include="hljs\styles\obsidian.css" />
+    <Content Include="hljs\styles\pojoaque.css" />
+    <Content Include="hljs\styles\pojoaque.jpg" />
+    <Content Include="hljs\styles\railscasts.css" />
+    <Content Include="hljs\styles\rainbow.css" />
+    <Content Include="hljs\styles\school_book.css" />
+    <Content Include="hljs\styles\school_book.png" />
+    <Content Include="hljs\styles\solarized_dark.css" />
+    <Content Include="hljs\styles\solarized_light.css" />
+    <Content Include="hljs\styles\sunburst.css" />
+    <Content Include="hljs\styles\tomorrow-night-blue.css" />
+    <Content Include="hljs\styles\tomorrow-night-bright.css" />
+    <Content Include="hljs\styles\tomorrow-night-eighties.css" />
+    <Content Include="hljs\styles\tomorrow-night.css" />
+    <Content Include="hljs\styles\tomorrow.css" />
+    <Content Include="hljs\styles\vs.css" />
+    <Content Include="hljs\styles\xcode.css" />
+    <Content Include="hljs\styles\zenburn.css" />
     <Content Include="smallgroups.html" />
     <Content Include="fullscreen.js" />
     <Content Include="graphdata\biological_images\C00002.gif">
@@ -144,6 +185,7 @@
     <Content Include="rectangletest.js" />
     <Content Include="smallnonoverlappinggraph.png" />
     <Content Include="style.css" />
+    <Content Include="sucrosebreakdown.png" />
     <Content Include="svg.draggable.js" />
     <Content Include="svg.js" />
     <Content Include="nonoverlapping.html" />
@@ -226,6 +268,9 @@
     <Content Include="rectangle.js.map">
       <DependentUpon>rectangle.ts</DependentUpon>
     </Content>
+    <Content Include="hljs\LICENSE" />
+    <Content Include="hljs\README.md" />
+    <Content Include="hljs\README.ru.md" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>
