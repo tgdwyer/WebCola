@@ -1,10 +1,8 @@
-\\ad.monash.edu\home\staff04\timd\documents\visual studio 2012\Projects\WebCola\WebCola\bin\WebCola.dll
-\\ad.monash.edu\home\staff04\timd\documents\visual studio 2012\Projects\WebCola\WebCola\bin\WebCola.pdb
-\\ad.monash.edu\home\staff04\timd\documents\visual studio 2012\Projects\WebCola\WebCola\obj\Debug\WebCola.csprojResolveAssemblyReference.cache
-\\ad.monash.edu\home\staff04\timd\documents\visual studio 2012\Projects\WebCola\WebCola\obj\Debug\WebCola.dll
-\\ad.monash.edu\home\staff04\timd\documents\visual studio 2012\Projects\WebCola\WebCola\obj\Debug\WebCola.pdb
-C:\Users\timd\Documents\Visual Studio 2012\WebCola\WebCola\bin\WebCola.dll
-C:\Users\timd\Documents\Visual Studio 2012\WebCola\WebCola\bin\WebCola.pdb
-C:\Users\timd\Documents\Visual Studio 2012\WebCola\WebCola\obj\Debug\WebCola.csprojResolveAssemblyReference.cache
-C:\Users\timd\Documents\Visual Studio 2012\WebCola\WebCola\obj\Debug\WebCola.dll
-C:\Users\timd\Documents\Visual Studio 2012\WebCola\WebCola\obj\Debug\WebCola.pdb
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\graphdata\biological_images\C00002.gif
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\downwardedges.html
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\WebCola.dll.config
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\WebCola.dll
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\WebCola.pdb
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.dll
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.pdb
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.csprojResolveAssemblyReference.cache
