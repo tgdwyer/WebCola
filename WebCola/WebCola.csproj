@@ -23,7 +23,7 @@
     <Content Include="aca.html" />
     <Content Include="graphdata\SucroseBreakdownDicots-flowlayout.svg" />
     <Content Include="sucrosebreakdown-handdrawn.png" />
-    <Content Include="SucroseBreakdown.html" />
+    <Content Include="sucrosebreakdown.html" />
     <Content Include="alignment.png" />
     <Content Include="brain3d.html" />
     <Content Include="brainnetwork.html" />

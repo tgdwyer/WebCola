@@ -3,11 +3,11 @@ var cola;
     var Descent = (function () {
         function Descent(x, y, D, G) {
             if (typeof G === "undefined") { G = null; }
+            this.D = D;
+            this.G = G;
             this.threshold = 0.00001;
             this.random = new PseudoRandom();
             this.project = null;
-            this.D = D;
-            this.G = G;
             this.x = [x, y];
             this.k = 2;
             var n = this.n = x.length;
@@ -283,11 +283,11 @@ var cola;
     var PseudoRandom = (function () {
         function PseudoRandom(seed) {
             if (typeof seed === "undefined") { seed = 1; }
+            this.seed = seed;
             this.a = 214013;
             this.c = 2531011;
             this.m = 2147483648;
             this.range = 32767;
-            this.seed = seed;
         }
         PseudoRandom.prototype.getNext = function () {
             this.seed = (this.seed * this.a + this.c) % this.m;

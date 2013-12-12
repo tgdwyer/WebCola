@@ -24,8 +24,8 @@
     fill: none;
     stroke: #000;
     stroke-width: 3px;
-    opacity: 0.4;
-    /*marker-end: url(#end-arrow);*/
+    opacity: 0.7;
+    marker-end: url(#end-arrow);
 }
 
 .label {
@@ -82,8 +82,8 @@
     }
 
     var groupsLayer = vis.append("g");
-    var linksLayer = vis.append("g");
     var nodesLayer = vis.append("g");
+    var linksLayer = vis.append("g");
 
     var graph = {}, nodeLookup = {};
     function parseDunnart() {
@@ -142,9 +142,9 @@
         outer.append('svg:defs').append('svg:marker')
             .attr('id', 'end-arrow')
             .attr('viewBox', '0 -5 10 10')
-            .attr('refX', 6)
-            .attr('markerWidth', 6)
-            .attr('markerHeight', 6)
+            .attr('refX', 10)
+            .attr('markerWidth', 3)
+            .attr('markerHeight', 3)
             .attr('orient', 'auto')
           .append('svg:path')
             .attr('d', 'M0,-5L10,0L0,5')
@@ -200,11 +200,24 @@
             .text(function (d) { return d.label; });
 
         cola.on("tick", function () {
-            var nodeRadius = 50;
-            link.attr("x1", function (d) { return d.source.x; })
-                .attr("y1", function (d) { return d.source.y; })
-                .attr("x2", function (d) { return d.target.x; })
-                .attr("y2", function (d) { return d.target.y; });
+            node.each(function (d) {
+                d.innerBounds = d.bounds.inflate(3 - margin);
+            });
+            link.each(function (d) {
+                d.sourceIntersection = d.source.innerBounds.rayIntersection(d.target.x, d.target.y);
+                if (!d.sourceIntersection) d.sourceIntersection = { x: d.source.x, y: d.source.y };
+                d.targetIntersection = d.target.innerBounds.rayIntersection(d.source.x, d.source.y);
+                if (!d.targetIntersection) d.targetIntersection = { x: d.target.x, y: d.target.y };
+                if (isIE()) {
+                    this.parentNode.insertBefore(this, this);
+                }
+            });
+            
+            link.attr("x1", function (d) { return d.sourceIntersection.x; })
+                .attr("y1", function (d) { return d.sourceIntersection.y; })
+                .attr("x2", function (d) { return d.targetIntersection.x; })
+                .attr("y2", function (d) { return d.targetIntersection.y; });
+            //var nodeRadius = 50;
             //link.attr('d', function (d) {
             //    var deltaX = d.target.x - d.source.x,
             //        deltaY = d.target.y - d.source.y,
@@ -241,6 +254,7 @@
             });
         });
     }
+    function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
 </script>
     <p>
         The graph above demonstrates alignment constraints and non-overlapping group and node boundaries.  The groups

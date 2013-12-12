@@ -1,8 +1,6 @@
 module cola {
     export class Descent {
         public threshold: number = 0.00001;
-        public D: number[][];
-        public G: number[][];
         public H: number[][][];
         public g: number[][];
         public x: number[][];
@@ -27,9 +25,7 @@ module cola {
 
         public project: { (x0: number[], y0: number[], r: number[]): void }[] = null;
 
-        constructor(x: number[], y: number[], D: number[][], G: number[][]= null) {
-            this.D = D;
-            this.G = G;
+        constructor(x: number[], y: number[], public D: number[][], public G: number[][]= null) {
             this.x = [x, y];
             this.k = 2;
             var n = this.n = x.length;
@@ -274,14 +270,11 @@ module cola {
 
     // Linear congruential pseudo random number generator
     export class PseudoRandom {
-        public seed: number;
         private a: number = 214013;
         private c: number = 2531011;
         private m: number = 2147483648;
         private range: number = 32767;
-        constructor(seed: number = 1) {
-            this.seed = seed;
-        }
+        constructor(public seed: number = 1) { }
         getNext(): number {
             this.seed = (this.seed * this.a + this.c) % this.m;
             return (this.seed >> 16) / this.range;

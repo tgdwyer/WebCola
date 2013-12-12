@@ -1,0 +1,2823 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--Created with Dunnart (http://www.csse.monash.edu.au/~mwybrow/dunnart/)-->
+<svg
+   xmlns:dunnart="http://www.csse.monash.edu.au/~mwybrow/dunnart.dtd"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.0"
+   baseProfile="full"
+   viewBox="126 113 964 503"
+   id="SucroseBreakdown"
+   sodipodi:version="0.32"
+   inkscape:version="0.45+devel"
+   sodipodi:docname="SucroseBreakdownDicots-flowlayout.svg"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape"
+   preserveAspectRatio="xMidYMid"
+   width="100%"
+   height="100%">
+  <metadata
+     id="metadata255">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <dunnart:options
+     useMultiway="1"
+     instantFeedback="1"
+     newConnType="53"
+     orientation="1"
+     graphMode="0"
+     layoutMethod="0"
+     layoutMode="1"
+     nonOverlapConstraints="1"
+     straightenConnectors="1"
+     avoidBuffer="6.45161"
+     pageBoundaryConstraints="1"
+     defaultIdealConnectorLength="0.471544"
+     penaliseCrossings="0" />
+  <sodipodi:namedview
+     showguides="false"
+     guidetolerance="5.0"
+     guidecolor="#000000ff"
+     guideopacity="0.25"
+     bordercolor="#000000"
+     borderopacity="0.5"
+     width="964px"
+     height="503px"
+     id="namedview4"
+     inkscape:zoom="0.74049736"
+     inkscape:cx="372.04724"
+     inkscape:cy="251.5"
+     inkscape:window-width="993"
+     inkscape:window-height="666"
+     inkscape:window-x="10"
+     inkscape:window-y="97"
+     inkscape:current-layer="svg2">
+    <sodipodi:guide
+       dunnart:type="indGuide"
+       position="502"
+       orientation="horizontal"
+       dunnart:position="499"
+       dunnart:direction="101"
+       id="221" />
+    <sodipodi:guide
+       dunnart:type="indGuide"
+       position="230"
+       orientation="vertical"
+       dunnart:position="227"
+       dunnart:direction="100"
+       id="222" />
+    <sodipodi:guide
+       dunnart:type="indGuide"
+       position="432"
+       orientation="vertical"
+       dunnart:position="429"
+       dunnart:direction="100"
+       id="223" />
+    <sodipodi:guide
+       dunnart:type="indGuide"
+       position="196"
+       orientation="horizontal"
+       dunnart:position="193"
+       dunnart:direction="101"
+       id="224" />
+    <sodipodi:guide
+       dunnart:type="indGuide"
+       position="776"
+       orientation="vertical"
+       dunnart:position="773"
+       dunnart:direction="100"
+       id="231" />
+    <sodipodi:guide
+       dunnart:type="indGuide"
+       position="499"
+       orientation="vertical"
+       dunnart:position="496"
+       dunnart:direction="100"
+       id="232" />
+  </sodipodi:namedview>
+  <style
+     type="text/css"
+     id="style12">.shape   { stroke:black; stroke-width:1px; fill:#f0f0d2; } .connector { fill:none; stroke:black; stroke-width:1px; stroke-linecap:butt; stroke-linejoin:miter; stroke-opacity:1; } .cluster { fill:#60cdf3; fill-opacity:0.33333333; } .tLabel { text-anchor:middle; text-align:center; } .tsLabel { font-size:11px; font-style:normal; font-weight:normal; fill:black; fill-opacity:1; stroke:none; font-family:DejaVu Sans; } .frLabel { font-size:11px; font-style:normal; font-weight:normal; fill:black; fill-opacity:1; stroke:none; stroke-width:1px; stroke-linecap:butt; stroke-linejoin:miter; stroke-opacity:1; font-family:DejaVu Sans; font-stretch:normal; font-variant:normal; text-anchor:middle; text-align:center; progression-align:center; writing-mode:lr; line-height:125%; } </style>
+  <defs
+     id="defs14">
+    <marker
+       inkscape:stockid="ConnArrowEnd"
+       orient="auto"
+       refX="7.5"
+       refY="0"
+       id="ConnArrowEnd"
+       style="overflow:visible">
+      <path
+         d="M 0,0 L 1,-5 L -12.5,0 L 1,5 L 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1px;marker-start:none"
+         transform="scale(-0.6,-0.6)"
+         id="path17" />
+    </marker>
+  </defs>
+  <path
+     id="206"
+     class="cluster"
+     d="M 397,118 L 397,118 L 449,118 L 455,118 L 460,121 L 465,126 L 468,131 L 518,293 L 519,297 L 521,377 L 521,495 L 520,498 L 518,502 L 516,504 L 512,506 L 464,525 L 458,526 L 204,526 L 197,525 L 192,522 L 187,517 L 184,512 L 142,427 L 142,424 L 142,383 L 142,379 L 165,239 L 184,165 L 390,118 L 397,118"
+     dunnart:contains="102 86 80 76 71 66 57 52 47 46 44 41 38 36 33 30 28 22 20 14 12 10 8 6 4 2 1 90"
+     dunnart:type="cluster"
+     style="fill:#ffdd3c;fill-opacity:0.37254902000000001;stroke:#ffdd3c;stroke-opacity:1"
+     dunnart:fillColour="ffdd3c5f;" />
+  <path
+     id="208"
+     class="cluster"
+     d="M 641,330 L 641,330 L 691,330 L 875,338 L 878,338 L 882,340 L 884,342 L 917,381 L 919,385 L 933,433 L 933,481 L 900,510 L 896,512 L 699,598 L 693,599 L 641,599 L 634,598 L 629,595 L 624,590 L 621,585 L 621,579 L 621,350 L 621,343 L 624,338 L 629,333 L 634,330 L 641,330"
+     dunnart:contains="95 103 172 166 164 141 136 130 128 121 115 109 179 148 149"
+     dunnart:type="cluster"
+     style="fill:#4db987;fill-opacity:0.31764700000000001;stroke:#4db987;stroke-opacity:1"
+     dunnart:fillColour="4db98751;" />
+  <path
+     id="209"
+     class="cluster"
+     d="M 1047,344 L 1047,344 L 1069,344 L 1072,344 L 1076,346 L 1078,348 L 1080,352 L 1081,356 L 1081,397 L 1067,534 L 1066,537 L 1064,541 L 1062,543 L 1058,545 L 1055,546 L 1047,546 L 1043,545 L 1039,543 L 1037,541 L 1035,537 L 1035,534 L 1035,356 L 1035,352 L 1037,348 L 1039,346 L 1043,344 L 1047,344"
+     dunnart:contains="184 189 158"
+     dunnart:type="cluster"
+     style="fill:#ffdd3c;fill-opacity:0.37254902000000001;stroke:#ffdd3c;stroke-opacity:1"
+     dunnart:fillColour="ffdd3c5f;" />
+  <path
+     id="3"
+     class="connector"
+     dunnart:srcID="2"
+     dunnart:srcFlags="544"
+     dunnart:srcX="380"
+     dunnart:srcY="250"
+     dunnart:dstID="1"
+     dunnart:dstFlags="544"
+     dunnart:dstX="331"
+     dunnart:dstY="301"
+     dunnart:directed="1"
+     d="M 229,195 L 187,239"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="5"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="4"
+     dunnart:srcFlags="544"
+     dunnart:srcX="497"
+     dunnart:srcY="250"
+     dunnart:dstID="2"
+     dunnart:dstFlags="544"
+     dunnart:dstX="380"
+     dunnart:dstY="250"
+     dunnart:directed="1"
+     d="M 346,195 L 269,195"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="7"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="2"
+     dunnart:srcFlags="544"
+     dunnart:srcX="380"
+     dunnart:srcY="250"
+     dunnart:dstID="6"
+     dunnart:dstFlags="544"
+     dunnart:dstX="380"
+     dunnart:dstY="314"
+     dunnart:directed="1"
+     d="M 229,195 L 229,251"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="9"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="6"
+     dunnart:srcFlags="544"
+     dunnart:srcX="380"
+     dunnart:srcY="314"
+     dunnart:dstID="8"
+     dunnart:dstFlags="544"
+     dunnart:dstX="380"
+     dunnart:dstY="366"
+     dunnart:directed="1"
+     d="M 229,259 L 229,303"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="11"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="8"
+     dunnart:srcFlags="544"
+     dunnart:srcX="380"
+     dunnart:srcY="366"
+     dunnart:dstID="10"
+     dunnart:dstFlags="544"
+     dunnart:dstX="380"
+     dunnart:dstY="408"
+     dunnart:directed="1"
+     d="M 229,311 L 229,345"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="19"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="12"
+     dunnart:srcFlags="544"
+     dunnart:srcX="380"
+     dunnart:srcY="458"
+     dunnart:dstID="14"
+     dunnart:dstFlags="544"
+     dunnart:dstX="380"
+     dunnart:dstY="556"
+     dunnart:directed="1"
+     d="M 229,403 L 229,485"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="21"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="14"
+     dunnart:srcFlags="544"
+     dunnart:srcX="380"
+     dunnart:srcY="556"
+     dunnart:dstID="20"
+     dunnart:dstFlags="544"
+     dunnart:dstX="481"
+     dunnart:dstY="556"
+     dunnart:directed="1"
+     d="M 229,501 L 283,500"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="27"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="20"
+     dunnart:srcFlags="544"
+     dunnart:srcX="481"
+     dunnart:srcY="556"
+     dunnart:dstID="22"
+     dunnart:dstFlags="544"
+     dunnart:dstX="582"
+     dunnart:dstY="556"
+     dunnart:directed="1"
+     d="M 330,501 L 393,500"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="29"
+     class="connector"
+     dunnart:srcID="8"
+     dunnart:srcFlags="544"
+     dunnart:srcX="380"
+     dunnart:srcY="366"
+     dunnart:dstID="28"
+     dunnart:dstFlags="544"
+     dunnart:dstX="483"
+     dunnart:dstY="419"
+     dunnart:directed="1"
+     d="M 229,311 L 316,356"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="31"
+     class="connector"
+     dunnart:srcID="28"
+     dunnart:srcFlags="544"
+     dunnart:srcX="483"
+     dunnart:srcY="419"
+     dunnart:dstID="30"
+     dunnart:dstFlags="544"
+     dunnart:dstX="492"
+     dunnart:dstY="482"
+     dunnart:directed="1"
+     d="M 332,364 L 340,419"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="32"
+     class="connector"
+     dunnart:srcID="30"
+     dunnart:srcFlags="544"
+     dunnart:srcX="492"
+     dunnart:srcY="482"
+     dunnart:dstID="22"
+     dunnart:dstFlags="544"
+     dunnart:dstX="582"
+     dunnart:dstY="556"
+     dunnart:directed="1"
+     d="M 341,427 L 383,473 L 404,484"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="34"
+     class="connector"
+     dunnart:srcID="6"
+     dunnart:srcFlags="544"
+     dunnart:srcX="380"
+     dunnart:srcY="314"
+     dunnart:dstID="33"
+     dunnart:dstFlags="544"
+     dunnart:dstX="490"
+     dunnart:dstY="330"
+     dunnart:directed="1"
+     d="M 229,259 L 309,270"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="35"
+     class="connector"
+     dunnart:srcID="33"
+     dunnart:srcFlags="544"
+     dunnart:srcX="490"
+     dunnart:srcY="330"
+     dunnart:dstID="10"
+     dunnart:dstFlags="544"
+     dunnart:dstX="380"
+     dunnart:dstY="408"
+     dunnart:directed="1"
+     d="M 339,275 L 240,345"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="37"
+     class="connector"
+     dunnart:srcID="33"
+     dunnart:srcFlags="544"
+     dunnart:srcX="490"
+     dunnart:srcY="330"
+     dunnart:dstID="36"
+     dunnart:dstFlags="544"
+     dunnart:dstX="582"
+     dunnart:dstY="347"
+     dunnart:directed="1"
+     d="M 339,275 L 404,286"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="39"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="36"
+     dunnart:srcFlags="544"
+     dunnart:srcX="582"
+     dunnart:srcY="347"
+     dunnart:dstID="38"
+     dunnart:dstFlags="544"
+     dunnart:dstX="582"
+     dunnart:dstY="250"
+     dunnart:directed="1"
+     d="M 431,292 L 430,220"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="40"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="38"
+     dunnart:srcFlags="544"
+     dunnart:srcX="582"
+     dunnart:srcY="250"
+     dunnart:dstID="4"
+     dunnart:dstFlags="544"
+     dunnart:dstX="497"
+     dunnart:dstY="250"
+     dunnart:directed="1"
+     d="M 431,195 L 386,195"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="42"
+     class="connector"
+     dunnart:srcID="38"
+     dunnart:srcFlags="544"
+     dunnart:srcX="582"
+     dunnart:srcY="250"
+     dunnart:dstID="41"
+     dunnart:dstFlags="544"
+     dunnart:dstX="520"
+     dunnart:dstY="290"
+     dunnart:directed="1"
+     d="M 431,195 L 381,227"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="43"
+     class="connector"
+     dunnart:srcID="41"
+     dunnart:srcFlags="544"
+     dunnart:srcX="520"
+     dunnart:srcY="290"
+     dunnart:dstID="33"
+     dunnart:dstFlags="544"
+     dunnart:dstX="490"
+     dunnart:dstY="330"
+     dunnart:directed="1"
+     d="M 369,235 L 351,259"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="45"
+     class="connector"
+     dunnart:srcID="44"
+     dunnart:srcFlags="544"
+     dunnart:srcX="573"
+     dunnart:srcY="196"
+     dunnart:dstID="38"
+     dunnart:dstFlags="544"
+     dunnart:dstX="582"
+     dunnart:dstY="250"
+     dunnart:directed="1"
+     d="M 422,141 L 427,172"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="62"
+     class="connector"
+     dunnart:srcID="52"
+     dunnart:srcFlags="544"
+     dunnart:srcX="315"
+     dunnart:srcY="441"
+     dunnart:dstID="12"
+     dunnart:dstFlags="544"
+     dunnart:dstX="380"
+     dunnart:dstY="458"
+     dunnart:directed="1"
+     d="M 164,386 L 198,395"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="63"
+     class="connector"
+     dunnart:srcID="12"
+     dunnart:srcFlags="544"
+     dunnart:srcX="380"
+     dunnart:srcY="458"
+     dunnart:dstID="57"
+     dunnart:dstFlags="544"
+     dunnart:dstX="315"
+     dunnart:dstY="474"
+     dunnart:directed="1"
+     d="M 229,403 L 181,415"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="64"
+     class="connector"
+     dunnart:srcID="46"
+     dunnart:srcFlags="544"
+     dunnart:srcX="514"
+     dunnart:srcY="451"
+     dunnart:dstID="30"
+     dunnart:dstFlags="544"
+     dunnart:dstX="492"
+     dunnart:dstY="482"
+     dunnart:directed="1"
+     d="M 363,396 L 347,419"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="65"
+     class="connector"
+     dunnart:srcID="30"
+     dunnart:srcFlags="544"
+     dunnart:srcX="492"
+     dunnart:srcY="482"
+     dunnart:dstID="47"
+     dunnart:dstFlags="544"
+     dunnart:dstX="479"
+     dunnart:dstY="514"
+     dunnart:directed="1"
+     d="M 341,427 L 331,451"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="77"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="71"
+     dunnart:srcFlags="544"
+     dunnart:srcX="649"
+     dunnart:srcY="435"
+     dunnart:dstID="76"
+     dunnart:dstFlags="544"
+     dunnart:dstX="582"
+     dunnart:dstY="395"
+     dunnart:directed="1"
+     d="M 498,380 L 460,358"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="78"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="76"
+     dunnart:srcFlags="544"
+     dunnart:srcX="582"
+     dunnart:srcY="395"
+     dunnart:dstID="66"
+     dunnart:dstFlags="544"
+     dunnart:dstX="649"
+     dunnart:dstY="355"
+     dunnart:directed="1"
+     d="M 431,340 L 485,306"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="79"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="76"
+     dunnart:srcFlags="544"
+     dunnart:srcX="582"
+     dunnart:srcY="395"
+     dunnart:dstID="36"
+     dunnart:dstFlags="544"
+     dunnart:dstX="582"
+     dunnart:dstY="347"
+     dunnart:directed="1"
+     d="M 431,340 L 430,310"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="85"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="80"
+     dunnart:srcFlags="544"
+     dunnart:srcX="582"
+     dunnart:srcY="443"
+     dunnart:dstID="76"
+     dunnart:dstFlags="544"
+     dunnart:dstX="582"
+     dunnart:dstY="395"
+     dunnart:directed="1"
+     d="M 431,388 L 430,358"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="87"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="22"
+     dunnart:srcFlags="544"
+     dunnart:srcX="582"
+     dunnart:srcY="556"
+     dunnart:dstID="86"
+     dunnart:dstFlags="544"
+     dunnart:dstX="582"
+     dunnart:dstY="497"
+     dunnart:directed="1"
+     d="M 431,501 L 430,467"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="88"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="86"
+     dunnart:srcFlags="544"
+     dunnart:srcX="582"
+     dunnart:srcY="497"
+     dunnart:dstID="80"
+     dunnart:dstFlags="544"
+     dunnart:dstX="582"
+     dunnart:dstY="443"
+     dunnart:directed="1"
+     d="M 431,442 L 430,406"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="100"
+     class="connector"
+     dunnart:srcID="95"
+     dunnart:srcFlags="544"
+     dunnart:srcX="787"
+     dunnart:srcY="453"
+     dunnart:dstID="89"
+     dunnart:dstFlags="544"
+     dunnart:dstX="721"
+     dunnart:dstY="469"
+     dunnart:directed="1"
+     d="M 636,398 L 606,405"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="101"
+     class="connector"
+     dunnart:srcID="89"
+     dunnart:srcFlags="544"
+     dunnart:srcX="721"
+     dunnart:srcY="469"
+     dunnart:dstID="90"
+     dunnart:dstFlags="544"
+     dunnart:dstX="655"
+     dunnart:dstY="486"
+     dunnart:directed="1"
+     d="M 570,414 L 514,428"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="106"
+     class="connector"
+     dunnart:srcID="102"
+     dunnart:srcFlags="544"
+     dunnart:srcX="655"
+     dunnart:srcY="545"
+     dunnart:dstID="104"
+     dunnart:dstFlags="544"
+     dunnart:dstX="720"
+     dunnart:dstY="573"
+     dunnart:directed="1"
+     d="M 504,490 L 536,503"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="107"
+     class="connector"
+     dunnart:srcID="80"
+     dunnart:srcFlags="544"
+     dunnart:srcX="582"
+     dunnart:srcY="443"
+     dunnart:dstID="89"
+     dunnart:dstFlags="544"
+     dunnart:dstX="721"
+     dunnart:dstY="469"
+     dunnart:directed="1"
+     d="M 431,388 L 536,407"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="114"
+     class="connector"
+     dunnart:srcID="104"
+     dunnart:srcFlags="544"
+     dunnart:srcX="720"
+     dunnart:srcY="573"
+     dunnart:dstID="109"
+     dunnart:dstFlags="544"
+     dunnart:dstX="817"
+     dunnart:dstY="629"
+     dunnart:directed="1"
+     d="M 569,518 L 639,557"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="120"
+     class="connector"
+     dunnart:srcID="115"
+     dunnart:srcFlags="544"
+     dunnart:srcX="817"
+     dunnart:srcY="500"
+     dunnart:dstID="109"
+     dunnart:dstFlags="544"
+     dunnart:dstX="817"
+     dunnart:dstY="629"
+     dunnart:directed="1"
+     d="M 666,445 L 666,558"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="126"
+     class="connector"
+     dunnart:srcID="121"
+     dunnart:srcFlags="544"
+     dunnart:srcX="816"
+     dunnart:srcY="408"
+     dunnart:dstID="89"
+     dunnart:dstFlags="544"
+     dunnart:dstX="721"
+     dunnart:dstY="469"
+     dunnart:directed="1"
+     d="M 665,353 L 595,398"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="127"
+     class="connector"
+     dunnart:srcID="121"
+     dunnart:srcFlags="544"
+     dunnart:srcX="816"
+     dunnart:srcY="408"
+     dunnart:dstID="115"
+     dunnart:dstFlags="544"
+     dunnart:dstX="817"
+     dunnart:dstY="500"
+     dunnart:directed="1"
+     d="M 665,353 L 666,422"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="129"
+     class="connector"
+     dunnart:srcID="121"
+     dunnart:srcFlags="544"
+     dunnart:srcX="816"
+     dunnart:srcY="408"
+     dunnart:dstID="128"
+     dunnart:dstFlags="544"
+     dunnart:dstX="926"
+     dunnart:dstY="424"
+     dunnart:directed="1"
+     d="M 665,353 L 718,360"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="135"
+     class="connector"
+     dunnart:srcID="128"
+     dunnart:srcFlags="544"
+     dunnart:srcX="926"
+     dunnart:srcY="424"
+     dunnart:dstID="130"
+     dunnart:dstFlags="544"
+     dunnart:dstX="926"
+     dunnart:dstY="479"
+     dunnart:directed="1"
+     d="M 775,369 L 775,408"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="146"
+     class="connector"
+     dunnart:srcID="141"
+     dunnart:srcFlags="544"
+     dunnart:srcX="1014"
+     dunnart:srcY="408"
+     dunnart:dstID="128"
+     dunnart:dstFlags="544"
+     dunnart:dstX="926"
+     dunnart:dstY="424"
+     dunnart:directed="1"
+     d="M 863,353 L 834,358"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="147"
+     class="connector"
+     dunnart:srcID="128"
+     dunnart:srcFlags="544"
+     dunnart:srcX="926"
+     dunnart:srcY="424"
+     dunnart:dstID="136"
+     dunnart:dstFlags="544"
+     dunnart:dstX="981"
+     dunnart:dstY="471"
+     dunnart:directed="1"
+     d="M 775,369 L 821,407"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="154"
+     class="connector"
+     dunnart:srcID="136"
+     dunnart:srcFlags="544"
+     dunnart:srcX="981"
+     dunnart:srcY="471"
+     dunnart:dstID="148"
+     dunnart:dstFlags="544"
+     dunnart:dstX="1032"
+     dunnart:dstY="511"
+     dunnart:directed="1"
+     d="M 830,416 L 861,440"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="155"
+     class="connector"
+     dunnart:srcID="148"
+     dunnart:srcFlags="544"
+     dunnart:srcX="1032"
+     dunnart:srcY="511"
+     dunnart:dstID="149"
+     dunnart:dstFlags="544"
+     dunnart:dstX="1036"
+     dunnart:dstY="551"
+     dunnart:directed="1"
+     d="M 881,456 L 884,488"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="157"
+     class="connector"
+     dunnart:srcID="149"
+     dunnart:srcFlags="544"
+     dunnart:srcX="1036"
+     dunnart:srcY="551"
+     dunnart:dstID="156"
+     dunnart:dstFlags="544"
+     dunnart:dstX="1133"
+     dunnart:dstY="568"
+     dunnart:directed="1"
+     d="M 885,496 L 948,506"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="163"
+     class="connector"
+     dunnart:srcID="156"
+     dunnart:srcFlags="544"
+     dunnart:srcX="1133"
+     dunnart:srcY="568"
+     dunnart:dstID="158"
+     dunnart:dstFlags="544"
+     dunnart:dstX="1201"
+     dunnart:dstY="584"
+     dunnart:directed="1"
+     d="M 982,513 L 1042,526"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="165"
+     class="connector"
+     dunnart:srcID="130"
+     dunnart:srcFlags="544"
+     dunnart:srcX="926"
+     dunnart:srcY="479"
+     dunnart:dstID="164"
+     dunnart:dstFlags="544"
+     dunnart:dstX="926"
+     dunnart:dstY="527"
+     dunnart:directed="1"
+     d="M 775,424 L 775,456"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="171"
+     class="connector"
+     dunnart:srcID="164"
+     dunnart:srcFlags="544"
+     dunnart:srcX="926"
+     dunnart:srcY="527"
+     dunnart:dstID="166"
+     dunnart:dstFlags="544"
+     dunnart:dstX="926"
+     dunnart:dstY="567"
+     dunnart:directed="1"
+     d="M 775,472 L 775,504"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="194"
+     class="connector"
+     dunnart:srcID="178"
+     dunnart:srcFlags="544"
+     dunnart:srcX="1134"
+     dunnart:srcY="430"
+     dunnart:dstID="179"
+     dunnart:dstFlags="544"
+     dunnart:dstX="1047"
+     dunnart:dstY="447"
+     dunnart:directed="1"
+     d="M 983,375 L 913,389"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="195"
+     class="connector"
+     dunnart:srcID="184"
+     dunnart:srcFlags="544"
+     dunnart:srcX="1208"
+     dunnart:srcY="414"
+     dunnart:dstID="178"
+     dunnart:dstFlags="544"
+     dunnart:dstX="1134"
+     dunnart:dstY="430"
+     dunnart:directed="1"
+     d="M 1057,359 L 1020,367"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="196"
+     class="connector"
+     dunnart:srcID="178"
+     dunnart:srcFlags="544"
+     dunnart:srcX="1134"
+     dunnart:srcY="430"
+     dunnart:dstID="189"
+     dunnart:dstFlags="544"
+     dunnart:dstX="1208"
+     dunnart:dstY="447"
+     dunnart:directed="1"
+     d="M 983,375 L 1042,388"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="197"
+     class="connector"
+     dunnart:srcID="141"
+     dunnart:srcFlags="544"
+     dunnart:srcX="1014"
+     dunnart:srcY="408"
+     dunnart:dstID="178"
+     dunnart:dstFlags="544"
+     dunnart:dstX="1134"
+     dunnart:dstY="430"
+     dunnart:directed="1"
+     d="M 863,353 L 948,368"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="228"
+     class="connector"
+     dunnart:srcID="104"
+     dunnart:srcFlags="544"
+     dunnart:srcX="720"
+     dunnart:srcY="573"
+     dunnart:dstID="103"
+     dunnart:dstFlags="544"
+     dunnart:dstX="789"
+     dunnart:dstY="589"
+     dunnart:directed="1"
+     d="M 569,518 L 630,531"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="230"
+     class="connector"
+     dunnart:inEa="0"
+     dunnart:srcID="10"
+     dunnart:srcFlags="544"
+     dunnart:srcX="380"
+     dunnart:srcY="408"
+     dunnart:dstID="12"
+     dunnart:dstFlags="544"
+     dunnart:dstX="380"
+     dunnart:dstY="458"
+     dunnart:directed="1"
+     d="M 229,353 L 229,395"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="233"
+     class="connector"
+     dunnart:srcID="164"
+     dunnart:srcFlags="544"
+     dunnart:srcX="926"
+     dunnart:srcY="527"
+     dunnart:dstID="172"
+     dunnart:dstFlags="544"
+     dunnart:dstX="983"
+     dunnart:dstY="567"
+     dunnart:directed="1"
+     d="M 775,472 L 821,504"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <path
+     id="234"
+     class="connector"
+     dunnart:srcID="22"
+     dunnart:srcFlags="544"
+     dunnart:srcX="582"
+     dunnart:srcY="556"
+     dunnart:dstID="104"
+     dunnart:dstFlags="544"
+     dunnart:dstX="720"
+     dunnart:dstY="573"
+     dunnart:directed="1"
+     d="M 431,501 L 536,513"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#ConnArrowEnd);stroke-opacity:1"
+     dunnart:type="connAvoidPoly" />
+  <rect
+     width="18"
+     height="18"
+     x="172"
+     y="238"
+     rx="9"
+     ry="9"
+     id="1"
+     class="shape"
+     dunnart:label="P"
+     dunnart:width="24"
+     dunnart:height="24"
+     dunnart:xPos="169"
+     dunnart:yPos="235"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text1"
+     class="tLabel"
+     x="181"
+     y="251"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan1n0"
+       class="tsLabel"
+       x="181"
+       y="251"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">P</tspan>
+  </text>
+  <rect
+     width="78"
+     height="48"
+     x="191"
+     y="172"
+     id="2"
+     class="shape"
+     dunnart:label="sucrose phosphate phosphatase"
+     dunnart:width="84"
+     dunnart:height="54"
+     dunnart:xPos="188"
+     dunnart:yPos="169"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text2"
+     class="tLabel"
+     x="230"
+     y="186"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan2n0"
+       class="tsLabel"
+       x="230"
+       y="186"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">sucrose</tspan>
+    <tspan
+       id="tspan2n1"
+       class="tsLabel"
+       x="230"
+       y="199.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">phosphate</tspan>
+    <tspan
+       id="tspan2n2"
+       class="tsLabel"
+       x="230"
+       y="213.5"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">phosphatase</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="224"
+     objOneID="2"
+     alignmentPos="1" />
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="222"
+     objOneID="2"
+     alignmentPos="4" />
+  <rect
+     width="78"
+     height="34"
+     x="308"
+     y="179"
+     rx="17"
+     ry="17"
+     id="4"
+     class="shape"
+     dunnart:label="sucrose 6-phosphate"
+     dunnart:width="84"
+     dunnart:height="40"
+     dunnart:xPos="305"
+     dunnart:yPos="176"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text4"
+     class="tLabel"
+     x="347"
+     y="193"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan4n0"
+       class="tsLabel"
+       x="347"
+       y="193"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">sucrose</tspan>
+    <tspan
+       id="tspan4n1"
+       class="tsLabel"
+       x="347"
+       y="206.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">6-phosphate</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="224"
+     objOneID="4"
+     alignmentPos="1" />
+  <rect
+     width="54"
+     height="18"
+     x="203"
+     y="251"
+     rx="9"
+     ry="9"
+     id="6"
+     class="shape"
+     dunnart:label="sucrose"
+     dunnart:width="60"
+     dunnart:height="24"
+     dunnart:xPos="200"
+     dunnart:yPos="248"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text6"
+     class="tLabel"
+     x="230"
+     y="264"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan6n0"
+       class="tsLabel"
+       x="230"
+       y="264"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">sucrose</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="222"
+     objOneID="6"
+     alignmentPos="4" />
+  <rect
+     width="56"
+     height="18"
+     x="202"
+     y="303"
+     id="8"
+     class="shape"
+     dunnart:label="invertase"
+     dunnart:width="62"
+     dunnart:height="24"
+     dunnart:xPos="199"
+     dunnart:yPos="300"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text8"
+     class="tLabel"
+     x="230"
+     y="316"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan8n0"
+       class="tsLabel"
+       x="230"
+       y="316"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">invertase</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="222"
+     objOneID="8"
+     alignmentPos="4" />
+  <rect
+     width="54"
+     height="18"
+     x="203"
+     y="345"
+     rx="9"
+     ry="9"
+     id="10"
+     class="shape"
+     dunnart:label="fructose"
+     dunnart:width="60"
+     dunnart:height="24"
+     dunnart:xPos="200"
+     dunnart:yPos="342"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text10"
+     class="tLabel"
+     x="230"
+     y="358"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan10n0"
+       class="tsLabel"
+       x="230"
+       y="358"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">fructose</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="222"
+     objOneID="10"
+     alignmentPos="4" />
+  <rect
+     width="72"
+     height="18"
+     x="194"
+     y="395"
+     id="12"
+     class="shape"
+     dunnart:label="fructokinase"
+     dunnart:width="78"
+     dunnart:height="24"
+     dunnart:xPos="191"
+     dunnart:yPos="392"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text12"
+     class="tLabel"
+     x="230"
+     y="408"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan12n0"
+       class="tsLabel"
+       x="230"
+       y="408"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">fructokinase</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="222"
+     objOneID="12"
+     alignmentPos="4" />
+  <rect
+     width="78"
+     height="34"
+     x="191"
+     y="485"
+     rx="17"
+     ry="17"
+     id="14"
+     class="shape"
+     dunnart:label="fructose 6-phosphate"
+     dunnart:width="84"
+     dunnart:height="40"
+     dunnart:xPos="188"
+     dunnart:yPos="482"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text14"
+     class="tLabel"
+     x="230"
+     y="499"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan14n0"
+       class="tsLabel"
+       x="230"
+       y="499"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">fructose</tspan>
+    <tspan
+       id="tspan14n1"
+       class="tsLabel"
+       x="230"
+       y="512.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">6-phosphate</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="221"
+     objOneID="14"
+     alignmentPos="1" />
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="222"
+     objOneID="14"
+     alignmentPos="4" />
+  <rect
+     width="96"
+     height="34"
+     x="283"
+     y="485"
+     id="20"
+     class="shape"
+     dunnart:label="phosphoglucose isomerase"
+     dunnart:width="102"
+     dunnart:height="40"
+     dunnart:xPos="280"
+     dunnart:yPos="482"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text20"
+     class="tLabel"
+     x="331"
+     y="499"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan20n0"
+       class="tsLabel"
+       x="331"
+       y="499"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">phosphoglucose</tspan>
+    <tspan
+       id="tspan20n1"
+       class="tsLabel"
+       x="331"
+       y="512.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">isomerase</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="221"
+     objOneID="20"
+     alignmentPos="1" />
+  <rect
+     width="78"
+     height="34"
+     x="393"
+     y="485"
+     rx="17"
+     ry="17"
+     id="22"
+     class="shape"
+     dunnart:label="glucose 6-phosphate"
+     dunnart:width="84"
+     dunnart:height="40"
+     dunnart:xPos="390"
+     dunnart:yPos="482"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text22"
+     class="tLabel"
+     x="432"
+     y="499"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan22n0"
+       class="tsLabel"
+       x="432"
+       y="499"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">glucose</tspan>
+    <tspan
+       id="tspan22n1"
+       class="tsLabel"
+       x="432"
+       y="512.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">6-phosphate</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="221"
+     objOneID="22"
+     alignmentPos="1" />
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="223"
+     objOneID="22"
+     alignmentPos="4" />
+  <rect
+     width="54"
+     height="18"
+     x="306"
+     y="356"
+     rx="9"
+     ry="9"
+     id="28"
+     class="shape"
+     dunnart:label="glucose"
+     dunnart:width="60"
+     dunnart:height="24"
+     dunnart:xPos="303"
+     dunnart:yPos="353"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text28"
+     class="tLabel"
+     x="333"
+     y="369"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan28n0"
+       class="tsLabel"
+       x="333"
+       y="369"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">glucose</tspan>
+  </text>
+  <rect
+     width="66"
+     height="18"
+     x="309"
+     y="419"
+     id="30"
+     class="shape"
+     dunnart:label="hexokinase"
+     dunnart:width="72"
+     dunnart:height="24"
+     dunnart:xPos="306"
+     dunnart:yPos="416"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text30"
+     class="tLabel"
+     x="342"
+     y="432"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan30n0"
+       class="tsLabel"
+       x="342"
+       y="432"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">hexokinase</tspan>
+  </text>
+  <rect
+     width="62"
+     height="34"
+     x="309"
+     y="259"
+     id="33"
+     class="shape"
+     dunnart:label="sucrose synthase"
+     dunnart:width="68"
+     dunnart:height="40"
+     dunnart:xPos="306"
+     dunnart:yPos="256"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text33"
+     class="tLabel"
+     x="340"
+     y="273"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan33n0"
+       class="tsLabel"
+       x="340"
+       y="273"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">sucrose</tspan>
+    <tspan
+       id="tspan33n1"
+       class="tsLabel"
+       x="340"
+       y="286.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">synthase</tspan>
+  </text>
+  <rect
+     width="56"
+     height="34"
+     x="404"
+     y="276"
+     rx="17"
+     ry="17"
+     id="36"
+     class="shape"
+     dunnart:label="UDP - glucose"
+     dunnart:width="62"
+     dunnart:height="40"
+     dunnart:xPos="401"
+     dunnart:yPos="273"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text36"
+     class="tLabel"
+     x="432"
+     y="290"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan36n0"
+       class="tsLabel"
+       x="432"
+       y="290"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">UDP -</tspan>
+    <tspan
+       id="tspan36n1"
+       class="tsLabel"
+       x="432"
+       y="303.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">glucose</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="223"
+     objOneID="36"
+     alignmentPos="4" />
+  <rect
+     width="64"
+     height="48"
+     x="400"
+     y="172"
+     id="38"
+     class="shape"
+     dunnart:label="sucrose phosphate synthase"
+     dunnart:width="70"
+     dunnart:height="54"
+     dunnart:xPos="397"
+     dunnart:yPos="169"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text38"
+     class="tLabel"
+     x="432"
+     y="186"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan38n0"
+       class="tsLabel"
+       x="432"
+       y="186"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">sucrose</tspan>
+    <tspan
+       id="tspan38n1"
+       class="tsLabel"
+       x="432"
+       y="199.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">phosphate</tspan>
+    <tspan
+       id="tspan38n2"
+       class="tsLabel"
+       x="432"
+       y="213.5"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">synthase</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="224"
+     objOneID="38"
+     alignmentPos="1" />
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="223"
+     objOneID="38"
+     alignmentPos="4" />
+  <rect
+     width="32"
+     height="18"
+     x="354"
+     y="227"
+     rx="9"
+     ry="9"
+     id="41"
+     class="shape"
+     dunnart:label="UDP"
+     dunnart:width="38"
+     dunnart:height="24"
+     dunnart:xPos="351"
+     dunnart:yPos="224"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text41"
+     class="tLabel"
+     x="370"
+     y="240"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan41n0"
+       class="tsLabel"
+       x="370"
+       y="240"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">UDP</tspan>
+  </text>
+  <rect
+     width="78"
+     height="34"
+     x="384"
+     y="125"
+     rx="17"
+     ry="17"
+     id="44"
+     class="shape"
+     dunnart:label="fructose 6-phosphate"
+     dunnart:width="84"
+     dunnart:height="40"
+     dunnart:xPos="381"
+     dunnart:yPos="122"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text44"
+     class="tLabel"
+     x="423"
+     y="139"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan44n0"
+       class="tsLabel"
+       x="423"
+       y="139"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">fructose</tspan>
+    <tspan
+       id="tspan44n1"
+       class="tsLabel"
+       x="423"
+       y="152.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">6-phosphate</tspan>
+  </text>
+  <rect
+     width="32"
+     height="18"
+     x="348"
+     y="388"
+     rx="9"
+     ry="9"
+     id="46"
+     class="shape"
+     dunnart:label="ATP"
+     dunnart:width="38"
+     dunnart:height="24"
+     dunnart:xPos="345"
+     dunnart:yPos="385"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text46"
+     class="tLabel"
+     x="364"
+     y="401"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan46n0"
+       class="tsLabel"
+       x="364"
+       y="401"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">ATP</tspan>
+  </text>
+  <rect
+     width="32"
+     height="18"
+     x="313"
+     y="451"
+     rx="9"
+     ry="9"
+     id="47"
+     class="shape"
+     dunnart:label="ATP"
+     dunnart:width="38"
+     dunnart:height="24"
+     dunnart:xPos="310"
+     dunnart:yPos="448"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text47"
+     class="tLabel"
+     x="329"
+     y="464"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan47n0"
+       class="tsLabel"
+       x="329"
+       y="464"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">ATP</tspan>
+  </text>
+  <rect
+     width="32"
+     height="18"
+     x="149"
+     y="378"
+     rx="9"
+     ry="9"
+     id="52"
+     class="shape"
+     dunnart:label="ATP"
+     dunnart:width="38"
+     dunnart:height="24"
+     dunnart:xPos="146"
+     dunnart:yPos="375"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text52"
+     class="tLabel"
+     x="165"
+     y="391"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan52n0"
+       class="tsLabel"
+       x="165"
+       y="391"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">ATP</tspan>
+  </text>
+  <rect
+     width="32"
+     height="18"
+     x="149"
+     y="411"
+     rx="9"
+     ry="9"
+     id="57"
+     class="shape"
+     dunnart:label="ADP"
+     dunnart:width="38"
+     dunnart:height="24"
+     dunnart:xPos="146"
+     dunnart:yPos="408"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text57"
+     class="tLabel"
+     x="165"
+     y="424"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan57n0"
+       class="tsLabel"
+       x="165"
+       y="424"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">ADP</tspan>
+  </text>
+  <rect
+     width="26"
+     height="18"
+     x="486"
+     y="292"
+     rx="9"
+     ry="9"
+     id="66"
+     class="shape"
+     dunnart:label="PP"
+     dunnart:width="32"
+     dunnart:height="24"
+     dunnart:xPos="483"
+     dunnart:yPos="289"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text66"
+     class="tLabel"
+     x="499"
+     y="305"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan66n0"
+       class="tsLabel"
+       x="499"
+       y="305"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">PP</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="232"
+     objOneID="66"
+     alignmentPos="4" />
+  <rect
+     width="30"
+     height="18"
+     x="484"
+     y="372"
+     rx="9"
+     ry="9"
+     id="71"
+     class="shape"
+     dunnart:label="UTP"
+     dunnart:width="36"
+     dunnart:height="24"
+     dunnart:xPos="481"
+     dunnart:yPos="369"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text71"
+     class="tLabel"
+     x="499"
+     y="385"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan71n0"
+       class="tsLabel"
+       x="499"
+       y="385"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">UTP</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="232"
+     objOneID="71"
+     alignmentPos="4" />
+  <rect
+     width="116"
+     height="34"
+     x="374"
+     y="324"
+     id="76"
+     class="shape"
+     dunnart:label="UDP glucose pyrophosphorylase"
+     dunnart:width="122"
+     dunnart:height="40"
+     dunnart:xPos="371"
+     dunnart:yPos="321"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text76"
+     class="tLabel"
+     x="432"
+     y="338"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan76n0"
+       class="tsLabel"
+       x="432"
+       y="338"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">UDP glucose</tspan>
+    <tspan
+       id="tspan76n1"
+       class="tsLabel"
+       x="432"
+       y="351.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">pyrophosphorylase</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="223"
+     objOneID="76"
+     alignmentPos="4" />
+  <rect
+     width="76"
+     height="34"
+     x="394"
+     y="372"
+     rx="17"
+     ry="17"
+     id="80"
+     class="shape"
+     dunnart:label="glucose 1-phosphate"
+     dunnart:width="82"
+     dunnart:height="40"
+     dunnart:xPos="391"
+     dunnart:yPos="369"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text80"
+     class="tLabel"
+     x="432"
+     y="386"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan80n0"
+       class="tsLabel"
+       x="432"
+       y="386"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">glucose</tspan>
+    <tspan
+       id="tspan80n1"
+       class="tsLabel"
+       x="432"
+       y="399.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">1-phosphate</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="223"
+     objOneID="80"
+     alignmentPos="4" />
+  <rect
+     width="84"
+     height="48"
+     x="390"
+     y="419"
+     id="86"
+     class="shape"
+     dunnart:label="phospho- glucomutase (cPGM)"
+     dunnart:width="90"
+     dunnart:height="54"
+     dunnart:xPos="387"
+     dunnart:yPos="416"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text86"
+     class="tLabel"
+     x="432"
+     y="433"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan86n0"
+       class="tsLabel"
+       x="432"
+       y="433"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">phospho-</tspan>
+    <tspan
+       id="tspan86n1"
+       class="tsLabel"
+       x="432"
+       y="446.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">glucomutase</tspan>
+    <tspan
+       id="tspan86n2"
+       class="tsLabel"
+       x="432"
+       y="460.5"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">(cPGM)</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="223"
+     objOneID="86"
+     alignmentPos="4" />
+  <rect
+     width="70"
+     height="34"
+     x="536"
+     y="398"
+     id="89"
+     class="shape"
+     dunnart:label="G1P transporter"
+     dunnart:width="76"
+     dunnart:height="40"
+     dunnart:xPos="533"
+     dunnart:yPos="395"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text89"
+     class="tLabel"
+     x="571"
+     y="412"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan89n0"
+       class="tsLabel"
+       x="571"
+       y="412"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">G1P</tspan>
+    <tspan
+       id="tspan89n1"
+       class="tsLabel"
+       x="571"
+       y="425.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">transporter</tspan>
+  </text>
+  <rect
+     width="18"
+     height="18"
+     x="496"
+     y="423"
+     rx="9"
+     ry="9"
+     id="90"
+     class="shape"
+     dunnart:label="P"
+     dunnart:width="24"
+     dunnart:height="24"
+     dunnart:xPos="493"
+     dunnart:yPos="420"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text90"
+     class="tLabel"
+     x="505"
+     y="436"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan90n0"
+       class="tsLabel"
+       x="505"
+       y="436"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">P</tspan>
+  </text>
+  <rect
+     width="18"
+     height="18"
+     x="628"
+     y="390"
+     rx="9"
+     ry="9"
+     id="95"
+     class="shape"
+     dunnart:label="P"
+     dunnart:width="24"
+     dunnart:height="24"
+     dunnart:xPos="625"
+     dunnart:yPos="387"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text95"
+     class="tLabel"
+     x="637"
+     y="403"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan95n0"
+       class="tsLabel"
+       x="637"
+       y="403"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">P</tspan>
+  </text>
+  <rect
+     width="18"
+     height="18"
+     x="496"
+     y="482"
+     rx="9"
+     ry="9"
+     id="102"
+     class="shape"
+     dunnart:label="P"
+     dunnart:width="24"
+     dunnart:height="24"
+     dunnart:xPos="493"
+     dunnart:yPos="479"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text102"
+     class="tLabel"
+     x="505"
+     y="495"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan102n0"
+       class="tsLabel"
+       x="505"
+       y="495"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">P</tspan>
+  </text>
+  <rect
+     width="18"
+     height="18"
+     x="630"
+     y="526"
+     rx="9"
+     ry="9"
+     id="103"
+     class="shape"
+     dunnart:label="P"
+     dunnart:width="24"
+     dunnart:height="24"
+     dunnart:xPos="627"
+     dunnart:yPos="523"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text103"
+     class="tLabel"
+     x="639"
+     y="539"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan103n0"
+       class="tsLabel"
+       x="639"
+       y="539"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">P</tspan>
+  </text>
+  <rect
+     width="68"
+     height="34"
+     x="536"
+     y="502"
+     id="104"
+     class="shape"
+     dunnart:label="G6P transporter"
+     dunnart:width="74"
+     dunnart:height="40"
+     dunnart:xPos="533"
+     dunnart:yPos="499"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text104"
+     class="tLabel"
+     x="570"
+     y="516"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan104n0"
+       class="tsLabel"
+       x="570"
+       y="516"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">G6P</tspan>
+    <tspan
+       id="tspan104n1"
+       class="tsLabel"
+       x="570"
+       y="529.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">transporter</tspan>
+  </text>
+  <rect
+     width="78"
+     height="34"
+     x="628"
+     y="558"
+     rx="17"
+     ry="17"
+     id="109"
+     class="shape"
+     dunnart:label="glucose 6-phosphate"
+     dunnart:width="84"
+     dunnart:height="40"
+     dunnart:xPos="625"
+     dunnart:yPos="555"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text109"
+     class="tLabel"
+     x="667"
+     y="572"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan109n0"
+       class="tsLabel"
+       x="667"
+       y="572"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">glucose</tspan>
+    <tspan
+       id="tspan109n1"
+       class="tsLabel"
+       x="667"
+       y="585.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">6-phosphate</tspan>
+  </text>
+  <rect
+     width="78"
+     height="48"
+     x="628"
+     y="422"
+     id="115"
+     class="shape"
+     dunnart:label="phospho- glucomutase (cPGM)"
+     dunnart:width="84"
+     dunnart:height="54"
+     dunnart:xPos="625"
+     dunnart:yPos="419"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text115"
+     class="tLabel"
+     x="667"
+     y="436"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan115n0"
+       class="tsLabel"
+       x="667"
+       y="436"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">phospho-</tspan>
+    <tspan
+       id="tspan115n1"
+       class="tsLabel"
+       x="667"
+       y="449.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">glucomutase</tspan>
+    <tspan
+       id="tspan115n2"
+       class="tsLabel"
+       x="667"
+       y="463.5"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">(cPGM)</tspan>
+  </text>
+  <rect
+     width="76"
+     height="34"
+     x="628"
+     y="337"
+     rx="17"
+     ry="17"
+     id="121"
+     class="shape"
+     dunnart:label="glucose 1-phosphate"
+     dunnart:width="82"
+     dunnart:height="40"
+     dunnart:xPos="625"
+     dunnart:yPos="334"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text121"
+     class="tLabel"
+     x="666"
+     y="351"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan121n0"
+       class="tsLabel"
+       x="666"
+       y="351"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">glucose</tspan>
+    <tspan
+       id="tspan121n1"
+       class="tsLabel"
+       x="666"
+       y="364.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">1-phosphate</tspan>
+  </text>
+  <rect
+     width="116"
+     height="48"
+     x="718"
+     y="346"
+     id="128"
+     class="shape"
+     dunnart:label="ADPglucose pyrophosphorylase (pAGPase)"
+     dunnart:width="122"
+     dunnart:height="54"
+     dunnart:xPos="715"
+     dunnart:yPos="343"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text128"
+     class="tLabel"
+     x="776"
+     y="360"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan128n0"
+       class="tsLabel"
+       x="776"
+       y="360"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">ADPglucose</tspan>
+    <tspan
+       id="tspan128n1"
+       class="tsLabel"
+       x="776"
+       y="373.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">pyrophosphorylase</tspan>
+    <tspan
+       id="tspan128n2"
+       class="tsLabel"
+       x="776"
+       y="387.5"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">(pAGPase)</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="231"
+     objOneID="128"
+     alignmentPos="4" />
+  <rect
+     width="56"
+     height="34"
+     x="748"
+     y="408"
+     rx="17"
+     ry="17"
+     id="130"
+     class="shape"
+     dunnart:label="ADP - glucose"
+     dunnart:width="62"
+     dunnart:height="40"
+     dunnart:xPos="745"
+     dunnart:yPos="405"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text130"
+     class="tLabel"
+     x="776"
+     y="422"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan130n0"
+       class="tsLabel"
+       x="776"
+       y="422"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">ADP -</tspan>
+    <tspan
+       id="tspan130n1"
+       class="tsLabel"
+       x="776"
+       y="435.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">glucose</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="231"
+     objOneID="130"
+     alignmentPos="4" />
+  <rect
+     width="26"
+     height="18"
+     x="818"
+     y="408"
+     rx="9"
+     ry="9"
+     id="136"
+     class="shape"
+     dunnart:label="PP"
+     dunnart:width="32"
+     dunnart:height="24"
+     dunnart:xPos="815"
+     dunnart:yPos="405"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text136"
+     class="tLabel"
+     x="831"
+     y="421"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan136n0"
+       class="tsLabel"
+       x="831"
+       y="421"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">PP</tspan>
+  </text>
+  <rect
+     width="32"
+     height="18"
+     x="848"
+     y="345"
+     rx="9"
+     ry="9"
+     id="141"
+     class="shape"
+     dunnart:label="ATP"
+     dunnart:width="38"
+     dunnart:height="24"
+     dunnart:xPos="845"
+     dunnart:yPos="342"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text141"
+     class="tLabel"
+     x="864"
+     y="358"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan141n0"
+       class="tsLabel"
+       x="864"
+       y="358"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">ATP</tspan>
+  </text>
+  <rect
+     width="88"
+     height="34"
+     x="838"
+     y="440"
+     id="148"
+     class="shape"
+     dunnart:label="inorganic diphosphatase"
+     dunnart:width="94"
+     dunnart:height="40"
+     dunnart:xPos="835"
+     dunnart:yPos="437"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text148"
+     class="tLabel"
+     x="882"
+     y="454"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan148n0"
+       class="tsLabel"
+       x="882"
+       y="454"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">inorganic</tspan>
+    <tspan
+       id="tspan148n1"
+       class="tsLabel"
+       x="882"
+       y="467.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">diphosphatase</tspan>
+  </text>
+  <rect
+     width="24"
+     height="18"
+     x="874"
+     y="488"
+     rx="9"
+     ry="9"
+     id="149"
+     class="shape"
+     dunnart:label="P"
+     dunnart:width="30"
+     dunnart:height="24"
+     dunnart:xPos="871"
+     dunnart:yPos="485"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text149"
+     class="tLabel"
+     x="886"
+     y="501"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan149n0"
+       class="tsLabel"
+       x="886"
+       y="501"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">P</tspan>
+  </text>
+  <rect
+     width="70"
+     height="34"
+     x="948"
+     y="497"
+     id="156"
+     class="shape"
+     dunnart:label="phosphate transporter"
+     dunnart:width="76"
+     dunnart:height="40"
+     dunnart:xPos="945"
+     dunnart:yPos="494"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text156"
+     class="tLabel"
+     x="983"
+     y="511"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan156n0"
+       class="tsLabel"
+       x="983"
+       y="511"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">phosphate</tspan>
+    <tspan
+       id="tspan156n1"
+       class="tsLabel"
+       x="983"
+       y="524.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">transporter</tspan>
+  </text>
+  <rect
+     width="18"
+     height="18"
+     x="1042"
+     y="521"
+     rx="9"
+     ry="9"
+     id="158"
+     class="shape"
+     dunnart:label="P"
+     dunnart:width="24"
+     dunnart:height="24"
+     dunnart:xPos="1039"
+     dunnart:yPos="518"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text158"
+     class="tLabel"
+     x="1051"
+     y="534"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan158n0"
+       class="tsLabel"
+       x="1051"
+       y="534"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">P</tspan>
+  </text>
+  <rect
+     width="96"
+     height="34"
+     x="728"
+     y="456"
+     id="164"
+     class="shape"
+     dunnart:label="starch synthase (simpl.)"
+     dunnart:width="102"
+     dunnart:height="40"
+     dunnart:xPos="725"
+     dunnart:yPos="453"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text164"
+     class="tLabel"
+     x="776"
+     y="470"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan164n0"
+       class="tsLabel"
+       x="776"
+       y="470"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">starch synthase</tspan>
+    <tspan
+       id="tspan164n1"
+       class="tsLabel"
+       x="776"
+       y="483.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">(simpl.)</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="231"
+     objOneID="164"
+     alignmentPos="4" />
+  <rect
+     width="32"
+     height="18"
+     x="760"
+     y="504"
+     rx="9"
+     ry="9"
+     id="166"
+     class="shape"
+     dunnart:label="ADP"
+     dunnart:width="38"
+     dunnart:height="24"
+     dunnart:xPos="757"
+     dunnart:yPos="501"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text166"
+     class="tLabel"
+     x="776"
+     y="517"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan166n0"
+       class="tsLabel"
+       x="776"
+       y="517"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">ADP</tspan>
+  </text>
+  <dunnart:node
+     dunnart:type="constraint"
+     isMultiway="1"
+     relType="alignment"
+     constraintID="231"
+     objOneID="166"
+     alignmentPos="4" />
+  <rect
+     width="54"
+     height="18"
+     x="806"
+     y="504"
+     rx="9"
+     ry="9"
+     id="172"
+     class="shape"
+     dunnart:label="starch"
+     dunnart:width="60"
+     dunnart:height="24"
+     dunnart:xPos="803"
+     dunnart:yPos="501"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text172"
+     class="tLabel"
+     x="833"
+     y="517"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan172n0"
+       class="tsLabel"
+       x="833"
+       y="517"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">starch</tspan>
+  </text>
+  <rect
+     width="72"
+     height="34"
+     x="948"
+     y="359"
+     id="178"
+     class="shape"
+     dunnart:label="ATP/ADP transporter"
+     dunnart:width="78"
+     dunnart:height="40"
+     dunnart:xPos="945"
+     dunnart:yPos="356"
+     dunnart:type="rect"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text178"
+     class="tLabel"
+     x="984"
+     y="373"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan178n0"
+       class="tsLabel"
+       x="984"
+       y="373"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">ATP/ADP</tspan>
+    <tspan
+       id="tspan178n1"
+       class="tsLabel"
+       x="984"
+       y="386.75"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">transporter</tspan>
+  </text>
+  <rect
+     width="32"
+     height="18"
+     x="881"
+     y="384"
+     rx="9"
+     ry="9"
+     id="179"
+     class="shape"
+     dunnart:label="ADP"
+     dunnart:width="38"
+     dunnart:height="24"
+     dunnart:xPos="878"
+     dunnart:yPos="381"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text179"
+     class="tLabel"
+     x="897"
+     y="397"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan179n0"
+       class="tsLabel"
+       x="897"
+       y="397"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">ADP</tspan>
+  </text>
+  <rect
+     width="32"
+     height="18"
+     x="1042"
+     y="351"
+     rx="9"
+     ry="9"
+     id="184"
+     class="shape"
+     dunnart:label="ADP"
+     dunnart:width="38"
+     dunnart:height="24"
+     dunnart:xPos="1039"
+     dunnart:yPos="348"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text184"
+     class="tLabel"
+     x="1058"
+     y="364"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan184n0"
+       class="tsLabel"
+       x="1058"
+       y="364"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">ADP</tspan>
+  </text>
+  <rect
+     width="32"
+     height="18"
+     x="1042"
+     y="384"
+     rx="9"
+     ry="9"
+     id="189"
+     class="shape"
+     dunnart:label="ATP"
+     dunnart:width="38"
+     dunnart:height="24"
+     dunnart:xPos="1039"
+     dunnart:yPos="381"
+     dunnart:type="flowEndOProc"
+     style="fill:#f0f0d2;stroke:#000000;stroke-width:1px" />
+  <text
+     id="text189"
+     class="tLabel"
+     x="1058"
+     y="397"
+     style="text-align:center;text-anchor:middle">
+    <tspan
+       id="tspan189n0"
+       class="tsLabel"
+       x="1058"
+       y="397"
+       sodipodi:role="line"
+       style="font-size:11px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans">ATP</tspan>
+  </text>
+</svg>
