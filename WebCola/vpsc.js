@@ -32,6 +32,10 @@ var vpsc;
             this.equality = equality;
             this.active = false;
             this.unsatisfiable = false;
+            this.left = left;
+            this.right = right;
+            this.gap = gap;
+            this.equality = equality;
         }
         Constraint.prototype.slack = function () {
             return this.unsatisfiable ? Number.MAX_VALUE : this.right.scale * this.right.position() - this.gap - this.left.scale * this.left.position();
@@ -76,8 +80,8 @@ var vpsc;
 
     var Block = (function () {
         function Block(v) {
-            v.offset = 0;
             this.vars = [];
+            v.offset = 0;
             this.ps = new PositionStats(v.scale);
             this.addVariable(v);
         }
@@ -340,6 +344,8 @@ var vpsc;
 
     var Solver = (function () {
         function Solver(vs, cs) {
+            this.vs = vs;
+            this.cs = cs;
             this.vs = vs;
             vs.forEach(function (v) {
                 v.cIn = [], v.cOut = [];

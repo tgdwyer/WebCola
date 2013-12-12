@@ -208,9 +208,7 @@
                 if (!d.sourceIntersection) d.sourceIntersection = { x: d.source.x, y: d.source.y };
                 d.targetIntersection = d.target.innerBounds.rayIntersection(d.source.x, d.source.y);
                 if (!d.targetIntersection) d.targetIntersection = { x: d.target.x, y: d.target.y };
-                if (isIE()) {
-                    this.parentNode.insertBefore(this, this);
-                }
+                if (isIE())  this.parentNode.insertBefore(this, this);
             });
             
             link.attr("x1", function (d) { return d.sourceIntersection.x; })

@@ -80,15 +80,53 @@ var vpsc;
         Rectangle.prototype.union = function (r) {
             return new Rectangle(Math.min(this.x, r.x), Math.max(this.X, r.X), Math.min(this.y, r.y), Math.max(this.Y, r.Y));
         };
+
+        Rectangle.prototype.rayIntersection = function (x2, y2) {
+            var x1 = this.cx(), y1 = this.cy(), r = Rectangle.lineIntersection(x1, y1, x2, y2, this.x, this.y, this.X, this.y);
+            if (r !== null)
+                return { x: r.x, y: r.y };
+            r = Rectangle.lineIntersection(x1, y1, x2, y2, this.X, this.y, this.X, this.Y);
+            if (r !== null)
+                return { x: r.x, y: r.y };
+            r = Rectangle.lineIntersection(x1, y1, x2, y2, this.X, this.Y, this.x, this.Y);
+            if (r !== null)
+                return { x: r.x, y: r.y };
+            r = Rectangle.lineIntersection(x1, y1, x2, y2, this.x, this.Y, this.x, this.y);
+            if (r !== null)
+                return { x: r.x, y: r.y };
+            return null;
+        };
+
+        Rectangle.lineIntersection = function (x1, y1, x2, y2, x3, y3, x4, y4) {
+            var dx12 = x2 - x1, dx34 = x4 - x3, dy12 = y2 - y1, dy34 = y4 - y3, denominator = dy34 * dx12 - dx34 * dy12;
+            if (denominator == 0)
+                return null;
+            var dx31 = x1 - x3, dy31 = y1 - y3;
+            var numa = dx34 * dy31 - dy34 * dx31;
+            var a = numa / denominator;
+            var numb = dx12 * dy31 - dy12 * dx31;
+            var b = numb / denominator;
+            if (a >= 0 && a <= 1 && b >= 0 && b <= 1) {
+                return {
+                    x: x1 + a * dx12,
+                    y: y1 + a * dy12
+                };
+            }
+            return null;
+        };
+
+        Rectangle.prototype.inflate = function (pad) {
+            return new Rectangle(this.x - pad, this.X + pad, this.y - pad, this.Y + pad);
+        };
         return Rectangle;
     })();
     vpsc.Rectangle = Rectangle;
 
     var Node = (function () {
-        function Node(v, r, p) {
+        function Node(v, r, pos) {
             this.v = v;
             this.r = r;
-            this.pos = p;
+            this.pos = pos;
             this.prev = makeRBTree();
             this.next = makeRBTree();
         }
@@ -96,10 +134,10 @@ var vpsc;
     })();
 
     var Event = (function () {
-        function Event(isOpen, v, p) {
+        function Event(isOpen, v, pos) {
             this.isOpen = isOpen;
             this.v = v;
-            this.pos = p;
+            this.pos = pos;
         }
         return Event;
     })();
@@ -329,9 +367,9 @@ var vpsc;
 
     var IndexedVariable = (function (_super) {
         __extends(IndexedVariable, _super);
-        function IndexedVariable(i, w) {
+        function IndexedVariable(index, w) {
             _super.call(this, 0, w);
-            this.index = i;
+            this.index = index;
         }
         return IndexedVariable;
     })(vpsc.Variable);
@@ -343,8 +381,8 @@ var vpsc;
             if (typeof avoidOverlaps === "undefined") { avoidOverlaps = false; }
             var _this = this;
             this.nodes = nodes;
-            this.rootGroup = rootGroup;
             this.groups = groups;
+            this.rootGroup = rootGroup;
             this.avoidOverlaps = avoidOverlaps;
             this.variables = nodes.map(function (v, i) {
                 return v.variable = new IndexedVariable(i, 1);
