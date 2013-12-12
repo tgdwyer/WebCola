@@ -443,10 +443,10 @@ var vpsc;
             this.project(x0, y0, x0, x, function (v) {
                 return v.px;
             }, this.xConstraints, generateXGroupConstraints, function (v) {
-                return v.bounds.setXCentre(x[(v.variable).index] = v.variable.position());
+                return v.bounds.setXCentre(x[v.variable.index] = v.variable.position());
             }, function (g) {
-                g.bounds.x = x[(g.minVar).index] = g.minVar.position();
-                g.bounds.X = x[(g.maxVar).index] = g.maxVar.position();
+                g.bounds.x = x[g.minVar.index] = g.minVar.position();
+                g.bounds.X = x[g.maxVar.index] = g.maxVar.position();
             });
         };
 
@@ -456,10 +456,10 @@ var vpsc;
             this.project(x0, y0, y0, y, function (v) {
                 return v.py;
             }, this.yConstraints, generateYGroupConstraints, function (v) {
-                return v.bounds.setYCentre(y[(v.variable).index] = v.variable.position());
+                return v.bounds.setYCentre(y[v.variable.index] = v.variable.position());
             }, function (g) {
-                g.bounds.y = y[(g.minVar).index] = g.minVar.position();
-                g.bounds.Y = y[(g.maxVar).index] = g.maxVar.position();
+                g.bounds.y = y[g.minVar.index] = g.minVar.position();
+                g.bounds.Y = y[g.maxVar.index] = g.maxVar.position();
             });
         };
 

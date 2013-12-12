@@ -16,9 +16,9 @@ module vpsc {
     }
 
     export function computeGroupBounds(g: Group): Rectangle {
-        g.bounds = g.leaves.reduce((r, c) => c.bounds.union(r), Rectangle.empty());
+        g.bounds = g.leaves.reduce((r: Rectangle, c) => c.bounds.union(r), Rectangle.empty());
         if (typeof g.groups !== "undefined")
-            g.bounds = g.groups.reduce((r, c) => computeGroupBounds(c).union(r), g.bounds);
+            g.bounds = <Rectangle>g.groups.reduce((r: Rectangle, c) => computeGroupBounds(c).union(r), g.bounds);
         return g.bounds;
     }
 
@@ -159,7 +159,7 @@ module vpsc {
             gn = typeof root.groups !== 'undefined' ? root.groups.length : 0,
             ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0,
             childConstraints: Constraint[] = !gn ? []
-            : root.groups.reduce((ccs, g) => ccs.concat(generateGroupConstraints(g, f, minSep, true)), []),
+            : root.groups.reduce((ccs: Constraint[], g) => ccs.concat(generateGroupConstraints(g, f, minSep, true)), []),
             n = (isContained ? 2 : 0) + ln + gn,
             vs: Variable[] = new Array(n),
             rs: Rectangle[] = new Array(n),

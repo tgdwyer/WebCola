@@ -143,8 +143,8 @@ var cola;
             return x;
         };
 
-        Descent.rightMultiply = // result r = matrix m * vector v
-        function (m, v, r) {
+        // result r = matrix m * vector v
+        Descent.rightMultiply = function (m, v, r) {
             var i = m.length;
             while (i--)
                 r[i] = Descent.dotProd(m[i], v);

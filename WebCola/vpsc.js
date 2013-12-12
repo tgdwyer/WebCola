@@ -182,8 +182,8 @@ var vpsc;
             return false;
         };
 
-        Block.split = // split the block into two by deactivating the specified constraint
-        function (c) {
+        // split the block into two by deactivating the specified constraint
+        Block.split = function (c) {
             /* DEBUG
             console.log("split on " + c);
             console.assert(c.active, "attempt to split on inactive constraint");
@@ -447,6 +447,11 @@ var vpsc;
             while ((v = this.mostViolated()) && (v.equality || v.slack() < Solver.ZERO_UPPERBOUND && !v.active)) {
                 var lb = v.left.block, rb = v.right.block;
 
+                /* DEBUG
+                console.log("most violated is: " + v);
+                this.bs.contains(lb);
+                this.bs.contains(rb);
+                DEBUG */
                 if (lb !== rb) {
                     this.bs.merge(v);
                 } else {
