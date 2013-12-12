@@ -1,16 +1,10 @@
 module vpsc {
     export class PositionStats {
-        scale: number;
-        AB: number;
-        AD: number;
-        A2: number;
+        AB: number = 0;
+        AD: number = 0;
+        A2: number = 0;
 
-        constructor(scale: number) {
-            this.scale = scale;
-            this.AB = 0;
-            this.AD = 0;
-            this.A2 = 0;
-        }
+        constructor(public scale: number) {}
 
         addVariable(v: Variable): void {
             var ai = this.scale / v.scale;
@@ -27,21 +21,15 @@ module vpsc {
     }
 
     export class Constraint {
-        left: Variable;
-        right: Variable;
-        gap: number;
         lm: number;
-        active: boolean;
-        equality: boolean;
-        unsatisfiable: boolean;
+        active: boolean = false;
+        unsatisfiable: boolean = false;
 
-        constructor(left: Variable, right: Variable, gap: number, equality: boolean = false) {
+        constructor(public left: Variable, public right: Variable, public gap: number, public equality: boolean = false) {
             this.left = left;
             this.right = right;
             this.gap = gap;
             this.equality = equality;
-            this.active = false;
-            this.unsatisfiable = false;
         }
 
         slack(): number {
@@ -52,20 +40,12 @@ module vpsc {
     }
 
     export class Variable {
-        desiredPosition: number;
-        weight: number;
-        offset: number;
-        scale: number;
+        offset: number = 0;
         block: Block;
         cIn: Constraint[];
         cOut: Constraint[];
 
-        constructor(desiredPosition: number, weight: number = 1, scale: number = 1) {
-            this.desiredPosition = desiredPosition;
-            this.weight = weight;
-            this.scale = scale;
-            this.offset = 0;
-        }
+        constructor(public desiredPosition: number, public weight: number = 1, public scale: number = 1) {}
 
         dfdv(): number {
             return 2.0 * this.weight * (this.position() - this.desiredPosition);
@@ -86,14 +66,13 @@ module vpsc {
     }
 
     export class Block {
-        vars: Variable[];
+        vars: Variable[] = [];
         posn: number;
         ps: PositionStats;
         blockInd: number;
 
         constructor(v: Variable) {
             v.offset = 0;
-            this.vars = [];
             this.ps = new PositionStats(v.scale);
             this.addVariable(v);
         }
@@ -249,11 +228,9 @@ DEBUG */
     }
 
     export class Blocks {
-        vs: Variable[];
         private list: Block[];
 
-        constructor(vs: Variable[]) {
-            this.vs = vs;
+        constructor(public vs: Variable[]) {
             var n = vs.length;
             this.list = new Array(n);
             while (n--) {
@@ -368,14 +345,12 @@ DEBUG */
 
     export class Solver {
         bs: Blocks;
-        vs: Variable[];
-        cs: Constraint[];
         inactive: Constraint[];
 
         static LAGRANGIAN_TOLERANCE = -1e-4;
         static ZERO_UPPERBOUND = -1e-10;
 
-        constructor(vs: Variable[], cs: Constraint[]) {
+        constructor(public vs: Variable[], public cs: Constraint[]) {
             this.vs = vs;
             vs.forEach(v => {
                 v.cIn = [], v.cOut = [];

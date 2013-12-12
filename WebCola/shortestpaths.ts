@@ -19,20 +19,13 @@ module ShortestPaths {
     }
 
     class Neighbour {
-        constructor(id: number, distance: number) {
-            this.id = id;
-            this.distance = distance;
-        }
-        id: number;
-        distance: number;
+        constructor(public id: number, public distance: number) {}
     }
 
     class Node {
-        constructor(id: number) {
-            this.id = id;
+        constructor(public id: number) {
             this.neighbours = [];
         }
-        id: number;
         neighbours: Neighbour[];
         d: number;
         q: PairingHeap<Node>;

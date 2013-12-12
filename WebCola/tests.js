@@ -2,6 +2,8 @@
 /// <reference path="cola.js"/>
 /// <reference path="shortestpaths.js"/>
 /// <reference path="descent.js"/>
+/// <reference path="vpsc.js"/>
+/// <reference path="rectangle.js"/>
 
 asyncTest("all-pairs shortest paths", function () {
     var d3cola = cola.d3adaptor();
@@ -70,6 +72,15 @@ test("pseudo random number test", function () {
         ok(r >= 0, "r=" + r);
         console.log(r);
     }
+});
+
+test("rectangle intersections", function () {
+    var r = new vpsc.Rectangle(2, 4, 0, 2);
+    var p = r.rayIntersection(0, 1);
+    ok(p.x == 2);
+    ok(p.y == 1);
+    p = r.rayIntersection(0, 0);
+    ok(p.x == 2);
 });
 
 test("matrix perf test", function () {

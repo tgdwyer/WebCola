@@ -78,8 +78,7 @@ class PairingHeap<T> {
 
 class PriorityQueue<T> {
     private root : PairingHeap<T>;
-    private lessThan: (a: T, b: T) => boolean;
-    constructor(lessThan: (a: T, b: T) => boolean) { this.lessThan = lessThan; }
+    constructor(private lessThan: (a: T, b: T) => boolean) { }
     public top() : T {
         if (this.empty()) { return null; }
         return this.root.elem;
