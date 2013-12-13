@@ -8,8 +8,7 @@ using D3.js and other web-based graphics libraries.
 Building
 --------
 
-Linux/Mac/Windows Command Line:
-
+*Linux/Mac/Windows Command Line:*
  - install [node.js](http://nodejs.org)
 
 > npm install -g grunt-cli
@@ -22,6 +21,6 @@ Linux/Mac/Windows Command Line:
 to build:
 > grunt
 
-Visual Studio:
+*Visual Studio:*
  - get the [typescript plugin](http://www.typescriptlang.org/#Download)
  - open webcola.sln
