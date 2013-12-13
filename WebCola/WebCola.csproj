@@ -20,7 +20,6 @@
     <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="aca.html" />
     <Content Include="graphdata\SucroseBreakdownDicots-flowlayout.svg" />
     <Content Include="sucrosebreakdown-handdrawn.png" />
     <Content Include="sucrosebreakdown.html" />
@@ -192,7 +191,6 @@
     <Content Include="qunit.css" />
     <TypeScriptCompile Include="vpsc.ts" />
     <TypeScriptCompile Include="rbtree.d.ts" />
-    <Content Include="rbtree.js" />
     <Content Include="rectangle.js">
       <DependentUpon>rectangle.ts</DependentUpon>
     </Content>
@@ -227,7 +225,6 @@
     <Content Include="descent.js">
       <DependentUpon>descent.ts</DependentUpon>
     </Content>
-    <Content Include="force.js" />
     <Content Include="graphdata\coordinates.csv" />
     <Content Include="graphdata\fivenodesdisconnected.json" />
     <Content Include="graphdata\smallgrouped.json" />
