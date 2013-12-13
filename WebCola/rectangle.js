@@ -82,18 +82,16 @@ var vpsc;
         };
 
         Rectangle.prototype.rayIntersection = function (x2, y2) {
-            var x1 = this.cx(), y1 = this.cy(), r = Rectangle.lineIntersection(x1, y1, x2, y2, this.x, this.y, this.X, this.y);
-            if (r !== null)
-                return { x: r.x, y: r.y };
-            r = Rectangle.lineIntersection(x1, y1, x2, y2, this.X, this.y, this.X, this.Y);
-            if (r !== null)
-                return { x: r.x, y: r.y };
-            r = Rectangle.lineIntersection(x1, y1, x2, y2, this.X, this.Y, this.x, this.Y);
-            if (r !== null)
-                return { x: r.x, y: r.y };
-            r = Rectangle.lineIntersection(x1, y1, x2, y2, this.x, this.Y, this.x, this.y);
-            if (r !== null)
-                return { x: r.x, y: r.y };
+            var x1 = this.cx(), y1 = this.cy(), sides = [
+                [this.x, this.y, this.X, this.y],
+                [this.X, this.y, this.X, this.Y],
+                [this.X, this.Y, this.x, this.Y],
+                [this.x, this.Y, this.x, this.y]];
+            for (var i = 0; i < 4; ++i) {
+                var r = Rectangle.lineIntersection(x1, y1, x2, y2, sides[i][0], sides[i][1], sides[i][2], sides[i][3]);
+                if (r !== null)
+                    return { x: r.x, y: r.y };
+            }
             return null;
         };
 
@@ -101,11 +99,7 @@ var vpsc;
             var dx12 = x2 - x1, dx34 = x4 - x3, dy12 = y2 - y1, dy34 = y4 - y3, denominator = dy34 * dx12 - dx34 * dy12;
             if (denominator == 0)
                 return null;
-            var dx31 = x1 - x3, dy31 = y1 - y3;
-            var numa = dx34 * dy31 - dy34 * dx31;
-            var a = numa / denominator;
-            var numb = dx12 * dy31 - dy12 * dx31;
-            var b = numb / denominator;
+            var dx31 = x1 - x3, dy31 = y1 - y3, numa = dx34 * dy31 - dy34 * dx31, a = numa / denominator, numb = dx12 * dy31 - dy12 * dx31, b = numb / denominator;
             if (a >= 0 && a <= 1 && b >= 0 && b <= 1) {
                 return {
                     x: x1 + a * dx12,
