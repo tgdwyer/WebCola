@@ -13,11 +13,12 @@ Linux/Mac/Windows Command Line:
  - install [node.js](http://nodejs.org)
 > npm install -g grunt-cli
  - from the WebCola directory:
+> npm install grunt
 > npm install
 
 to build:
 > grunt
 
 Visual Studio:
-
- - just open webcola.sln
+ - get the [typescript plugin](http://www.typescriptlang.org/#Download)
+ - open webcola.sln
