@@ -11,8 +11,11 @@ Building
 Linux/Mac/Windows Command Line:
 
  - install [node.js](http://nodejs.org)
+
 > npm install -g grunt-cli
+
  - from the WebCola directory:
+
 > npm install grunt
 > npm install
 
