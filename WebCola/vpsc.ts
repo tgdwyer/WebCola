@@ -412,14 +412,14 @@ DEBUG */
 DEBUG */
 
         private mostViolated(): Constraint {
-            var minSlack = Number.MAX_VALUE;
-            var v: Constraint = null;
-            var l = this.inactive;
-            var n = l.length;
-            var deletePoint = n;
+            var minSlack = Number.MAX_VALUE,
+                v: Constraint = null,
+                l = this.inactive,
+                n = l.length,
+                deletePoint = n;
             for (var i = 0; i < n; ++i) {
-                var c = l[i];
-                var slack = c.slack();
+                var c = l[i],
+                    slack = c.slack();
                 if (c.equality || slack < minSlack) {
                     minSlack = slack;
                     v = c;
