@@ -11,16 +11,16 @@ module.exports = function (grunt) {
                 options: {
                     module: 'amd',
                     target: 'es5',
-					sourcemap: true
+                    sourcemap: false
                 }
             }
         },
         uglify: {
             dist: {
                 options: {
-                    sourceMap: 'webcola/cola.min.map',
-                    sourceMapIn: 'webcola/compiledtypescript.js.map',
-                    sourceMapRoot: 'webcola'
+                    //sourceMap: 'webcola/cola.min.map',
+                    //sourceMapIn: 'webcola/compiledtypescript.js.map',
+                    //sourceMapRoot: 'webcola'
                 },
                 files: {
                     'webcola/cola.v1.min.js': ['webcola/compiledtypescript.js', 'webcola/cola.js', 'webcola/rbtree.js']

@@ -8,16 +8,25 @@ using D3.js and other web-based graphics libraries.
 Building
 --------
 
-Linux/Mac/Windows Command Line:
+*Linux/Mac/Windows Command Line:*
 
  - install [node.js](http://nodejs.org)
+
 > npm install -g grunt-cli
+
  - from the WebCola directory:
+
+> npm install grunt
+
 > npm install
 
-to build:
+ - build:
+
 > grunt
 
-Visual Studio:
+This creates the cola.v1.min.js file in the webcola directory.
 
- - just open webcola.sln
+*Visual Studio:*
+
+ - get the [typescript plugin](http://www.typescriptlang.org/#Download)
+ - open webcola.sln

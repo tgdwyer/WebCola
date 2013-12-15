@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <link rel="canonical" href="http://d3js.org/">
-<title>WebCoLa: Constraint-based Layout in the Browser</title>
+<title>cola.js: Constraint-based Layout in the Browser</title>
 <style>
 
 @import url(style.css);
@@ -47,12 +47,11 @@
     <header>
         .
         <b><a href="./">Overview</a></b>
-        <a style="margin-left:1em;" href="https://github.com/tgdwyer/WebCola/wiki/Gallery">Examples</a>
         <a style="margin-left:1em;" href="https://github.com/tgdwyer/WebCola/wiki">Documentation</a>
         <a style="margin-left:1em;" href="https://github.com/tgdwyer/WebCola">Source</a>
     </header>
 
-    <h1>WebCoLa</h1>
+    <h1>cola.js</h1>
     <h2>Constraint-Based Layout in the Browser</h2>
 
     <div id="examples"></div>
@@ -108,7 +107,7 @@
 
     <!--<p><aside>See <a href="https://github.com/mbostock/d3/wiki/Gallery">more examples</a>.</aside>-->
 
-    <p><b>WebCola.js</b> is an <a href="https://raw.github.com/tgdwyer/WebCola/master/LICENSE">open-source</a> JavaScript library for arranging your HTML5 documents and diagrams using constraint-based optimization techniques.
+    <p><b>cola.js</b> (A.K.A. "WebCoLa") is an <a href="https://raw.github.com/tgdwyer/WebCola/master/LICENSE">open-source</a> JavaScript library for arranging your HTML5 documents and diagrams using constraint-based optimization techniques.
 
     <p>
         It works well with libraries like <a href="http://d3js.org">D3.js</a> and <a href="http://www.svgjs.com">svg.js</a>.
@@ -117,14 +116,14 @@
 
     <aside>
         <p>
-            WebCoLa is developed by <br /><a href="http://marvl.infotech.monash.edu/~dwyer">Tim Dwyer</a> at the <a href="http://marvl.infotech.monash.edu">
+            <b>cola.js</b> is developed by <br /><a href="http://marvl.infotech.monash.edu/~dwyer">Tim Dwyer</a> at the <a href="http://marvl.infotech.monash.edu">
                 Monash Adaptive Visualisation Lab.
                 <img src="http://marvl.infotech.monash.edu.au/wp-content/themes/marvl/marvl.png" width="155px" alt="MArVL Logo" />
             </a>
         </p>
     </aside>
     <p>
-        It has an adaptor for d3.js that allows you to use webcola as a drop-in replacement for the <a href="https://github.com/mbostock/d3/wiki/Force-Layout">D3 force layout</a>.
+        It has an adaptor for d3.js that allows you to use cola as a drop-in replacement for the <a href="https://github.com/mbostock/d3/wiki/Force-Layout">D3 force layout</a>.
         The layout converges to a local optimum unlike the D3 force layout, which forces convergence through a simple annealing strategy.
         Thus, compared to D3 force layout:
         <ul>
@@ -136,11 +135,16 @@
         </ul>
         However, it works well on an average machine on graphs with fewer than 100 nodes.
     </p>
-    <p>Replacing D3 force layout with webcola is easy:</p>
+    <p>Replacing D3 force layout with cola.js is easy.  Include the following in your html:
+        <pre><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"http://marvl.infotech.monash.edu/webcola/cola.v1.min.js"</span><span class="nt">/&gt;</span>
+</pre>
+    </p>
+    <p>Or, if you don't like your javascript files being loaded from Australia, then host the cola.v1.min.js file locally.</p>
+    <p>Then replace D3 force with cola as follows:</p>
     <table>
         <tr>
             <td>D3 force setup:</td>
-            <td>Webcola setup:</td>
+            <td>cola setup:</td>
         </tr>
         <tr>
             <td>
