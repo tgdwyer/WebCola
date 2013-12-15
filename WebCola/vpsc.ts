@@ -57,9 +57,7 @@ module vpsc {
 
         // visit neighbours by active constraints within the same block
         visitNeighbours(prev: Variable, f: (c: Constraint, next: Variable) => void ): void {
-            var ff = (c, next) => {
-                if (c.active && prev !== next) f(c, next);
-            };
+            var ff = (c, next) => c.active && prev !== next && f(c, next);
             this.cOut.forEach(c=> ff(c, c.right));
             this.cIn.forEach(c=> ff(c, c.left));
         }
@@ -211,8 +209,8 @@ DEBUG */
         cost(): number {
             var sum = 0, i = this.vars.length;
             while (i--) {
-                var v = this.vars[i];
-                var d = v.position() - v.desiredPosition;
+                var v = this.vars[i],
+                    d = v.position() - v.desiredPosition;
                 sum += d * d * v.weight;
             }
             return sum;
@@ -412,14 +410,14 @@ DEBUG */
 DEBUG */
 
         private mostViolated(): Constraint {
-            var minSlack = Number.MAX_VALUE;
-            var v: Constraint = null;
-            var l = this.inactive;
-            var n = l.length;
-            var deletePoint = n;
+            var minSlack = Number.MAX_VALUE,
+                v: Constraint = null,
+                l = this.inactive,
+                n = l.length,
+                deletePoint = n;
             for (var i = 0; i < n; ++i) {
-                var c = l[i];
-                var slack = c.slack();
+                var c = l[i],
+                    slack = c.slack();
                 if (c.equality || slack < minSlack) {
                     minSlack = slack;
                     v = c;

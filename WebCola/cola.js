@@ -97,7 +97,7 @@ var cola;
         }
 
         // the following does nothing, it's just here so that if people forget to remove the call when they switch from
-        // d3 to cola, it does break the chaining.
+        // d3 to cola, it doesn't break the chaining.
         d3adaptor.charge = function (x) {
             if (!arguments.length) return 0;
             return d3adaptor;

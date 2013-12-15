@@ -20,7 +20,6 @@
     <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="aca.html" />
     <Content Include="graphdata\SucroseBreakdownDicots-flowlayout.svg" />
     <Content Include="sucrosebreakdown-handdrawn.png" />
     <Content Include="sucrosebreakdown.html" />

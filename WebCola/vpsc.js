@@ -64,8 +64,7 @@ var vpsc;
         // visit neighbours by active constraints within the same block
         Variable.prototype.visitNeighbours = function (prev, f) {
             var ff = function (c, next) {
-                if (c.active && prev !== next)
-                    f(c, next);
+                return c.active && prev !== next && f(c, next);
             };
             this.cOut.forEach(function (c) {
                 return ff(c, c.right);
@@ -228,8 +227,7 @@ var vpsc;
         Block.prototype.cost = function () {
             var sum = 0, i = this.vars.length;
             while (i--) {
-                var v = this.vars[i];
-                var d = v.position() - v.desiredPosition;
+                var v = this.vars[i], d = v.position() - v.desiredPosition;
                 sum += d * d * v.weight;
             }
             return sum;
@@ -415,14 +413,9 @@ var vpsc;
         }
         DEBUG */
         Solver.prototype.mostViolated = function () {
-            var minSlack = Number.MAX_VALUE;
-            var v = null;
-            var l = this.inactive;
-            var n = l.length;
-            var deletePoint = n;
+            var minSlack = Number.MAX_VALUE, v = null, l = this.inactive, n = l.length, deletePoint = n;
             for (var i = 0; i < n; ++i) {
-                var c = l[i];
-                var slack = c.slack();
+                var c = l[i], slack = c.slack();
                 if (c.equality || slack < minSlack) {
                     minSlack = slack;
                     v = c;
