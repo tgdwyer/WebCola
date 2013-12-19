@@ -143,12 +143,13 @@
         outer.append('svg:defs').append('svg:marker')
             .attr('id', 'end-arrow')
             .attr('viewBox', '0 -5 10 10')
-            .attr('refX', 10)
+            .attr('refX', 5)
             .attr('markerWidth', 3)
             .attr('markerHeight', 3)
             .attr('orient', 'auto')
           .append('svg:path')
-            .attr('d', 'M0,-5L10,0L0,5')
+            .attr('d', 'M0,-5L10,0L0,5L2,0')
+            .attr('stroke-width', '0px')
             .attr('fill', '#000');
 
         var group = groupsLayer.selectAll(".group")
@@ -202,20 +203,25 @@
 
         cola.on("tick", function () {
             node.each(function (d) {
-                d.innerBounds = d.bounds.inflate(3 - margin);
+                d.innerBounds = d.bounds.inflate(- margin);
             });
             link.each(function (d) {
                 d.sourceIntersection = d.source.innerBounds.rayIntersection(d.target.x, d.target.y);
                 if (!d.sourceIntersection) d.sourceIntersection = { x: d.source.x, y: d.source.y };
                 d.targetIntersection = d.target.innerBounds.rayIntersection(d.source.x, d.source.y);
                 if (!d.targetIntersection) d.targetIntersection = { x: d.target.x, y: d.target.y };
+                var ah = 5;
+                var dx = d.targetIntersection.x - d.sourceIntersection.x,
+                    dy = d.targetIntersection.y - d.sourceIntersection.y,
+                    l = Math.sqrt(dx * dx + dy * dy), al = l - ah;
+                d.arrowStart = { x: d.sourceIntersection.x + al * dx / l, y: d.sourceIntersection.y + al * dy / l };
                 if (isIE())  this.parentNode.insertBefore(this, this);
             });
             
             link.attr("x1", function (d) { return d.sourceIntersection.x; })
                 .attr("y1", function (d) { return d.sourceIntersection.y; })
-                .attr("x2", function (d) { return d.targetIntersection.x; })
-                .attr("y2", function (d) { return d.targetIntersection.y; });
+                .attr("x2", function (d) { return d.arrowStart.x; })
+                .attr("y2", function (d) { return d.arrowStart.y; });
             //var nodeRadius = 50;
             //link.attr('d', function (d) {
             //    var deltaX = d.target.x - d.source.x,
