@@ -1,0 +1,69 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+</head>
+<body>
+    <script>
+        var queryid = 0;
+        getpeopleformovie(550);
+        function getPersonImage(p, f) {
+            tmdbrequest(queryid, "person", p.id, "images", function (p, qid) { showimage(qid, p.profiles, f) });
+        }
+        function getMovieImage(p, f) {
+            tmdbrequest(queryid, "movie", p.id, "images", function (p, qid) { showimage(qid, p.posters, f) });
+        }
+        function getpeople(r) {
+            r.cast.forEach(function (p) {
+                getPersonImage(p, function () {
+                    getmoviesforperson(p.id);
+                });
+            });
+        }
+        function getmovies(r) {
+            r.cast.forEach(function (m) {
+                getMovieImage(m, function () {
+                    getpeopleformovie(m.id);
+                });
+            });
+        }
+        function tmdbrequest(qid, type, id, content, callback) {
+            if (qid !== queryid) return;
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "https://api.themoviedb.org/3/" + type + "/" + id + "/" + content + "?api_key=1bba0362f468d50d2ec27acff6d5e05a");
+            xhr.setRequestHeader("Accept", "application/json");
+            xhr.onreadystatechange = function () {
+                if (this.readyState == 4 && qid === queryid) {
+                    //alert('Status: ' + this.status + '\nHeaders: ' + JSON.stringify(this.getAllResponseHeaders()) + '\nBody: ' + this.responseText);
+                    callback(JSON.parse(this.responseText), qid);
+                }
+            };
+            xhr.send(null);
+        }
+        function clearimages() {
+            var body = document.getElementsByTagName('body')[0];
+            while (body.hasChildNodes()) {
+                body.removeChild(body.lastChild);
+            }
+        }
+        function getmoviesforperson(pid) {
+            clearimages();
+            tmdbrequest(++queryid, "person", pid, "movie_credits", getmovies);
+        }
+        function getpeopleformovie(mid) {
+            clearimages();
+            tmdbrequest(++queryid, "movie", mid, "credits", getpeople);
+        }
+        function showimage(qid, r, f) {
+            if (qid !== queryid || r.length === 0) return null;
+            var val = r[0].file_path,
+                src = 'http://image.tmdb.org/t/p/w185/' + val,
+                img = document.createElement('img');
+
+            img.src = src;
+            img.onclick = f;
+            document.body.appendChild(img);
+        }
+    </script>
+</body>
+</html>

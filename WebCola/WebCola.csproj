@@ -21,6 +21,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="graphdata\SucroseBreakdownDicots-flowlayout.svg" />
+    <Content Include="movies.html" />
     <Content Include="sucrosebreakdown-handdrawn.png" />
     <Content Include="sucrosebreakdown.html" />
     <Content Include="alignment.png" />
