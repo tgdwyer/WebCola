@@ -28,7 +28,7 @@
     <Content Include="brainnetwork.html" />
     <Content Include="brainnetwork2.html" />
     <Content Include="brainnetworkmultiview.html" />
-    <Content Include="cola.js" />
+    <Content Include="d3adapter.js" />
     <Content Include="harmony-collections.js" />
     <Content Include="hljs\classref.txt" />
     <Content Include="hljs\highlight.pack.js" />
@@ -189,6 +189,7 @@
     <Content Include="svg.js" />
     <Content Include="nonoverlapping.html" />
     <Content Include="qunit.css" />
+    <TypeScriptCompile Include="linklengths.ts" />
     <TypeScriptCompile Include="vpsc.ts" />
     <TypeScriptCompile Include="rbtree.d.ts" />
     <Content Include="rectangle.js">

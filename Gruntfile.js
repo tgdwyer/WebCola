@@ -23,7 +23,7 @@ module.exports = function (grunt) {
                     //sourceMapRoot: 'webcola'
                 },
                 files: {
-                    'webcola/cola.v1.min.js': ['webcola/compiledtypescript.js', 'webcola/cola.js', 'webcola/rbtree.js']
+                    'webcola/cola.v1.min.js': ['webcola/compiledtypescript.js', 'webcola/d3adapter.js', 'webcola/rbtree.js']
                 }
             }
         }

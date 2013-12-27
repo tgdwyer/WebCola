@@ -1,7 +1,4 @@
 ﻿// to do:
-//  - refactor x/yproject out of here
-//  - makefeasible:
-//    o apply user constraints, then generated constraints
 //  - autogenerate downward edge constraints with strongly connected components detection
 //  - 3D! (add a third dimension to descent.ts and try out with three.js)
 var cola;
@@ -136,62 +133,13 @@ var cola;
             return d3adaptor;
         };
 
-        function unionCount(a, b) {
-            var u = {};
-            for (var i in a) u[i] = {};
-            for (var i in b) u[i] = {};
-            return Object.keys(u).length;
-        }
-
-        function intersectionCount(a, b) {
-            var n = 0;
-            for (var i in a) if (typeof b[i] !== 'undefined') ++n;
-            return n;
-        }
-
-        d3adaptor.symmetricDiffLinkLengths = function () {
-            var w = 1;
-            if (arguments.length > 0) {
-                w = arguments[0];
-            }
-            computeLinkLengths(w, function (a, b) {
-                return Math.sqrt(unionCount(a, b) - intersectionCount(a, b));
-            });
+        d3adaptor.symmetricDiffLinkLengths = function (w) {
+            cola.symmetricDiffLinkLengths(nodes, links, w);
             return d3adaptor;
         }
 
-        d3adaptor.jaccardLinkLengths = function () {
-            var w = 1;
-            if (arguments.length > 0) {
-                w = arguments[0];
-            }
-            computeLinkLengths(w, function (a, b) {
-                if (Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1) return 0;
-                return intersectionCount(a, b) / unionCount(a, b);
-            });
-            return d3adaptor;
-        }
-
-        computeLinkLengths = function (w, f) {
-            var n = nodes.length;
-            var neighbours = new Array(n);
-            for (var i = 0; i < n; ++i) {
-                neighbours[i] = {};
-            }
-            links.forEach(function (e) {
-                neighbours[e.source][e.target] = {};
-                neighbours[e.target][e.source] = {};
-            });
-            links.forEach(function (l) {
-                var a = neighbours[l.source];
-                var b = neighbours[l.target];
-                //var jaccard = intersectionCount(a, b) / unionCount(a, b);
-                //if (Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1) {
-                //    jaccard = 0;
-                //}
-                //l.length = 1 + w * jaccard;
-                l.length = 1 + w * f(a,b);
-            });
+        d3adaptor.jaccardLinkLengths = function (w) {
+            cola.jaccardLinkLengths(nodes, links, w)
             return d3adaptor;
         }
 
@@ -252,9 +200,7 @@ var cola;
                     x[i] = 0, y[i++] = 0;
                     x[i] = 0, y[i++] = 0;
                 });
-            } else {
-                rootGroup = { leaves: nodes };
-            }
+            } else rootGroup = { leaves: nodes };
             
             var initialUnconstrainedIterations = arguments.length > 0 ? arguments[0] : 0;
             var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;
