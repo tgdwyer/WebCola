@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Incremental exploration of a large graph</title>
 <style>
-@import url(style.css);
+@import url(../style.css);
 
 .background {
     stroke: gray;
@@ -28,8 +28,9 @@
 <body>
     <h1>Online Graph Exploration</h1>
     <p>Red nodes are incomplete.  Click on them to expand their neighbours.</p>
-<script src="d3.v3.js"></script>
-<script src="cola.v1.min.js"></script>
+    <script src="../extern/d3.v3.js"></script>
+    <script src="../extern/fullscreen.js"></script>
+<script src="../cola.v1.min.js"></script>
 <script>
     var width = 960,
         height = 500;

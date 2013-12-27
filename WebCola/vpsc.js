@@ -210,8 +210,11 @@ var vpsc;
             var c = this.findMinLMBetween(vl, vr);
             if (c !== null) {
                 var bs = Block.split(c);
+                return { constraint: c, lb: bs[0], rb: bs[1] };
             }
-            return { constraint: c, lb: bs[0], rb: bs[1] };
+
+            // couldn't find a split point - for example the active path is all equality constraints
+            return null;
         };
 
         Block.prototype.mergeAcross = function (b, c, dist) {
@@ -415,7 +418,10 @@ var vpsc;
         Solver.prototype.mostViolated = function () {
             var minSlack = Number.MAX_VALUE, v = null, l = this.inactive, n = l.length, deletePoint = n;
             for (var i = 0; i < n; ++i) {
-                var c = l[i], slack = c.slack();
+                var c = l[i];
+                if (c.unsatisfiable)
+                    continue;
+                var slack = c.slack();
                 if (c.equality || slack < minSlack) {
                     minSlack = slack;
                     v = c;
@@ -457,10 +463,10 @@ var vpsc;
 
                     // constraint is within block, need to split first
                     var split = lb.splitBetween(v.left, v.right);
-                    this.bs.insert(split.lb);
-                    this.bs.insert(split.rb);
-                    this.bs.remove(lb);
-                    if (split.constraint !== null) {
+                    if (split !== null) {
+                        this.bs.insert(split.lb);
+                        this.bs.insert(split.rb);
+                        this.bs.remove(lb);
                         this.inactive.push(split.constraint);
                     } else {
                         /* DEBUG

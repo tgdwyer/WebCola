@@ -1,11 +1,3 @@
-C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\graphdata\biological_images\C00002.gif
-C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\downwardedges.html
-C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\WebCola.dll.config
-C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\WebCola.dll
-C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\WebCola.pdb
-C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.dll
-C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.pdb
-C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.csprojResolveAssemblyReference.cache
 C:\Users\timd\Source\Repos\WebCola\WebCola\obj\Debug\WebCola.csprojResolveAssemblyReference.cache
 C:\Users\timd\Source\Repos\WebCola\WebCola\bin\graphdata\biological_images\C00002.gif
 C:\Users\timd\Source\Repos\WebCola\WebCola\bin\downwardedges.html
@@ -14,3 +6,10 @@ C:\Users\timd\Source\Repos\WebCola\WebCola\bin\WebCola.dll
 C:\Users\timd\Source\Repos\WebCola\WebCola\bin\WebCola.pdb
 C:\Users\timd\Source\Repos\WebCola\WebCola\obj\Debug\WebCola.dll
 C:\Users\timd\Source\Repos\WebCola\WebCola\obj\Debug\WebCola.pdb
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\examples\graphdata\biological_images\C00002.gif
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\WebCola.dll.config
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\WebCola.dll
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\WebCola.pdb
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.dll
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.pdb
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.csprojResolveAssemblyReference.cache

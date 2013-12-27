@@ -56,9 +56,9 @@
 
     <div id="examples"></div>
 
-    <script src="d3.v3.min.js?3.0.0rc1"></script>
-    <link rel="stylesheet" href="hljs/styles/github.css">
-    <script src="hljs/highlight.pack.js"></script>
+    <script src="extern/d3.v3.min.js?3.0.0rc1"></script>
+    <link rel="stylesheet" href="extern/hljs/styles/github.css">
+    <script src="extern/hljs/highlight.pack.js"></script>
     <script>
         hljs.initHighlightingOnLoad();
 
@@ -99,9 +99,9 @@
             .data(shuffle(examples).slice(0, 12))
           .enter().append("a")
             .attr("class", "example")
-            .attr("href", function (d) { return d + ".html"; })
+            .attr("href", function (d) { return "examples/" + d + ".html"; })
           .append("img")
-            .attr("src", function (d) { return d + ".png"; });
+            .attr("src", function (d) { return "examples/" + d + ".png"; });
 
     </script>
 

@@ -2,9 +2,11 @@
 
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <title>Non-overlapping Layout</title>
-    <style>
+<meta charset="utf-8" />
+<title>Alignment constraints with guidelines</title>
+<style>
+
+@import url(../style.css);
 
 .node {
   stroke: #fff;
@@ -34,18 +36,12 @@
 </style>
 </head>
 <body>
-    <h1>Disconnected graph with non-overlap constraints</h1>
-<script src="d3.v3.js"></script>
-<script src="pqueue.js"></script>
-<script src="shortestpaths.js"></script>
-<script src="vpsc.js"></script>
-<script src="rbtree.js"></script>
-<script src="rectangle.js"></script>
-<script src="descent.js"></script>
-<script src="cola.js"></script>
+    <h1>Alignment constraints with guidelines</h1>
+<script src="../extern/d3.v3.js"></script>
+<script src="../cola.v1.min.js"></script>
 <script>
-    var width = 960,
-        height = 500;
+    var width = 800,
+        height = 300;
 
     var color = d3.scale.category20();
 
@@ -59,6 +55,7 @@
         .attr("height", height);
 
     d3.json("graphdata/alignmentconstraints.json", function (error, graph) {
+        graph.nodes.forEach(function (v) { v.x = 400, v.y = 70 });
         cola
             .nodes(graph.nodes)
             .links(graph.links)
@@ -140,9 +137,7 @@
         return c.bounds;
     }
 </script>
-    <p>Since node 'e' is not connected to the rest of the graph, it does not influence the layout of the connected component
-        except through constraints.  In this case, we generate constraints to prevent node boxes from overlapping.  Try dragging 'e'
-        so that it collides with the other nodes.
+    <p>Nodes 'a', 'b' and 'e' are constrained to the same y-coordinate.  'b', 'c' and 'd' are constrained to the same x.
     </p>
 </body>
 </html>
