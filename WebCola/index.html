@@ -164,7 +164,8 @@
     </table>
     <p>You then use <code>cola</code> as you would <code>force</code> (or just continue to call it <code>force</code> if you don't care what it's actually doing as much as me).</p>
     <p>
-        Note that while with D3 force layout you may have to mess with parameters like "charge" to get reasonable node separation, cola should do a much better job of repecting the specified link distance in the final layout.
+        Note that while with D3 force layout you may have had to mess with parameters like "charge" to get reasonable node separation, 
+        cola should do a much better job of respecting the specified link distance in the final layout.
         This is because cola is directly trying to minimize the variance between ideal link distance and the actual distance in the drawing.
         In other words, just set linkDistance to something reasonable for the size of your nodes (in the same coordinate system).
     </p>
