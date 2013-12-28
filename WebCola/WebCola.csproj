@@ -24,7 +24,7 @@
     <Content Include="examples\sucrosebreakdown-handdrawn.png" />
     <Content Include="examples\sucrosebreakdown.html" />
     <Content Include="examples\alignment.png" />
-    <Content Include="d3adapter.js" />
+    <Content Include="src\d3adapter.js" />
     <Content Include="examples\smallgroups.html" />
     <Content Include="examples\graphdata\biological_images\C00002.gif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -132,38 +132,34 @@
     <Content Include="examples\graphdata\BrainLSDecimated0.01.obj" />
     <Content Include="examples\graphdata\biological.json" />
     <None Include="examples\graphdata\chris.json" />
-    <Content Include="d3layout.htm" />
     <Content Include="examples\rectangletest.js" />
     <Content Include="examples\smallnonoverlappinggraph.png" />
     <Content Include="style.css" />
     <Content Include="examples\sucrosebreakdown.png" />
     <Content Include="examples\nonoverlapping.html" />
-    <Content Include="qunit.css" />
-    <TypeScriptCompile Include="linklengths.ts" />
-    <TypeScriptCompile Include="vpsc.ts" />
-    <TypeScriptCompile Include="rbtree.d.ts" />
-    <Content Include="rectangle.js">
+    <Content Include="test\qunit.css" />
+    <TypeScriptCompile Include="src\linklengths.ts" />
+    <TypeScriptCompile Include="src\vpsc.ts" />
+    <TypeScriptCompile Include="src\rbtree.d.ts" />
+    <Content Include="src\rectangle.js">
       <DependentUpon>rectangle.ts</DependentUpon>
     </Content>
-    <Content Include="rectangle.min.js">
+    <Content Include="src\rectangle.min.js">
       <DependentUpon>rectangle.ts</DependentUpon>
     </Content>
-    <TypeScriptCompile Include="rectangle.ts" />
-    <Content Include="shortestpaths.min.js">
-      <DependentUpon>shortestpaths.ts</DependentUpon>
-    </Content>
+    <TypeScriptCompile Include="src\rectangle.ts" />
     <Content Include="examples\graphdata\triangle.js" />
     <Content Include="examples\downwardedges.html" />
     <Content Include="examples\unconstrained.html" />
     <Content Include="examples\unconstrainedsmallworld.html" />
     <Content Include="examples\unconstrained.png" />
     <Content Include="examples\unconstrainedsmallworld.png" />
-    <Content Include="vpsc.js">
+    <Content Include="src\vpsc.js">
       <DependentUpon>vpsc.ts</DependentUpon>
     </Content>
-    <Content Include="vpsctests.js" />
-    <TypeScriptCompile Include="descent.ts" />
-    <Content Include="descent.js">
+    <Content Include="test\vpsctests.js" />
+    <TypeScriptCompile Include="src\descent.ts" />
+    <Content Include="src\descent.js">
       <DependentUpon>descent.ts</DependentUpon>
     </Content>
     <Content Include="examples\graphdata\coordinates.csv" />
@@ -171,39 +167,23 @@
     <Content Include="examples\graphdata\smallgrouped.json" />
     <Content Include="examples\graphdata\alignmentconstraints.json" />
     <None Include="examples\graphdata\miserables.json" />
-    <Content Include="pqueue.js">
-      <DependentUpon>pqueue.ts</DependentUpon>
-    </Content>
-    <TypeScriptCompile Include="pqueue.ts" />
-    <Content Include="pqueue.min.js">
-      <DependentUpon>pqueue.ts</DependentUpon>
-    </Content>
-    <Content Include="qunit.js" />
-    <TypeScriptCompile Include="shortestpaths.ts" />
-    <Content Include="shortestpaths.js">
-      <DependentUpon>shortestpaths.ts</DependentUpon>
-    </Content>
-    <Content Include="test.html" />
-    <Content Include="tests.js" />
+    <Content Include="src\pqueue.js" />
+    <TypeScriptCompile Include="src\pqueue.ts" />
+    <Content Include="test\qunit.js" />
+    <TypeScriptCompile Include="src\shortestpaths.ts" />
+    <Content Include="test\test.html" />
+    <Content Include="test\tests.js" />
     <None Include="examples\graphdata\test1.json" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="pqueue.js.map">
-      <DependentUpon>pqueue.ts</DependentUpon>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="web.config" />
-    <Content Include="vpsc.js.map">
+    <Content Include="src\vpsc.js.map">
       <DependentUpon>vpsc.ts</DependentUpon>
     </Content>
-    <Content Include="descent.js.map">
+    <Content Include="src\descent.js.map">
       <DependentUpon>descent.ts</DependentUpon>
     </Content>
-    <Content Include="shortestpaths.js.map">
-      <DependentUpon>shortestpaths.ts</DependentUpon>
-    </Content>
-    <Content Include="rectangle.js.map">
+    <Content Include="src\rectangle.js.map">
       <DependentUpon>rectangle.ts</DependentUpon>
     </Content>
     <None Include="web.Debug.config">

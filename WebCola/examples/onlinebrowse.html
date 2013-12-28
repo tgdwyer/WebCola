@@ -26,14 +26,15 @@
 </style>
 </head>
 <body>
-    <h1>Online Graph Exploration</h1>
-    <p>Red nodes are incomplete.  Click on them to expand their neighbours.</p>
-    <script src="../extern/d3.v3.js"></script>
-    <script src="../extern/fullscreen.js"></script>
+<h1>Online Graph Exploration</h1>
+<p>Red nodes are incomplete.  Click on them to expand their neighbours.</p>
+<script src="../extern/d3.v3.js"></script>
+<script src="../extern/fullscreen.js"></script>
 <script src="../cola.v1.min.js"></script>
 <script>
     var width = 960,
-        height = 500;
+        height = 500,
+        imageScale = 0.25;
 
     var color = d3.scale.category20();
 
@@ -117,10 +118,16 @@
 
     function toggleImageZoom(img) {
         var scale = 1;
+        d3.select(img).each(function (d) {
+            if (Math.abs(img.width.baseVal.value - d.width) < 1) scale /= imageScale;
+        });
+        imageZoom(img, scale);
+    }
+
+    function imageZoom(img, scale) {
         d3.select(img)
             .transition()
             .attr("width", function (d) {
-                if (Math.abs(img.width.baseVal.value - d.width) < 1) scale = 4;
                 return scale * d.width;
             })
             .attr("height", function (d) { return scale * d.height; });
@@ -160,16 +167,16 @@
                 var simg = this;
                 var img = new Image();
                 img.onload = function () {
-                    d.width = this.width / 4;
-                    d.height = this.height / 4;
+                    d.width = this.width * imageScale;
+                    d.height = this.height * imageScale;
                     simg.setAttribute("width", d.width);
                     simg.setAttribute("height", d.height);
                 }
                 return img.src = url;
             })
-            .on("mouseover", function () { toggleImageZoom(this) })
+            .on("mouseover", function () { imageZoom(this, 1/imageScale) })
             .on("touchend", function () { toggleImageZoom(this) })
-            .on("mouseout", function () { toggleImageZoom(this) });
+            .on("mouseout", function () { imageZoom(this, 1) });
         
         enter.append("circle")
             .attr("r", 7)

@@ -8,7 +8,7 @@
 asyncTest("all-pairs shortest paths", function () {
     var d3cola = cola.d3adaptor();
 
-    d3.json("graphdata/triangle.js", function (error, graph) {
+    d3.json("../examples/graphdata/triangle.js", function (error, graph) {
         d3cola
             .nodes(graph.nodes)
             .links(graph.links);
@@ -45,7 +45,7 @@ asyncTest("all-pairs shortest paths", function () {
 asyncTest("equality constraints", function () {
     var d3cola = cola.d3adaptor();
 
-    d3.json("graphdata/triangle.js", function (error, graph) {
+    d3.json("../examples/graphdata/triangle.js", function (error, graph) {
         d3cola
             .nodes(graph.nodes)
             .links(graph.links)
@@ -70,7 +70,7 @@ test("pseudo random number test", function () {
         var r = rand.getNext();
         ok(r <= 1, "r=" + r);
         ok(r >= 0, "r=" + r);
-        console.log(r);
+        //console.log(r);
     }
 });
 

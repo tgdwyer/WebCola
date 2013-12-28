@@ -11,7 +11,8 @@
   "dependencies": {
     "grunt-typescript": "~0.2.7",
     "grunt": "~0.4.2",
-    "uglifyjs": "~2.3.6"
+    "uglifyjs": "~2.3.6",
+    "grunt-contrib-qunit": "~0.3.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
