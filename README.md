@@ -11,6 +11,7 @@ Building
 *Linux/Mac/Windows Command Line:*
 
  - install [node.js](http://nodejs.org)
+ - install grunt from the command line using npm (comes with node.js):
 
 > npm install -g grunt-cli
 
@@ -20,7 +21,7 @@ Building
 
 > npm install
 
- - build:
+ - build, minify and test:
 
 > grunt
 
