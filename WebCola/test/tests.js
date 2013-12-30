@@ -70,6 +70,12 @@ test("pseudo random number test", function () {
         var r = rand.getNext();
         ok(r <= 1, "r=" + r);
         ok(r >= 0, "r=" + r);
+        r = rand.getNextBetween(5, 10);
+        ok(r <= 10, "r=" + r);
+        ok(r >= 5, "r=" + r);
+        r = rand.getNextBetween(-5, 0);
+        ok(r <= 0, "r=" + r);
+        ok(r >= -5, "r=" + r);
         //console.log(r);
     }
 });

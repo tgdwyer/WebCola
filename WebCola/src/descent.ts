@@ -85,17 +85,9 @@ module cola {
 
         private offsetDir(): number[] {
             var u = new Array(this.k);
-            var rand = () => {
-                var r = 0;
-                while (r * r < 1) {
-                    var r = this.random.getNext() - 0.5;
-                    r *= 100;
-                }
-                return r;
-            };
             var l = 0;
             for (var i = 0; i < this.k; ++i) {
-                var x = u[i] = rand();
+                var x = u[i] = this.random.getNextBetween(0.01, 1) - 0.5;
                 l += x * x;
             }
             l = Math.sqrt(l);
@@ -274,10 +266,18 @@ module cola {
         private c: number = 2531011;
         private m: number = 2147483648;
         private range: number = 32767;
+
         constructor(public seed: number = 1) { }
+
+        // random real between 0 and 1
         getNext(): number {
             this.seed = (this.seed * this.a + this.c) % this.m;
             return (this.seed >> 16) / this.range;
+        }
+
+        // random real between min and max
+        getNextBetween(min: number, max: number) {
+            return min + this.getNext() * (max - min);
         }
     }
 }

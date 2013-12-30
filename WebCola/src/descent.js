@@ -68,17 +68,9 @@ var cola;
         Descent.prototype.offsetDir = function () {
             var _this = this;
             var u = new Array(this.k);
-            var rand = function () {
-                var r = 0;
-                while (r * r < 1) {
-                    var r = _this.random.getNext() - 0.5;
-                    r *= 100;
-                }
-                return r;
-            };
             var l = 0;
             for (var i = 0; i < this.k; ++i) {
-                var x = u[i] = rand();
+                var x = u[i] = this.random.getNextBetween(0.01, 1) - 0.5;
                 l += x * x;
             }
             l = Math.sqrt(l);
@@ -289,9 +281,15 @@ var cola;
             this.m = 2147483648;
             this.range = 32767;
         }
+        // random real between 0 and 1
         PseudoRandom.prototype.getNext = function () {
             this.seed = (this.seed * this.a + this.c) % this.m;
             return (this.seed >> 16) / this.range;
+        };
+
+        // random real between min and max
+        PseudoRandom.prototype.getNextBetween = function (min, max) {
+            return min + this.getNext() * (max - min);
         };
         return PseudoRandom;
     })();
