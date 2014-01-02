@@ -10,6 +10,6 @@ C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\examples\graphdata\biological
 C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\WebCola.dll.config
 C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\WebCola.dll
 C:\Users\timd\Documents\GitHub\WebCola\WebCola\bin\WebCola.pdb
+C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.csprojResolveAssemblyReference.cache
 C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.dll
 C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.pdb
-C:\Users\timd\Documents\GitHub\WebCola\WebCola\obj\Debug\WebCola.csprojResolveAssemblyReference.cache

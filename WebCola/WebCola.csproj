@@ -140,6 +140,8 @@
     <Content Include="examples\sucrosebreakdown.png" />
     <Content Include="examples\nonoverlapping.html" />
     <Content Include="test\qunit.css" />
+    <TypeScriptCompile Include="examples\jquery.d.ts" />
+    <TypeScriptCompile Include="examples\tmdbgraph.ts" />
     <TypeScriptCompile Include="src\linklengths.ts" />
     <TypeScriptCompile Include="src\vpsc.ts" />
     <TypeScriptCompile Include="src\rbtree.d.ts" />

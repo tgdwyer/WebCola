@@ -29,9 +29,10 @@
 <h1>Online Graph Exploration</h1>
 <p>Red nodes are incomplete.  Click on them to expand their neighbours.</p>
 <script src="../extern/d3.v3.js"></script>
+<script src="../extern/jquery-1.10.2.min.js"></script>
 <script src="../extern/fullscreen.js"></script>
-<script src="../cola.v1.min.js"></script>
-<script src="../src/descent.js"></script>
+    <script src="../cola.v1.min.js"></script>
+    <script src="tmdbgraph.js"></script>
 <script>
     var width = 960,
         height = 500,
@@ -61,35 +62,36 @@
 
     function redraw() {
         if (nodeMouseDown) return;
-        vis.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+        vis.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
     }
 
     var edgesLayer = vis.append("g");
     var nodesLayer = vis.append("g");
 
-    var modelgraph, viewgraph = { nodes: [], links: [] };
+    var viewgraph = { nodes: [], links: [] };
+    var modelgraph = new tmdb.Graph();
 
-    d3.json("graphdata/biological.json", function (error, g) {
-        modelgraph = g;
-        var startNode = getNode("79");
+    var d = modelgraph.getNode(tmdb.Movie, 550);
+    $.when(d).then(function (startNode) {
         addViewNode(startNode);
         refocus(startNode);
-        update();
     });
 
     function refocus(focus) {
-        modelgraph.links.forEach(function (l) {
-            var u = modelgraph.nodes[l.source], v = modelgraph.nodes[l.target];
-            if (u === focus && !inView(v)) addViewNode(v, focus);
-            if (v === focus && !inView(u)) addViewNode(u, focus);
-        });
-        viewgraph.links = [];
-        viewgraph.nodes.forEach(function (v) {v.colour = "blue"});
-        modelgraph.links.forEach(function (l) {
-            var u = modelgraph.nodes[l.source], v = modelgraph.nodes[l.target];
-            if (inView(u) && inView(v)) viewgraph.links.push({ source: u, target: v });
-            if (inView(u) && !inView(v)) u.colour = "red";
-            if (!inView(u) && inView(v)) v.colour = "red";
+        $.when(modelgraph.expandNeighbours(focus)).then(function f(neighbours) {
+            neighbours.forEach(function (v) {
+                if (!inView(v)) addViewNode(v, focus);
+            });
+            viewgraph.links = [];
+            viewgraph.nodes.forEach(function (v) { v.colour = modelgraph.fullyExpanded(v) ? "blue" : "red" });
+            Object.keys(modelgraph.edges).forEach(function (e) {
+                var l = modelgraph.edges[e];
+                var u = modelgraph.nodes[l.source], v = modelgraph.nodes[l.target];
+                if (inView(u) && inView(v)) viewgraph.links.push({ source: u, target: v });
+                if (inView(u) && !inView(v)) u.colour = "red";
+                if (!inView(u) && inView(v)) v.colour = "red";
+            });
+            update();
         });
     }
 
@@ -104,17 +106,10 @@
         viewgraph.nodes.push(v);
     }
 
-    function getNode(name) {
-        var v, i = modelgraph.nodes.length;
-        while (i--) if ((v = modelgraph.nodes[i]).name == name) return v;
-        return null;
-    }
-
     function click(node) {
         if (node.colour == "blue") return;
-        var focus = getNode(node.name);
+        var focus = modelgraph.getNode(node.type, node.id);
         refocus(focus);
-        update();
     }
 
     function toggleImageZoom(img) {
