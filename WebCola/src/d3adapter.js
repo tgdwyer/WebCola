@@ -134,12 +134,12 @@ var cola;
         };
 
         d3adaptor.symmetricDiffLinkLengths = function (w) {
-            cola.symmetricDiffLinkLengths(nodes, links, w);
+            cola.symmetricDiffLinkLengths(nodes.length, links, w);
             return d3adaptor;
         }
 
         d3adaptor.jaccardLinkLengths = function (w) {
-            cola.jaccardLinkLengths(nodes, links, w)
+            cola.jaccardLinkLengths(nodes.length, links, w)
             return d3adaptor;
         }
 

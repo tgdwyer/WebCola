@@ -4,7 +4,8 @@
   "devDependencies": {
     "grunt": "~0.4.2",
     "grunt-contrib-uglify": "~0.2.2",
-    "grunt-typescript": "~0.2.7"
+    "grunt-typescript": "~0.2.7",
+    "grunt-contrib-qunit": "~0.3.0"
   },
   "description": "WebCola =======",
   "main": "Gruntfile.js",

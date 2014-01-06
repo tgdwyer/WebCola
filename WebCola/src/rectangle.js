@@ -86,8 +86,7 @@ var vpsc;
                 [this.x, this.y, this.X, this.y],
                 [this.X, this.y, this.X, this.Y],
                 [this.X, this.Y, this.x, this.Y],
-                [this.x, this.Y, this.x, this.y]
-            ];
+                [this.x, this.Y, this.x, this.y]];
             for (var i = 0; i < 4; ++i) {
                 var r = Rectangle.lineIntersection(x1, y1, x2, y2, sides[i][0], sides[i][1], sides[i][2], sides[i][3]);
                 if (r !== null)
@@ -476,10 +475,10 @@ var vpsc;
             this.project(x0, y0, x0, x, function (v) {
                 return v.px;
             }, this.xConstraints, generateXGroupConstraints, function (v) {
-                return v.bounds.setXCentre(x[(v.variable).index] = v.variable.position());
+                return v.bounds.setXCentre(x[v.variable.index] = v.variable.position());
             }, function (g) {
-                g.bounds.x = x[(g.minVar).index] = g.minVar.position();
-                g.bounds.X = x[(g.maxVar).index] = g.maxVar.position();
+                g.bounds.x = x[g.minVar.index] = g.minVar.position();
+                g.bounds.X = x[g.maxVar.index] = g.maxVar.position();
             });
         };
 
@@ -489,10 +488,10 @@ var vpsc;
             this.project(x0, y0, y0, y, function (v) {
                 return v.py;
             }, this.yConstraints, generateYGroupConstraints, function (v) {
-                return v.bounds.setYCentre(y[(v.variable).index] = v.variable.position());
+                return v.bounds.setYCentre(y[v.variable.index] = v.variable.position());
             }, function (g) {
-                g.bounds.y = y[(g.minVar).index] = g.minVar.position();
-                g.bounds.Y = y[(g.maxVar).index] = g.maxVar.position();
+                g.bounds.y = y[g.minVar.index] = g.minVar.position();
+                g.bounds.Y = y[g.maxVar.index] = g.maxVar.position();
             });
         };
 
