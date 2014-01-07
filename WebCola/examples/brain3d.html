@@ -26,16 +26,12 @@
 	</head>
 
 	<body>
-		<div id="info">
-		<a href="http://threejs.org" target="_blank">three.js</a> - OBJLoader test
-		</div>
-
-		<script src="three/three.js"></script>
-		<script src="three/OBJLoader.js"></script>
+		<script src="../extern/three.js"></script>
+		<script src="../extern/OBJLoader.js"></script>
         
-		<script src="three/Detector.js"></script>
-		<script src="three/TrackballControls.js"></script>
-		<script src="d3.v3.js"></script>
+		<script src="../extern/Detector.js"></script>
+		<script src="../extern/TrackballControls.js"></script>
+		<script src="../extern/d3.v3.js"></script>
 
 		<script>
 
@@ -105,7 +101,6 @@
 		            object.traverse(function (child) {
 
 		                if (child instanceof THREE.Mesh) {
-
 		                    child.material =
                                 new THREE.MeshLambertMaterial(
                                 {
@@ -134,6 +129,9 @@
 		            });
 
 		            object.position.y = 0;
+                    // Setting scale to some arbitrarily larger value
+		            var scale = 1.5;
+		            object.scale = new THREE.Vector3(scale, scale, scale);
 		            scene.add(object);
 		            render();
 		        });
