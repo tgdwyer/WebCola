@@ -21,6 +21,7 @@ var cola;
             distanceMatrix = [],
             distances = {},
             descent = {},
+            directedLinkConstraints = null,
             threshold;
 
         d3adaptor.tick = function () {
@@ -78,6 +79,12 @@ var cola;
         d3adaptor.avoidOverlaps = function (v) {
             if (!arguments.length) return avoidOverlaps;
             avoidOverlaps = v;
+            return d3adaptor;
+        }
+
+        d3adaptor.directedLinkConstraints = function (v) {
+            if (!arguments.length) return directedLinkConstraints;
+            directedLinkConstraints = v;
             return d3adaptor;
         }
 
@@ -200,8 +207,12 @@ var cola;
                     x[i] = 0, y[i++] = 0;
                     x[i] = 0, y[i++] = 0;
                 });
-            } else rootGroup = { leaves: nodes };
+            } else rootGroup = { leaves: nodes, groups: [] };
             
+            if (directedLinkConstraints) {
+                constraints = (constraints || []).concat(cola.generateDirectedEdgeConstraints(n, links, directedLinkConstraints));
+            }
+
             var initialUnconstrainedIterations = arguments.length > 0 ? arguments[0] : 0;
             var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;
             var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;

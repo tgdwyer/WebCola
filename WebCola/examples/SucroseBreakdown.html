@@ -47,6 +47,7 @@
     <h1>Metabolic Pathway: Sucrose Breakdown</h1>
 <script src="../extern/d3.v3.js"></script>
 <script src="../cola.v1.min.js"></script>
+    <script src="../src/rectangle.js"></script>
 <!--<script src="pqueue.js"></script>
 <script src="shortestpaths.js"></script>
 <script src="vpsc.js"></script>
@@ -206,15 +207,7 @@
                 d.innerBounds = d.bounds.inflate(- margin);
             });
             link.each(function (d) {
-                d.sourceIntersection = d.source.innerBounds.rayIntersection(d.target.x, d.target.y);
-                if (!d.sourceIntersection) d.sourceIntersection = { x: d.source.x, y: d.source.y };
-                d.targetIntersection = d.target.innerBounds.rayIntersection(d.source.x, d.source.y);
-                if (!d.targetIntersection) d.targetIntersection = { x: d.target.x, y: d.target.y };
-                var ah = 5;
-                var dx = d.targetIntersection.x - d.sourceIntersection.x,
-                    dy = d.targetIntersection.y - d.sourceIntersection.y,
-                    l = Math.sqrt(dx * dx + dy * dy), al = l - ah;
-                d.arrowStart = { x: d.sourceIntersection.x + al * dx / l, y: d.sourceIntersection.y + al * dy / l };
+                vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE())  this.parentNode.insertBefore(this, this);
             });
             
@@ -222,21 +215,6 @@
                 .attr("y1", function (d) { return d.sourceIntersection.y; })
                 .attr("x2", function (d) { return d.arrowStart.x; })
                 .attr("y2", function (d) { return d.arrowStart.y; });
-            //var nodeRadius = 50;
-            //link.attr('d', function (d) {
-            //    var deltaX = d.target.x - d.source.x,
-            //        deltaY = d.target.y - d.source.y,
-            //        dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
-            //        normX = deltaX / dist,
-            //        normY = deltaY / dist,
-            //        sourcePadding = nodeRadius,
-            //        targetPadding = nodeRadius + 2,
-            //        sourceX = d.source.x + (sourcePadding * normX),
-            //        sourceY = d.source.y + (sourcePadding * normY),
-            //        targetX = d.target.x - (targetPadding * normX),
-            //        targetY = d.target.y - (targetPadding * normY);
-            //    return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY;
-            //});
 
             label.each(function (d) {
                 var b = this.getBBox();
@@ -244,10 +222,10 @@
                 d.height = b.height + 2 * margin + 8;
             });
 
-            node.attr("x", function (d) { return d.x - d.width / 2 + pad - margin; })
-                .attr("y", function (d) { return d.y - d.height / 2 + pad - margin; })
-                .attr("width", function (d) { return d.width - 2 * pad + 2 * margin; })
-                .attr("height", function (d) { return d.height - 2 * pad + 2 * margin; });
+            node.attr("x", function (d) { return d.innerBounds.x; })
+                .attr("y", function (d) { return d.innerBounds.y; })
+                .attr("width", function (d) { return d.innerBounds.width(); })
+                .attr("height", function (d) { return d.innerBounds.height(); });
 
             group.attr("x", function (d) { return d.bounds.x; })
                  .attr("y", function (d) { return d.bounds.y; })

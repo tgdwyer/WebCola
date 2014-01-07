@@ -20,6 +20,7 @@
     <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="examples\brain3d.html" />
     <Content Include="examples\brainnetwork2.html" />
     <Content Include="examples\graphdata\SucroseBreakdownDicots-flowlayout.svg" />
     <Content Include="examples\movies.html" />
@@ -28,6 +29,7 @@
     <Content Include="examples\sucrosebreakdown.html" />
     <Content Include="examples\alignment.png" />
     <Content Include="examples\unix.html" />
+    <Content Include="examples\unix.png" />
     <Content Include="src\d3adapter.js" />
     <Content Include="examples\smallgroups.html" />
     <Content Include="examples\graphdata\biological_images\C00002.gif">
@@ -135,6 +137,8 @@
     <Content Include="examples\graphdata\affil.txt" />
     <Content Include="examples\graphdata\BrainLSDecimated0.01.obj" />
     <Content Include="examples\graphdata\biological.json" />
+    <Content Include="examples\graphdata\Approval_state.dot" />
+    <Content Include="examples\graphdata\unix.dot" />
     <None Include="examples\graphdata\chris.json" />
     <Content Include="examples\rectangletest.js" />
     <Content Include="examples\smallnonoverlappinggraph.png" />

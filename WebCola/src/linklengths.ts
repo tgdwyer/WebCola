@@ -67,24 +67,28 @@ module cola {
         gap: number;
     }
 
+    export interface DirectedEdgeConstraints {
+        axis: string;
+        gap: number;
+    }
+
     // generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
-    export function generateDirectedEdgeConstraints(n: number, links: Link[], gap: number): IConstraint[] {
+    export function generateDirectedEdgeConstraints(n: number, links: Link[], params: DirectedEdgeConstraints): IConstraint[]{
+        if (!params) return [];
         var components = stronglyConnectedComponents(n, links);
         var nodes = {};
-        components.forEach(c => 
-            c.forEach(v => 
-                nodes[v].component = c
-            )
+        components.filter(c => c.length > 1).forEach(c => 
+            c.forEach(v => nodes[v] = c)
         );
         var constraints: any[] = [];
         links.forEach(l => {
             var u = nodes[l.source], v = nodes[l.target];
             if (!u || !v || u.component !== v.component) {
                 constraints.push({
-                    axis: "y",
+                    axis: params.axis,
                     left: l.source,
                     right: l.target,
-                    gap: gap
+                    gap: params.gap
                 });
             }
         });

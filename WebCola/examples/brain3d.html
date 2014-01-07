@@ -30,12 +30,12 @@
 		<a href="http://threejs.org" target="_blank">three.js</a> - OBJLoader test
 		</div>
 
-		<script src="three/three.js"></script>
-		<script src="three/OBJLoader.js"></script>
+		<script src="../extern/three.js"></script>
+		<script src="../extern/OBJLoader.js"></script>
         
-		<script src="three/Detector.js"></script>
-		<script src="three/TrackballControls.js"></script>
-		<script src="d3.v3.js"></script>
+		<script src="../extern/Detector.js"></script>
+		<script src="../extern/TrackballControls.js"></script>
+		<script src="../extern/d3.v3.js"></script>
 
 		<script>
 
@@ -100,7 +100,7 @@
 		        // model
 
 		        var loader = new THREE.OBJLoader(manager);
-		        loader.load('graphdata/BrainLSDecimated0.01.obj', function (object) {
+		        loader.load('graphdata/xxx.json', function (object) {
 
 		            object.traverse(function (child) {
 

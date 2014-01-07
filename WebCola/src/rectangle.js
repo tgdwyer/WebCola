@@ -116,6 +116,20 @@ var vpsc;
     })();
     vpsc.Rectangle = Rectangle;
 
+    function makeEdgeBetween(link, source, target, ah) {
+        var si = source.rayIntersection(target.cx(), target.cy());
+        if (!si)
+            si = { x: source.cx(), y: source.cy() };
+        var ti = target.rayIntersection(source.cx(), source.cy());
+        if (!ti)
+            ti = { x: target.cx(), y: target.cy() };
+        var dx = ti.x - si.x, dy = ti.y - si.y, l = Math.sqrt(dx * dx + dy * dy), al = l - ah;
+        link.sourceIntersection = si;
+        link.targetIntersection = ti;
+        link.arrowStart = { x: si.x + al * dx / l, y: si.y + al * dy / l };
+    }
+    vpsc.makeEdgeBetween = makeEdgeBetween;
+
     var Node = (function () {
         function Node(v, r, pos) {
             this.v = v;

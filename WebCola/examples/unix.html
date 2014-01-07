@@ -1,76 +1,185 @@
 ﻿<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title></title>
-</head>
-<body>
-    <script src="../extern/graphlib-dot.min.js"></script>
-    <script>
-        var digraph = graphlibDot.parse('digraph unix {\
-size="6,6";\
-        "5th Edition" -> "6th Edition";\
-        "5th Edition" -> "PWB 1.0";\
-        "6th Edition" -> "LSX";\
-        "6th Edition" -> "1 BSD";\
-        "6th Edition" -> "Mini Unix";\
-        "6th Edition" -> "Wollongong";\
-        "6th Edition" -> "Interdata";\
-        "Interdata" -> "Unix/TS 3.0";\
-        "Interdata" -> "PWB 2.0";\
-        "Interdata" -> "7th Edition";\
-        "7th Edition" -> "8th Edition";\
-        "7th Edition" -> "32V";\
-        "7th Edition" -> "V7M";\
-        "7th Edition" -> "Ultrix-11";\
-        "7th Edition" -> "Xenix";\
-        "7th Edition" -> "UniPlus+";\
-        "V7M" -> "Ultrix-11";\
-        "8th Edition" -> "9th Edition";\
-        "1 BSD" -> "2 BSD";\
-        "2 BSD" -> "2.8 BSD";\
-        "2.8 BSD" -> "Ultrix-11";\
-        "2.8 BSD" -> "2.9 BSD";\
-        "32V" -> "3 BSD";\
-        "3 BSD" -> "4 BSD";\
-        "4 BSD" -> "4.1 BSD";\
-        "4.1 BSD" -> "4.2 BSD";\
-        "4.1 BSD" -> "2.8 BSD";\
-        "4.1 BSD" -> "8th Edition";\
-        "4.2 BSD" -> "4.3 BSD";\
-        "4.2 BSD" -> "Ultrix-32";\
-        "PWB 1.0" -> "PWB 1.2";\
-        "PWB 1.0" -> "USG 1.0";\
-        "PWB 1.2" -> "PWB 2.0";\
-        "USG 1.0" -> "CB Unix 1";\
-        "USG 1.0" -> "USG 2.0";\
-        "CB Unix 1" -> "CB Unix 2";\
-        "CB Unix 2" -> "CB Unix 3";\
-        "CB Unix 3" -> "Unix/TS++";\
-        "CB Unix 3" -> "PDP-11 Sys V";\
-        "USG 2.0" -> "USG 3.0";\
-        "USG 3.0" -> "Unix/TS 3.0";\
-        "PWB 2.0" -> "Unix/TS 3.0";\
-        "Unix/TS 1.0" -> "Unix/TS 3.0";\
-        "Unix/TS 3.0" -> "TS 4.0";\
-        "Unix/TS++" -> "TS 4.0";\
-        "CB Unix 3" -> "TS 4.0";\
-        "TS 4.0" -> "System V.0";\
-        "System V.0" -> "System V.2";\
-        "System V.2" -> "System V.3";\
-        }');
-        var nodes = digraph.nodes();
-        for (var i = 0; i < nodes.length; ++i) {
-            digraph._nodes[nodes[i]].id = i;
-        }
-        var edges = [];
-        for (var e in digraph._edges) {
-            var edge = digraph._edges[e];
-            edges.push({ source: digraph._nodes[edge.u].id, target: digraph._nodes[edge.v].id });
-        }
-        // => [ "1", "2" ]
+    <title>Unix Family Tree</title>    
+    <style>
+        @import url(../style.css);
+    .background {
+        stroke: white;
+        stroke-width: 1px;
+        fill: white;
+    }
 
-        digraph.edge(digraph.edges()[0]);
-        // => { label: "label", id: /* unique id here */ }
+    .node {
+        stroke: black;
+        stroke-width: 1.5px;
+        cursor: move;
+        fill: lightcoral;
+    }
+
+    .link {
+        fill: none;
+        stroke: #000;
+        stroke-width: 3px;
+        opacity: 0.7;
+        marker-end: url(#end-arrow);
+    }
+
+    .label {
+        fill: black;
+        font-family: Verdana;
+        font-size: 25px;
+        text-anchor: middle;
+        cursor: move;
+    }
+    </style > 
+    </head > 
+<body > 
+    <h1>Unix Family Tree</h1>
+    <h2>Directed graph flow layout example</h2>
+    <script src="../extern/graphlib-dot.min.js"> </script> 
+    <script src="../extern/d3.v3.js"></script>
+    <script src="../cola.v1.min.js"></script>
+    <link rel="stylesheet" href="extern/hljs/styles/github.css">
+    <script src="../extern/hljs/highlight.pack.js"></script>
+    <script>
+        hljs.initHighlightingOnLoad();
+        var cola = cola.d3adaptor();
+
+        var width = 960, height = 700;
+
+        var outer = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("pointer-events", "all");
+
+        outer.append('rect')
+            .attr('class', 'background')
+            .attr('width', "100%")
+            .attr('height', "100%")
+            .call(d3.behavior.zoom().on("zoom", redraw));
+
+        var vis = outer
+            .append('g')
+            .attr('transform', 'translate(250,250) scale(0.3)');
+
+        function redraw() {
+            vis.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+        }
+
+        outer.append('svg:defs').append('svg:marker')
+            .attr('id', 'end-arrow')
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', 5)
+            .attr('markerWidth', 3)
+            .attr('markerHeight', 3)
+            .attr('orient', 'auto')
+          .append('svg:path')
+            .attr('d', 'M0,-5L10,0L0,5L2,0')
+            .attr('stroke-width', '0px')
+            .attr('fill', '#000');
+
+        d3.text("graphdata/unix.dot", function (f) {
+            var digraph = graphlibDot.parse(f);
+            var nodeNames = digraph.nodes();
+            var nodes = new Array(nodeNames.length);
+            for (var i = 0; i < nodeNames.length; ++i) {
+                var v = nodes[i] = digraph._nodes[nodeNames[i]];
+                v.id = i;
+                v.name = nodeNames[i];
+                v.width = 80;
+                v.height = 30;
+            }
+            var edges = [];
+            for (var e in digraph._edges) {
+                var edge = digraph._edges[e];
+                edges.push({ source: digraph._nodes[edge.u].id, target: digraph._nodes[edge.v].id });
+            }
+            cola
+                .linkDistance(150)
+                .avoidOverlaps(true)
+                .directedLinkConstraints({ axis: 'x', gap: cola.linkDistance() })
+                .size([width, height])
+                .nodes(nodes)
+                .links(edges)
+                .jaccardLinkLengths();
+
+            var link = vis.selectAll(".link")
+                .data(edges)
+                .enter().append("line")
+                .attr("class", "link");
+
+            var margin = 6, pad = 12;
+            var node = vis.selectAll(".node")
+                .data(nodes)
+                .enter().append("rect")
+                .attr("class", "node")
+                .attr("rx", 5).attr("ry", 5)
+                .call(cola.drag);
+
+            var label = vis.selectAll(".label")
+                .data(nodes)
+                .enter().append("text")
+                .attr("class", "label")
+                .text(function (d) { return d.name; })
+                .call(cola.drag);
+
+            label.each(function (d) {
+                var b = this.getBBox();
+                var extra = 2 * margin + 2 * pad;
+                d.width = b.width + extra;
+                d.height = b.height + extra;
+            });
+
+            node
+                .append("title")
+                .text(function (d) { return d.name; });
+
+            cola.start(20, 20, 20).on("tick", function () {
+
+                node.each(function (d) {
+                    d.innerBounds = d.bounds.inflate(-margin);
+                });
+
+                link.each(function (d) {
+                    if (d.source === d.target) {
+                        d.sourceIntersection = { x: d.source.x, y: d.source.y };
+                        d.arrowStart = { x: d.target.x, y: d.target.y };
+                        return;
+                    }
+                    vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                    if (isIE()) this.parentNode.insertBefore(this, this);
+                });
+
+                link.attr("x1", function (d) { return d.sourceIntersection.x; })
+                    .attr("y1", function (d) { return d.sourceIntersection.y; })
+                    .attr("x2", function (d) { return d.arrowStart.x; })
+                    .attr("y2", function (d) { return d.arrowStart.y; });
+
+                node.attr("x", function (d) { return d.innerBounds.x; })
+                    .attr("y", function (d) { return d.innerBounds.y; })
+                    .attr("width", function (d) { return d.innerBounds.width(); })
+                    .attr("height", function (d) { return d.innerBounds.height(); });
+
+                label.attr("x", function (d) {
+                    return d.x
+                }).attr("y", function (d) { return d.y + (margin + pad) / 2 });
+            });
+        });
+        function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
     </script>
+    This is a cola.js rendering of the classic graphviz dot <a href="http://www.graphviz.org/content/unix">example</a>.  We use <a href="https://github.com/cpettitt/graphlib-dot">graphlib-dot.js</a> to load the dot file.
+    The initialization for cola here is interesting:
+    <pre><code>cola
+    .linkDistance(150)
+    .avoidOverlaps(true)
+    .directedLinkConstraints({ axis: 'x', gap: cola.linkDistance() })
+    .size([width, height])
+    .nodes(nodes)
+    .links(edges)
+    .jaccardLinkLengths();
+</code></pre>
+    In particular, the call to <code>directedLinkConstraints</code> causes all edges not involved in a cycle to have a separation constraint generated between their source and sink, 
+    with a minimum spacing set to the ideal linkDistance.  This achieves a left-to-right flow layout.  Change <code>'x'</code> to <code>'y'</code> to get top-to-bottom flow layout.
 </body>
 </html>
