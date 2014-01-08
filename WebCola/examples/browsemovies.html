@@ -32,16 +32,18 @@
 <script src="../extern/jquery-1.10.2.min.js"></script>
 <script src="../extern/fullscreen.js"></script>
     <script src="../cola.v1.min.js"></script>
+    <script src="../src/d3adapter.js"></script>
+    <script src="../src/descent.js"></script>
     <script src="tmdbgraph.js"></script>
 <script>
     var width = 960,
         height = 500,
-        imageScale = 0.25;
+        imageScale = 0.1;
 
     var color = d3.scale.category20();
 
     var cola = cola.d3adaptor()
-        .linkDistance(60)
+        .linkDistance(30)
         .size([width, height]);
 
     var outer = d3.select("body").append("svg")
@@ -71,34 +73,58 @@
     var viewgraph = { nodes: [], links: [] };
     var modelgraph = new tmdb.Graph();
 
-    var d = modelgraph.getNode(tmdb.Movie, 550);
+    var d = modelgraph.getNode(tmdb.Movie, 550, addViewNode);
     $.when(d).then(function (startNode) {
-        addViewNode(startNode);
         refocus(startNode);
     });
 
     function refocus(focus) {
-        $.when(modelgraph.expandNeighbours(focus)).then(function f(neighbours) {
-            neighbours.forEach(function (v) {
-                if (!inView(v)) addViewNode(v, focus);
-            });
-            viewgraph.links = [];
-            viewgraph.nodes.forEach(function (v) { v.colour = modelgraph.fullyExpanded(v) ? "blue" : "red" });
-            Object.keys(modelgraph.edges).forEach(function (e) {
-                var l = modelgraph.edges[e];
-                var u = modelgraph.nodes[l.source], v = modelgraph.nodes[l.target];
-                if (inView(u) && inView(v)) viewgraph.links.push({ source: u, target: v });
-                if (inView(u) && !inView(v)) u.colour = "red";
-                if (!inView(u) && inView(v)) v.colour = "red";
-            });
-            update();
+        var neighboursExpanded = modelgraph.expandNeighbours(focus, function (v) {
+            if (!inView(v)) addViewNode(v, focus);
         });
+        refreshViewGraph();
+        $.when(neighboursExpanded).then(function f() {
+            refreshViewGraph();
+        });
+    }
+
+    function refreshViewGraph() {
+        viewgraph.links = [];
+        viewgraph.nodes.forEach(function (v) { v.colour = modelgraph.fullyExpanded(v) ? "blue" : "red" });
+        Object.keys(modelgraph.edges).forEach(function (e) {
+            var l = modelgraph.edges[e];
+            var u = modelgraph.nodes[l.source], v = modelgraph.nodes[l.target];
+            if (inView(u) && inView(v)) viewgraph.links.push({ source: u, target: v });
+            if (inView(u) && !inView(v)) u.colour = "red";
+            if (!inView(u) && inView(v)) v.colour = "red";
+        });
+        update();
     }
 
     function inView(v) { return typeof v.viewgraphid !== 'undefined'; }
 
     function addViewNode(v, startpos) {
         v.viewgraphid = viewgraph.nodes.length;
+        var d = v.getImage();
+        $.when(d).then(function (node) {
+            d3.select("#" + node.name())
+            .append("image")
+            .attr("xlink:href", function (d) {
+                var url = d.imgurl;
+                var simg = this;
+                var img = new Image();
+                img.onload = function () {
+                    d.width = this.width * imageScale;
+                    d.height = this.height * imageScale;
+                    simg.setAttribute("width", d.width);
+                    simg.setAttribute("height", d.height);
+                }
+                return img.src = url;
+            })
+            .on("mouseover", function () { imageZoom(this, 1 / imageScale) })
+            .on("touchend", function () { toggleImageZoom(this) })
+            .on("mouseout", function () { imageZoom(this, 1) });
+        });
         if (typeof startpos !== 'undefined') {
             v.x = startpos.x;
             v.y = startpos.y;
@@ -147,6 +173,7 @@
             .data(viewgraph.nodes, function (d) { return d.viewgraphid; });
 
         var enter = node.enter().append("g")
+            .attr("id", function (d) { return d.name() })
             .attr("class", function (d) { return "node" + ('image' in d ? ' imagenode' : '') })
             .on("mousedown", function () { nodeMouseDown = true; })
             .on("mouseup", function () { nodeMouseDown = false; })
@@ -178,10 +205,10 @@
             .attr("r", 7)
             .on("click", function (d) { click(d) })
             .on("touchend", function (d) { click(d) });
-
-        node.style("fill", function (d) { return d.colour; })
-            .append("title")
+        enter.append("title")
             .text(function (d) { return d.label; });
+
+        node.style("fill", function (d) { return d.colour; });
 
         cola.on("tick", function () {
             link.attr("x1", function (d) { return d.source.x; })
