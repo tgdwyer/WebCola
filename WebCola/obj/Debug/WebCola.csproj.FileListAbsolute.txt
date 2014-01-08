@@ -11,3 +11,4 @@ C:\Users\timd\Source\Repos\WebCola\WebCola\bin\WebCola.dll
 C:\Users\timd\Source\Repos\WebCola\WebCola\bin\WebCola.pdb
 C:\Users\timd\Source\Repos\WebCola\WebCola\obj\Debug\WebCola.dll
 C:\Users\timd\Source\Repos\WebCola\WebCola\obj\Debug\WebCola.pdb
+C:\Users\timd\Source\Repos\WebCola\WebCola\obj\Debug\WebCola.csprojResolveAssemblyReference.cache

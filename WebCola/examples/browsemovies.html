@@ -18,10 +18,14 @@
   stroke-width: 1.5px;
 }
 
-.link {
-  stroke: #999;
-  stroke-opacity: .8;
-}
+    .spike {
+        stroke: red;
+        stroke-opacity: .8;
+    }
+    .link {
+        stroke: #999;
+        stroke-opacity: .8;
+    }
 
 </style>
 </head>
@@ -43,7 +47,7 @@
     var color = d3.scale.category20();
 
     var cola = cola.d3adaptor()
-        .linkDistance(30)
+        .linkDistance(60)
         .size([width, height]);
 
     var outer = d3.select("body").append("svg")
@@ -73,6 +77,8 @@
     var viewgraph = { nodes: [], links: [] };
     var modelgraph = new tmdb.Graph();
 
+    var nodeWidth = 30, nodeHeight = 35;
+
     var d = modelgraph.getNode(tmdb.Movie, 550, addViewNode);
     $.when(d).then(function (startNode) {
         refocus(startNode);
@@ -90,7 +96,23 @@
 
     function refreshViewGraph() {
         viewgraph.links = [];
-        viewgraph.nodes.forEach(function (v) { v.colour = modelgraph.fullyExpanded(v) ? "blue" : "red" });
+        viewgraph.nodes.forEach(function (v) {
+            var fullyExpanded = modelgraph.fullyExpanded(v);
+            v.colour = fullyExpanded ? "blue" : "red"
+            if (!v.cast) return;
+            var view = d3.select("#" + v.name() + "_spikes");
+            if (fullyExpanded) {
+                view.selectAll(".spike").remove();
+            } else {
+                var r = 2 * Math.PI / v.cast.length;
+                for (var i = 0; i < v.cast.length; ++i) {
+                    view.append("line")
+                        .attr("class", "spike")
+                        .attr("x1", 15 + 25 * Math.cos(r * i)).attr("y1", 17.5 + 30 * Math.sin(r * i))
+                        .attr("x2", 15).attr("y2", 17.5);
+                }
+            }
+        });
         Object.keys(modelgraph.edges).forEach(function (e) {
             var l = modelgraph.edges[e];
             var u = modelgraph.nodes[l.source], v = modelgraph.nodes[l.target];
@@ -105,25 +127,27 @@
 
     function addViewNode(v, startpos) {
         v.viewgraphid = viewgraph.nodes.length;
+        //v.width = nodeWidth;
+        //v.height = nodeHeight;
         var d = v.getImage();
         $.when(d).then(function (node) {
-            d3.select("#" + node.name())
-            .append("image")
-            .attr("xlink:href", function (d) {
-                var url = d.imgurl;
+            d3.select("#" + node.name()).append("image")
+            .attr("transform", "translate(3,6)")
+            .attr("xlink:href", function (v) {
+                var url = v.imgurl;
                 var simg = this;
                 var img = new Image();
                 img.onload = function () {
-                    d.width = this.width * imageScale;
-                    d.height = this.height * imageScale;
-                    simg.setAttribute("width", d.width);
-                    simg.setAttribute("height", d.height);
+                    //v.width = this.width * imageScale;
+                    //v.height = this.height * imageScale;
+                    simg.setAttribute("width", nodeWidth - 6);
+                    simg.setAttribute("height", nodeHeight - 6);
                 }
                 return img.src = url;
             })
-            .on("mouseover", function () { imageZoom(this, 1 / imageScale) })
-            .on("touchend", function () { toggleImageZoom(this) })
-            .on("mouseout", function () { imageZoom(this, 1) });
+            //.on("mouseover", function () { imageZoom(this, 1 / imageScale) })
+            //.on("touchend", function () { toggleImageZoom(this) })
+            //.on("mouseout", function () { imageZoom(this, 1) });
         });
         if (typeof startpos !== 'undefined') {
             v.x = startpos.x;
@@ -172,7 +196,7 @@
         var node = nodesLayer.selectAll(".node")
             .data(viewgraph.nodes, function (d) { return d.viewgraphid; });
 
-        var enter = node.enter().append("g")
+        var nodeEnter = node.enter().append("g")
             .attr("id", function (d) { return d.name() })
             .attr("class", function (d) { return "node" + ('image' in d ? ' imagenode' : '') })
             .on("mousedown", function () { nodeMouseDown = true; })
@@ -182,30 +206,31 @@
             })
             .call(cola.drag);
 
-        nodesLayer.selectAll(".imagenode")
-            .attr("class", "node")
-            .append("image")
-            .attr("xlink:href", function (d) {
-                var url = "graphdata/" + d['image'] + ".gif";
-                var simg = this;
-                var img = new Image();
-                img.onload = function () {
-                    d.width = this.width * imageScale;
-                    d.height = this.height * imageScale;
-                    simg.setAttribute("width", d.width);
-                    simg.setAttribute("height", d.height);
-                }
-                return img.src = url;
-            })
-            .on("mouseover", function () { imageZoom(this, 1/imageScale) })
-            .on("touchend", function () { toggleImageZoom(this) })
-            .on("mouseout", function () { imageZoom(this, 1) });
-        
-        enter.append("circle")
-            .attr("r", 7)
+        //nodesLayer.selectAll(".imagenode")
+        //    .attr("class", "node")
+        //    .append("image")
+        //    .attr("xlink:href", function (d) {
+        //        var url = "graphdata/" + d['image'] + ".gif";
+        //        var simg = this;
+        //        var img = new Image();
+        //        img.onload = function () {
+        //            d.width = this.width * imageScale;
+        //            d.height = this.height * imageScale;
+        //            simg.setAttribute("width", d.width);
+        //            simg.setAttribute("height", d.height);
+        //        }
+        //        return img.src = url;
+        //    })
+        //    .on("mouseover", function () { imageZoom(this, 1/imageScale) })
+        //    .on("touchend", function () { toggleImageZoom(this) })
+        //    .on("mouseout", function () { imageZoom(this, 1) });
+        nodeEnter.append("g").attr("id",function (d) { return d.name() + "_spikes" })
+        nodeEnter.append("rect")
+            .attr("rx", 5).attr("ry", 5)
+            .attr("width", 30).attr("height", 40)
             .on("click", function (d) { click(d) })
             .on("touchend", function (d) { click(d) });
-        enter.append("title")
+        nodeEnter.append("title")
             .text(function (d) { return d.label; });
 
         node.style("fill", function (d) { return d.colour; });
@@ -216,7 +241,7 @@
                 .attr("x2", function (d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
 
-            node.attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; });
+            node.attr("transform", function (d) { return "translate(" + (d.x - nodeWidth/2) + "," + (d.y-nodeHeight/2) + ")"; });
         });
     }
 </script>

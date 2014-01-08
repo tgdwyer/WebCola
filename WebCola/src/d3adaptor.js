@@ -1,8 +1,14 @@
 ﻿// to do:
 //  - autogenerate downward edge constraints with strongly connected components detection
 //  - 3D! (add a third dimension to descent.ts and try out with three.js)
+/**
+ * @module cola
+ */
 var cola;
 (function (cola) {
+    /**
+     * @class d3adaptor
+     */
     cola.d3adaptor = function () {
         var d3adaptor = {},
             event = d3.dispatch("start", "tick", "end"),
@@ -18,8 +24,7 @@ var cola;
             rootGroup = null,
             links = [],
             constraints = [],
-            distanceMatrix = [],
-            distances = {},
+            distanceMatrix = null,
             descent = {},
             threshold;
 
@@ -54,12 +59,22 @@ var cola;
             event.tick({ type: "tick", alpha: alpha });
         };
 
-        d3adaptor.nodes = function (x) {
+        /**
+         * a list of nodes
+         * @property nodes {Array}
+         * @default empty list
+         */
+        d3adaptor.nodes = function (v) {
             if (!arguments.length) return nodes;
-            nodes = x;
+            nodes = v;
             return d3adaptor;
         };
 
+        /**
+         * a list of hierarchical groups defined over nodes
+         * @property groups {Array}
+         * @default empty list
+         */
         d3adaptor.groups = function (x) {
             if (!arguments.length) return groups;
             groups = x;
@@ -75,37 +90,60 @@ var cola;
             return d3adaptor;
         };
 
+        /**
+         * if true, the layout will not permit overlaps of the node bounding boxes (defined by the width and height properties on nodes)
+         * @property avoidOverlaps
+         * @type bool
+         * @default false
+         */
         d3adaptor.avoidOverlaps = function (v) {
             if (!arguments.length) return avoidOverlaps;
             avoidOverlaps = v;
             return d3adaptor;
         }
 
+        /**
+         * links defined as source, target pairs over nodes
+         * @property links {array}
+         * @default empty list
+         */
         d3adaptor.links = function (x) {
             if (!arguments.length) return links;
             links = x;
             return d3adaptor;
         };
 
-        d3adaptor.constraints = function (x) {
+        /**
+         * list of constraints of various types
+         * @property constraints
+         * @type {array} 
+         * @default empty list
+         */
+        d3adaptor.constraints = function (c) {
             if (!arguments.length) return constraints;
-            constraints = x;
+            constraints = c;
             return d3adaptor;
         }
 
-        // the following does nothing, it's just here so that if people forget to remove the call when they switch from
-        // d3 to cola, it doesn't break the chaining.
-        d3adaptor.charge = function (x) {
-            if (!arguments.length) return 0;
-            return d3adaptor;
-        };
-
+        /**
+         * Matrix of ideal distances between all pairs of nodes.
+         * If unspecified, the ideal distances for pairs of nodes will be based on the shortest path distance between them.
+         * @property distanceMatrix
+         * @type {Array of Array of Number}
+         * @default null
+         */
         d3adaptor.distanceMatrix = function (d) {
             if (!arguments.length) return distanceMatrix;
             distanceMatrix = d;
             return d3adaptor;
         }
 
+        /**
+         * Size of the layout canvas dimensions [x,y]. Currently only used to determine the midpoint which is taken as the starting position
+         * for nodes with no preassigned x and y.
+         * @property size
+         * @type {Array of Number}
+         */
         d3adaptor.size = function (x) {
             if (!arguments.length) return size;
             size = x;
@@ -143,6 +181,13 @@ var cola;
             return d3adaptor;
         }
 
+        /**
+         * start the layout process
+         * @method start
+         * @param {number} [initialUnconstrainedIterations=0] unconstrained initial layout iterations 
+         * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
+         * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
+         */
         d3adaptor.start = function () {
             var i,
                 j,
@@ -173,7 +218,10 @@ var cola;
                 x[i] = v.x, y[i] = v.y;
             });
 
-            if (distanceMatrix.length != N) {
+            var distances;
+            if (distanceMatrix) {
+                distances = distanceMatrix;
+            } else {
                 var edges = links.map(function (e, i) {
                     return {
                         source: typeof e.source === 'number' ? e.source : e.source.index,
@@ -181,7 +229,7 @@ var cola;
                         length: typeof e.length !== 'undefined' ? e.length : 1
                     };
                 });
-                distanceMatrix = ShortestPaths.johnsons(N, edges);
+                distances = ShortestPaths.johnsons(N, edges);
                 var G = cola.Descent.createSquareMatrix(N, function () { return 2 });
                 edges.forEach(function (e) {
                     G[e.source][e.target] = G[e.target][e.source] = 1;
@@ -189,7 +237,7 @@ var cola;
             }
 
             var D = cola.Descent.createSquareMatrix(N, function (i, j) {
-                return distanceMatrix[i][j] * linkDistance;
+                return distances[i][j] * linkDistance;
             });
 
             if (rootGroup && typeof rootGroup.groups !== 'undefined') {
