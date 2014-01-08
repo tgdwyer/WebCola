@@ -40,9 +40,9 @@ var PairingHeap = (function () {
     PairingHeap.prototype.merge = function (heap2, lessThan) {
         if (this.empty())
             return heap2;
-else if (heap2.empty())
+        else if (heap2.empty())
             return this;
-else if (lessThan(this.elem, heap2.elem)) {
+        else if (lessThan(this.elem, heap2.elem)) {
             this.subheaps.push(heap2);
             return this;
         } else {
@@ -54,14 +54,14 @@ else if (lessThan(this.elem, heap2.elem)) {
     PairingHeap.prototype.removeMin = function (lessThan) {
         if (this.empty())
             return null;
-else
+        else
             return this.mergePairs(lessThan);
     };
 
     PairingHeap.prototype.mergePairs = function (lessThan) {
         if (this.subheaps.length == 0)
             return new PairingHeap(null);
-else if (this.subheaps.length == 1) {
+        else if (this.subheaps.length == 1) {
             return this.subheaps[0];
         } else {
             var firstPair = this.subheaps.pop().merge(this.subheaps.pop(), lessThan);

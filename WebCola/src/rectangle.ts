@@ -78,9 +78,9 @@ module vpsc {
         } {
             var x1 = this.cx(), y1 = this.cy(),
                 sides = [[this.x, this.y, this.X, this.y],
-                         [this.X, this.y, this.X, this.Y],
-                         [this.X, this.Y, this.x, this.Y],
-                         [this.x, this.Y, this.x, this.y]];
+                    [this.X, this.y, this.X, this.Y],
+                    [this.X, this.Y, this.x, this.Y],
+                    [this.x, this.Y, this.x, this.y]];
             for (var i = 0; i < 4; ++i) {
                 var r = Rectangle.lineIntersection(x1, y1, x2, y2, sides[i][0], sides[i][1], sides[i][2], sides[i][3]);
                 if (r !== null) return { x: r.x, y: r.y };
@@ -92,8 +92,7 @@ module vpsc {
             x1: number, y1: number,
             x2: number, y2: number,
             x3: number, y3: number,
-            x4: number, y4: number): { x: number; y: number }
-        {
+            x4: number, y4: number): { x: number; y: number } {
             var dx12 = x2 - x1, dx34 = x4 - x3,
                 dy12 = y2 - y1, dy34 = y4 - y3,
                 denominator = dy34 * dx12 - dx34 * dy12;
@@ -115,6 +114,19 @@ module vpsc {
         inflate(pad: number): Rectangle {
             return new Rectangle(this.x - pad, this.X + pad, this.y - pad, this.Y + pad);
         }
+    }
+
+    export function makeEdgeBetween(link: any, source: Rectangle, target: Rectangle, ah: number) {
+        var si = source.rayIntersection(target.cx(), target.cy());
+        if (!si) si = { x: source.cx(), y: source.cy() };
+        var ti = target.rayIntersection(source.cx(), source.cy());
+        if (!ti) ti = { x: target.cx(), y: target.cy() };
+        var dx = ti.x - si.x,
+            dy = ti.y - si.y,
+            l = Math.sqrt(dx * dx + dy * dy), al = l - ah;
+        link.sourceIntersection = si;
+        link.targetIntersection = ti;
+        link.arrowStart = { x: si.x + al * dx / l, y: si.y + al * dy / l };
     }
 
     class Node {
