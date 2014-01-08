@@ -70,9 +70,9 @@
         outer.append('svg:defs').append('svg:marker')
             .attr('id', 'end-arrow')
             .attr('viewBox', '0 -5 10 10')
-            .attr('refX', 5)
-            .attr('markerWidth', 3)
-            .attr('markerHeight', 3)
+            .attr('refX', 8)
+            .attr('markerWidth', 6)
+            .attr('markerHeight', 6)
             .attr('orient', 'auto')
           .append('svg:path')
             .attr('d', 'M0,-5L10,0L0,5L2,0')
@@ -81,20 +81,21 @@
 
         d3.text("graphdata/unix.dot", function (f) {
             var digraph = graphlibDot.parse(f);
+
             var nodeNames = digraph.nodes();
             var nodes = new Array(nodeNames.length);
-            for (var i = 0; i < nodeNames.length; ++i) {
+            nodeNames.forEach(function (name, i) {
                 var v = nodes[i] = digraph._nodes[nodeNames[i]];
                 v.id = i;
-                v.name = nodeNames[i];
-                v.width = 80;
-                v.height = 30;
-            }
+                v.name = name;
+            });
+
             var edges = [];
             for (var e in digraph._edges) {
                 var edge = digraph._edges[e];
                 edges.push({ source: digraph._nodes[edge.u].id, target: digraph._nodes[edge.v].id });
             }
+
             cola
                 .linkDistance(150)
                 .avoidOverlaps(true)
@@ -122,53 +123,43 @@
                 .enter().append("text")
                 .attr("class", "label")
                 .text(function (d) { return d.name; })
-                .call(cola.drag);
-
-            label.each(function (d) {
-                var b = this.getBBox();
-                var extra = 2 * margin + 2 * pad;
-                d.width = b.width + extra;
-                d.height = b.height + extra;
-            });
-
-            node
-                .append("title")
-                .text(function (d) { return d.name; });
+                .call(cola.drag)
+                .each(function (d) {
+                    var b = this.getBBox();
+                    var extra = 2 * margin + 2 * pad;
+                    d.width = b.width + extra;
+                    d.height = b.height + extra;
+                });
 
             cola.start(20, 20, 20).on("tick", function () {
-
-                node.each(function (d) {
-                    d.innerBounds = d.bounds.inflate(-margin);
-                });
-
-                link.each(function (d) {
-                    if (d.source === d.target) {
-                        d.sourceIntersection = { x: d.source.x, y: d.source.y };
-                        d.arrowStart = { x: d.target.x, y: d.target.y };
-                        return;
-                    }
-                    vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
-                    if (isIE()) this.parentNode.insertBefore(this, this);
-                });
-
-                link.attr("x1", function (d) { return d.sourceIntersection.x; })
-                    .attr("y1", function (d) { return d.sourceIntersection.y; })
-                    .attr("x2", function (d) { return d.arrowStart.x; })
-                    .attr("y2", function (d) { return d.arrowStart.y; });
-
-                node.attr("x", function (d) { return d.innerBounds.x; })
+                node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin); })
+                    .attr("x", function (d) { return d.innerBounds.x; })
                     .attr("y", function (d) { return d.innerBounds.y; })
                     .attr("width", function (d) { return d.innerBounds.width(); })
                     .attr("height", function (d) { return d.innerBounds.height(); });
 
-                label.attr("x", function (d) {
-                    return d.x
-                }).attr("y", function (d) { return d.y + (margin + pad) / 2 });
+                link.each(function (d) {
+                    if (d.source === d.target) {
+                            // self edge... need to do something better here.
+                            d.sourceIntersection = { x: d.source.x, y: d.source.y };
+                            d.arrowStart = { x: d.target.x, y: d.target.y };
+                            return;
+                        }
+                        vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                        if (isIE()) this.parentNode.insertBefore(this, this);})
+                    .attr("x1", function (d) { return d.sourceIntersection.x; })
+                    .attr("y1", function (d) { return d.sourceIntersection.y; })
+                    .attr("x2", function (d) { return d.arrowStart.x; })
+                    .attr("y2", function (d) { return d.arrowStart.y; });
+
+                label
+                    .attr("x", function (d) { return d.x })
+                    .attr("y", function (d) { return d.y + (margin + pad) / 2 });
             });
         });
         function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
     </script>
-    This is a cola.js rendering of the classic graphviz dot <a href="http://www.graphviz.org/content/unix">example</a>.  We use <a href="https://github.com/cpettitt/graphlib-dot">graphlib-dot.js</a> to load the dot file.
+    This is a cola.js rendering of the classic graphviz dot <a href="http://www.graphviz.org/content/unix">example</a>.  We use <a href="https://github.com/cpettitt/graphlib-dot">graphlib-dot.js</a> to parse the dot file.
     The initialization for cola here is interesting:
     <pre><code>cola
     .linkDistance(150)
@@ -179,7 +170,7 @@
     .links(edges)
     .jaccardLinkLengths();
 </code></pre>
-    In particular, the call to <code>directedLinkConstraints</code> causes all edges not involved in a cycle to have a separation constraint generated between their source and sink, 
-    with a minimum spacing set to the ideal linkDistance.  This achieves a left-to-right flow layout.  Change <code>'x'</code> to <code>'y'</code> to get top-to-bottom flow layout.
+    In particular, the call to <code>directedLinkConstraints</code> causes all edges not involved in a cycle (strongly connected component) to have a separation constraint generated between their source and sink, 
+    with a minimum spacing set to the ideal linkDistance.  This achieves a left-to-right flow layout.  Change <code>axis: 'x'</code> to <code>'y'</code> to get top-to-bottom flow layout.
 </body>
 </html>
