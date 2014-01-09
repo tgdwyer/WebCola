@@ -31,20 +31,18 @@
 </head>
 <body>
 <h1>Online Graph Exploration</h1>
-<p>Red nodes are incomplete.  Click on them to expand their neighbours.</p>
+<p>Pink nodes are incomplete.  Click on them to expand their neighbours.</p>
 <script src="../extern/d3.v3.js"></script>
 <script src="../extern/jquery-1.10.2.min.js"></script>
 <script src="../extern/fullscreen.js"></script>
-    <script src="../cola.v1.min.js"></script>
-    <script src="../src/d3adapter.js"></script>
-    <script src="../src/descent.js"></script>
-    <script src="tmdbgraph.js"></script>
+<script src="../cola.v1.min.js"></script>
+<script src="tmdbgraph.js"></script>
 <script>
     var width = 960,
         height = 500,
         imageScale = 0.1;
 
-    var color = d3.scale.category20();
+    var red = "rgb(254, 137, 137)";
 
     var cola = cola.d3adaptor()
         .linkDistance(60)
@@ -60,6 +58,7 @@
         .attr('width', "100%")
         .attr('height', "100%")
         .call(d3.behavior.zoom().on("zoom", redraw));
+
     var gradient = outer.append("svg:defs")
       .append("svg:linearGradient")
         .attr("id", "SpikeGradient")
@@ -85,6 +84,7 @@
     var nodeMouseDown = false;
 
     function redraw() {
+        // if mouse down then we are dragging not panning
         if (nodeMouseDown) return;
         vis.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
     }
@@ -92,11 +92,12 @@
     var edgesLayer = vis.append("g");
     var nodesLayer = vis.append("g");
 
-    var viewgraph = { nodes: [], links: [] };
     var modelgraph = new tmdb.Graph();
+    var viewgraph = { nodes: [], links: [] };
 
     var nodeWidth = 30, nodeHeight = 35;
 
+    // get first node 
     var d = modelgraph.getNode(tmdb.Movie, 550, addViewNode);
     $.when(d).then(function (startNode) {
         addViewNode(startNode);
@@ -112,7 +113,6 @@
             refreshViewGraph();
         });
     }
-    var red = "rgb(254, 137, 137)";
 
     function refreshViewGraph() {
         viewgraph.links = [];
@@ -223,22 +223,21 @@
         link.exit().remove();
 
         var node = nodesLayer.selectAll(".node")
-            .data(viewgraph.nodes, function (d) { return d.viewgraphid; });
+            .data(viewgraph.nodes, function (d) { return d.viewgraphid; })
 
         var nodeEnter = node.enter().append("g")
             .attr("id", function (d) { return d.name() })
-            .attr("class", function (d) { return "node" + ('image' in d ? ' imagenode' : '') })
-            .on("mousedown", function () { nodeMouseDown = true; })
+            .attr("class", "node" )
+            .on("mousedown", function () { nodeMouseDown = true; }) // recording the mousedown state allows us to differentiate dragging from panning
             .on("mouseup", function () { nodeMouseDown = false; })
-            .on("touchmove", function () {
-                d3.event.preventDefault()
-            })
-            .on("mouseenter", function (d) { hintNeighbours(d) })
+            .on("touchmove", function () { d3.event.preventDefault() })
+            .on("mouseenter", function (d) { hintNeighbours(d) }) // on mouse over nodes we show "spikes" indicating there are hidden neighbours
             .on("mouseleave", function (d) { unhintNeighbours(d) })
             .call(cola.drag);
 
         nodeEnter.append("g").attr("id", function (d) { return d.name() + "_spikes" })
             .attr("transform", "translate(3,3)");
+
         nodeEnter.append("rect")
             .attr("rx", 5).attr("ry", 5)
             .style("stroke-width","0")
@@ -265,11 +264,13 @@ Mouse wheel zooms, left-mouse-button drag on the background to pan.
 <p>
     This example introduces the notion of a "model" graph and a "view" graph.  The model graph is too large to sensibly display in one go.
     Instead we begin with just a small neighbourhood showing in the view graph which is bound to SVG visuals following the usual
-    D3 pattern.  The red nodes have neighbours in the model graph
+    D3 pattern.  The pink nodes have neighbours in the model graph
     that are not shown in the view graph.  Clicking on a red node causes its invisible neighbours to be added to the view and
     we use D3's enter/exit selections to update the display as usual.
     </p><p>
     The stability of WebCoLa layout makes this type of dynamic graph layout much less chaotic than is possible with the D3 force layout.
-</p>
+    <p>
+    Data from <a href="http://www.themoviedb.org">tmdb</a>.
+    </p>
 </body>
 </html>
