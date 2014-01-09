@@ -26,6 +26,7 @@ var cola;
             constraints = [],
             distanceMatrix = null,
             descent = {},
+            directedLinkConstraints = null,
             threshold;
 
         d3adaptor.tick = function () {
@@ -103,6 +104,21 @@ var cola;
         }
 
         /**
+         * causes constraints to be generated such that directed graphs are laid out either from left-to-right or top-to-bottom.
+         * a separation constraint is generated in the selected axis for each edge that is not involved in a cycle (part of a strongly connected component)
+         * @param axis {string} 'x' for left-to-right, 'y' for top-to-bottom
+         * @param minSeparation {number} minimum spacing required across edges
+         */
+        d3adaptor.flowLayout = function (axis, minSeparation) {
+            if (!arguments.length) axis = 'y';
+            directedLinkConstraints = {
+                axis: axis,
+                getMinSep: arguments.length > 1 ? function () { return minSeparation } : d3adaptor.linkDistance
+            };
+            return d3adaptor;
+        }
+
+        /**
          * links defined as source, target pairs over nodes
          * @property links {array}
          * @default empty list
@@ -172,12 +188,12 @@ var cola;
         };
 
         d3adaptor.symmetricDiffLinkLengths = function (w) {
-            cola.symmetricDiffLinkLengths(nodes, links, w);
+            cola.symmetricDiffLinkLengths(nodes.length, links, w);
             return d3adaptor;
         }
 
         d3adaptor.jaccardLinkLengths = function (w) {
-            cola.jaccardLinkLengths(nodes, links, w)
+            cola.jaccardLinkLengths(nodes.length, links, w)
             return d3adaptor;
         }
 
@@ -220,8 +236,10 @@ var cola;
 
             var distances;
             if (distanceMatrix) {
+                // use the user specified distanceMatrix
                 distances = distanceMatrix;
             } else {
+                // construct an n X n distance matrix based on shortest paths through graph (with respect to edge.length).
                 var edges = links.map(function (e, i) {
                     return {
                         source: typeof e.source === 'number' ? e.source : e.source.index,
@@ -230,6 +248,9 @@ var cola;
                     };
                 });
                 distances = ShortestPaths.johnsons(N, edges);
+
+                // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
+                // otherwise 2. (
                 var G = cola.Descent.createSquareMatrix(N, function () { return 2 });
                 edges.forEach(function (e) {
                     G[e.source][e.target] = G[e.target][e.source] = 1;
@@ -248,7 +269,12 @@ var cola;
                     x[i] = 0, y[i++] = 0;
                     x[i] = 0, y[i++] = 0;
                 });
-            } else rootGroup = { leaves: nodes };
+            } else rootGroup = { leaves: nodes, groups: [] };
+
+            if (directedLinkConstraints) {
+                constraints = (constraints || []).concat(cola.generateDirectedEdgeConstraints(n, links, directedLinkConstraints.axis, directedLinkConstraints.getMinSep()));
+            }
+
             
             var initialUnconstrainedIterations = arguments.length > 0 ? arguments[0] : 0;
             var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;

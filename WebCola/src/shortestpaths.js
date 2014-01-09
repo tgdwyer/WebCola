@@ -6,6 +6,14 @@ var ShortestPaths;
     }
     ShortestPaths.dijkstra = dijkstra;
 
+    /**
+    * compute shortest paths for graph over n nodes with edges an array of source/target pairs
+    * edges may optionally have a length attribute.  1 is the default.
+    *
+    * @method johnsons
+    * @param n {number} number of nodes
+    * @param es {Edge} an array of source/target pairs
+    */
     function johnsons(n, es) {
         var D = new Array(n), N = getNeighbours(n, es);
         for (var i = 0; i < n; ++i) {

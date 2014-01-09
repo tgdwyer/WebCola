@@ -27,6 +27,7 @@ module tmdb {
         imgurl: string;
         cast: any[];
         label: string;
+        degree: number = 0;
         constructor(public type: NodeType, public id: number) { }
         name(): string { return this.type + this.id.toString(); }
         getImage(): JQueryPromise<Node> {
@@ -111,6 +112,7 @@ module tmdb {
             if (!(ename in this.edges)) {
                 this.edges[ename] = edge;
             }
+            ++u.degree, ++v.degree;
         }
     }
 }

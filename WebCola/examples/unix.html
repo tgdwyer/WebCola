@@ -99,7 +99,7 @@
             cola
                 .linkDistance(150)
                 .avoidOverlaps(true)
-                .directedLinkConstraints({ axis: 'x', gap: cola.linkDistance() })
+                .flowLayout('x')
                 .size([width, height])
                 .nodes(nodes)
                 .links(edges)
@@ -164,13 +164,14 @@
     <pre><code>cola
     .linkDistance(150)
     .avoidOverlaps(true)
-    .directedLinkConstraints({ axis: 'x', gap: cola.linkDistance() })
+    .flowLayout('x')
     .size([width, height])
     .nodes(nodes)
     .links(edges)
     .jaccardLinkLengths();
 </code></pre>
-    In particular, the call to <code>directedLinkConstraints</code> causes all edges not involved in a cycle (strongly connected component) to have a separation constraint generated between their source and sink, 
-    with a minimum spacing set to the ideal linkDistance.  This achieves a left-to-right flow layout.  Change <code>axis: 'x'</code> to <code>'y'</code> to get top-to-bottom flow layout.
+    In particular, the call to <code>flowLayout</code> causes all edges not involved in a cycle (strongly connected component) to have a separation constraint generated between their source and sink, 
+    with a minimum spacing set to the ideal linkDistance.  Specifying the <code>'x'</code> axis achieves a left-to-right flow layout.  The default is top-to-bottom flow layout (i.e. <code>'y'</code>).
+    The default minimum separation between source and target of such edges is <code>linkDistance</code>.  Specify a different minimum as a second parameter to <code>flowLayout</code>.
 </body>
 </html>

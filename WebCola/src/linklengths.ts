@@ -58,7 +58,7 @@ module cola {
     export function jaccardLinkLengths(n: number, links: Link[], w: number = 1) {
         computeLinkLengths(n, links, w, (a, b) =>
             Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1 ? 0 : intersectionCount(a, b) / unionCount(a, b)
-        );
+            );
     }
 
     export interface IConstraint {
@@ -73,8 +73,8 @@ module cola {
     }
 
     // generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
-    export function generateDirectedEdgeConstraints(n: number, links: Link[], params: DirectedEdgeConstraints): IConstraint[]{
-        if (!params) return [];
+    export function generateDirectedEdgeConstraints(n: number, links: Link[], axis: string, minSeparation: number): IConstraint[]
+    {
         var components = stronglyConnectedComponents(n, links);
         var nodes = {};
         components.filter(c => c.length > 1).forEach(c => 
@@ -85,10 +85,10 @@ module cola {
             var u = nodes[l.source], v = nodes[l.target];
             if (!u || !v || u.component !== v.component) {
                 constraints.push({
-                    axis: params.axis,
+                    axis: axis,
                     left: l.source,
                     right: l.target,
-                    gap: params.gap
+                    gap: minSeparation
                 });
             }
         });

@@ -25,6 +25,15 @@ module cola {
 
         public project: { (x0: number[], y0: number[], r: number[]): void }[] = null;
 
+        /**
+         * @method constructor
+         * @param x {number[]} initial x coordinates for nodes
+         * @param y {number[]} initial y coordinates for nodes
+         * @param D {number[][]} matrix of desired distances between pairs of nodes
+         * @param G {number[][]} [default=null] if specified, G is a matrix of weights for goal terms between pairs of nodes.  
+         * If G[i][j] > 1 and the separation between nodes i and j is greater than their ideal distance, then there is no contribution for this pair to the goal
+         * If G[i][j] <= 1 then it is used as a weighting on the contribution of the variance between ideal and actual separation between i and j to the goal function
+         */
         constructor(x: number[], y: number[], public D: number[][], public G: number[][]= null) {
             this.x = [x, y];
             this.k = 2;
@@ -121,6 +130,9 @@ module cola {
                     if (weight > 1 && l > D || !isFinite(D)) {
                         for (i = 0; i < this.k; ++i) this.H[i][u][v] = 0;
                         continue;
+                    }
+                    if (weight > 1) {
+                        weight = 1;
                     }
                     var D2: number = D * D;
                     var gs: number = weight * (l - D) / (D2 * l);

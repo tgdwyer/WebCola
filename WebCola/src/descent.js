@@ -1,6 +1,15 @@
 var cola;
 (function (cola) {
     var Descent = (function () {
+        /**
+        * @method constructor
+        * @param x {number[]} initial x coordinates for nodes
+        * @param y {number[]} initial y coordinates for nodes
+        * @param D {number[][]} matrix of desired distances between pairs of nodes
+        * @param G {number[][]} [default=null] if specified, G is a matrix of weights for goal terms between pairs of nodes.
+        * If G[i][j] > 1 and the separation between nodes i and j is greater than their ideal distance, then there is no contribution for this pair to the goal
+        * If G[i][j] <= 1 then it is used as a weighting on the contribution of the variance between ideal and actual separation between i and j to the goal function
+        */
         function Descent(x, y, D, G) {
             if (typeof G === "undefined") { G = null; }
             this.D = D;
@@ -112,6 +121,9 @@ var cola;
                         for (i = 0; i < this.k; ++i)
                             this.H[i][u][v] = 0;
                         continue;
+                    }
+                    if (weight > 1) {
+                        weight = 1;
                     }
                     var D2 = D * D;
                     var gs = weight * (l - D) / (D2 * l);
