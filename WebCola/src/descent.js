@@ -1,5 +1,13 @@
+/**
+* @module cola
+*/
 var cola;
 (function (cola) {
+    /**
+    * Uses a gradient descent approach to reduce a stress or p-stress goal function over a graph with specified ideal edge lengths or a square matrix of dissimilarities.
+    *
+    * @class Descent
+    */
     var Descent = (function () {
         /**
         * @method constructor

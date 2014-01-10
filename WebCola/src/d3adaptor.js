@@ -39,6 +39,12 @@ var cola;
             var n = nodes.length,
                 m = links.length;
 
+            //var locks = new Array(n);
+            //for (var o, i = 0; i < n; ++i) {
+            //    o = nodes[i];
+            //    locks[i] = o.fixed ? [o.px, o.py] : [0,0];
+            //}
+
             var s1 = descent.rungeKutta();
             //var s1 = descent.reduceStress();
             if (typeof lastStress !== 'undefined' && lastStress > s1) {
@@ -247,7 +253,7 @@ var cola;
                         length: typeof e.length !== 'undefined' ? e.length : 1
                     };
                 });
-                distances = ShortestPaths.johnsons(N, edges);
+                distances = (new shortestpaths.Calculator(N, edges)).DistanceMatrix();
 
                 // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
                 // otherwise 2. (

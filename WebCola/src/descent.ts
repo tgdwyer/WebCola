@@ -1,10 +1,34 @@
+/**
+ * @module cola
+ */
 module cola {
+    /**
+     * Uses a gradient descent approach to reduce a stress or p-stress goal function over a graph with specified ideal edge lengths or a square matrix of dissimilarities.
+     *
+     * @class Descent
+     */
     export class Descent {
         public threshold: number = 0.00001;
+        /** Hessian Matrix
+         * @property H {number[][][]}
+         */
         public H: number[][][];
+        /** gradient vector
+         * @property G {number[][]}
+         */
         public g: number[][];
+        /** positions vector
+         * @property x {number[][]}
+         */
         public x: number[][];
+        /**
+         * @property k {number} dimensionality
+         */
         public k: number;
+        /**
+         * number of data-points / nodes / size of vectors/matrices
+         * @property n {number}
+         */
         public n: number;
 
         private static zeroDistance: number = 1e-10;

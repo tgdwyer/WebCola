@@ -14,7 +14,7 @@ asyncTest("all-pairs shortest paths", function () {
             .links(graph.links);
         var n = d3cola.nodes().length;
         equal(n, 4);
-        var D = ShortestPaths.johnsons(n, d3cola.links());
+        var D = (new shortestpaths.Calculator(n, d3cola.links())).DistanceMatrix();
         deepEqual(D, [
             [0, 1, 1, 2],
             [1, 0, 1, 2],
@@ -216,9 +216,10 @@ test("dijkstra", function () {
     //  1-2
     var n = 5;
     var links = getLinks([[0, 1], [1, 2], [2, 3], [3, 4], [4, 1]])
-    var d = ShortestPaths.dijkstra(n, links, 0);
+    var calc = new shortestpaths.Calculator(n, links);
+    var d = calc.DistancesFromNode(0);
     deepEqual(d, [0, 1, 2, 3, 2]);
-    var D = ShortestPaths.johnsons(n, links);
+    var D = calc.DistanceMatrix();
     deepEqual(D, [
         [0, 1, 2, 3, 2],
         [1, 0, 1, 2, 1],
