@@ -1,6 +1,71 @@
+/**
+* @module cola
+*/
 var cola;
 (function (cola) {
+    /**
+    * Descent respects a collection of locks over nodes that should not move
+    * @class Locks
+    */
+    var Locks = (function () {
+        function Locks() {
+            this.locks = {};
+        }
+        /**
+        * add a lock on the node at index id
+        * @method add
+        * @param id index of node to be locked
+        * @param x required position for node
+        */
+        Locks.prototype.add = function (id, x) {
+            this.locks[id] = x;
+        };
+
+        /**
+        * @method clear clear all locks
+        */
+        Locks.prototype.clear = function () {
+            this.locks = {};
+        };
+
+        /**
+        * @isEmpty
+        * @returns false if no locks exist
+        */
+        Locks.prototype.isEmpty = function () {
+            for (var l in this.locks)
+                return false;
+            return true;
+        };
+
+        /**
+        * perform an operation on each lock
+        * @apply
+        */
+        Locks.prototype.apply = function (f) {
+            for (var l in this.locks) {
+                f(l, this.locks[l]);
+            }
+        };
+        return Locks;
+    })();
+    cola.Locks = Locks;
+
+    /**
+    * Uses a gradient descent approach to reduce a stress or p-stress goal function over a graph with specified ideal edge lengths or a square matrix of dissimilarities.
+    *
+    * @class Descent
+    */
     var Descent = (function () {
+        /**
+        * @method constructor
+        * @param x {number[]} initial x coordinates for nodes
+        * @param y {number[]} initial y coordinates for nodes
+        * @param D {number[][]} matrix of desired distances between pairs of nodes
+        * @param G {number[][]} [default=null] if specified, G is a matrix of weights for goal terms between pairs of nodes.
+        * If G[i][j] > 1 and the separation between nodes i and j is greater than their ideal distance, then there is no contribution for this pair to the goal
+        * If G[i][j] <= 1 then it is used as a weighting on the contribution of the variance between ideal and actual separation between i and j to the goal function
+        */
         function Descent(x, D, G) {
             if (typeof G === "undefined") { G = null; }
             this.D = D;
@@ -22,6 +87,7 @@ var cola;
             this.ia = new Array(this.k);
             this.ib = new Array(this.k);
             this.xtmp = new Array(this.k);
+            this.locks = new Locks();
             this.minD = Number.MAX_VALUE;
             var i = n, j;
             while (i--) {
@@ -80,6 +146,7 @@ var cola;
         };
 
         Descent.prototype.computeDerivatives = function (x) {
+            var _this = this;
             var n = this.n;
             if (n <= 1)
                 return;
@@ -113,6 +180,9 @@ var cola;
                             this.H[i][u][v] = 0;
                         continue;
                     }
+                    if (weight > 1) {
+                        weight = 1;
+                    }
                     var D2 = D * D;
                     var gs = weight * (l - D) / (D2 * l);
                     var hs = -weight / (D2 * l * l * l);
@@ -125,6 +195,19 @@ var cola;
                 }
                 for (i = 0; i < this.k; ++i)
                     this.H[i][u][u] = Huu[i];
+            }
+            if (!this.locks.isEmpty()) {
+                // find a reasonable lockweight based on the max value on the diagonal of the hessian
+                var lockWeight = 0;
+                for (var u = 0; u < n; ++u)
+                    for (i = 0; i < this.k; ++i)
+                        lockWeight = Math.max(lockWeight, this.H[i][u][u]);
+                this.locks.apply(function (u, p) {
+                    for (i = 0; i < _this.k; ++i) {
+                        _this.H[i][u][u] += lockWeight;
+                        _this.g[i][u] -= lockWeight * (p[i] - x[i][u]);
+                    }
+                });
             }
         };
 
@@ -222,7 +305,6 @@ var cola;
 
         Descent.prototype.rungeKutta = function () {
             var _this = this;
-            debugger;
             this.computeNextPosition(this.x, this.a);
             Descent.mid(this.x, this.a, this.ia);
             this.computeNextPosition(this.ia, this.b);

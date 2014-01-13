@@ -1,3 +1,6 @@
+/**
+ * @module cola
+ */
 module cola {
     export interface Link {
         source: number;
@@ -47,18 +50,22 @@ module cola {
         });
     }
 
-    // modify the specified link lengths based on the symmetric difference of their neighbours
+    /** modify the specified link lengths based on the symmetric difference of their neighbours
+     * @class symmetricDiffLinkLengths
+     */
     export function symmetricDiffLinkLengths(n: number, links: Link[], w: number = 1) {
         computeLinkLengths(n, links, w, function (a, b) {
             return Math.sqrt(unionCount(a, b) - intersectionCount(a, b));
         });
     }
 
-    // modify the specified links lengths based on the jaccard difference between their neighbours
+    /** modify the specified links lengths based on the jaccard difference between their neighbours
+     * @class jaccardLinkLengths
+     */
     export function jaccardLinkLengths(n: number, links: Link[], w: number = 1) {
         computeLinkLengths(n, links, w, (a, b) =>
             Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1 ? 0 : intersectionCount(a, b) / unionCount(a, b)
-        );
+            );
     }
 
     export interface IConstraint {
@@ -67,24 +74,30 @@ module cola {
         gap: number;
     }
 
-    // generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
-    export function generateDirectedEdgeConstraints(n: number, links: Link[], gap: number): IConstraint[] {
+    export interface DirectedEdgeConstraints {
+        axis: string;
+        gap: number;
+    }
+
+    /** generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
+     * @class generateDirectedEdgeConstraints
+     */
+    export function generateDirectedEdgeConstraints(n: number, links: Link[], axis: string, minSeparation: number): IConstraint[]
+    {
         var components = stronglyConnectedComponents(n, links);
         var nodes = {};
-        components.forEach(c => 
-            c.forEach(v => 
-                nodes[v].component = c
-            )
+        components.filter(c => c.length > 1).forEach(c => 
+            c.forEach(v => nodes[v] = c)
         );
         var constraints: any[] = [];
         links.forEach(l => {
             var u = nodes[l.source], v = nodes[l.target];
             if (!u || !v || u.component !== v.component) {
                 constraints.push({
-                    axis: "y",
+                    axis: axis,
                     left: l.source,
                     right: l.target,
-                    gap: gap
+                    gap: minSeparation
                 });
             }
         });
