@@ -193,23 +193,6 @@
         refocus(focus);
     }
 
-    function toggleImageZoom(img) {
-        var scale = 1;
-        d3.select(img).each(function (d) {
-            if (Math.abs(img.width.baseVal.value - d.width) < 1) scale /= imageScale;
-        });
-        imageZoom(img, scale);
-    }
-
-    function imageZoom(img, scale) {
-        d3.select(img)
-            .transition()
-            .attr("width", function (d) {
-                return scale * d.width;
-            })
-            .attr("height", function (d) { return scale * d.height; });
-    }
-
     function update() {
         cola.nodes(viewgraph.nodes)
             .links(viewgraph.links)
