@@ -1,6 +1,10 @@
 ﻿
-
-function fullScreen(e) {
+function endFullScreen(oncancel) {
+    if (!RunPrefixMethod(document, "FullScreen") && !RunPrefixMethod(document, "IsFullScreen")) {
+        oncancel();
+    }
+}
+function fullScreen(e, oncancel) {
     if (RunPrefixMethod(document, "FullScreen") || RunPrefixMethod(document, "IsFullScreen")) {
         RunPrefixMethod(document, "CancelFullScreen");
     }
@@ -9,7 +13,12 @@ function fullScreen(e) {
         e.setAttribute("width", screen.width);
         e.setAttribute("height", screen.height);
     }
-
+    if (arguments.length > 1) {
+        var f = function () { endFullScreen(oncancel); };
+        document.addEventListener("fullscreenchange", f, false);
+        document.addEventListener("mozfullscreenchange", f, false);
+        document.addEventListener("webkitfullscreenchange", f, false);
+    }
 }
 
 var pfx = ["webkit", "moz", "ms", "o", ""];
@@ -29,5 +38,9 @@ function RunPrefixMethod(obj, method) {
         }
         p++;
     }
+}
 
+function isFullScreen() {
+    var fullscreenEnabled = document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled;
+    return fullscreenEnabled;
 }

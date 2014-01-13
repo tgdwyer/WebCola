@@ -40,15 +40,17 @@ var cola;
                 m = links.length,
                 o;
 
-            var haveLocks = false;
+            descent.locks.clear();
             for (i = 0; i < n; ++i) {
                 o = nodes[i];
-                if (o.fixed && typeof o.px !== 'undefined') {
-                    descent.locks.add(i, [o.px, o.py]);
-                    haveLocks = true;
+                if (o.fixed) {
+                    var p = [o.x, o.y];
+                    if (typeof o.px !== 'undefined') {
+                        p = [o.px, o.py];
+                    }
+                    descent.locks.add(i, p);
                 }
             }
-            if (!haveLocks) descent.locks.clear(); 
 
             var s1 = descent.rungeKutta();
             //var s1 = descent.reduceStress();
@@ -59,7 +61,7 @@ var cola;
 
             for (i = 0; i < n; ++i) {
                 o = nodes[i];
-                if (o.fixed) {
+                if (o.fixed && typeof o.px !== 'undefined') {
                     o.x = o.px;
                     o.y = o.py;
                 } else {
@@ -341,8 +343,8 @@ var cola;
 
             if (!arguments.length) return drag;
 
-            this.on("mouseover.d3adaptor", colaMouseover)
-                .on("mouseout.d3adaptor", colaMouseout)
+            this//.on("mouseover.d3adaptor", colaMouseover)
+                //.on("mouseout.d3adaptor", colaMouseout)
                 .call(drag);
         };
 

@@ -133,7 +133,7 @@
 
     function hintNeighbours(v) {
         if (!v.cast) return;
-        var hiddenEdges = v.cast.length - v.degree;
+        var hiddenEdges = v.cast.length + 1 - v.degree;
         var r = 2 * Math.PI / hiddenEdges;
         for (var i = 0; i < hiddenEdges; ++i) {
             var w = nodeWidth - 6,
@@ -258,8 +258,32 @@
             node.attr("transform", function (d) { return "translate(" + (d.x - nodeWidth/2) + "," + (d.y-nodeHeight/2) + ")"; });
         });
     }
+    function graphBounds() {
+        var x = Number.POSITIVE_INFINITY, X=Number.NEGATIVE_INFINITY, y=Number.POSITIVE_INFINITY, Y=Number.NEGATIVE_INFINITY;
+        nodesLayer.selectAll(".node").each(function (v) {
+            x = Math.min(x, v.x - nodeWidth / 2);
+            X = Math.max(X, v.x + nodeWidth / 2);
+            y = Math.min(y, v.y - nodeHeight / 2);
+            Y = Math.max(Y, v.y + nodeHeight / 2);
+        });
+        return { x: x, X: X, y: y, Y: Y };
+    }
+    function fullScreenChange() {
+        outer.attr("width", width).attr("height", height);
+    }
+    function zoomToFit() {
+        var b = graphBounds();
+        var w = b.X - b.x, h = b.Y - b.y;
+        var s = Math.min(width / w, height / h);
+        var tx = (-b.x * s + (width / s - w) * s / 2), ty = (-b.y * s + (height / s - h) * s / 2);
+        //vis.attr("transform", "translate(" + tx + "," + ty + ") scale(" + s + ")");
+        d3.behavior.zoom().translate([tx, ty]);
+        d3.behavior.scale(s);
+        redraw();
+    }
 </script>
-    <button onclick="fullScreen(outer[0][0])">Full screen</button>
+    <button onclick="fullScreen(outer[0][0], fullScreenChange)">Full screen</button>
+    <button onclick="zoomToFit()">Zoom to fit</button>
 Mouse wheel zooms, left-mouse-button drag on the background to pan.
 <p>
     This example introduces the notion of a "model" graph and a "view" graph.  The model graph is too large to sensibly display in one go.
