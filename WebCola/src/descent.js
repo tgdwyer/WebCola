@@ -1,16 +1,16 @@
 var cola;
 (function (cola) {
     var Descent = (function () {
-        function Descent(x, y, D, G) {
+        function Descent(x, D, G) {
             if (typeof G === "undefined") { G = null; }
             this.D = D;
             this.G = G;
             this.threshold = 0.00001;
             this.random = new PseudoRandom();
             this.project = null;
-            this.x = [x, y];
-            this.k = 2;
-            var n = this.n = x.length;
+            this.x = x;
+            this.k = x.length; // dimensionality
+            var n = this.n = x[0].length;
             this.H = new Array(this.k);
             this.g = new Array(this.k);
             this.Hd = new Array(this.k);
@@ -222,6 +222,7 @@ var cola;
 
         Descent.prototype.rungeKutta = function () {
             var _this = this;
+            debugger;
             this.computeNextPosition(this.x, this.a);
             Descent.mid(this.x, this.a, this.ia);
             this.computeNextPosition(this.ia, this.b);

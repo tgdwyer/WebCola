@@ -25,10 +25,10 @@ module cola {
 
         public project: { (x0: number[], y0: number[], r: number[]): void }[] = null;
 
-        constructor(x: number[], y: number[], public D: number[][], public G: number[][]= null) {
-            this.x = [x, y];
-            this.k = 2;
-            var n = this.n = x.length;
+        constructor(x: number[][], public D: number[][], public G: number[][]= null) {
+            this.x = x;
+            this.k = x.length; // dimensionality
+            var n = this.n = x[0].length; // number of nodes
             this.H = new Array(this.k);
             this.g = new Array(this.k);
             this.Hd = new Array(this.k);
@@ -207,7 +207,7 @@ module cola {
             }
         }
 
-        run(iterations: number): number {
+        public run(iterations: number): number {
             var stress = Number.MAX_VALUE, converged = false;
             while (!converged && iterations-- > 0) {
                 var s = this.rungeKutta();
@@ -217,7 +217,8 @@ module cola {
             return stress;
         }
 
-        rungeKutta(): number {
+        public rungeKutta(): number {
+            debugger;
             this.computeNextPosition(this.x, this.a);
             Descent.mid(this.x, this.a, this.ia);
             this.computeNextPosition(this.ia, this.b);

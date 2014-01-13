@@ -206,7 +206,7 @@ var cola;
             var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;
             var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;
             this.avoidOverlaps(false);
-            descent = new cola.Descent(x, y, D);
+            descent = new cola.Descent([x, y], D);
 
             // apply initialIterations without user constraints or nonoverlap constraints
             descent.run(initialUnconstrainedIterations);
