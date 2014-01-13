@@ -20,9 +20,11 @@
     <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="examples\brainmodelnonetwork.html" />
     <Content Include="examples\brain3d.html" />
     <Content Include="examples\brainnetwork2.html" />
     <Content Include="examples\graphdata\SucroseBreakdownDicots-flowlayout.svg" />
+    <Content Include="examples\input.js" />
     <Content Include="examples\movies.html" />
     <Content Include="examples\browsemovies.html" />
     <Content Include="examples\sucrosebreakdown-handdrawn.png" />
@@ -158,7 +160,8 @@
       <DependentUpon>rectangle.ts</DependentUpon>
     </Content>
     <TypeScriptCompile Include="src\rectangle.ts" />
-    <Content Include="examples\graphdata\triangle.js" />
+    <Content Include="examples\graphdata\pyramid.json" />
+    <Content Include="examples\graphdata\triangle.json" />
     <Content Include="examples\downwardedges.html" />
     <Content Include="examples\unconstrained.html" />
     <Content Include="examples\unconstrainedsmallworld.html" />

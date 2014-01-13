@@ -100,10 +100,10 @@ module cola {
          * If G[i][j] > 1 and the separation between nodes i and j is greater than their ideal distance, then there is no contribution for this pair to the goal
          * If G[i][j] <= 1 then it is used as a weighting on the contribution of the variance between ideal and actual separation between i and j to the goal function
          */
-        constructor(x: number[], y: number[], public D: number[][], public G: number[][]= null) {
-            this.x = [x, y];
-            this.k = 2;
-            var n = this.n = x.length;
+        constructor(x: number[][], public D: number[][], public G: number[][]= null) {
+            this.x = x;
+            this.k = x.length; // dimensionality
+            var n = this.n = x[0].length; // number of nodes
             this.H = new Array(this.k);
             this.g = new Array(this.k);
             this.Hd = new Array(this.k);
@@ -299,7 +299,7 @@ module cola {
             }
         }
 
-        run(iterations: number): number {
+        public run(iterations: number): number {
             var stress = Number.MAX_VALUE, converged = false;
             while (!converged && iterations-- > 0) {
                 var s = this.rungeKutta();
@@ -309,7 +309,7 @@ module cola {
             return stress;
         }
 
-        rungeKutta(): number {
+        public rungeKutta(): number {
             this.computeNextPosition(this.x, this.a);
             Descent.mid(this.x, this.a, this.ia);
             this.computeNextPosition(this.ia, this.b);
