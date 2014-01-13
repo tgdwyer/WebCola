@@ -1,3 +1,6 @@
+/**
+* @module cola
+*/
 var cola;
 (function (cola) {
     // compute the size of the union of two sets a and b
@@ -47,7 +50,9 @@ var cola;
         });
     }
 
-    // modify the specified link lengths based on the symmetric difference of their neighbours
+    /** modify the specified link lengths based on the symmetric difference of their neighbours
+    * @class symmetricDiffLinkLengths
+    */
     function symmetricDiffLinkLengths(n, links, w) {
         if (typeof w === "undefined") { w = 1; }
         computeLinkLengths(n, links, w, function (a, b) {
@@ -56,7 +61,9 @@ var cola;
     }
     cola.symmetricDiffLinkLengths = symmetricDiffLinkLengths;
 
-    // modify the specified links lengths based on the jaccard difference between their neighbours
+    /** modify the specified links lengths based on the jaccard difference between their neighbours
+    * @class jaccardLinkLengths
+    */
     function jaccardLinkLengths(n, links, w) {
         if (typeof w === "undefined") { w = 1; }
         computeLinkLengths(n, links, w, function (a, b) {
@@ -65,13 +72,17 @@ var cola;
     }
     cola.jaccardLinkLengths = jaccardLinkLengths;
 
-    // generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
-    function generateDirectedEdgeConstraints(n, links, gap) {
+    /** generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
+    * @class generateDirectedEdgeConstraints
+    */
+    function generateDirectedEdgeConstraints(n, links, axis, minSeparation) {
         var components = stronglyConnectedComponents(n, links);
         var nodes = {};
-        components.forEach(function (c) {
+        components.filter(function (c) {
+            return c.length > 1;
+        }).forEach(function (c) {
             return c.forEach(function (v) {
-                return nodes[v].component = c;
+                return nodes[v] = c;
             });
         });
         var constraints = [];
@@ -79,10 +90,10 @@ var cola;
             var u = nodes[l.source], v = nodes[l.target];
             if (!u || !v || u.component !== v.component) {
                 constraints.push({
-                    axis: "y",
+                    axis: axis,
                     left: l.source,
                     right: l.target,
-                    gap: gap
+                    gap: minSeparation
                 });
             }
         });
