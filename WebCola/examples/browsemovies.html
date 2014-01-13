@@ -272,6 +272,7 @@
     }
     function fullScreenCancel() {
         outer.attr("width", width).attr("height", height);
+        zoomToFit();
     }
     function zoomToFit() {
         var b = graphBounds();
