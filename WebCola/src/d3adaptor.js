@@ -26,8 +26,7 @@ var cola;
             constraints = [],
             distanceMatrix = null,
             descent = {},
-            directedLinkConstraints = null,
-            threshold;
+            directedLinkConstraints = null;
 
         d3adaptor.tick = function () {
             if (alpha < descent.threshold) {
@@ -44,24 +43,25 @@ var cola;
             for (i = 0; i < n; ++i) {
                 o = nodes[i];
                 if (o.fixed) {
-                    var p = [o.x, o.y];
-                    if (typeof o.px !== 'undefined') {
-                        p = [o.px, o.py];
+                    if (typeof o.px === 'undefined' || typeof o.py === 'undefined') {
+                        o.px = o.x;
+                        o.py = o.y;
                     }
+                    var p = [o.px, o.py];
                     descent.locks.add(i, p);
                 }
             }
 
             var s1 = descent.rungeKutta();
             //var s1 = descent.reduceStress();
-            if (typeof lastStress !== 'undefined' && lastStress > s1) {
+            if (typeof lastStress !== 'undefined' && lastStress > s1 - descent.threshold) {
                 alpha = lastStress / s1 - 1;
             }
             lastStress = s1;
 
             for (i = 0; i < n; ++i) {
                 o = nodes[i];
-                if (o.fixed && typeof o.px !== 'undefined') {
+                if (o.fixed) {
                     o.x = o.px;
                     o.y = o.py;
                 } else {
@@ -364,6 +364,7 @@ var cola;
 
     function colaDragstart(d) {
         d.fixed |= 2; // set bit 2
+        d.px = d.x, d.py = d.y; // set velocity to zero
     }
 
     function colaDragend(d) {
