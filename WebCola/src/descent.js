@@ -66,16 +66,16 @@ var cola;
         * If G[i][j] > 1 and the separation between nodes i and j is greater than their ideal distance, then there is no contribution for this pair to the goal
         * If G[i][j] <= 1 then it is used as a weighting on the contribution of the variance between ideal and actual separation between i and j to the goal function
         */
-        function Descent(x, y, D, G) {
+        function Descent(x, D, G) {
             if (typeof G === "undefined") { G = null; }
             this.D = D;
             this.G = G;
             this.threshold = 0.00001;
             this.random = new PseudoRandom();
             this.project = null;
-            this.x = [x, y];
-            this.k = 2;
-            var n = this.n = x.length;
+            this.x = x;
+            this.k = x.length; // dimensionality
+            var n = this.n = x[0].length;
             this.H = new Array(this.k);
             this.g = new Array(this.k);
             this.Hd = new Array(this.k);

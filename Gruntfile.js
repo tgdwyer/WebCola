@@ -1,5 +1,6 @@
 module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-typescript');
+	grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-qunit');
     grunt.loadNpmTasks('grunt-contrib-yuidoc');
@@ -17,6 +18,13 @@ module.exports = function (grunt) {
                 }
             }
         },
+		concat: {
+			options: {},
+			dist: {
+				src: ['WebCola/compiledtypescript.js', 'WebCola/src/d3adapter.js', 'WebCola/src/rbtree.js', 'WebCola/src/scc.js'],
+				dest: 'WebCola/cola.v1.min.js'
+			}
+		},
         uglify: {
             dist: {
                 options: {
@@ -47,5 +55,6 @@ module.exports = function (grunt) {
     });
  
     grunt.registerTask('default', ['typescript', 'uglify', 'qunit', 'yuidoc']);
- 
+	grunt.registerTask('nougly', ['typescript', 'concat', 'qunit']);
+	grunt.registerTask('nougly-notest', ['typescript', 'concat']);
 }

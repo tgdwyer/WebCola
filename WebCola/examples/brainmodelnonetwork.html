@@ -1,0 +1,192 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>three.js webgl - loaders - OBJ loader</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            font-family: Monospace;
+            background-color: #000;
+            color: #fff;
+            margin: 0px;
+            overflow: hidden;
+        }
+
+        #info {
+            color: #fff;
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            display: block;
+        }
+
+            #info a, .button {
+                color: #f00;
+                font-weight: bold;
+                text-decoration: underline;
+                cursor: pointer;
+            }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <a href="http://threejs.org" target="_blank">three.js</a> - OBJLoader test
+    </div>
+    <script src="../extern/three.js"></script>
+    <script src="../extern/OBJLoader.js"></script>
+
+    <script src="../extern/Detector.js"></script>
+    <script src="../extern/TrackballControls.js"></script>
+    <script src="../extern/d3.v3.js"></script>
+    <script>
+
+        var container;
+
+        var camera, controls, scene, renderer;
+
+        var mouseX = 0, mouseY = 0;
+
+        var windowHalfX = window.innerWidth / 2;
+        var windowHalfY = window.innerHeight / 2;
+
+
+        init();
+        animate();
+
+
+        function init() {
+
+            container = document.createElement('div');
+            document.body.appendChild(container);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+            camera.position.z = 250;
+
+            controls = new THREE.TrackballControls(camera);
+
+            controls.rotateSpeed = 1.0;
+            controls.zoomSpeed = 1.2;
+            controls.panSpeed = 0.8;
+
+            controls.noZoom = false;
+            controls.noPan = false;
+
+            controls.staticMoving = true;
+            controls.dynamicDampingFactor = 0.3;
+
+            controls.keys = [65, 83, 68];
+
+            controls.addEventListener('change', render);
+
+            // scene
+
+            scene = new THREE.Scene();
+
+            var ambient = new THREE.AmbientLight(0x101030);
+            scene.add(ambient);
+
+            var directionalLight = new THREE.DirectionalLight(0xffeedd);
+            directionalLight.position.set(0, 0, 1);
+            scene.add(directionalLight);
+
+            // texture
+
+            var manager = new THREE.LoadingManager();
+            manager.onProgress = function (item, loaded, total) {
+
+                console.log(item, loaded, total);
+
+            };
+
+            // model
+
+            var loader = new THREE.OBJLoader(manager);
+            loader.load('graphdata/BrainLSDecimated0.01.obj', function (object) {
+
+                object.traverse(function (child) {
+
+                    if (child instanceof THREE.Mesh) {
+                        child.material =
+                            new THREE.MeshLambertMaterial(
+                            {
+                                color: 0xffcccc,
+                                transparent: true,
+                                opacity: 0.3
+                            });
+                        //new THREE.MeshPhongMaterial({
+                        //    // light
+                        //    specular: '#a9fcff',
+                        //    // intermediate
+                        //    color: '#00abb1',
+                        //    // dark
+                        //    emissive: '#006063',
+                        //    shininess: 100,
+                        //    transparent: true,
+                        //    opacity: 0.3
+                        //});
+                        //new THREE.MeshBasicMaterial({
+                        //    wireframe: true,
+                        //    color: 'gray'
+                        //});
+
+                    }
+
+                });
+
+                object.position.y = 0;
+                // Setting scale to some arbitrarily larger value
+                var scale = 1.5;
+                object.scale = new THREE.Vector3(scale, scale, scale);
+                scene.add(object);
+                render();
+            });
+
+            d3.csv('graphdata/coordinates.csv', function (d) {
+                for (var i = 0; i < d.length; ++i) {
+                    var sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), new THREE.MeshLambertMaterial(
+                                {
+                                    color: 0xFFFFFF
+                                }));
+                    sphere.overdraw = true;
+                    var p = d[i];
+                    sphere.position.x = p.x;
+                    sphere.position.y = p.y;
+                    sphere.position.z = p.z;
+                    scene.add(sphere);
+                }
+            });
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            window.addEventListener('resize', onWindowResize, false);
+
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            controls.handleResize();
+
+            render();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+        }
+
+        function render() {
+            renderer.render(scene, camera);
+        }
+
+    </script>
+</body>
+</html>

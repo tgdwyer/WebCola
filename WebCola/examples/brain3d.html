@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>three.js webgl - loaders - OBJ loader</title>
+		<title>Brain Model</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
@@ -12,73 +12,189 @@
 				margin: 0px;
 				overflow: hidden;
 			}
-			#info {
-				color: #fff;
-				position: absolute;
-				top: 10px;
-				width: 100%;
-				text-align: center;
-				z-index: 100;
-				display:block;
-			}
-			#info a, .button { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
 		</style>
 	</head>
 
 	<body>
-		<div id="info">
-		<a href="http://threejs.org" target="_blank">three.js</a> - OBJLoader test
-		</div>
-
 		<script src="../extern/three.js"></script>
 		<script src="../extern/OBJLoader.js"></script>
-        
-		<script src="../extern/Detector.js"></script>
-		<script src="../extern/TrackballControls.js"></script>
+        <script src="../extern/TrackballControls.js"></script>
+		<!-- What is this here for?
+        <script src="../extern/Detector.js"></script>
+                        -->
+        <!-- Used for resource loading -->
 		<script src="../extern/d3.v3.js"></script>
 
+        <script src="../cola.v1.min.js"></script>
+        <script src="../src/descent.js"></script>
+        <script src="../extern/leap.js"></script>
+        <script src="input.js"></script>
+
 		<script>
-
-		    var container;
-
-		    var camera, controls, scene, renderer;
-
+		    var camera, trackballControls, scene, renderer;
 		    var mouseX = 0, mouseY = 0;
 
-		    var windowHalfX = window.innerWidth / 2;
-		    var windowHalfY = window.innerHeight / 2;
+		    var physioCoords;
+		    var physioCoordsCola; // The physiological coordinates in a format that Cola likes
+		    var nodeMeshes;
 
+		    var distanceMatrix = [];
+            // Stores elements which represent nodes of the graph and their corresponding group
+            // {id, group}
+		    var nodes = [];
+		    var groupLabels = [];
+
+		    var minSimilarity = Number.MAX_VALUE;
+		    var maxSimilarity = 0;
+		    var percentiles = new Array(101);
+
+		    var descent; // The handle to the constraint solver    
 
 		    init();
-		    animate();
 
+		    // This is where the main loop tries to start. We begin when all resources are loaded.
+		    var prerequisites = Array(4);
+		    function tryBegin(p) {
+		        if (!prerequisites[p]) {
+		            prerequisites[p] = 1;
+		            console.log("Prerequisite " + p + " met.");
+		        }
+		        else {
+		            console.log("Error: prerequisite ID supplied more than once.");
+		        }
+		        // Cancel if not all the prerequisites have been met
+		        for (var i = 0; i < prerequisites.length; ++i)
+		            if (!prerequisites[i]) return;
+
+		        // We can begin now
+
+                /*
+                // Give Descent a zero-filled coordinate matrix
+		        var len = nodes.length;
+		        var a = Array(len);
+		        for (var i = 0; i < len; ++i)
+		            a[i] = 0;
+		        descent = new cola.Descent([a, a.slice(0), a.slice(0)], distanceMatrix);
+                */
+                // TODO: Is it better to give Descent the physiological coordinates to start with, or just zeros?
+		        descent = new cola.Descent(physioCoordsCola, distanceMatrix);
+		        //descent.run(30); //REMOVE THIS
+		        timeOfLastFrame = new Date().getTime(); 
+		        mainLoop();
+		    }
+
+		    function mainLoop() {
+		        nextUpdate();
+		        draw();
+		        requestAnimationFrame(mainLoop);
+		    }
+
+		    var frameTimeLimit = 0.03;
+		    var timeOfLastFrame = 0;
+
+		    function nextUpdate() {
+		        var currentTime = new Date().getTime();
+		        var deltaTime = (currentTime - timeOfLastFrame) / 1000;
+		        timeOfLastFrame = currentTime;
+
+		        // Limit the maximum time step
+		        if (deltaTime > frameTimeLimit)
+		            update(frameTimeLimit);
+		        else
+		            update(deltaTime);
+		    }
+
+		    var physioMode = true;
+		    var modeLerpLength = 0.5;
+		    var modeLerpAmount = 1;
+
+		    function update(deltaTime) {
+		        trackballControls.update();
+
+		        if (Input.keyboard.keyPressed[' ']) {
+		            physioMode = !physioMode;
+		            modeLerpAmount = 0;
+		        }
+                
+		        // TEST STEP
+		        if (Input.keyboard.keyPressed['1']) {
+		            descent.rungeKutta();
+		        }
+
+		        if (Input.keyboard.keyPressed['2']) {
+		            descent.reduceStress();
+		        }
+
+		        if (Input.keyboard.keyToggle['a']) {
+		            descent.rungeKutta();
+		        }
+
+		        if (physioMode) {
+		            if (modeLerpAmount < 1) {
+		                modeLerpAmount += deltaTime / modeLerpLength;
+		                if (modeLerpAmount >= 1) {
+		                    modeLerpAmount = 1;
+		                    physioNodePositions();
+		                }
+		                else {
+		                    lerpNodePositions(1 - modeLerpAmount);
+		                }
+		            }
+		        }
+		        else {
+		            if (modeLerpAmount < 1) {
+		                modeLerpAmount += deltaTime / modeLerpLength;
+		                if (modeLerpAmount >= 1) {
+		                    modeLerpAmount = 1;
+		                    colaNodePositions();
+		                }
+		                else {
+		                    lerpNodePositions(modeLerpAmount);
+		                }
+		            }
+		            else colaNodePositions();
+		        }
+
+		        // descent.rungeKutta();
+
+		        Input.reset();
+		    }
+
+		    function draw() {
+		        renderer.render(scene, camera);
+		    }
 
 		    function init() {
-
-		        container = document.createElement('div');
+		        var container = document.createElement('div');
 		        document.body.appendChild(container);
 
+		        window.addEventListener('resize', onWindowResize, false);
+
+		        // Set up renderer
+		        renderer = new THREE.WebGLRenderer();
+		        renderer.setSize(window.innerWidth, window.innerHeight);
+		        container.appendChild(renderer.domElement);
+
+                // Set up camera
 		        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
 		        camera.position.z = 250;
 
-		        controls = new THREE.TrackballControls(camera);
+                // Set up controls
+		        trackballControls = new THREE.TrackballControls(camera);
 
-		        controls.rotateSpeed = 1.0;
-		        controls.zoomSpeed = 1.2;
-		        controls.panSpeed = 0.8;
+		        trackballControls.rotateSpeed = 1.0;
+		        trackballControls.zoomSpeed = 1.2;
+		        trackballControls.panSpeed = 0.8;
 
-		        controls.noZoom = false;
-		        controls.noPan = false;
+		        trackballControls.noZoom = false;
+		        trackballControls.noPan = false;
 
-		        controls.staticMoving = true;
-		        controls.dynamicDampingFactor = 0.3;
+		        trackballControls.staticMoving = true;
+		        trackballControls.dynamicDampingFactor = 0.3;
 
-		        controls.keys = [65, 83, 68];
+		        trackballControls.keys = [65, 83, 68];
 
-		        controls.addEventListener('change', render);
-
-		        // scene
-
+		        // Set up scene
 		        scene = new THREE.Scene();
 
 		        var ambient = new THREE.AmbientLight(0x101030);
@@ -88,24 +204,18 @@
 		        directionalLight.position.set(0, 0, 1);
 		        scene.add(directionalLight);
 
-		        // texture
-
+                // Load the model
 		        var manager = new THREE.LoadingManager();
 		        manager.onProgress = function (item, loaded, total) {
-
 		            console.log(item, loaded, total);
-
 		        };
 
-		        // model
-
 		        var loader = new THREE.OBJLoader(manager);
-		        loader.load('graphdata/xxx.json', function (object) {
-
+		        loader.load('graphdata/BrainLSDecimated0.01.obj', function (object) {
+                    // Set brain mesh material
 		            object.traverse(function (child) {
-
+		                
 		                if (child instanceof THREE.Mesh) {
-
 		                    child.material =
                                 new THREE.MeshLambertMaterial(
                                 {
@@ -113,73 +223,204 @@
                                     transparent: true,
                                     opacity: 0.3
                                 });
-		                        //new THREE.MeshPhongMaterial({
-                                //    // light
-                                //    specular: '#a9fcff',
-                                //    // intermediate
-                                //    color: '#00abb1',
-                                //    // dark
-                                //    emissive: '#006063',
-                                //    shininess: 100,
-                                //    transparent: true,
-                                //    opacity: 0.3
-		                        //});
-		                        //new THREE.MeshBasicMaterial({
-		                        //    wireframe: true,
-		                        //    color: 'gray'
-		                        //});
-
+		                    //new THREE.MeshPhongMaterial({
+		                    //    // light
+		                    //    specular: '#a9fcff',
+		                    //    // intermediate
+		                    //    color: '#00abb1',
+		                    //    // dark
+		                    //    emissive: '#006063',
+		                    //    shininess: 100,
+		                    //    transparent: true,
+		                    //    opacity: 0.3
+		                    //});
+		                    //new THREE.MeshBasicMaterial({
+		                    //    wireframe: true,
+		                    //    color: 'gray'
+		                    //});
 		                }
-
 		            });
 
 		            object.position.y = 0;
+                    // Setting scale to some arbitrarily larger value
+		            var scale = 1.5;
+		            object.scale = new THREE.Vector3(scale, scale, scale);
 		            scene.add(object);
-		            render();
 		        });
 
-		        d3.csv('graphdata/coordinates.csv', function (d) {
-		            for (var i = 0; i < d.length; ++i) {
-		                var sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), new THREE.MeshLambertMaterial(
+                // Load the distance matrix
+		        d3.text("graphdata/signed_weighted.txt",
+                    function (error, text) {
+                        // Extract the similarity matrix from the file
+                        var lines = text.split('\n').map(function (s) { return s.trim() });
+                        lines.forEach(function (line) {
+                            if (line.length > 0) {
+                                distanceMatrix.push(line.split(',').map(function (d) {
+                                    var l = 15 / (parseFloat(d) + 1); // Convert similarities to distances
+                                    minSimilarity = Math.min(minSimilarity, l);
+                                    maxSimilarity = Math.max(maxSimilarity, l);
+                                    return l;
+                                }));
+                            }
+                        });
+
+                        // Calculate the percentiles
+                        var orderedWeights = [];
+                        for (var i = 0; i < distanceMatrix.length; ++i) {
+                            var row = distanceMatrix[i];
+                            for (var j = 0; j < row.length; ++j) {
+                                orderedWeights.push(row[j]);
+                            }
+                        }
+                        orderedWeights.sort(function (a, b) { return a - b });
+                        var k = orderedWeights.length / 100;
+                        for (var i = 0; i < 100; ++i) {
+                            percentiles[i] = orderedWeights[Math.floor(i * k)];
+                        }
+                        percentiles[100] = orderedWeights[orderedWeights.length - 1];
+                        tryBegin(0);
+                    });
+
+                // Load the group affiliations
+		        d3.text("graphdata/signed_weighted_affil.txt",
+                    function (error, text) {
+                        var groups = text.split(',').map(function (s) { return s.trim() });
+                        nodes = groups.map(function (group, i) {
+                            return { id: i, group: parseInt(group) }; // Create node objects with their respective group IDs
+                        });
+                        tryBegin(1);
+                    });
+
+                // Load the labels
+		        d3.text("graphdata/labels.txt",
+                    function (error, text) {
+                        groupLabels = text.split('\n').map(function (s) { return s.trim() });
+                        tryBegin(2);
+                    });
+
+                // Load the physiological coordinates of each node in the brain
+		        d3.csv('graphdata/coordinates.csv', function (coords) {
+		            physioCoords = coords;
+		            nodeMeshes = Array(coords.length);
+		            physioCoordsCola = [Array(coords.length), Array(coords.length), Array(coords.length)]; // Coords in Cola format: probably unnecessary to seed Cola with these
+
+		            for (var i = 0; i < coords.length; ++i) {
+                        // Create the mesh for the node
+		                var sphere = nodeMeshes[i] = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), new THREE.MeshLambertMaterial(
                                     {
                                         color: 0xFFFFFF
                                     }));
-		                sphere.overdraw = true;
-		                var p = d[i];
-		                sphere.position.x = p.x;
-		                sphere.position.y = p.y;
-		                sphere.position.z = p.z;
+		                sphere.overdraw = true; // TODO: what is this doing?
 		                scene.add(sphere);
+		                // Translate the coords into Cola's format
+		                physioCoordsCola[0][i] = parseFloat(coords[i].x);
+		                physioCoordsCola[1][i] = parseFloat(coords[i].y);
+		                physioCoordsCola[2][i] = parseFloat(coords[i].z);
 		            }
+
+		            physioNodePositions();
+		            tryBegin(3);
 		        });
-
-		        renderer = new THREE.WebGLRenderer();
-		        renderer.setSize(window.innerWidth, window.innerHeight);
-		        container.appendChild(renderer.domElement);
-
-		        window.addEventListener('resize', onWindowResize, false);
-
 		    }
-
+            
 		    function onWindowResize() {
 		        camera.aspect = window.innerWidth / window.innerHeight;
 		        camera.updateProjectionMatrix();
-
 		        renderer.setSize(window.innerWidth, window.innerHeight);
-
-		        controls.handleResize();
-
-		        render();
+		        trackballControls.handleResize();
 		    }
 
-		    function animate() {
-		        requestAnimationFrame(animate);
-		        controls.update();
+            // Move the nodes to their physiological positions
+		    function physioNodePositions() {
+		        for (var i = 0; i < physioCoords.length; ++i) {
+		            var c = physioCoords[i];
+		            nodeMeshes[i].position.x = c.x;
+		            nodeMeshes[i].position.y = c.y;
+		            nodeMeshes[i].position.z = c.z;
+		        }
 		    }
 
-		    function render() {
-		        renderer.render(scene, camera);
+            // Lerp between the physio and Cola positions of the nodes
+		    // 0 <= t <= 1
+		    function lerpNodePositions(t) {
+		        for (var i = 0; i < physioCoords.length; ++i) {
+		            var c = physioCoords[i];
+		            var x = descent.x;
+		            nodeMeshes[i].position.x = c.x * (1 - t) + x[0][i] * t;
+		            nodeMeshes[i].position.y = c.y * (1 - t) + x[1][i] * t;
+		            nodeMeshes[i].position.z = c.z * (1 - t) + x[2][i] * t;
+		        }
 		    }
+
+            // Move the nodes to their Cola positions
+		    function colaNodePositions() {
+		        for (var i = 0; i < physioCoords.length; ++i) {
+		            var x = descent.x;
+		            nodeMeshes[i].position.x = x[0][i];
+		            nodeMeshes[i].position.y = x[1][i];
+		            nodeMeshes[i].position.z = x[2][i];
+		        }
+		    }
+
+		    var selectedLinks = [];
+		    var previousThreshold = 0;
+
+            // Select the given percentage of links
+		    function setEdgeThreshold(percent) {
+		        var threshold = percentiles[percent];
+                // Remove links that are now above the threshold
+		        selectedLinks = selectedLinks.filter(function (link) {
+		            return link.length < threshold;
+		        });
+
+                // Add links that are now below the threshold (but not already added)
+		        var n = nodes.length;
+		        for (var i = 0; i < n - 1; ++i) {
+		            for (var j = i + 1; j < n; ++j) {
+		                var val = distanceMatrix[i][j];
+		                if (val >= previousThreshold && val < threshold) {
+		                    selectedLinks.push({ source: nodes[i], target: nodes[j], length: l/*, id: linkid++*/ });
+		                }
+		            }
+		        }
+		        previousThreshold = threshold;
+		    }
+
+		    var relaxedGraph = {};
+
+		    function relaxEdges() {
+                // Copy the array of all nodes
+		        relaxedGraph.nodes = nodes.map(function (u) {
+		            return { id: u.id, group: u.group };
+		        });
+
+                // WHAT DO?
+		        var neighbours = {};
+		        relaxedGraph.links = links.map(function (l) {
+		            neighbours[l.source.id] = true;
+		            neighbours[l.target.id] = true;
+		            return { source: relaxedGraph.nodes[l.source.id], target: relaxedGraph.nodes[l.target.id], id: l.id };
+		        });
+
+                // Remove nodes from the graph that have no links
+		        relaxedGraph.nodes = relaxedGraph.nodes.filter(function (node) {
+		            return (node.id in neighbours);
+		        });
+
+		        // Create the new graph and simulate it
+
+		        // We need to filter the distance matrix to include only the distances
+                // between nodes whose edges we have selected
+		        descent = new cola.Descent(physioCoordsCola, filteredDistanceMatrix);
+
+                // THIS NEEDS TO BE CHANGED TO WORK WITHOUT D3ADAPTER
+		        gc2.cola
+                    .nodes(relaxedGraph.nodes)
+                    .links(relaxedGraph.selectedLinks)
+                    //.symmetricDiffLinkLengths(1)
+                    .start(100);
+		    }
+
 
 		</script>
 
