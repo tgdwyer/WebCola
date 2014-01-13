@@ -37,13 +37,18 @@ var cola;
             }
 
             var n = nodes.length,
-                m = links.length;
+                m = links.length,
+                o;
 
-            //var locks = new Array(n);
-            //for (var o, i = 0; i < n; ++i) {
-            //    o = nodes[i];
-            //    locks[i] = o.fixed ? [o.px, o.py] : [0,0];
-            //}
+            var haveLocks = false;
+            for (i = 0; i < n; ++i) {
+                o = nodes[i];
+                if (o.fixed && typeof o.px !== 'undefined') {
+                    descent.locks.add(i, [o.px, o.py]);
+                    haveLocks = true;
+                }
+            }
+            if (!haveLocks) descent.locks.clear(); 
 
             var s1 = descent.rungeKutta();
             //var s1 = descent.reduceStress();
@@ -52,11 +57,11 @@ var cola;
             }
             lastStress = s1;
 
-            for (var o, i = 0; i < n; ++i) {
+            for (i = 0; i < n; ++i) {
                 o = nodes[i];
                 if (o.fixed) {
-                    descent.x[0][i] = o.x = o.px;
-                    descent.x[1][i] = o.y = o.py;
+                    o.x = o.px;
+                    o.y = o.py;
                 } else {
                     o.x = descent.x[0][i];
                     o.y = descent.x[1][i];
@@ -360,7 +365,8 @@ var cola;
     }
 
     function colaDragend(d) {
-        d.fixed &= ~6; // unset bits 2 and 3
+        //d.fixed &= ~6; // unset bits 2 and 3
+        d.fixed = 0;
     }
 
     function colaMouseover(d) {

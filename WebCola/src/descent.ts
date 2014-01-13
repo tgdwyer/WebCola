@@ -3,6 +3,46 @@
  */
 module cola {
     /**
+     * Descent respects a collection of locks over nodes that should not move
+     * @class Locks
+     */
+    export class Locks {
+        locks: any = {};
+        /**
+         * add a lock on the node at index id
+         * @method add
+         * @param id index of node to be locked
+         * @param x required position for node
+         */
+        add(id: number, x: number[]) {
+            this.locks[id] = x;
+        }
+        /**
+         * @method clear clear all locks
+         */
+        clear() {
+            this.locks = {};
+        }
+        /**
+         * @isEmpty 
+         * @returns false if no locks exist
+         */
+        isEmpty(): boolean {
+            for (var l in this.locks) return false;
+            return true;
+        }
+        /**
+         * perform an operation on each lock
+         * @apply
+         */
+        apply(f: (id: number, x: number[]) => void) {
+            for (var l in this.locks) {
+                f(l, this.locks[l]);
+            }
+        }
+    }
+
+    /**
      * Uses a gradient descent approach to reduce a stress or p-stress goal function over a graph with specified ideal edge lengths or a square matrix of dissimilarities.
      *
      * @class Descent
@@ -30,6 +70,8 @@ module cola {
          * @property n {number}
          */
         public n: number;
+
+        public locks: Locks;
 
         private static zeroDistance: number = 1e-10;
         private minD: number;
@@ -73,6 +115,7 @@ module cola {
             this.ia = new Array(this.k);
             this.ib = new Array(this.k);
             this.xtmp = new Array(this.k);
+            this.locks = new Locks();
             this.minD = Number.MAX_VALUE;
             var i = n, j;
             while (i--) {
@@ -169,6 +212,19 @@ module cola {
                     }
                 }
                 for (i = 0; i < this.k; ++i) this.H[i][u][u] = Huu[i];
+            }
+            if (!this.locks.isEmpty()) {
+                // find a reasonable lockweight based on the max value on the diagonal of the hessian
+                var lockWeight = 0;
+                for (var u: number = 0; u < n; ++u) 
+                    for (i = 0; i < this.k; ++i) 
+                        lockWeight = Math.max(lockWeight, this.H[i][u][u]);
+                this.locks.apply((u, p) => {
+                    for (i = 0; i < this.k; ++i) {
+                        this.H[i][u][u] += lockWeight;
+                        this.g[i][u] -= lockWeight * (p[i] - x[i][u]);
+                    }
+                });
             }
         }
 
