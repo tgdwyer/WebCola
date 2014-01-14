@@ -172,10 +172,9 @@ module cola {
         }
 
         public computeDerivatives(x: number[][]) {
-            var n = this.n;
+            var n: number = this.n;
             if (n <= 1) return;
-            var i;
-
+            var i: number;
 /* DEBUG
             for (var u: number = 0; u < n; ++u)
                 for (i = 0; i < this.k; ++i)
@@ -184,6 +183,7 @@ DEBUG */
             var d: number[] = new Array(this.k);
             var d2: number[] = new Array(this.k);
             var Huu: number[] = new Array(this.k);
+            var maxH: number = 0;
             for (var u: number = 0; u < n; ++u) {
                 for (i = 0; i < this.k; ++i) Huu[i] = this.g[i][u] = 0;
                 for (var v = 0; v < n; ++v) {
@@ -218,18 +218,13 @@ DEBUG */
                         Huu[i] -= this.H[i][u][v] = hs * (D * (d2[i] - sd2) + l * sd2);
                     }
                 }
-                for (i = 0; i < this.k; ++i) this.H[i][u][u] = Huu[i];
+                for (i = 0; i < this.k; ++i) maxH = Math.max(maxH, this.H[i][u][u] = Huu[i]);
             }
             if (!this.locks.isEmpty()) {
-                // find a reasonable lockweight based on the max value on the diagonal of the hessian
-                var lockWeight = 0;
-                for (var u: number = 0; u < n; ++u)
-                    for (i = 0; i < this.k; ++i)
-                        lockWeight = Math.max(lockWeight, this.H[i][u][u]);
                 this.locks.apply((u, p) => {
                     for (i = 0; i < this.k; ++i) {
-                        this.H[i][u][u] += lockWeight;
-                        this.g[i][u] -= lockWeight * (p[i] - x[i][u]);
+                        this.H[i][u][u] += maxH;
+                        this.g[i][u] -= maxH * (p[i] - x[i][u]);
                     }
                 });
             }
