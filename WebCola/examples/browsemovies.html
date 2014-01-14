@@ -247,9 +247,7 @@
         cola.on("tick", function () {
             link.attr("transform", function (d) {
                 var dx = d.source.x - d.target.x, dy = d.source.y - d.target.y;
-                var l = Math.sqrt(dx * dx + dy * dy);
-                var r = 180 * Math.atan(dy / dx) / Math.PI;
-                if (dx < 0) r += 180;
+                var r = 180 * Math.atan2(dy, dx) / Math.PI;
                 return "translate(" + d.target.x + "," + d.target.y + ") rotate(" + r + ") ";
             }).attr("width", function (d) {
                 var dx = d.source.x - d.target.x, dy = d.source.y - d.target.y;
