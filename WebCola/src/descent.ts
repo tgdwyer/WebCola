@@ -15,6 +15,7 @@ module cola {
          * @param x required position for node
          */
         add(id: number, x: number[]) {
+            if (isNaN(x[0]) || isNaN(x[1])) debugger;
             this.locks[id] = x;
         }
         /**
@@ -170,12 +171,18 @@ module cola {
         }
 
         public computeDerivatives(x: number[][]) {
-            var n = this.n;
+            var n: number = this.n;
             if (n <= 1) return;
-            var i;
+            var i: number;
+/* DEBUG
+            for (var u: number = 0; u < n; ++u)
+                for (i = 0; i < this.k; ++i)
+                    if (isNaN(x[i][u])) debugger;
+DEBUG */
             var d: number[] = new Array(this.k);
             var d2: number[] = new Array(this.k);
             var Huu: number[] = new Array(this.k);
+            var maxH: number = 0;
             for (var u: number = 0; u < n; ++u) {
                 for (i = 0; i < this.k; ++i) Huu[i] = this.g[i][u] = 0;
                 for (var v = 0; v < n; ++v) {
@@ -210,21 +217,24 @@ module cola {
                         Huu[i] -= this.H[i][u][v] = hs * (D * (d2[i] - sd2) + l * sd2);
                     }
                 }
-                for (i = 0; i < this.k; ++i) this.H[i][u][u] = Huu[i];
+                for (i = 0; i < this.k; ++i) maxH = Math.max(maxH, this.H[i][u][u] = Huu[i]);
             }
             if (!this.locks.isEmpty()) {
-                // find a reasonable lockweight based on the max value on the diagonal of the hessian
-                var lockWeight = 0;
-                for (var u: number = 0; u < n; ++u) 
-                    for (i = 0; i < this.k; ++i) 
-                        lockWeight = Math.max(lockWeight, this.H[i][u][u]);
                 this.locks.apply((u, p) => {
                     for (i = 0; i < this.k; ++i) {
-                        this.H[i][u][u] += lockWeight;
-                        this.g[i][u] -= lockWeight * (p[i] - x[i][u]);
+                        this.H[i][u][u] += maxH;
+                        this.g[i][u] -= maxH * (p[i] - x[i][u]);
                     }
                 });
             }
+/* DEBUG
+            for (var u: number = 0; u < n; ++u)
+                for (i = 0; i < this.k; ++i) {
+                    if (isNaN(this.g[i][u])) debugger;
+                    for (var v: number = 0; v < n; ++v) 
+                        if (isNaN(this.H[i][u][v])) debugger;
+                }
+DEBUG */
         }
 
         private static dotProd(a: number[], b: number[]): number {
@@ -289,6 +299,10 @@ module cola {
             this.computeDerivatives(x0);
             var alpha = this.computeStepSize(this.g);
             this.stepAndProject(x0, r, this.g, alpha);
+
+            for (var u: number = 0; u < this.n; ++u)
+                for (var i = 0; i < this.k; ++i)
+                    if (isNaN(r[i][u])) debugger;
 
             if (this.project) {
                 this.matrixApply((i, j) => this.e[i][j] = x0[i][j] - r[i][j]);

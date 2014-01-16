@@ -8,7 +8,7 @@
 asyncTest("all-pairs shortest paths", function () {
     var d3cola = cola.d3adaptor();
 
-    d3.json("../examples/graphdata/triangle.js", function (error, graph) {
+    d3.json("../examples/graphdata/triangle.json", function (error, graph) {
         d3cola
             .nodes(graph.nodes)
             .links(graph.links);
@@ -22,7 +22,7 @@ asyncTest("all-pairs shortest paths", function () {
             [2, 2, 1, 0],
         ]);
         var x = [0, 0, 1, 1], y = [1, 0, 0, 1];
-        var descent = new cola.Descent(x, y, D);
+        var descent = new cola.Descent([x, y], D);
         var s0 = descent.reduceStress();
         var s1 = descent.reduceStress();
         ok(s1 < s0);
@@ -45,7 +45,7 @@ asyncTest("all-pairs shortest paths", function () {
 asyncTest("equality constraints", function () {
     var d3cola = cola.d3adaptor();
 
-    d3.json("../examples/graphdata/triangle.js", function (error, graph) {
+    d3.json("../examples/graphdata/triangle.json", function (error, graph) {
         d3cola
             .nodes(graph.nodes)
             .links(graph.links)

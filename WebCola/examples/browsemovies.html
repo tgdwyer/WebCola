@@ -22,10 +22,6 @@
     fill: url(#SpikeGradient); 
     stroke-width: 0;
 }
-.link {
-    stroke: #999;
-    stroke-opacity: .8;
-}
 
 </style>
 </head>
@@ -61,38 +57,44 @@
         .call(zoom.on("zoom", redraw))
         .on("dblclick.zoom", zoomToFit);
 
-    var gradient = outer.append("svg:defs")
-      .append("svg:linearGradient")
-        .attr("id", "SpikeGradient")
-        .attr("x1", "0%")
-        .attr("y1", "0%")
-        .attr("x2", "100%")
-        .attr("y2", "0%")
-        .attr("spreadMethod", "pad");
+    var defs = outer.append("svg:defs");
 
-    gradient.append("svg:stop")
-        .attr("offset", "0%")
-        .attr("stop-color", "red")
-        .attr("stop-opacity", 1);
+    function addGradient(id, colour1, opacity1, colour2, opacity2) {
+        var gradient = defs.append("svg:linearGradient")
+            .attr("id", id)
+            .attr("x1", "0%")
+            .attr("y1", "0%")
+            .attr("x2", "100%")
+            .attr("y2", "0%")
+            .attr("spreadMethod", "pad");
 
-    gradient.append("svg:stop")
-        .attr("offset", "100%")
-        .attr("stop-color", "red")
-        .attr("stop-opacity", 0);
+        gradient.append("svg:stop")
+            .attr("offset", "0%")
+            .attr("stop-color", colour1)
+            .attr("stop-opacity", opacity1);
 
-    var vis = outer
-        .append('g');
+        gradient.append("svg:stop")
+            .attr("offset", "100%")
+            .attr("stop-color", colour2)
+            .attr("stop-opacity", opacity2);
+    }
+
+    addGradient("SpikeGradient", "red", 1, "red", 0);
+    addGradient("EdgeGradient", red, 1, "darkgray", 1);
+    addGradient("ReverseEdgeGradient", "darkgray", 1, red, 1);
+
+    var vis = outer.append('g');
+    var edgesLayer = vis.append("g");
+    var nodesLayer = vis.append("g");
 
     var nodeMouseDown = false;
 
-    function redraw() {
+    function redraw(transition) {
         // if mouse down then we are dragging not panning
         if (nodeMouseDown) return;
-        vis.attr("transform", "translate(" + zoom.translate() + ") scale(" + zoom.scale() + ")");
+        (transition ? vis.transition() : vis)
+            .attr("transform", "translate(" + zoom.translate() + ") scale(" + zoom.scale() + ")");
     }
-
-    var edgesLayer = vis.append("g");
-    var nodesLayer = vis.append("g");
 
     var modelgraph = new tmdb.Graph();
     var viewgraph = { nodes: [], links: [] };
@@ -201,11 +203,19 @@
         var link = edgesLayer.selectAll(".link")
             .data(viewgraph.links);
 
-        link.enter().append("line")
-            .attr("class", "link")
-            .style("stroke-width", 2);
+        link.enter().append("rect")
+            .attr("x", 0).attr("y", 0)
+            .attr("height", 2)
+            .attr("class", "link");
 
         link.exit().remove();
+
+        link
+            .attr("fill", function (d) {
+                if (d.source.colour === red && d.target.colour === red) return red;
+                if (d.source.colour !== red && d.target.colour !== red) return "darkgray";
+                return d.source.colour === red ? "url(#ReverseEdgeGradient)" : "url(#EdgeGradient)";
+            });
 
         var node = nodesLayer.selectAll(".node")
             .data(viewgraph.nodes, function (d) { return d.viewgraphid; })
@@ -235,10 +245,14 @@
         node.style("fill", function (d) { return d.colour; });
 
         cola.on("tick", function () {
-            link.attr("x1", function (d) { return d.source.x; })
-                .attr("y1", function (d) { return d.source.y; })
-                .attr("x2", function (d) { return d.target.x; })
-                .attr("y2", function (d) { return d.target.y; });
+            link.attr("transform", function (d) {
+                var dx = d.source.x - d.target.x, dy = d.source.y - d.target.y;
+                var r = 180 * Math.atan2(dy, dx) / Math.PI;
+                return "translate(" + d.target.x + "," + d.target.y + ") rotate(" + r + ") ";
+            }).attr("width", function (d) {
+                var dx = d.source.x - d.target.x, dy = d.source.y - d.target.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            });
 
             node.attr("transform", function (d) { return "translate(" + (d.x - nodeWidth/2) + "," + (d.y-nodeHeight/2) + ")"; });
         });
@@ -264,10 +278,10 @@
         var s = Math.min(cw / w, ch / h);
         var tx = (-b.x * s + (cw / s - w) * s / 2), ty = (-b.y * s + (ch / s - h) * s / 2);
         zoom.translate([tx, ty]).scale(s);
-        redraw();
+        redraw(true);
     }
 </script>
-    <button onclick="fullScreen(outer[0][0], fullScreenCancel)">Full screen</button>
+    <button onclick="fullScreen(outer[0][0], fullScreenCancel);zoomToFit()">Full screen</button>
     <button onclick="zoomToFit()">Zoom to fit (or double click)</button>
 Mouse wheel zooms, left-mouse-button drag on the background to pan.
 <p>

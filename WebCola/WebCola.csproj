@@ -157,10 +157,10 @@
     <Content Include="src\rectangle.js">
       <DependentUpon>rectangle.ts</DependentUpon>
     </Content>
-    <Content Include="src\rectangle.min.js">
-      <DependentUpon>rectangle.ts</DependentUpon>
-    </Content>
     <TypeScriptCompile Include="src\rectangle.ts" />
+    <Content Include="src\linklengths.js">
+      <DependentUpon>linklengths.ts</DependentUpon>
+    </Content>
     <Content Include="examples\graphdata\pyramid.json" />
     <Content Include="examples\graphdata\triangle.json" />
     <Content Include="examples\downwardedges.html" />
@@ -181,10 +181,15 @@
     <Content Include="examples\graphdata\smallgrouped.json" />
     <Content Include="examples\graphdata\alignmentconstraints.json" />
     <None Include="examples\graphdata\miserables.json" />
-    <Content Include="src\pqueue.js" />
+    <Content Include="src\pqueue.js">
+      <DependentUpon>pqueue.ts</DependentUpon>
+    </Content>
     <TypeScriptCompile Include="src\pqueue.ts" />
     <Content Include="test\qunit.js" />
     <TypeScriptCompile Include="src\shortestpaths.ts" />
+    <Content Include="src\shortestpaths.js">
+      <DependentUpon>shortestpaths.ts</DependentUpon>
+    </Content>
     <Content Include="test\test.html" />
     <Content Include="test\tests.js" />
     <None Include="examples\graphdata\test1.json" />
