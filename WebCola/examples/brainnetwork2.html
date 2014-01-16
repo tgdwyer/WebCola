@@ -21,12 +21,14 @@
 </head>
 <body>
 <script src="../extern/d3.v3.js"></script>
-<script src="../cola.v1.min.js"></script>
+    <script src="../cola.v1.min.js"></script>
+    <script src="../src/d3adaptor.js"></script>
 <script>
     var width = 1000,
         height = 500;
 
     var color = d3.scale.category20();
+    var graphDiv = d3.select("body").append("div");
     GraphCanvas = function () {
         var gc = {};
         gc.init = function (id, width, height, linkDistance) {
@@ -34,7 +36,7 @@
                     .linkDistance(linkDistance)
                     .size([width, height]);
 
-            gc.svg = d3.select("body").append("svg")
+            gc.svg = graphDiv.append("svg")
                     .attr("id", id)
                     .attr("width", width)
                     .attr("height", height);
@@ -47,7 +49,6 @@
     };
     var gc1 = GraphCanvas().init("mdsview", 400, height, 10);
     d3.select("body").append("button").attr("id", "relaxButton").attr("disabled","true").text("Relax Edges").on("click", relaxEdges);
-    var gc2 = GraphCanvas().init("graphview", 400, height, 25);
 
     var matrix = [];
     var nodes = [];
@@ -142,10 +143,6 @@
                 return l.length < t;
             });
 
-            if (links.length > 0) {
-                d3.select("#relaxButton").attr("disabled", null);
-            }
-
             var n = nodes.length;
             for (var i = 0; i < n - 1; ++i) {
                 for (var j = i + 1; j < n; ++j) {
@@ -155,6 +152,11 @@
                     }
                 }
             }
+
+            if (links.length > 0) {
+                d3.select("#relaxButton").attr("disabled", null);
+            }
+
             previousThreshold = t;
             linkSelection = gc1.linkLayer.selectAll(".link").data(links, function (l) { return l.id });
             linkSelection.exit().remove();
@@ -166,12 +168,12 @@
 
     function updatePositions(circles, lines) {
         if (circles) {
-            circles
+            circles.transition().duration(0.01)
                 .attr("cx", function (d) { return d.x; })
                 .attr("cy", function (d) { return d.y; })
         }
         if (lines) {
-            lines.attr("x1", function (d) { return d.source.x; })
+            lines.transition().duration(0.01).attr("x1", function (d) { return d.source.x; })
                  .attr("y1", function (d) { return d.source.y; })
                  .attr("x2", function (d) { return d.target.x; })
                  .attr("y2", function (d) { return d.target.y; });
@@ -200,26 +202,19 @@
          .style("-webkit-transform", "translate(" + dx + "px, 0px)");
     }
     var relaxedGraph = null;
+    var gc2 = null;
     function relaxEdges() {
+
+        // construct a relaxed graph from the positions
         if (!relaxedGraph) {
             relaxedGraph = {};
         }
-        gc2.cola.stop();
-        gc2.cola.on("tick", null);
-
-        var dx = gc1.svg[0][0].getBoundingClientRect().left - gc2.svg[0][0].getBoundingClientRect().left;
-        var transitionEndCallback = function () {
-            gc2.svg.style("visibility", "visible");
-            gc2.svg.on('webkitTransitionEnd', null).on('transitionend', null);
-            updatePositionsAnimated(relaxedGraph.circles, relaxedGraph.lines);
-            gc2.cola.on("tick", function () {
-                updatePositions(relaxedGraph.circles, relaxedGraph.lines);
-            });
-            movex(gc2.svg, "1s", 0);
+        if (gc2) {
+            gc2.cola.on("tick", null);
+            gc2.svg.remove();
         }
-        gc2.svg.on('webkitTransitionEnd', transitionEndCallback).on('transitionend', transitionEndCallback);
-        gc2.svg.style("visibility", "hidden");
-        movex(gc2.svg, "0.01s", dx);
+
+        gc2 = GraphCanvas().init("graphview", 400, height, 25);
 
         relaxedGraph.nodes = nodes.map(function (u) {
             return { id: u.id, group: u.group, x: u.x, y: u.y };
@@ -260,14 +255,35 @@
         nodeQuery.exit().remove();
 
         updatePositions(
-            relaxedGraph.circles = gc2.nodeLayer.selectAll(".node"),
-            relaxedGraph.lines = gc2.linkLayer.selectAll(".link"));
+            relaxedGraph.circles = nodeQuery,
+            relaxedGraph.lines = linkQuery);
 
         gc2.cola
             .nodes(relaxedGraph.nodes)
             .links(relaxedGraph.links)
             //.symmetricDiffLinkLengths(1)
-            .start(100);
+            .start(20,20,60);
+        gc2.cola.stop();
+
+            var dx = gc1.svg[0][0].getBoundingClientRect().left - gc2.svg[0][0].getBoundingClientRect().left;
+            var transitionEndCallback = function () {
+                updatePositionsAnimated(relaxedGraph.circles, relaxedGraph.lines);
+                gc2.svg.style("visibility", "visible");
+                var setTickFunc = function () {
+                    gc2.cola.resume();
+                    gc2.cola.on("tick", function () {
+                        updatePositions(relaxedGraph.circles, relaxedGraph.lines);
+                    });
+                    gc2.svg.on('webkitTransitionEnd', null).on('transitionend', null);
+                }
+                gc2.svg.on('webkitTransitionEnd', setTickFunc).on('transitionend', setTickFunc);
+                movex(gc2.svg, "2s", 0);
+            }
+
+            // first, really quickly move the right canvas left to overlay the original graph
+            gc2.svg.on('webkitTransitionEnd', transitionEndCallback).on('transitionend', transitionEndCallback);
+            gc2.svg.style("visibility", "hidden");
+            movex(gc2.svg, "0.01s", dx);
     }
 </script>
 <script>
