@@ -93,8 +93,7 @@ module cola {
 
         /**
          * @method constructor
-         * @param x {number[]} initial x coordinates for nodes
-         * @param y {number[]} initial y coordinates for nodes
+         * @param x {number[][]} initial coordinates for nodes
          * @param D {number[][]} matrix of desired distances between pairs of nodes
          * @param G {number[][]} [default=null] if specified, G is a matrix of weights for goal terms between pairs of nodes.  
          * If G[i][j] > 1 and the separation between nodes i and j is greater than their ideal distance, then there is no contribution for this pair to the goal
