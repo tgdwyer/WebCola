@@ -22,13 +22,13 @@
 <body>
 <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v1.min.js"></script>
-    <script src="../src/d3adaptor.js"></script>
 <script>
     var width = 1000,
         height = 500;
 
     var color = d3.scale.category20();
     var graphDiv = d3.select("body").append("div");
+
     GraphCanvas = function () {
         var gc = {};
         gc.init = function (id, width, height, linkDistance) {
@@ -48,6 +48,7 @@
         return gc;
     };
     var gc1 = GraphCanvas().init("mdsview", 400, height, 10);
+
     d3.select("body").append("button").attr("id", "relaxButton").attr("disabled","true").text("Relax Edges").on("click", relaxEdges);
 
     var matrix = [];
