@@ -4,6 +4,7 @@
 /// <reference path="descent.js"/>
 /// <reference path="vpsc.js"/>
 /// <reference path="rectangle.js"/>
+/// <reference path="geom.js"/>
 
 asyncTest("all-pairs shortest paths", function () {
     var d3cola = cola.d3adaptor();
@@ -63,6 +64,76 @@ asyncTest("equality constraints", function () {
     });
     ok(true);
 });
+
+test("convex hulls", function () {
+    var draw = false;
+    var rand = new cola.PseudoRandom();
+    var nextInt = function (r) { return Math.round(rand.getNext() * r) }
+    var width = 100, height = 100;
+
+    for (var k = 0; k < 100; ++k) {
+        if (draw) {
+            var svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
+        }
+        var P = [];
+        for (var i = 0; i < 5; ++i) {
+            var p;
+            P.push(p = { x: nextInt(width), y: nextInt(height) });
+            if (draw) svg.append("circle").attr("cx", p.x).attr("cy", p.y).attr('fill', 'green').attr("r", 5);
+        }
+        var h = geom.ConvexHull(P);
+        if (draw) {
+            var lineFunction = d3.svg.line().x(function (d) { return d.x; }).y(function (d) { return d.y; }).interpolate("linear");
+            svg.append("path").attr("d", lineFunction(h))
+                .attr("stroke", "blue")
+                .attr("stroke-width", 2)
+                .attr("fill", "none");
+        }
+
+        for (var i = 2; i < h.length; ++i) {
+            var p = h[i - 2], q = h[i - 1], r = h[i];
+            ok(geom.isLeft(p, q, r) >= 0, "clockwise hull " + i);
+            for (var j = 0; j < P.length; ++j) {
+                ok(geom.isLeft(p, q, P[j]) >= 0, "" + j);
+            }
+        }
+        ok(h[0] !== h[h.length - 1], "first and last point of hull are different" + k);
+    }
+});
+
+test("radial sort", function () {
+    var draw = false;
+    var n = 100;
+    var width = 400, height = 400;
+    if (draw) {
+        var svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
+    }
+    var P = [];
+    var x=0, y=0;
+    var rand = new cola.PseudoRandom(5);
+    var nextInt = function (r) { return Math.round(rand.getNext() * r) }
+    for (var i = 0; i < n; ++i) {
+        var p;
+        P.push(p = { x: nextInt(width), y: nextInt(height) });
+        x += p.x; y += p.y;
+        if (draw) svg.append("circle").attr("cx", p.x).attr("cy", p.y).attr('fill', 'green').attr("r", 5);
+    }
+    var q = { x: x / n, y: y / n };
+    console.log(q);
+    var p0 = null;
+    geom.clockwiseRadialSweep(q, P, function (p, i) {
+        if (p0) {
+            var il = geom.isLeft(q, p0, p);
+            ok(il >= 0);
+        }
+        p0 = p;
+        if (draw) {
+            svg.append("line").attr('x1', q.x).attr('y1', q.y).attr('x2', p.x).attr("y2", p.y)
+                .attr("stroke", d3.interpolateRgb("yellow", "red")(i / n))
+                .attr("stroke-width", 2)
+        }
+    });
+})
 
 test("pseudo random number test", function () {
     var rand = new cola.PseudoRandom();
