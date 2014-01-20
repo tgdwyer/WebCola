@@ -3,6 +3,11 @@ module geom {
         x: number;
         y: number;
     }
+
+    export class PolyPoint extends Point {
+        polyIndex: number;
+    }
+
     /** tests if a point is Left|On|Right of an infinite line.
      * @param points P0, P1, and P2
      * @return >0 for P2 left of the line through P0 and P1
@@ -12,6 +17,15 @@ module geom {
     export function isLeft(P0: Point, P1: Point, P2: Point): number {
         return (P1.x - P0.x) * (P2.y - P0.y) - (P2.x - P0.x) * (P1.y - P0.y);
     }
+
+    function above(p: Point, vi: Point, vj: Point): boolean {
+        return isLeft(p, vi, vj) > 0;
+    }
+
+    function below(p: Point, vi: Point, vj: Point): boolean {
+        return isLeft(p, vi, vj) < 0;
+    }
+
 
     /**
      * returns the convex hull of a set of points using Andrew's monotone chain algorithm
@@ -88,5 +102,176 @@ module geom {
         P.slice(0).sort(
             (a, b) => Math.atan2(a.y - p.y, a.x - p.x) - Math.atan2(b.y - p.y, b.x - p.x)
         ).forEach(f);
+    }
+
+    function nextPolyPoint(p: PolyPoint, ps: PolyPoint[]): PolyPoint {
+        if (p.polyIndex === ps.length - 1) return ps[0];
+        return ps[p.polyIndex + 1];
+    }
+
+    function prevPolyPoint(p: PolyPoint, ps: PolyPoint[]): PolyPoint {
+        if (p.polyIndex === 0) return ps[ps.length - 1];
+        return ps[p.polyIndex - 1];
+    }
+
+    export function tangents(a: PolyPoint[], b: PolyPoint[]) {
+    }
+
+    // tangent_PointPolyC(): fast binary search for tangents to a convex polygon
+    //    Input:  P = a 2D point (exterior to the polygon)
+    //            n = number of polygon vertices
+    //            V = array of vertices for a 2D convex polygon with V[n] = V[0]
+    //    Output: rtan = index of rightmost tangent point V[rtan]
+    //            ltan = index of leftmost tangent point V[ltan]
+    function tangent_PointPolyC(P: Point, V: Point[]): { rtan: number; ltan: number }
+    {
+        return { rtan: Rtangent_PointPolyC(P, V), ltan: Ltangent_PointPolyC(P, V) };
+    }
+
+
+    // Rtangent_PointPolyC(): binary search for convex polygon right tangent
+    //    Input:  P = a 2D point (exterior to the polygon)
+    //            n = number of polygon vertices
+    //            V = array of vertices for a 2D convex polygon with V[n] = V[0]
+    //    Return: index "i" of rightmost tangent point V[i]
+    function Rtangent_PointPolyC(P: Point, V: Point[]): number {
+        var n = V.length - 1;
+
+        // use binary search for large convex polygons
+        var a: number, b: number, c: number;            // indices for edge chain endpoints
+        var upA: boolean, dnC: boolean;           // test for up direction of edges a and c
+
+        // rightmost tangent = maximum for the isLeft() ordering
+        // test if V[0] is a local maximum
+        if (below(P, V[1], V[0]) && !above(P, V[n - 1], V[0]))
+            return 0;               // V[0] is the maximum tangent point
+
+        for (a = 0, b = n; ;) {          // start chain = [0,n] with V[n]=V[0]
+            c = Math.floor((a + b) / 2);        // midpoint of [a,b], and 0<c<n
+            dnC = below(P, V[c + 1], V[c]);
+            if (dnC && !above(P, V[c - 1], V[c]))
+                return c;          // V[c] is the maximum tangent point
+
+            // no max yet, so continue with the binary search
+            // pick one of the two subchains [a,c] or [c,b]
+            upA = above(P, V[a + 1], V[a]);
+            if (upA) {                       // edge a points up
+                if (dnC)                         // edge c points down
+                    b = c;                           // select [a,c]
+                else {                           // edge c points up
+                    if (above(P, V[a], V[c]))     // V[a] above V[c]
+                        b = c;                       // select [a,c]
+                    else                          // V[a] below V[c]
+                        a = c;                       // select [c,b]
+                }
+            }
+            else {                           // edge a points down
+                if (!dnC)                        // edge c points up
+                    a = c;                           // select [c,b]
+                else {                           // edge c points down
+                    if (below(P, V[a], V[c]))     // V[a] below V[c]
+                        b = c;                       // select [a,c]
+                    else                          // V[a] above V[c]
+                        a = c;                       // select [c,b]
+                }
+            }
+        }
+    }
+
+    // Ltangent_PointPolyC(): binary search for convex polygon left tangent
+    //    Input:  P = a 2D point (exterior to the polygon)
+    //            n = number of polygon vertices
+    //            V = array of vertices for a 2D convex polygon with V[n]=V[0]
+    //    Return: index "i" of leftmost tangent point V[i]
+    function Ltangent_PointPolyC(P: Point, V: Point[]): number {
+        var n = V.length - 1;
+        // use binary search for large convex polygons
+        var a: number, b: number, c: number;             // indices for edge chain endpoints
+        var dnA: boolean, dnC: boolean;           // test for down direction of edges a and c
+
+        // leftmost tangent = minimum for the isLeft() ordering
+        // test if V[0] is a local minimum
+        if (above(P, V[n - 1], V[0]) && !below(P, V[1], V[0]))
+            return 0;               // V[0] is the minimum tangent point
+
+        for (a = 0, b = n; ;) {          // start chain = [0,n] with V[n] = V[0]
+            c = Math.floor((a + b) / 2);        // midpoint of [a,b], and 0<c<n
+            dnC = below(P, V[c + 1], V[c]);
+            if (above(P, V[c - 1], V[c]) && !dnC)
+                return c;          // V[c] is the minimum tangent point
+
+            // no min yet, so continue with the binary search
+            // pick one of the two subchains [a,c] or [c,b]
+            dnA = below(P, V[a + 1], V[a]);
+            if (dnA) {                       // edge a points down
+                if (!dnC)                        // edge c points up
+                    b = c;                           // select [a,c]
+                else {                           // edge c points down
+                    if (below(P, V[a], V[c]))     // V[a] below V[c]
+                        b = c;                       // select [a,c]
+                    else                          // V[a] above V[c]
+                        a = c;                       // select [c,b]
+                }
+            }
+            else {                           // edge a points up
+                if (dnC)                         // edge c points down
+                    a = c;                           // select [c,b]
+                else {                           // edge c points up
+                    if (above(P, V[a], V[c]))     // V[a] above V[c]
+                        b = c;                       // select [a,c]
+                    else                          // V[a] below V[c]
+                        a = c;                       // select [c,b]
+                }
+            }
+        }
+    }
+
+    // RLtangent_PolyPolyC(): get the RL tangent between two convex polygons
+    //    Input:  m = number of vertices in polygon 1
+    //            V = array of vertices for convex polygon 1 with V[m]=V[0]
+    //            n = number of vertices in polygon 2
+    //            W = array of vertices for convex polygon 2 with W[n]=W[0]
+    //    Output: *t1 = index of tangent point V[t1] for polygon 1
+    //            *t2 = index of tangent point W[t2] for polygon 2
+    export function tangent_PolyPolyC(V: Point[], W: Point[], t1: (a, b) => number, t2: (a, b) => number, cmp1: (a,b,c)=>boolean, cmp2: (a,b,c)=>boolean): { t1: number; t2: number } {
+        var ix1: number, ix2: number;      // search indices for polygons 1 and 2
+
+        // first get the initial vertex on each polygon
+        ix1 = t1(W[0], V);   // right tangent from W[0] to V
+        ix2 = t2(V[ix1], W); // left tangent from V[ix1] to W
+
+        // ping-pong linear search until it stabilizes
+        var done = false;                    // flag when done
+        while (!done) {
+            done = true;                     // assume done until...
+            while (true) {
+                if (ix1 === V.length - 1) ix1 = 0;
+                if (cmp1(W[ix2], V[ix1], V[ix1 + 1])) break;
+                ++ix1;                       // get Rtangent from W[ix2] to V
+            }
+            while (true) {
+                if (ix2 === 0) ix2 = W.length - 1;
+                if (cmp2(V[ix1], W[ix2], W[ix2 - 1])) break;
+                --ix2;                       // get Ltangent from V[ix1] to W
+                done = false;                // not done if had to adjust this
+            }
+        }
+        return { t1: ix1, t2: ix2 };
+    }
+    export function LRtangent_PolyPolyC(V: Point[], W: Point[]): { t1: number; t2: number } {
+        var rl = RLtangent_PolyPolyC(W, V);
+        return { t1: rl.t2, t2: rl.t1 };
+    }
+
+    export function RLtangent_PolyPolyC(V: Point[], W: Point[]): { t1: number; t2: number } {
+        return tangent_PolyPolyC(V, W, Rtangent_PointPolyC, Ltangent_PointPolyC, above, below);
+    }
+
+    export function LLtangent_PolyPolyC(V: Point[], W: Point[]): { t1: number; t2: number } {
+        return tangent_PolyPolyC(V, W, Ltangent_PointPolyC, Ltangent_PointPolyC, below, below);
+    }
+
+    export function RRtangent_PolyPolyC(V: Point[], W: Point[]): { t1: number; t2: number } {
+        return tangent_PolyPolyC(V, W, Rtangent_PointPolyC, Rtangent_PointPolyC, above, above);
     }
 } 

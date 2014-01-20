@@ -135,6 +135,101 @@ test("radial sort", function () {
     });
 })
 
+test("tangents", function () {
+    var draw = true;
+    var rand = new cola.PseudoRandom();
+    for (var j = 0; j < 100; j++) {
+        var length = function (p, q) { var dx = p.x - q.x, dy = p.y - q.y; return dx * dx + dy * dy; };
+        var nextInt = function (r) { return Math.round(rand.getNext() * r) }
+        var makePoly = function () {
+            var n = nextInt(7) + 3, width = 10, height = 10;
+            var P = [];
+            loop: for (var i = 0; i < n; ++i) {
+                var p = { x: nextInt(width), y: nextInt(height) };
+                var ctr = 0;
+                while (i > 0 && length(P[i - 1], p) < 1
+                    || i > 1 && (
+                           geom.isLeft(P[i - 2], P[i - 1], p) <= 0
+                        || geom.isLeft(P[i - 1], p, P[0]) <= 0
+                        || geom.isLeft(p, P[0], P[1]) <= 0)) {
+                    if (ctr++ > 10) break loop;
+                    p = { x: nextInt(width), y: nextInt(height) };
+                }
+                P.push(p);
+            }
+            P.push({ x: P[0].x, y: P[0].y });
+            return P;
+        }
+        var A = makePoly(), B = makePoly();
+        for (var i = 0; i < B.length; i++) {
+            B[i].x = B[i].x + 11;
+        }
+        B.forEach(function (p) { p.x += 11 });
+        //if (j !== 6) continue;
+        //continue;
+        var ll = geom.LLtangent_PolyPolyC(A, B);
+        var rr = geom.RRtangent_PolyPolyC(A, B);
+        var rl = geom.RLtangent_PolyPolyC(A, B);
+        var lr = geom.LRtangent_PolyPolyC(A, B);
+        if (draw) {
+            var embiggen = function (p) { return { x: p.x * 10, y: p.y * 10 } };
+            var A_ = A.map(embiggen);
+            var B_ = B.map(embiggen);
+            var getLine = function (tp) {
+                return { x1: A_[tp.t1].x, y1: A_[tp.t1].y, x2: B_[tp.t2].x, y2: B_[tp.t2].y };
+            }
+            var l = getLine(rr);
+            var ints = intersects(l, A_).concat(intersects(l, B_));
+            if (ints.length == 4) continue;
+            d3.select("body").append("p").html(j);
+            var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 100);
+            var drawPoly = function (P) {
+                if (draw) {
+                    for (var i = 0; i < P.length; ++i) {
+                        var lineFunction = d3.svg.line().x(function (d) { return d.x * 10; }).y(function (d) { return d.y * 10; }).interpolate("linear");
+                        svg.append("path").attr("d", lineFunction(P))
+                            .attr("stroke", "blue")
+                            .attr("stroke-width", 1)
+                            .attr("fill", "none");
+                    }
+                }
+            }
+            var drawLine = function (l) {
+                svg.append("line").attr('x1', l.x1).attr('y1', l.y1).attr('x2', l.x2).attr("y2", l.y2)
+                    .attr("stroke", "green")
+                    .attr("stroke-width", 1);
+            };
+            var drawCircle = function (p) {
+                svg.append("circle").attr("cx", p.x).attr("cy", p.y).attr('fill', 'red').attr("r", 2);
+            }
+            drawPoly(A);
+            drawPoly(B);
+            drawLine(getLine(rr));
+            ints.forEach(function (p) { drawCircle(p); });
+            //drawLine(getLine(rr));
+            //drawLine(getLine(lr));
+            //drawLine(getLine(rl));
+            //drawCircle(A_[0]);
+            //drawCircle(B_[0]);
+        }
+    }
+    ok(true);
+});
+
+function intersects(l, P) {
+    var ints = [];
+    for (var i = 1; i < P.length; ++i) {
+        var int = vpsc.Rectangle.lineIntersection(
+            l.x1, l.y1,
+            l.x2, l.y2,
+            P[i-1].x, P[i-1].y,
+            P[i].x, P[i].y
+            );
+        if (int) ints.push(int);
+    }
+    return ints;
+}
+
 test("pseudo random number test", function () {
     var rand = new cola.PseudoRandom();
     for (var i = 0; i < 100; ++i) {
