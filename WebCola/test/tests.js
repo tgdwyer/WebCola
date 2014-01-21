@@ -71,7 +71,7 @@ test("convex hulls", function () {
     var nextInt = function (r) { return Math.round(rand.getNext() * r) }
     var width = 100, height = 100;
 
-    for (var k = 0; k < 100; ++k) {
+    for (var k = 0; k < 10; ++k) {
         if (draw) {
             var svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
         }
@@ -161,16 +161,11 @@ test("tangents", function () {
             return P;
         }
         var A = makePoly(), B = makePoly();
-        for (var i = 0; i < B.length; i++) {
-            B[i].x = B[i].x + 11;
-        }
+        if (A.length <= 3 || B.length <= 3) continue;
         B.forEach(function (p) { p.x += 11 });
-        //if (j !== 6) continue;
-        //continue;
-        var ll = geom.LLtangent_PolyPolyC(A, B);
-        var rr = geom.RRtangent_PolyPolyC(A, B);
-        var rl = geom.RLtangent_PolyPolyC(A, B);
-        var lr = geom.LRtangent_PolyPolyC(A, B);
+        //if (j !== 207) continue;
+        var t = geom.tangents(A, B);
+        // ok(t.length === 4, t.length + " tangents found at j="+j);
         if (draw) {
             var embiggen = function (p) { return { x: p.x * 10, y: p.y * 10 } };
             var A_ = A.map(embiggen);
@@ -178,9 +173,6 @@ test("tangents", function () {
             var getLine = function (tp) {
                 return { x1: A_[tp.t1].x, y1: A_[tp.t1].y, x2: B_[tp.t2].x, y2: B_[tp.t2].y };
             }
-            var l = getLine(rr);
-            var ints = intersects(l, A_).concat(intersects(l, B_));
-            if (ints.length == 4) continue;
             d3.select("body").append("p").html(j);
             var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 100);
             var drawPoly = function (P) {
@@ -204,13 +196,12 @@ test("tangents", function () {
             }
             drawPoly(A);
             drawPoly(B);
-            drawLine(getLine(rr));
-            ints.forEach(function (p) { drawCircle(p); });
-            //drawLine(getLine(rr));
-            //drawLine(getLine(lr));
-            //drawLine(getLine(rl));
-            //drawCircle(A_[0]);
-            //drawCircle(B_[0]);
+            for (var p in t) {
+                var l = getLine(t[p]);
+                drawLine(l);
+                var ints = intersects(l, A_).concat(intersects(l, B_));
+                ok (ints.length <= 4, ints.length + " intersects found at "+j);
+            }
         }
     }
     ok(true);

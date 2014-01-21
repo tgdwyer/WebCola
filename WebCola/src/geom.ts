@@ -33,7 +33,7 @@ module geom {
      * @param S array of points
      * @return the convex hull as an array of points
      */
-    export function ConvexHull(S: Point[]): Point[]{
+    export function ConvexHull(S: Point[]): Point[] {
         var P = S.slice(0).sort((a, b) => a.x !== b.x ? b.x - a.x : b.y - a.y);
         var n = S.length, i;
         var minmin = 0;
@@ -101,7 +101,7 @@ module geom {
     export function clockwiseRadialSweep(p: Point, P: Point[], f: (Point) => void) {
         P.slice(0).sort(
             (a, b) => Math.atan2(a.y - p.y, a.x - p.x) - Math.atan2(b.y - p.y, b.x - p.x)
-        ).forEach(f);
+            ).forEach(f);
     }
 
     function nextPolyPoint(p: PolyPoint, ps: PolyPoint[]): PolyPoint {
@@ -114,17 +114,13 @@ module geom {
         return ps[p.polyIndex - 1];
     }
 
-    export function tangents(a: PolyPoint[], b: PolyPoint[]) {
-    }
-
     // tangent_PointPolyC(): fast binary search for tangents to a convex polygon
     //    Input:  P = a 2D point (exterior to the polygon)
     //            n = number of polygon vertices
     //            V = array of vertices for a 2D convex polygon with V[n] = V[0]
     //    Output: rtan = index of rightmost tangent point V[rtan]
     //            ltan = index of leftmost tangent point V[ltan]
-    function tangent_PointPolyC(P: Point, V: Point[]): { rtan: number; ltan: number }
-    {
+    function tangent_PointPolyC(P: Point, V: Point[]): { rtan: number; ltan: number } {
         return { rtan: Rtangent_PointPolyC(P, V), ltan: Ltangent_PointPolyC(P, V) };
     }
 
@@ -233,7 +229,7 @@ module geom {
     //            W = array of vertices for convex polygon 2 with W[n]=W[0]
     //    Output: *t1 = index of tangent point V[t1] for polygon 1
     //            *t2 = index of tangent point W[t2] for polygon 2
-    export function tangent_PolyPolyC(V: Point[], W: Point[], t1: (a, b) => number, t2: (a, b) => number, cmp1: (a,b,c)=>boolean, cmp2: (a,b,c)=>boolean): { t1: number; t2: number } {
+    export function tangent_PolyPolyC(V: Point[], W: Point[], t1: (a, b) => number, t2: (a, b) => number, cmp1: (a, b, c) => boolean, cmp2: (a, b, c) => boolean): { t1: number; t2: number } {
         var ix1: number, ix2: number;      // search indices for polygons 1 and 2
 
         // first get the initial vertex on each polygon
@@ -273,5 +269,52 @@ module geom {
 
     export function RRtangent_PolyPolyC(V: Point[], W: Point[]): { t1: number; t2: number } {
         return tangent_PolyPolyC(V, W, Rtangent_PointPolyC, Rtangent_PointPolyC, above, above);
+    }
+
+    export class BiTangent {
+        constructor(public t1: number, public t2: number) { }
+    }
+
+    export class BiTangents {
+        rl: BiTangent;
+        lr: BiTangent;
+        ll: BiTangent;
+        rr: BiTangent;
+    }
+
+    export function tangents(V: Point[], W: Point[]): BiTangents
+    {
+        var m = V.length - 1, n = W.length - 1;
+        var bt = new BiTangents();
+        for (var i = 0; i < m; ++i) {
+            for (var j = 0; j < n; ++j) {
+                var v1 = V[i == 0 ? m - 1 : i - 1];
+                var v2 = V[i];
+                var v3 = V[i + 1];
+                var w1 = W[j == 0 ? n - 1 : j - 1];
+                var w2 = W[j];
+                var w3 = W[j + 1];
+                var v1v2w2 = isLeft(v1, v2, w2);
+                var v2w1w2 = isLeft(v2, w1, w2);
+                var v2w2w3 = isLeft(v2, w2, w3);
+                var w1w2v2 = isLeft(w1, w2, v2);
+                var w2v1v2 = isLeft(w2, v1, v2);
+                var w2v2v3 = isLeft(w2, v2, v3);
+                if (v1v2w2 >= 0 && v2w1w2 >= 0 && v2w2w3 < 0
+                    && w1w2v2 >= 0 && w2v1v2 >= 0 && w2v2v3 < 0) {
+                        bt.ll = new BiTangent(i, j);
+                } else if (v1v2w2 <= 0 && v2w1w2 <= 0 && v2w2w3 > 0
+                    && w1w2v2 <= 0 && w2v1v2 <= 0 && w2v2v3 > 0) {
+                        bt.rr = new BiTangent(i, j);
+                } else if (v1v2w2 <= 0 && v2w1w2 > 0 && v2w2w3 <= 0
+                    && w1w2v2 >= 0 && w2v1v2 < 0 && w2v2v3 >= 0) {
+                        bt.rl = new BiTangent(i, j);
+                } else if (v1v2w2 >= 0 && v2w1w2 < 0 && v2w2w3 >= 0
+                    && w1w2v2 <= 0 && w2v1v2 > 0 && w2v2v3 <= 0) {
+                        bt.lr = new BiTangent(i, j);
+                }
+            }
+        }
+        return bt;
     }
 } 
