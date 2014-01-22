@@ -6,6 +6,8 @@
     [2]: bottom-left
     [3]: bottom-right
 */
+$('#upload').button();
+
 var viewResizeCallbacks = Array((a, b) => { }, (a, b) => { }, (a, b) => { }, (a, b) => { });
 
 // Embed brain network
@@ -13,16 +15,17 @@ var viewResizeCallbacks = Array((a, b) => { }, (a, b) => { }, (a, b) => { }, (a,
 //$('#view-bottom-right').append(iframe);
 
 var pinRadius = 12;
+var pinOffsetX = 262 - pinRadius;
 var viewWidth = $('#view-panel').width();
 var viewHeight = $('#view-panel').height();
-$('#pin').css({ left: viewWidth / 2 - pinRadius, top: viewHeight / 2 - pinRadius });
+$('#pin').css({ left: viewWidth / 2 + pinOffsetX, top: viewHeight / 2 });
 setViewCrossroads(viewWidth / 2, viewHeight / 2);
 
-$('#pin').draggable({ containment: 'parent' }).on('drag', function (event: JQueryEventObject, ...args: any[]) {
+$('#pin').draggable({ containment: '#outer-view-panel' }).on('drag', function (event: JQueryEventObject, ...args: any[]) {
     var ui = args[0];
-    var x = ui.position.left;
+    var x = ui.position.left - pinOffsetX;
     var y = ui.position.top;
-    setViewCrossroads(ui.position.left + pinRadius, ui.position.top + pinRadius);
+    setViewCrossroads(x, y);
 });
 
 function setViewCrossroads(x, y) {
@@ -41,6 +44,7 @@ function setViewCrossroads(x, y) {
     viewResizeCallbacks[3](viewWidth - x, viewHeight - y);
 }
 
+// TODO: Fix resizing behaviour
 window.addEventListener('resize', function () {
     var newViewWidth = $('#view-panel').width();
     var newViewHeight = $('#view-panel').height();
