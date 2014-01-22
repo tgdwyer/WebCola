@@ -3,14 +3,22 @@ declare var THREE;
 declare var d3;
 declare var input;
 
-class Simulation {
+class Brain3DApp implements Application, Loopable {
+
+    loop: Loop;
+    // Prerequisites to begin the simulation
+    prereqBrain;
+    prereqSimMatrix: number[][];
+    prereqNodeGroups: number[];
+    prereqNodeLabels: string[];
+    prereqCoords: number[][];
+
     // THREE variables
     camera;
     scene;
     renderer;
     projector = new THREE.Projector();
-    trackballControls;
-    
+
     descent: cola.Descent; // The handle to the constraint solver
 
     // Data/objects
@@ -48,47 +56,15 @@ class Simulation {
     colaLinkDistance = 15;
     d3ColorSelector = d3.scale.category20();
 
-    constructor(brainGeometry, simMatrix: number[][], nodeGroups: number[], nodeLabels: string[], physioCoords: number[][]) {
-        this.nodeCount = nodeGroups.length;
-        this.similarityMatrix = simMatrix;
-        this.createDissimilarityMatrix();
-        this.nodeGroups = nodeGroups;
-        this.nodeLabels = nodeLabels;
-        this.physioCoords = physioCoords;
-
-        var container = document.createElement('div');
-        document.body.appendChild(container);
-
+    init(canvasParent, canvasWidth, canvasHeight) {
         // Set up renderer
         this.renderer = new THREE.WebGLRenderer();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        container.appendChild(this.renderer.domElement);
+        this.renderer.setSize(canvasWidth, canvasHeight);
+        canvasParent.appendChild(this.renderer.domElement);
 
         // Set up camera
         this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, this.nearClip, this.farClip);
         this.camera.position.set(0, 0, 400);
-
-        window.addEventListener('resize', () => {
-            this.camera.aspect = window.innerWidth / window.innerHeight;
-            this.camera.updateProjectionMatrix();
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.trackballControls.handleResize();
-        }, false);
-
-        // Set up controls
-        this.trackballControls = new THREE.TrackballControls(this.camera);
-
-        this.trackballControls.rotateSpeed = 1.0;
-        this.trackballControls.zoomSpeed = 1.2;
-        this.trackballControls.panSpeed = 0.8;
-
-        this.trackballControls.noZoom = false;
-        this.trackballControls.noPan = false;
-
-        this.trackballControls.staticMoving = true;
-        this.trackballControls.dynamicDampingFactor = 0.3;
-
-        this.trackballControls.keys = [65, 83, 68];
 
         // Set up scene
         this.scene = new THREE.Scene();
@@ -99,6 +75,91 @@ class Simulation {
         var directionalLight = new THREE.DirectionalLight(0xffeedd);
         directionalLight.position.set(0, 0, 1);
         this.scene.add(directionalLight);
+
+        // Set up resource loading
+        var manager = new THREE.LoadingManager();
+        manager.onProgress = function (item, loaded, total) {
+            console.log(item, loaded, total);
+        };
+
+        // Load the brain model
+        var loader = new THREE.OBJLoader(manager);
+        loader.load('../examples/graphdata/BrainLSDecimated0.01.obj', (geometry) => {
+            this.prereqBrain = geometry;
+            this.tryBegin();
+        });
+
+        // Load the similarity matrix
+        d3.text("../examples/graphdata/signed_weighted.txt",
+            (error, text) => {
+                var lines = text.split('\n').map(function (s) { return s.trim() });
+                this.prereqSimMatrix = [];
+                lines.forEach((line, i) => {
+                    if (line.length > 0) {
+                        this.prereqSimMatrix.push(line.split(',').map(function (string) {
+                            return parseFloat(string);
+                        }));
+                    }
+                });
+                this.tryBegin();
+            });
+
+        // Load the group affiliations
+        d3.text("../examples/graphdata/signed_weighted_affil.txt",
+            (error, text) => {
+                var groups = text.split(',').map(function (s) { return s.trim() });
+                this.prereqNodeGroups = groups.map(function (group) {
+                    return parseInt(group);
+                });
+                this.tryBegin();
+            });
+
+        // Load the labels
+        d3.text("../examples/graphdata/labels.txt",
+            (error, text) => {
+                this.prereqNodeLabels = text.split('\n').map(function (s) { return s.trim() });
+                this.tryBegin();
+            });
+
+        // Load the physiological coordinates of each node in the brain
+        d3.csv('../examples/graphdata/coordinates.csv', (coords) => {
+            this.prereqCoords = [Array(coords.length), Array(coords.length), Array(coords.length)];
+
+            for (var i = 0; i < coords.length; ++i) {
+                // Translate the coords into Cola's format
+                this.prereqCoords[0][i] = parseFloat(coords[i].x);
+                this.prereqCoords[1][i] = parseFloat(coords[i].y);
+                this.prereqCoords[2][i] = parseFloat(coords[i].z);
+            }
+
+            this.tryBegin();
+        });
+
+        // Return the resize callback
+        return (width: number, height: number) => {
+            this.camera.aspect = width / height;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(width, height);
+        };
+    }
+
+    // This is where the main loop tries to start. We begin when all resources are loaded.
+    tryBegin() {
+        if (this.prereqBrain && this.prereqSimMatrix && this.prereqNodeGroups && this.prereqNodeLabels && this.prereqCoords) {
+            this.begin(this.prereqBrain, this.prereqSimMatrix, this.prereqNodeGroups, this.prereqNodeLabels, this.prereqCoords);
+        }
+    }
+
+    begin(brainGeometry, simMatrix: number[][], nodeGroups: number[], nodeLabels: string[], physioCoords: number[][]) {
+        this.nodeCount = nodeGroups.length;
+        this.similarityMatrix = simMatrix;
+        this.createDissimilarityMatrix();
+        this.nodeGroups = nodeGroups;
+        this.nodeLabels = nodeLabels;
+        this.physioCoords = physioCoords;
+
+        // Set up loop
+        this.loop = new Loop(this, 0.03);
 
         // Set up the base objects for the graphs
         this.brainObject = new THREE.Object3D();
@@ -155,7 +216,7 @@ class Simulation {
                 child.material =
                 new THREE.MeshLambertMaterial(
                     {
-                        color: 0xffcccc,
+                        color: 0xffaaaa,
                         transparent: true,
                         opacity: 0.3
                     });
@@ -187,11 +248,11 @@ class Simulation {
         for (var i = 0; i < this.similarityMatrix.length; ++i) {
             this.dissimilarityMatrix.push(this.similarityMatrix[i].map(
                 (sim) => {
-                this.minSimilarity = Math.min(this.minSimilarity, sim);
-                this.maxSimilarity = Math.max(this.maxSimilarity, sim);
-                return 15 / (sim + 1); // Convert similarities to distances
+                    this.minSimilarity = Math.min(this.minSimilarity, sim);
+                    this.maxSimilarity = Math.max(this.maxSimilarity, sim);
+                    return 15 / (sim + 1); // Convert similarities to distances
                 }
-            ));
+                ));
         }
 
         // Calculate the percentiles
@@ -253,8 +314,14 @@ class Simulation {
         return null;
     }
 
-    update(deltaTime) {
-        this.trackballControls.update();
+    update(deltaTime: number) {
+        // Execute coroutines
+        for (var i = 0; i < coroutines.length;) {
+            if (coroutines[i].func(coroutines[i], deltaTime))
+                coroutines.splice(i, 1);
+            else
+                ++i;
+        }
 
         var node = this.getNodeUnderPointer(input.mouse);
         if (node) {
@@ -309,7 +376,7 @@ class Simulation {
                 for (var i = 0; i < 10; ++i) {
                     this.descent.reduceStress();
                 }
-                
+
                 // Set up a coroutine to do the animation
                 var origin = new THREE.Vector3(-this.graphOffset, 0, 0);
                 var target = new THREE.Vector3(this.graphOffset, 0, 0);
@@ -318,7 +385,7 @@ class Simulation {
                 this.colaGraph.setVisible(true);
                 this.transitionInProgress = true;
 
-                setCoroutine({currentTime: 0, endTime: this.modeLerpLength},
+                setCoroutine({ currentTime: 0, endTime: this.modeLerpLength },
                     (o, deltaTime) => {
                         o.currentTime += deltaTime;
 
@@ -335,8 +402,8 @@ class Simulation {
                             return false;
                         }
                     }
-                );
-            } 
+                    );
+            }
         }
 
         if (input.keyboard.keyPressed['2']) {
@@ -505,7 +572,7 @@ class Edge {
         this.geometry = new THREE.Geometry();
         this.geometry.vertices.push(endPoint1);
         this.geometry.vertices.push(endPoint2);
-        this.line = new THREE.Line(this.geometry, new THREE.LineBasicMaterial({ color: 0xFFFFFF }));
+        this.line = new THREE.Line(this.geometry, new THREE.LineBasicMaterial({ color: 0x000000 }));
         parentObject.add(this.line);
         //this.highlighted = false;
     }
@@ -593,118 +660,6 @@ edgeHeadColorBrightH.setRGB(1, 1, 0);
 var edgeTailColorH = new THREE.Color();
 edgeTailColorH.setRGB(1, 0.3, 1);
 */
-
-var simulation: Simulation;
-
-init();
-
-// Prerequisites to begin the simulation
-var prereqBrain;
-var prereqSimMatrix: number[][];
-var prereqNodeGroups: number[];
-var prereqNodeLabels: string[];
-var prereqCoords: number[][];
-
-function init() {
-    var manager = new THREE.LoadingManager();
-    manager.onProgress = function (item, loaded, total) {
-        console.log(item, loaded, total);
-    };
-    
-    // Load the brain model
-    var loader = new THREE.OBJLoader(manager);
-    loader.load('graphdata/BrainLSDecimated0.01.obj', function (geometry) {
-        prereqBrain = geometry;
-        tryBegin();
-    });
-
-    // Load the similarity matrix
-    d3.text("graphdata/signed_weighted.txt",
-        function (error, text) {
-            var lines = text.split('\n').map(function (s) { return s.trim() });
-            prereqSimMatrix = [];
-            lines.forEach(function (line, i) {
-                if (line.length > 0) {
-                    prereqSimMatrix.push(line.split(',').map(function (string) {
-                        return parseFloat(string);
-                    }));
-                }
-            });
-            tryBegin();
-        });
-
-    // Load the group affiliations
-    d3.text("graphdata/signed_weighted_affil.txt",
-        function (error, text) {
-            var groups = text.split(',').map(function (s) { return s.trim() });
-            prereqNodeGroups = groups.map(function (group) {
-                return parseInt(group);
-            });
-            tryBegin();
-        });
-
-    // Load the labels
-    d3.text("graphdata/labels.txt",
-        function (error, text) {
-            prereqNodeLabels = text.split('\n').map(function (s) { return s.trim() });
-            tryBegin();
-        });
-
-    // Load the physiological coordinates of each node in the brain
-    d3.csv('graphdata/coordinates.csv', function (coords) {
-        prereqCoords = [Array(coords.length), Array(coords.length), Array(coords.length)];
-
-        for (var i = 0; i < coords.length; ++i) {
-            // Translate the coords into Cola's format
-            prereqCoords[0][i] = parseFloat(coords[i].x);
-            prereqCoords[1][i] = parseFloat(coords[i].y);
-            prereqCoords[2][i] = parseFloat(coords[i].z);
-        }
-
-        tryBegin();
-    });
-}
-
-// This is where the main loop tries to start. We begin when all resources are loaded.
-function tryBegin() {
-    if (prereqBrain && prereqSimMatrix && prereqNodeGroups && prereqNodeLabels && prereqCoords) {
-        timeOfLastFrame = new Date().getTime();
-        simulation = new Simulation(prereqBrain, prereqSimMatrix, prereqNodeGroups, prereqNodeLabels, prereqCoords);
-        mainLoop();
-    }
-}
-
-var frameTimeLimit = 0.03;
-var timeOfLastFrame = 0;
-
-function mainLoop() {
-    nextUpdate();
-    simulation.draw();
-    requestAnimationFrame(mainLoop);
-}
-
-function nextUpdate() {
-    var currentTime = new Date().getTime();
-    var deltaTime = (currentTime - timeOfLastFrame) / 1000;
-    timeOfLastFrame = currentTime;
-
-    // Limit the maximum time step
-    if (deltaTime > frameTimeLimit)
-        update(frameTimeLimit);
-    else
-        update(deltaTime);
-}
-
-function update(deltaTime: number) {
-    // Execute coroutines
-    for (var i = 0; i < coroutines.length;) {
-        if (coroutines[i].func(coroutines[i], deltaTime))
-            coroutines.splice(i, 1);
-        else
-            ++i;
-    }
-    simulation.update(deltaTime);
-}
 
 /* Functions can be pushed to the coroutines array to be executed as if they are
  * occuring in parallel with the program execution.
