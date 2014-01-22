@@ -25,7 +25,7 @@ var cola;
             links = [],
             constraints = [],
             distanceMatrix = null,
-            descent = {},
+            descent = null,
             directedLinkConstraints = null;
 
         d3adaptor.tick = function () {
@@ -264,7 +264,7 @@ var cola;
 
                 // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
                 // otherwise 2. (
-                var G = cola.Descent.createSquareMatrix(N, function () { return 2 });
+                G = cola.Descent.createSquareMatrix(N, function () { return 2 });
                 edges.forEach(function (e) {
                     G[e.source][e.target] = G[e.target][e.source] = 1;
                 });
@@ -317,7 +317,6 @@ var cola;
             nodes.forEach(function (v, i) {
                 v.x = x[i], v.y = y[i];
             });
-
             return d3adaptor.resume();
         };
 

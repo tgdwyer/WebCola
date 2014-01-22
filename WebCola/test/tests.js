@@ -4,6 +4,7 @@
 /// <reference path="descent.js"/>
 /// <reference path="vpsc.js"/>
 /// <reference path="rectangle.js"/>
+/// <reference path="geom.js"/>
 
 asyncTest("all-pairs shortest paths", function () {
     var d3cola = cola.d3adaptor();
@@ -63,6 +64,162 @@ asyncTest("equality constraints", function () {
     });
     ok(true);
 });
+
+test("convex hulls", function () {
+    var draw = false;
+    var rand = new cola.PseudoRandom();
+    var nextInt = function (r) { return Math.round(rand.getNext() * r) }
+    var width = 100, height = 100;
+
+    for (var k = 0; k < 10; ++k) {
+        if (draw) {
+            var svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
+        }
+        var P = [];
+        for (var i = 0; i < 5; ++i) {
+            var p;
+            P.push(p = { x: nextInt(width), y: nextInt(height) });
+            if (draw) svg.append("circle").attr("cx", p.x).attr("cy", p.y).attr('fill', 'green').attr("r", 5);
+        }
+        var h = geom.ConvexHull(P);
+        if (draw) {
+            var lineFunction = d3.svg.line().x(function (d) { return d.x; }).y(function (d) { return d.y; }).interpolate("linear");
+            svg.append("path").attr("d", lineFunction(h))
+                .attr("stroke", "blue")
+                .attr("stroke-width", 2)
+                .attr("fill", "none");
+        }
+
+        for (var i = 2; i < h.length; ++i) {
+            var p = h[i - 2], q = h[i - 1], r = h[i];
+            ok(geom.isLeft(p, q, r) >= 0, "clockwise hull " + i);
+            for (var j = 0; j < P.length; ++j) {
+                ok(geom.isLeft(p, q, P[j]) >= 0, "" + j);
+            }
+        }
+        ok(h[0] !== h[h.length - 1], "first and last point of hull are different" + k);
+    }
+});
+
+test("radial sort", function () {
+    var draw = false;
+    var n = 100;
+    var width = 400, height = 400;
+    if (draw) {
+        var svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
+    }
+    var P = [];
+    var x=0, y=0;
+    var rand = new cola.PseudoRandom(5);
+    var nextInt = function (r) { return Math.round(rand.getNext() * r) }
+    for (var i = 0; i < n; ++i) {
+        var p;
+        P.push(p = { x: nextInt(width), y: nextInt(height) });
+        x += p.x; y += p.y;
+        if (draw) svg.append("circle").attr("cx", p.x).attr("cy", p.y).attr('fill', 'green').attr("r", 5);
+    }
+    var q = { x: x / n, y: y / n };
+    console.log(q);
+    var p0 = null;
+    geom.clockwiseRadialSweep(q, P, function (p, i) {
+        if (p0) {
+            var il = geom.isLeft(q, p0, p);
+            ok(il >= 0);
+        }
+        p0 = p;
+        if (draw) {
+            svg.append("line").attr('x1', q.x).attr('y1', q.y).attr('x2', p.x).attr("y2", p.y)
+                .attr("stroke", d3.interpolateRgb("yellow", "red")(i / n))
+                .attr("stroke-width", 2)
+        }
+    });
+})
+
+test("tangents", function () {
+    var draw = true;
+    var rand = new cola.PseudoRandom();
+    for (var j = 0; j < 100; j++) {
+        var length = function (p, q) { var dx = p.x - q.x, dy = p.y - q.y; return dx * dx + dy * dy; };
+        var nextInt = function (r) { return Math.round(rand.getNext() * r) }
+        var makePoly = function () {
+            var n = nextInt(7) + 3, width = 10, height = 10;
+            var P = [];
+            loop: for (var i = 0; i < n; ++i) {
+                var p = { x: nextInt(width), y: nextInt(height) };
+                var ctr = 0;
+                while (i > 0 && length(P[i - 1], p) < 1
+                    || i > 1 && (
+                           geom.isLeft(P[i - 2], P[i - 1], p) <= 0
+                        || geom.isLeft(P[i - 1], p, P[0]) <= 0
+                        || geom.isLeft(p, P[0], P[1]) <= 0)) {
+                    if (ctr++ > 10) break loop;
+                    p = { x: nextInt(width), y: nextInt(height) };
+                }
+                P.push(p);
+            }
+            P.push({ x: P[0].x, y: P[0].y });
+            return P;
+        }
+        var A = makePoly(), B = makePoly();
+        if (A.length <= 3 || B.length <= 3) continue;
+        B.forEach(function (p) { p.x += 11 });
+        //if (j !== 207) continue;
+        var t = geom.tangents(A, B);
+        // ok(t.length === 4, t.length + " tangents found at j="+j);
+        if (draw) {
+            var embiggen = function (p) { return { x: p.x * 10, y: p.y * 10 } };
+            var A_ = A.map(embiggen);
+            var B_ = B.map(embiggen);
+            var getLine = function (tp) {
+                return { x1: A_[tp.t1].x, y1: A_[tp.t1].y, x2: B_[tp.t2].x, y2: B_[tp.t2].y };
+            }
+            d3.select("body").append("p").html(j);
+            var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 100);
+            var drawPoly = function (P) {
+                if (draw) {
+                    for (var i = 0; i < P.length; ++i) {
+                        var lineFunction = d3.svg.line().x(function (d) { return d.x * 10; }).y(function (d) { return d.y * 10; }).interpolate("linear");
+                        svg.append("path").attr("d", lineFunction(P))
+                            .attr("stroke", "blue")
+                            .attr("stroke-width", 1)
+                            .attr("fill", "none");
+                    }
+                }
+            }
+            var drawLine = function (l) {
+                svg.append("line").attr('x1', l.x1).attr('y1', l.y1).attr('x2', l.x2).attr("y2", l.y2)
+                    .attr("stroke", "green")
+                    .attr("stroke-width", 1);
+            };
+            var drawCircle = function (p) {
+                svg.append("circle").attr("cx", p.x).attr("cy", p.y).attr('fill', 'red').attr("r", 2);
+            }
+            drawPoly(A);
+            drawPoly(B);
+            for (var p in t) {
+                var l = getLine(t[p]);
+                drawLine(l);
+                var ints = intersects(l, A_).concat(intersects(l, B_));
+                ok (ints.length <= 4, ints.length + " intersects found at "+j);
+            }
+        }
+    }
+    ok(true);
+});
+
+function intersects(l, P) {
+    var ints = [];
+    for (var i = 1; i < P.length; ++i) {
+        var int = vpsc.Rectangle.lineIntersection(
+            l.x1, l.y1,
+            l.x2, l.y2,
+            P[i-1].x, P[i-1].y,
+            P[i].x, P[i].y
+            );
+        if (int) ints.push(int);
+    }
+    return ints;
+}
 
 test("pseudo random number test", function () {
     var rand = new cola.PseudoRandom();
