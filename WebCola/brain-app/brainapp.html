@@ -1,0 +1,143 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Brain Data Viewer</title>
+    <style type="text/css">
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 30px;
+            font-weight: bold;
+            line-height: 0;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: bold;
+            line-height: normal;
+        }
+
+        #control-panel {
+            position: absolute;
+            left: 0px;
+            width: 230px;
+            top: 0px;
+            bottom: 0px;
+            background-color: blanchedalmond;
+            overflow: hidden;
+            padding: 10px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        #outer-view-panel {
+            position: absolute;
+            left: 250px;
+            right: 0px;
+            top: 0px;
+            bottom: 0px;
+            overflow: hidden;
+        }
+
+        #view-panel {
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            top: 12px;
+            bottom: 12px;
+            overflow: hidden;
+        }
+
+        #view-top-left {
+            top: 0px;
+            bottom: 0px;
+            left: 0px;
+            right: 0px;
+            background-color: #ffcbcb;
+        }
+
+        #view-top-right {
+            top: 0px;
+            right: 0px;
+            background-color: #ccffb4;
+        }
+
+        #view-bottom-left {
+            bottom: 0px;
+            left: 0px;
+            background-color: #afdaff;
+        }
+
+        #view-bottom-right {
+            bottom: 0px;
+            right: 0px;
+            background-color: #e3afff;
+        }
+
+        .view {
+            position: absolute;
+            overflow: hidden;
+        }
+
+        #pin {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-color: black;
+        }
+
+    </style>
+
+</head>
+<body>
+    <!-- Page structure -->
+    <div id="control-panel">
+        <h1>Control Panel</h1>
+        <br/>
+        <h2>Select Data</h2>
+        <input id="upload" type="file" />
+        <button>Upload</button>
+    </div>
+
+    <div id="outer-view-panel">
+        <div id="view-panel">
+            <div id="view-top-left" class="view"></div>
+            <div id="view-top-right" class="view"></div>
+            <div id="view-bottom-left" class="view"></div>
+            <div id="view-bottom-right" class="view"></div>
+        </div>
+    </div>
+
+    <div id="pin"></div>
+
+    <!-- Required scripts -->
+
+    <script src="../extern/jquery-1.10.2.min.js"></script>
+    <script src="../extern/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+
+    <script src="../extern/three.js"></script>
+    <script src="../extern/OBJLoader.js"></script>
+    <script src="../extern/leap.js"></script>
+    <script src="input.js"></script>
+    <!-- Used for resource loading -->
+    <script src="../extern/d3.v3.js"></script>
+
+    <script src="../cola.v1.min.js"></script>
+    <script src="../src/descent.js"></script>
+
+    <script src="brain3d.js"></script>
+    
+    <!-- The main application script -->
+    <script src="brainapp.js"></script>
+
+</body>
+</html>
+

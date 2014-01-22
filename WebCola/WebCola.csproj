@@ -20,11 +20,10 @@
     <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="examples\brainmodelnonetwork.html" />
-    <Content Include="examples\brain3d.html" />
+    <Content Include="brain-app\brainapp.html" />
+    <Content Include="brain-app\input.js" />
     <Content Include="examples\brainnetwork2.html" />
     <Content Include="examples\graphdata\SucroseBreakdownDicots-flowlayout.svg" />
-    <Content Include="examples\input.js" />
     <Content Include="examples\movies.html" />
     <Content Include="examples\browsemovies.html" />
     <Content Include="examples\sucrosebreakdown-handdrawn.png" />
@@ -148,8 +147,10 @@
     <Content Include="examples\sucrosebreakdown.png" />
     <Content Include="examples\nonoverlapping.html" />
     <Content Include="test\qunit.css" />
-    <TypeScriptCompile Include="examples\brain3d.ts" />
+    <TypeScriptCompile Include="brain-app\brain3d.ts" />
+    <TypeScriptCompile Include="brain-app\brainapp.ts" />
     <TypeScriptCompile Include="examples\jquery.d.ts" />
+    <TypeScriptCompile Include="examples\jqueryui.d.ts" />
     <TypeScriptCompile Include="examples\tmdbgraph.ts" />
     <TypeScriptCompile Include="src\geom.ts" />
     <Content Include="src\geom.js">
