@@ -144,6 +144,7 @@
     <None Include="examples\graphdata\chris.json" />
     <Content Include="examples\rectangletest.js" />
     <Content Include="examples\smallnonoverlappinggraph.png" />
+    <Content Include="src\handle_disconnected.js" />
     <Content Include="style.css" />
     <Content Include="examples\sucrosebreakdown.png" />
     <Content Include="examples\nonoverlapping.html" />

@@ -35,16 +35,16 @@ function applyPacking(graphs, w, h, node_size, desired_ratio){
         var min_x = Number.MAX_VALUE, min_y = Number.MAX_VALUE,
          max_x = 0, max_y = 0;
 
-        for (var j = 0; j < graph.array.length; j++){
-            if (graph.array[j].x > max_x)
-                max_x = graph.array[j].x;
-            if (graph.array[j].x < min_x)
-                min_x = graph.array[j].x;
-            if (graph.array[j].y > max_y)
-                max_y = graph.array[j].y;
-            if (graph.array[j].y < min_y)
-                min_y = graph.array[j].y;
-            
+        for (var j = 0; j < graph.array.length; j++) {
+            var v = graph.array[j];
+            var w = typeof v.width !== 'undefined' ? v.width : node_size;
+            var h = typeof v.height !== 'undefined' ? v.height : node_size;
+            w /= 2;
+            h /= 2;
+            max_x = Math.max(v.x + w, max_x);
+            min_x = Math.min(v.x - w, min_x);
+            max_y = Math.max(v.x + w, max_y);
+            min_y = Math.min(v.x - w, min_y);
         }
 
         graph.width = max_x - min_x;
@@ -141,15 +141,15 @@ function applyPacking(graphs, w, h, node_size, desired_ratio){
     }
 
     if (parent !== undefined){
-      rect.x = parent.x + parent.width + applyPacking.PADDING + node_size;
+      rect.x = parent.x + parent.width + applyPacking.PADDING;
       rect.y = parent.bottom;
       rect.space_left = rect.height;
       rect.bottom = rect.y;
-      parent.space_left -= rect.height + applyPacking.PADDING + node_size;
-      parent.bottom += rect.height + applyPacking.PADDING + node_size;
+      parent.space_left -= rect.height + applyPacking.PADDING;
+      parent.bottom += rect.height + applyPacking.PADDING;
     } else {
       rect.y = global_bottom;
-      global_bottom += rect.height + applyPacking.PADDING + node_size;
+      global_bottom += rect.height + applyPacking.PADDING;
       rect.x = init_x;
       rect.bottom = rect.y;
       rect.space_left = rect.height;
