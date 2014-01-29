@@ -333,7 +333,7 @@ var cola;
             });
 
             // recalculate nodes position for disconnected graphs
-            if (handleDisconnected === true){
+            if (!distanceMatrix && handleDisconnected) {
                 applyPacking(separateGraphs(nodes, links), w, h);
 
                 nodes.forEach(function (v, i) {
