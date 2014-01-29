@@ -15,6 +15,7 @@ var cola;
             size = [1, 1],
             linkDistance = 20,
             avoidOverlaps = false,
+            handleDisconnected = true,
             drag,
             alpha,
             lastStress,
@@ -115,6 +116,19 @@ var cola;
             avoidOverlaps = v;
             return d3adaptor;
         }
+
+        /**
+         * if true, the layout will not permit overlaps of the node bounding boxes (defined by the width and height properties on nodes)
+         * @property avoidOverlaps
+         * @type bool
+         * @default false
+         */
+        d3adaptor.handleDisconnected = function (v) {
+            if (!arguments.length) return handleDisconnected;
+            handleDisconnected = v;
+            return d3adaptor;
+        }
+
 
         /**
          * causes constraints to be generated such that directed graphs are laid out either from left-to-right or top-to-bottom.
@@ -317,6 +331,17 @@ var cola;
             nodes.forEach(function (v, i) {
                 v.x = x[i], v.y = y[i];
             });
+
+            // recalculate nodes position for disconnected graphs
+            if (handleDisconnected === true){
+                applyPacking(separateGraphs(nodes, links), w, h);
+
+                nodes.forEach(function (v, i) {
+                    descent.x[0][i] = v.x, descent.x[1][i] = v.y;
+                });
+            }
+            
+
             return d3adaptor.resume();
         };
 
