@@ -1,106 +1,12 @@
+/*!
+* LeapJS v0.3.0
+* http://github.com/leapmotion/leapjs/
+*
+* Copyright 2013 LeapMotion, Inc. and other contributors
+* Released under the BSD-2-Clause license
+* http://github.com/leapmotion/leapjs/blob/master/LICENSE.txt
+*/
 ;(function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({1:[function(require,module,exports){
-var chooseProtocol = require('./protocol').chooseProtocol
-  , EventEmitter = require('events').EventEmitter
-  , _ = require('underscore');
-
-var BaseConnection = module.exports = function(opts) {
-  this.opts = _.defaults(opts || {}, {
-    host : '127.0.0.1',
-    enableGestures: false,
-    port: 6437,
-    enableHeartbeat: true,
-    heartbeatInterval: 100,
-    requestProtocolVersion: 3
-  });
-  this.host = this.opts.host;
-  this.port = this.opts.port;
-  this.on('ready', function() {
-    this.enableGestures(this.opts.enableGestures);
-    if (this.opts.enableHeartbeat) this.startHeartbeat();
-  });
-  this.on('disconnect', function() {
-    if (this.opts.enableHeartbeat) this.stopHeartbeat();
-  });
-  this.heartbeatTimer = null;
-}
-
-BaseConnection.prototype.getUrl = function() {
-  return "ws://" + this.host + ":" + this.port + "/v" + this.opts.requestProtocolVersion + ".json";
-}
-
-BaseConnection.prototype.sendHeartbeat = function() {
-  if (this.protocol) {
-    this.setHeartbeatState(true);
-    this.protocol.sendHeartbeat(this);
-  }
-}
-
-BaseConnection.prototype.handleOpen = function() {
-  this.emit('connect');
-}
-
-BaseConnection.prototype.enableGestures = function(enabled) {
-  this.gesturesEnabled = enabled ? true : false;
-  this.send(this.protocol.encode({"enableGestures": this.gesturesEnabled}));
-}
-
-BaseConnection.prototype.handleClose = function() {
-  this.disconnect();
-  this.startReconnection();
-}
-
-BaseConnection.prototype.startReconnection = function() {
-  var connection = this;
-  setTimeout(function() { connection.connect() }, 1000);
-}
-
-BaseConnection.prototype.disconnect = function() {
-  if (!this.socket) return;
-  this.socket.close();
-  delete this.socket;
-  delete this.protocol;
-  this.emit('disconnect');
-}
-
-BaseConnection.prototype.handleData = function(data) {
-  var message = JSON.parse(data);
-  var messageEvent;
-  if (this.protocol === undefined) {
-    messageEvent = this.protocol = chooseProtocol(message);
-    this.emit('ready');
-  } else {
-    messageEvent = this.protocol(message);
-  }
-  this.emit(messageEvent.type, messageEvent);
-}
-
-BaseConnection.prototype.connect = function() {
-  if (this.socket) return;
-  this.socket = this.setupSocket();
-  return true;
-}
-
-BaseConnection.prototype.send = function(data) {
-  this.socket.send(data);
-}
-
-BaseConnection.prototype.stopHeartbeat = function() {
-  if (!this.heartbeatTimer) return;
-  clearInterval(this.heartbeatTimer);
-  delete this.heartbeatTimer;
-  this.setHeartbeatState(false);
-};
-
-BaseConnection.prototype.setHeartbeatState = function(state) {
-  if (this.heartbeatState === state) return;
-  this.heartbeatState = state;
-  this.emit(this.heartbeatState ? 'focus' : 'blur');
-};
-
-_.extend(BaseConnection.prototype, EventEmitter.prototype);
-
-
-},{"./protocol":12,"events":17,"underscore":20}],2:[function(require,module,exports){
 var CircularBuffer = module.exports = function(size) {
   this.pos = 0;
   this._buf = [];
@@ -119,20 +25,154 @@ CircularBuffer.prototype.push = function(o) {
   return this.pos++;
 }
 
-},{}],3:[function(require,module,exports){
-var Connection = module.exports = require('./base_connection')
+},{}],2:[function(require,module,exports){
+var chooseProtocol = require('../protocol').chooseProtocol
+  , EventEmitter = require('events').EventEmitter
+  , _ = require('underscore');
 
-Connection.prototype.setupSocket = function() {
+var BaseConnection = module.exports = function(opts) {
+  this.opts = _.defaults(opts || {}, {
+    host : '127.0.0.1',
+    enableGestures: false,
+    port: 6437,
+    background: false,
+    requestProtocolVersion: 4
+  });
+  this.host = this.opts.host;
+  this.port = this.opts.port;
+  this.protocolVersionVerified = false;
+  this.on('ready', function() {
+    this.enableGestures(this.opts.enableGestures);
+    this.setBackground(this.opts.background);
+  });
+}
+
+BaseConnection.prototype.getUrl = function() {
+  return "ws://" + this.host + ":" + this.port + "/v" + this.opts.requestProtocolVersion + ".json";
+}
+
+BaseConnection.prototype.setBackground = function(state) {
+  this.opts.background = state;
+  if (this.protocol && this.protocol.sendBackground && this.background !== this.opts.background) {
+    this.background = this.opts.background;
+    this.protocol.sendBackground(this, this.opts.background);
+  }
+}
+
+BaseConnection.prototype.handleOpen = function() {
+  if (!this.connected) {
+    this.connected = true;
+    this.emit('connect');
+  }
+}
+
+BaseConnection.prototype.enableGestures = function(enabled) {
+  this.gesturesEnabled = enabled ? true : false;
+  this.send(this.protocol.encode({"enableGestures": this.gesturesEnabled}));
+}
+
+BaseConnection.prototype.handleClose = function(code, reason) {
+  if (!this.connected) return;
+  this.disconnect();
+
+  // 1001 - an active connection is closed
+  // 1006 - cannot connect
+  if (code === 1001 && this.opts.requestProtocolVersion > 1) {
+    if (this.protocolVersionVerified) {
+      this.protocolVersionVerified = false;
+    }else{
+      this.opts.requestProtocolVersion--;
+    }
+  }
+  this.startReconnection();
+}
+
+BaseConnection.prototype.startReconnection = function() {
   var connection = this;
-  var socket = ("MozWebSocket" in window)? new MozWebSocket(this.getUrl()) : new WebSocket(this.getUrl());
-  socket.onopen = function() { connection.handleOpen() };
+  this.reconnectionTimer = setInterval(function() { connection.reconnect() }, 1000);
+}
+
+BaseConnection.prototype.disconnect = function() {
+  if (!this.socket) return;
+  this.socket.close();
+  delete this.socket;
+  delete this.protocol;
+  if (this.connected) {
+    this.connected = false;
+    this.emit('disconnect');
+  }
+  return true;
+}
+
+BaseConnection.prototype.reconnect = function() {
+  if (this.connected) {
+    clearInterval(this.reconnectionTimer);
+  } else {
+    this.disconnect();
+    this.connect();
+  }
+}
+
+BaseConnection.prototype.handleData = function(data) {
+  var message = JSON.parse(data);
+
+  var messageEvent;
+  if (this.protocol === undefined) {
+    messageEvent = this.protocol = chooseProtocol(message);
+    this.protocolVersionVerified = true;
+    this.emit('ready');
+  } else {
+    messageEvent = this.protocol(message);
+  }
+  this.emit(messageEvent.type, messageEvent);
+}
+
+BaseConnection.prototype.connect = function() {
+  if (this.socket) return;
+  this.socket = this.setupSocket();
+  return true;
+}
+
+BaseConnection.prototype.send = function(data) {
+  this.socket.send(data);
+}
+
+BaseConnection.prototype.reportFocus = function(state) {
+  if (this.focusedState === state) return;
+  this.focusedState = state;
+  this.emit(this.focusedState ? 'focus' : 'blur');
+  if (this.protocol && this.protocol.sendFocused) {
+    this.protocol.sendFocused(this, this.focusedState);
+  }
+}
+
+_.extend(BaseConnection.prototype, EventEmitter.prototype);
+
+
+},{"../protocol":13,"events":17,"underscore":20}],3:[function(require,module,exports){
+var BaseConnection = module.exports = require('./base')
+  , _ = require('underscore');
+
+var BrowserConnection = module.exports = function(opts) {
+  BaseConnection.call(this, opts);
+  var connection = this;
+  this.on('ready', function() { connection.startFocusLoop(); })
+  this.on('disconnect', function() { connection.stopFocusLoop(); })
+}
+
+_.extend(BrowserConnection.prototype, BaseConnection.prototype);
+
+BrowserConnection.prototype.setupSocket = function() {
+  var connection = this;
+  var socket = new WebSocket(this.getUrl());
+  socket.onopen = function() { connection.handleOpen(); };
+  socket.onclose = function(data) { connection.handleClose(data['code'], data['reason']); };
   socket.onmessage = function(message) { connection.handleData(message.data) };
-  socket.onclose = function() { connection.handleClose() };
   return socket;
 }
 
-Connection.prototype.startHeartbeat = function() {
-  if (!this.protocol.sendHeartbeat || this.heartbeatTimer) return;
+BrowserConnection.prototype.startFocusLoop = function() {
+  if (this.focusDetectorTimer) return;
   var connection = this;
   var propertyName = null;
   if (typeof document.hidden !== "undefined") {
@@ -147,32 +187,64 @@ Connection.prototype.startHeartbeat = function() {
     propertyName = undefined;
   }
 
-  var windowVisible = true;
+  if (connection.windowVisible === undefined) {
+    connection.windowVisible = propertyName === undefined ? true : document[propertyName] === false;
+  }
 
-  var focusListener = window.addEventListener('focus', function(e) { windowVisible = true; });
-  var blurListener = window.addEventListener('blur', function(e) { windowVisible = false; });
-
-  this.on('disconnect', function() {
-    if (connection.heartbeatTimer) {
-      clearTimeout(connection.heartbeatTimer);
-      delete connection.heartbeatTimer;
-    }
-    window.removeEventListener(focusListener);
-    window.removeEventListener(blurListener);
+  var focusListener = window.addEventListener('focus', function(e) {
+    connection.windowVisible = true;
+    updateFocusState();
   });
 
-  this.heartbeatTimer = setInterval(function() {
+  var blurListener = window.addEventListener('blur', function(e) {
+    connection.windowVisible = false;
+    updateFocusState();
+  });
+
+  this.on('disconnect', function() {
+    window.removeEventListener('focus', focusListener);
+    window.removeEventListener('blur', blurListener);
+  });
+
+  var updateFocusState = function() {
     var isVisible = propertyName === undefined ? true : document[propertyName] === false;
-    if (isVisible && windowVisible) {
-      connection.sendHeartbeat();
-    } else {
-      connection.setHeartbeatState(false);
-    }
-  }, this.opts.heartbeatInterval);
+    connection.reportFocus(isVisible && connection.windowVisible);
+  }
+
+  this.focusDetectorTimer = setInterval(updateFocusState, 100);
 }
 
-},{"./base_connection":1}],4:[function(require,module,exports){
-(function(process){var Frame = require('./frame')
+BrowserConnection.prototype.stopFocusLoop = function() {
+  if (!this.focusDetectorTimer) return;
+  clearTimeout(this.focusDetectorTimer);
+  delete this.focusDetectorTimer;
+}
+
+},{"./base":2,"underscore":20}],4:[function(require,module,exports){
+var WebSocket = require('ws')
+  , BaseConnection = require('./base')
+  , _ = require('underscore');
+
+var NodeConnection = module.exports = function(opts) {
+  BaseConnection.call(this, opts);
+  var connection = this;
+  this.on('ready', function() { connection.reportFocus(true); });
+}
+
+_.extend(NodeConnection.prototype, BaseConnection.prototype);
+
+NodeConnection.prototype.setupSocket = function() {
+  var connection = this;
+  var socket = new WebSocket(this.getUrl());
+  socket.on('open', function() { connection.handleOpen(); });
+  socket.on('message', function(m) { connection.handleData(m); });
+  socket.on('close', function(code, reason) { connection.handleClose(code, reason); });
+  socket.on('error', function() { connection.startReconnection(); });
+  return socket;
+}
+
+},{"./base":2,"underscore":20,"ws":21}],5:[function(require,module,exports){
+var process=require("__browserify_process");var Frame = require('./frame')
   , CircularBuffer = require("./circular_buffer")
   , Pipeline = require("./pipeline")
   , EventEmitter = require('events').EventEmitter
@@ -208,8 +280,10 @@ Connection.prototype.startHeartbeat = function() {
  * Polling is an appropriate strategy for applications which already have an
  * intrinsic update loop, such as a game.
  */
+
+
 var Controller = module.exports = function(opts) {
-  var inNode = typeof(process) !== 'undefined' && process.title === 'node';
+  var inNode = (typeof(process) !== 'undefined' && process.versions && process.versions.node);
 
   opts = _.defaults(opts || {}, {
     inNode: inNode
@@ -219,10 +293,10 @@ var Controller = module.exports = function(opts) {
 
   opts = _.defaults(opts || {}, {
     frameEventName: this.useAnimationLoop() ? 'animationFrame' : 'deviceFrame',
-    supressAnimationLoop: false,
+    suppressAnimationLoop: false
   });
 
-  this.supressAnimationLoop = opts.supressAnimationLoop;
+  this.suppressAnimationLoop = opts.suppressAnimationLoop;
   this.frameEventName = opts.frameEventName;
   this.history = new CircularBuffer(200);
   this.lastFrame = Frame.Invalid;
@@ -230,7 +304,7 @@ var Controller = module.exports = function(opts) {
   this.lastConnectionFrame = Frame.Invalid;
   this.accumulatedGestures = [];
   if (opts.connectionType === undefined) {
-    this.connectionType = (this.inBrowser() ? require('./connection') : require('./node_connection'));
+    this.connectionType = (this.inBrowser() ? require('./connection/browser') : require('./connection/node'));
   } else {
     this.connectionType = opts.connectionType;
   }
@@ -246,6 +320,10 @@ Controller.prototype.gesture = function(type, cb) {
   return creator;
 }
 
+Controller.prototype.setBackground = function(state) {
+  this.connection.setBackground(state);
+}
+
 Controller.prototype.inBrowser = function() {
   return !this.inNode;
 }
@@ -256,12 +334,12 @@ Controller.prototype.useAnimationLoop = function() {
 
 Controller.prototype.connect = function() {
   var controller = this;
-  if (this.connection.connect() && this.inBrowser() && !controller.supressAnimationLoop) {
+  if (this.connection.connect() && this.inBrowser() && !controller.suppressAnimationLoop) {
     var callback = function() {
       controller.emit('animationFrame', controller.lastConnectionFrame);
-      window.requestAnimFrame(callback);
+      window.requestAnimationFrame(callback);
     }
-    window.requestAnimFrame(callback);
+    window.requestAnimationFrame(callback);
   }
 }
 
@@ -325,10 +403,12 @@ Controller.prototype.processFrame = function(frame) {
     frame = this.pipeline.run(frame);
     if (!frame) frame = Frame.Invalid;
   }
+  // lastConnectionFrame is used by the animation loop
   this.lastConnectionFrame = frame;
   this.emit('deviceFrame', frame);
 }
 
+// on a deviceFrame or animationFrame, this emits a 'frame'
 Controller.prototype.processFinishedFrame = function(frame) {
   this.lastFrame = frame;
   if (frame.valid) {
@@ -367,8 +447,7 @@ Controller.prototype.setupConnectionEvents = function() {
 
 _.extend(Controller.prototype, EventEmitter.prototype);
 
-})(require("__browserify_process"))
-},{"./circular_buffer":2,"./connection":3,"./frame":5,"./gesture":6,"./node_connection":16,"./pipeline":10,"__browserify_process":18,"events":17,"underscore":20}],5:[function(require,module,exports){
+},{"./circular_buffer":1,"./connection/browser":3,"./connection/node":4,"./frame":6,"./gesture":7,"./pipeline":11,"__browserify_process":18,"events":17,"underscore":20}],6:[function(require,module,exports){
 var Hand = require("./hand")
   , Pointable = require("./pointable")
   , createGesture = require("./gesture").createGesture
@@ -473,6 +552,13 @@ var Frame = module.exports = function(data) {
    */
   this.fingers = [];
 
+  /**
+   * The InteractionBox associated with the current frame.
+   *
+   * @member interactionBox
+   * @memberof Leap.Frame.prototype
+   * @type {Leap.InteractionBox}
+   */
   if (data.interactionBox) {
     this.interactionBox = new InteractionBox(data.interactionBox);
   }
@@ -827,7 +913,7 @@ Frame.Invalid = {
   translation: function() { return vec3.create(); }
 };
 
-},{"./gesture":6,"./hand":7,"./interaction_box":9,"./pointable":11,"gl-matrix":19,"underscore":20}],6:[function(require,module,exports){
+},{"./gesture":7,"./hand":8,"./interaction_box":10,"./pointable":12,"gl-matrix":19,"underscore":20}],7:[function(require,module,exports){
 var glMatrix = require("gl-matrix")
   , vec3 = glMatrix.vec3
   , EventEmitter = require('events').EventEmitter
@@ -987,23 +1073,12 @@ var createGesture = exports.createGesture = function(data) {
   return gesture;
 }
 
+/*
+ * Returns a builder object, which uses method chaining for gesture callback binding.
+ */
 var gestureListener = exports.gestureListener = function(controller, type) {
   var handlers = {};
   var gestureMap = {};
-
-  var gestureCreator = function() {
-    var candidateGesture = gestureMap[gesture.id];
-    if (candidateGesture !== undefined) gesture.update(gesture, frame);
-    if (gesture.state == "start" || gesture.state == "stop") {
-      if (type == gesture.type && gestureMap[gesture.id] === undefined) {
-        gestureMap[gesture.id] = new Gesture(gesture, frame);
-        gesture.update(gesture, frame);
-      }
-      if (gesture.state == "stop") {
-        delete gestureMap[gesture.id];
-      }
-    }
-  };
 
   controller.on('gesture', function(gesture, frame) {
     if (gesture.type == type) {
@@ -1049,9 +1124,15 @@ var Gesture = exports.Gesture = function(gesture, frame) {
 }
 
 Gesture.prototype.update = function(gesture, frame) {
+  this.lastGesture = gesture;
+  this.lastFrame = frame;
   this.gestures.push(gesture);
   this.frames.push(frame);
   this.emit(gesture.state, this);
+}
+
+Gesture.prototype.translation = function() {
+  return vec3.subtract(vec3.create(), this.lastGesture.startPosition, this.lastGesture.position);
 }
 
 _.extend(Gesture.prototype, EventEmitter.prototype);
@@ -1316,7 +1397,7 @@ KeyTapGesture.prototype.toString = function() {
   return "KeyTapGesture ["+JSON.stringify(this)+"]";
 }
 
-},{"events":17,"gl-matrix":19,"underscore":20}],7:[function(require,module,exports){
+},{"events":17,"gl-matrix":19,"underscore":20}],8:[function(require,module,exports){
 var Pointable = require("./pointable")
   , glMatrix = require("gl-matrix")
   , mat3 = glMatrix.mat3
@@ -1473,7 +1554,9 @@ var Hand = module.exports = function(data) {
   /**
    * Time the hand has been visible in seconds.
    *
-   * @member Hand.prototype.timeVisible {float}
+   * @member timeVisible
+   * @memberof Leap.Hand.prototype
+   * @type {number}
    */
    this.timeVisible = data.timeVisible;
 
@@ -1660,6 +1743,60 @@ Hand.prototype.toString = function() {
 }
 
 /**
+ * The pitch angle in radians.
+ *
+ * Pitch is the angle between the negative z-axis and the projection of
+ * the vector onto the y-z plane. In other words, pitch represents rotation
+ * around the x-axis.
+ * If the vector points upward, the returned angle is between 0 and pi radians
+ * (180 degrees); if it points downward, the angle is between 0 and -pi radians.
+ *
+ * @method pitch
+ * @memberof Leap.Hand.prototype
+ * @returns {number} The angle of this vector above or below the horizon (x-z plane).
+ *
+ */
+Hand.prototype.pitch = function() {
+  return Math.atan2(this.direction[1], -this.direction[2]);
+}
+
+/**
+ *  The yaw angle in radians.
+ *
+ * Yaw is the angle between the negative z-axis and the projection of
+ * the vector onto the x-z plane. In other words, yaw represents rotation
+ * around the y-axis. If the vector points to the right of the negative z-axis,
+ * then the returned angle is between 0 and pi radians (180 degrees);
+ * if it points to the left, the angle is between 0 and -pi radians.
+ *
+ * @method yaw
+ * @memberof Leap.Hand.prototype
+ * @returns {number} The angle of this vector to the right or left of the y-axis.
+ *
+ */
+Hand.prototype.yaw = function() {
+  return Math.atan2(this.direction[0], -this.direction[2]);
+}
+
+/**
+ *  The roll angle in radians.
+ *
+ * Roll is the angle between the y-axis and the projection of
+ * the vector onto the x-y plane. In other words, roll represents rotation
+ * around the z-axis. If the vector points to the left of the y-axis,
+ * then the returned angle is between 0 and pi radians (180 degrees);
+ * if it points to the right, the angle is between 0 and -pi radians.
+ *
+ * @method roll
+ * @memberof Leap.Hand.prototype
+ * @returns {number} The angle of this vector to the right or left of the y-axis.
+ *
+ */
+Hand.prototype.roll = function() {
+  return Math.atan2(this.palmNormal[0], -this.palmNormal[1]);
+}
+
+/**
  * An invalid Hand object.
  *
  * You can use an invalid Hand object in comparisons testing
@@ -1687,8 +1824,8 @@ Hand.Invalid = {
   translation: function() { return vec3.create(); }
 };
 
-},{"./pointable":11,"gl-matrix":19,"underscore":20}],8:[function(require,module,exports){
-(function(){/**
+},{"./pointable":12,"gl-matrix":19,"underscore":20}],9:[function(require,module,exports){
+/**
  * Leap is the global namespace of the Leap API.
  * @namespace Leap
  */
@@ -1699,7 +1836,6 @@ module.exports = {
   Hand: require("./hand"),
   Pointable: require("./pointable"),
   InteractionBox: require("./interaction_box"),
-  Connection: require("./connection"),
   CircularBuffer: require("./circular_buffer"),
   UI: require("./ui"),
   glMatrix: require("gl-matrix"),
@@ -1744,11 +1880,11 @@ module.exports = {
     }
     if (!this.loopController) this.loopController = new this.Controller(opts);
     this.loopController.loop(callback);
+    return this.loopController;
   }
 }
 
-})()
-},{"./circular_buffer":2,"./connection":3,"./controller":4,"./frame":5,"./gesture":6,"./hand":7,"./interaction_box":9,"./pointable":11,"./ui":13,"gl-matrix":19}],9:[function(require,module,exports){
+},{"./circular_buffer":1,"./controller":5,"./frame":6,"./gesture":7,"./hand":8,"./interaction_box":10,"./pointable":12,"./ui":14,"gl-matrix":19}],10:[function(require,module,exports){
 var glMatrix = require("gl-matrix")
   , vec3 = glMatrix.vec3;
 
@@ -1766,6 +1902,8 @@ var glMatrix = require("gl-matrix")
  * The InteractionBox class can make it easier to map positions in the
  * Leap Motion coordinate system to 2D or 3D coordinate systems used
  * for application drawing.
+ *
+ * ![Interaction Box](images/Leap_InteractionBox.png)
  *
  * The InteractionBox region is defined by a center and dimensions along the x, y, and z axes.
  */
@@ -1823,8 +1961,8 @@ var InteractionBox = module.exports = function(data) {
  *
  * @method denormalizePoint
  * @memberof Leap.InteractionBox.prototype
- * @param {Leap.Vector} normalizedPosition The input position in InteractionBox coordinates.
- * @returns {Leap.Vector} The corresponding denormalized position in device coordinates.
+ * @param {number[]} normalizedPosition The input position in InteractionBox coordinates.
+ * @returns {number[]} The corresponding denormalized position in device coordinates.
  */
 InteractionBox.prototype.denormalizePoint = function(normalizedPosition) {
   return vec3.fromValues(
@@ -1843,10 +1981,10 @@ InteractionBox.prototype.denormalizePoint = function(normalizedPosition) {
  *
  * @method normalizePoint
  * @memberof Leap.InteractionBox.prototype
- * @param {Leap.Vector} position The input position in device coordinates.
+ * @param {number[]} position The input position in device coordinates.
  * @param {Boolean} clamp Whether or not to limit the output value to the range [0,1]
  * when the input position is outside the InteractionBox. Defaults to true.
- * @returns {Leap.Vector} The normalized position.
+ * @returns {number[]} The normalized position.
  */
 InteractionBox.prototype.normalizePoint = function(position, clamp) {
   var vec = vec3.fromValues(
@@ -1888,7 +2026,7 @@ InteractionBox.prototype.toString = function() {
  */
 InteractionBox.Invalid = { valid: false };
 
-},{"gl-matrix":19}],10:[function(require,module,exports){
+},{"gl-matrix":19}],11:[function(require,module,exports){
 var Pipeline = module.exports = function() {
   this.steps = [];
 }
@@ -1906,7 +2044,7 @@ Pipeline.prototype.run = function(frame) {
   return frame;
 }
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var glMatrix = require("gl-matrix")
   , vec3 = glMatrix.vec3;
 
@@ -2014,7 +2152,7 @@ var Pointable = module.exports = function(data) {
    * Stabilized
    *
    * @member stabilizedTipPosition
-   * @type {Leap.Vector}
+   * @type {number[]}
    * @memberof Leap.Pointable.prototype
    */
   this.stabilizedTipPosition = data.stabilizedTipPosition;
@@ -2035,22 +2173,57 @@ var Pointable = module.exports = function(data) {
    */
   this.tipVelocity = data.tipVelocity;
   /**
-   * Human readable string describing the 'Touch Zone' of this pointable
+   * The current touch zone of this Pointable object.
    *
-   * @member Pointable.prototype.touchZone {String}
+   * The Leap Motion software computes the touch zone based on a floating touch
+   * plane that adapts to the user's finger movement and hand posture. The Leap
+   * Motion software interprets purposeful movements toward this plane as potential touch
+   * points. When a Pointable moves close to the adaptive touch plane, it enters the
+   * "hovering" zone. When a Pointable reaches or passes through the plane, it enters
+   * the "touching" zone.
+   *
+   * The possible states include:
+   *
+   * * "none" -- The Pointable is outside the hovering zone.
+   * * "hovering" -- The Pointable is close to, but not touching the touch plane.
+   * * "touching" -- The Pointable has penetrated the touch plane.
+   *
+   * The touchDistance value provides a normalized indication of the distance to
+   * the touch plane when the Pointable is in the hovering or touching zones.
+   *
+   * @member touchZone
+   * @type {String}
+   * @memberof Leap.Pointable.prototype
    */
   this.touchZone = data.touchZone;
   /**
-   * Distance from 'Touch Plane'
+   * A value proportional to the distance between this Pointable object and the
+   * adaptive touch plane.
    *
-   * @member Pointable.prototype.touchDistance {number}
+   * ![Touch Distance](images/Leap_Touch_Plane.png)
+   *
+   * The touch distance is a value in the range [-1, 1]. The value 1.0 indicates the
+   * Pointable is at the far edge of the hovering zone. The value 0 indicates the
+   * Pointable is just entering the touching zone. A value of -1.0 indicates the
+   * Pointable is firmly within the touching zone. Values in between are
+   * proportional to the distance from the plane. Thus, the touchDistance of 0.5
+   * indicates that the Pointable is halfway into the hovering zone.
+   *
+   * You can use the touchDistance value to modulate visual feedback given to the
+   * user as their fingers close in on a touch target, such as a button.
+   *
+   * @member touchDistance
+   * @type {number}
+   * @memberof Leap.Pointable.prototype
    */
   this.touchDistance = data.touchDistance;
 
   /**
-   * Time the pointable has been visible in seconds.
+   * How long the pointable has been visible in seconds.
    *
-   * @member Pointable.prototype.timeVisible {float}
+   * @member timeVisible
+   * @type {number}
+   * @memberof Leap.Pointable.prototype
    */
   this.timeVisible = data.timeVisible;
 }
@@ -2072,6 +2245,13 @@ Pointable.prototype.toString = function() {
 }
 
 /**
+ * Returns the hand which the pointable is attached to.
+ */
+Pointable.prototype.hand = function(){
+  return this.frame.hand(this.handId);
+}
+
+/**
  * An invalid Pointable object.
  *
  * You can use this Pointable instance in comparisons testing
@@ -2085,7 +2265,7 @@ Pointable.prototype.toString = function() {
  */
 Pointable.Invalid = { valid: false };
 
-},{"gl-matrix":19}],12:[function(require,module,exports){
+},{"gl-matrix":19}],13:[function(require,module,exports){
 var Frame = require('./frame')
 
 var Event = function(data) {
@@ -2097,25 +2277,17 @@ var chooseProtocol = exports.chooseProtocol = function(header) {
   var protocol;
   switch(header.version) {
     case 1:
-      protocol = JSONProtocol(1, function(data) {
-        return new Frame(data);
-      });
-      break;
     case 2:
-      protocol = JSONProtocol(2, function(data) {
-        return new Frame(data);
-      });
-      protocol.sendHeartbeat = function(connection) {
-        connection.send(protocol.encode({heartbeat: true}));
-      }
-      break;
     case 3:
-      protocol = JSONProtocol(3, function(data) {
+    case 4:
+      protocol = JSONProtocol(header.version, function(data) {
         return data.event ? new Event(data.event) : new Frame(data);
-
       });
-      protocol.sendHeartbeat = function(connection) {
-        connection.send(protocol.encode({heartbeat: true}));
+      protocol.sendBackground = function(connection, state) {
+        connection.send(protocol.encode({background: state}));
+      }
+      protocol.sendFocused = function(connection, state) {
+        connection.send(protocol.encode({focused: state}));
       }
       break;
     default:
@@ -2135,12 +2307,12 @@ var JSONProtocol = function(version, cb) {
   return protocol;
 };
 
-},{"./frame":5}],13:[function(require,module,exports){
+},{"./frame":6}],14:[function(require,module,exports){
 exports.UI = {
   Region: require("./ui/region"),
   Cursor: require("./ui/cursor")
 };
-},{"./ui/cursor":14,"./ui/region":15}],14:[function(require,module,exports){
+},{"./ui/cursor":15,"./ui/region":16}],15:[function(require,module,exports){
 var Cursor = module.exports = function() {
   return function(frame) {
     var pointable = frame.pointables.sort(function(a, b) { return a.z - b.z })[0]
@@ -2151,7 +2323,7 @@ var Cursor = module.exports = function() {
   }
 }
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , _ = require('underscore')
 
@@ -2239,10 +2411,8 @@ Region.prototype.mapToXY = function(position, width, height) {
 }
 
 _.extend(Region.prototype, EventEmitter.prototype)
-},{"events":17,"underscore":20}],16:[function(require,module,exports){
-
-},{}],17:[function(require,module,exports){
-(function(process){if (!process.EventEmitter) process.EventEmitter = function () {};
+},{"events":17,"underscore":20}],17:[function(require,module,exports){
+var process=require("__browserify_process");if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
 var isArray = typeof Array.isArray === 'function'
@@ -2426,7 +2596,17 @@ EventEmitter.prototype.listeners = function(type) {
   return this._events[type];
 };
 
-})(require("__browserify_process"))
+EventEmitter.listenerCount = function(emitter, type) {
+  var ret;
+  if (!emitter._events || !emitter._events[type])
+    ret = 0;
+  else if (typeof emitter._events[type] === 'function')
+    ret = 1;
+  else
+    ret = emitter._events[type].length;
+  return ret;
+};
+
 },{"__browserify_process":18}],18:[function(require,module,exports){
 // shim for using process in browser
 
@@ -2482,7 +2662,7 @@ process.chdir = function (dir) {
 };
 
 },{}],19:[function(require,module,exports){
-(function(){/**
+/**
  * @fileoverview gl-matrix - High performance matrix and vector operations
  * @author Brandon Jones
  * @author Colin MacKenzie IV
@@ -2497,12 +2677,12 @@ are permitted provided that the following conditions are met:
   * Redistributions of source code must retain the above copyright notice, this
     list of conditions and the following disclaimer.
   * Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
+    this list of conditions and the following disclaimer in the documentation 
     and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
 ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -2525,7 +2705,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
     } else {
       // gl-matrix lives in a browser, define its namespaces in global
       shim.exports = window;
-    }
+    }    
   }
   else {
     // gl-matrix lives in commonjs, define its namespaces in exports
@@ -2541,12 +2721,12 @@ are permitted provided that the following conditions are met:
   * Redistributions of source code must retain the above copyright notice, this
     list of conditions and the following disclaimer.
   * Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
+    this list of conditions and the following disclaimer in the documentation 
     and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
 ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -2565,7 +2745,7 @@ var vec2 = {};
 if(!GLMAT_EPSILON) {
     var GLMAT_EPSILON = 0.000001;
 }
-
+ 
 /**
  * Creates a new, empty vec2
  *
@@ -2893,7 +3073,7 @@ vec2.forEach = (function() {
         if(!offset) {
             offset = 0;
         }
-
+        
         if(count) {
             l = Math.min((count * stride) + offset, a.length);
         } else {
@@ -2905,7 +3085,7 @@ vec2.forEach = (function() {
             fn(vec, vec, arg);
             a[i] = vec[0]; a[i+1] = vec[1];
         }
-
+        
         return a;
     };
 })();
@@ -2932,12 +3112,12 @@ are permitted provided that the following conditions are met:
   * Redistributions of source code must retain the above copyright notice, this
     list of conditions and the following disclaimer.
   * Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
+    this list of conditions and the following disclaimer in the documentation 
     and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
 ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -2956,7 +3136,7 @@ var vec3 = {};
 if(!GLMAT_EPSILON) {
     var GLMAT_EPSILON = 0.000001;
 }
-
+ 
 /**
  * Creates a new, empty vec3
  *
@@ -3334,7 +3514,7 @@ vec3.forEach = (function() {
         if(!offset) {
             offset = 0;
         }
-
+        
         if(count) {
             l = Math.min((count * stride) + offset, a.length);
         } else {
@@ -3346,7 +3526,7 @@ vec3.forEach = (function() {
             fn(vec, vec, arg);
             a[i] = vec[0]; a[i+1] = vec[1]; a[i+2] = vec[2];
         }
-
+        
         return a;
     };
 })();
@@ -3373,12 +3553,12 @@ are permitted provided that the following conditions are met:
   * Redistributions of source code must retain the above copyright notice, this
     list of conditions and the following disclaimer.
   * Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
+    this list of conditions and the following disclaimer in the documentation 
     and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
 ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -3778,7 +3958,7 @@ vec4.forEach = (function() {
         if(!offset) {
             offset = 0;
         }
-
+        
         if(count) {
             l = Math.min((count * stride) + offset, a.length);
         } else {
@@ -3790,7 +3970,7 @@ vec4.forEach = (function() {
             fn(vec, vec, arg);
             a[i] = vec[0]; a[i+1] = vec[1]; a[i+2] = vec[2]; a[i+3] = vec[3];
         }
-
+        
         return a;
     };
 })();
@@ -3817,12 +3997,12 @@ are permitted provided that the following conditions are met:
   * Redistributions of source code must retain the above copyright notice, this
     list of conditions and the following disclaimer.
   * Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
+    this list of conditions and the following disclaimer in the documentation 
     and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
 ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -3919,7 +4099,7 @@ mat2.transpose = function(out, a) {
         out[2] = a[1];
         out[3] = a[3];
     }
-
+    
     return out;
 };
 
@@ -3940,7 +4120,7 @@ mat2.invert = function(out, a) {
         return null;
     }
     det = 1.0 / det;
-
+    
     out[0] =  a3 * det;
     out[1] = -a1 * det;
     out[2] = -a2 * det;
@@ -4054,12 +4234,12 @@ are permitted provided that the following conditions are met:
   * Redistributions of source code must retain the above copyright notice, this
     list of conditions and the following disclaimer.
   * Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
+    this list of conditions and the following disclaimer in the documentation 
     and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
 ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -4181,7 +4361,7 @@ mat3.transpose = function(out, a) {
         out[7] = a[5];
         out[8] = a[8];
     }
-
+    
     return out;
 };
 
@@ -4204,8 +4384,8 @@ mat3.invert = function(out, a) {
         // Calculate the determinant
         det = a00 * b01 + a01 * b11 + a02 * b21;
 
-    if (!det) {
-        return null;
+    if (!det) { 
+        return null; 
     }
     det = 1.0 / det;
 
@@ -4297,8 +4477,8 @@ mat3.mul = mat3.multiply = function (out, a, b) {
  * @returns {String} string representation of the matrix
  */
 mat3.str = function (a) {
-    return 'mat3(' + a[0] + ', ' + a[1] + ', ' + a[2] + ', ' +
-                    a[3] + ', ' + a[4] + ', ' + a[5] + ', ' +
+    return 'mat3(' + a[0] + ', ' + a[1] + ', ' + a[2] + ', ' + 
+                    a[3] + ', ' + a[4] + ', ' + a[5] + ', ' + 
                     a[6] + ', ' + a[7] + ', ' + a[8] + ')';
 };
 
@@ -4314,12 +4494,12 @@ are permitted provided that the following conditions are met:
   * Redistributions of source code must retain the above copyright notice, this
     list of conditions and the following disclaimer.
   * Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
+    this list of conditions and the following disclaimer in the documentation 
     and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
 ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -4479,7 +4659,7 @@ mat4.transpose = function(out, a) {
         out[14] = a[11];
         out[15] = a[15];
     }
-
+    
     return out;
 };
 
@@ -4512,8 +4692,8 @@ mat4.invert = function(out, a) {
         // Calculate the determinant
         det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
 
-    if (!det) {
-        return null;
+    if (!det) { 
+        return null; 
     }
     det = 1.0 / det;
 
@@ -4613,7 +4793,7 @@ mat4.mul = mat4.multiply = function (out, a, b) {
         a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
 
     // Cache only the current line of the second matrix
-    var b0  = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
+    var b0  = b[0], b1 = b[1], b2 = b[2], b3 = b[3];  
     out[0] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
     out[1] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
     out[2] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
@@ -4727,7 +4907,7 @@ mat4.rotate = function (out, a, rad, axis) {
         b20, b21, b22;
 
     if (Math.abs(len) < GLMAT_EPSILON) { return null; }
-
+    
     len = 1 / len;
     x *= len;
     y *= len;
@@ -4946,7 +5126,7 @@ mat4.fromRotationTranslation = function (out, q, v) {
     out[13] = v[1];
     out[14] = v[2];
     out[15] = 1;
-
+    
     return out;
 };
 
@@ -5148,7 +5328,7 @@ mat4.lookAt = function (out, eye, center, up) {
 mat4.str = function (a) {
     return 'mat4(' + a[0] + ', ' + a[1] + ', ' + a[2] + ', ' + a[3] + ', ' +
                     a[4] + ', ' + a[5] + ', ' + a[6] + ', ' + a[7] + ', ' +
-                    a[8] + ', ' + a[9] + ', ' + a[10] + ', ' + a[11] + ', ' +
+                    a[8] + ', ' + a[9] + ', ' + a[10] + ', ' + a[11] + ', ' + 
                     a[12] + ', ' + a[13] + ', ' + a[14] + ', ' + a[15] + ')';
 };
 
@@ -5164,12 +5344,12 @@ are permitted provided that the following conditions are met:
   * Redistributions of source code must retain the above copyright notice, this
     list of conditions and the following disclaimer.
   * Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
+    this list of conditions and the following disclaimer in the documentation 
     and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
 ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -5321,7 +5501,7 @@ quat.scale = vec4.scale;
  * @returns {quat} out
  */
 quat.rotateX = function (out, a, rad) {
-    rad *= 0.5;
+    rad *= 0.5; 
 
     var ax = a[0], ay = a[1], az = a[2], aw = a[3],
         bx = Math.sin(rad), bw = Math.cos(rad);
@@ -5342,7 +5522,7 @@ quat.rotateX = function (out, a, rad) {
  * @returns {quat} out
  */
 quat.rotateY = function (out, a, rad) {
-    rad *= 0.5;
+    rad *= 0.5; 
 
     var ax = a[0], ay = a[1], az = a[2], aw = a[3],
         by = Math.sin(rad), bw = Math.cos(rad);
@@ -5363,7 +5543,7 @@ quat.rotateY = function (out, a, rad) {
  * @returns {quat} out
  */
 quat.rotateZ = function (out, a, rad) {
-    rad *= 0.5;
+    rad *= 0.5; 
 
     var ax = a[0], ay = a[1], az = a[2], aw = a[3],
         bz = Math.sin(rad), bw = Math.cos(rad);
@@ -5476,7 +5656,7 @@ quat.invert = function(out, a) {
     var a0 = a[0], a1 = a[1], a2 = a[2], a3 = a[3],
         dot = a0*a0 + a1*a1 + a2*a2 + a3*a3,
         invDot = dot ? 1.0/dot : 0;
-
+    
     // TODO: Would be faster to return [0,0,0,0] immediately if dot == 0
 
     out[0] = -a0*invDot;
@@ -5554,9 +5734,8 @@ if(typeof(exports) !== 'undefined') {
   })(shim.exports);
 })();
 
-})()
 },{}],20:[function(require,module,exports){
-(function(){//     Underscore.js 1.4.4
+//     Underscore.js 1.4.4
 //     http://underscorejs.org
 //     (c) 2009-2013 Jeremy Ashkenas, DocumentCloud Inc.
 //     Underscore may be freely distributed under the MIT license.
@@ -6783,18 +6962,25 @@ if(typeof(exports) !== 'undefined') {
 
 }).call(this);
 
-})()
 },{}],21:[function(require,module,exports){
-window.requestAnimFrame = (function() {
-  return  window.requestAnimationFrame ||
-  window.webkitRequestAnimationFrame   ||
-  window.mozRequestAnimationFrame      ||
-  window.oRequestAnimationFrame        ||
-  window.msRequestAnimationFrame       ||
-  function(callback) { window.setTimeout(callback, 1000 / 60); }
-})();
+var global=self;/// shim for browser packaging
+
+module.exports = function() {
+  return global.WebSocket || global.MozWebSocket;
+}
+
+},{}],22:[function(require,module,exports){
+if (typeof(window) !== 'undefined' && typeof(window.requestAnimationFrame) !== 'function') {
+  window.requestAnimationFrame = (
+    window.webkitRequestAnimationFrame   ||
+    window.mozRequestAnimationFrame      ||
+    window.oRequestAnimationFrame        ||
+    window.msRequestAnimationFrame       ||
+    function(callback) { setTimeout(callback, 1000 / 60); }
+  );
+}
 
 Leap = require("../lib/index");
 
-},{"../lib/index":8}]},{},[21])
+},{"../lib/index":9}]},{},[22])
 ;

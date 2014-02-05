@@ -1,17 +1,11 @@
 // GLOBAL VARIABLES
 declare var THREE;
 declare var d3;
-declare var input;
 
 class Brain3DApp implements Application, Loopable {
 
     loop: Loop;
-    // Prerequisites to begin the simulation
-    prereqBrain;
-    prereqSimMatrix: number[][];
-    prereqNodeGroups: number[];
-    prereqNodeLabels: string[];
-    prereqCoords: number[][];
+    input: InputTarget;
 
     // THREE variables
     camera;
@@ -22,20 +16,18 @@ class Brain3DApp implements Application, Loopable {
     descent: cola.Descent; // The handle to the constraint solver
 
     // Data/objects
+    commonData: CommonData;
+    dataSet: DataSet;
+    brainSurface;
     brainObject; // Base object for the brain graph
     colaObject; // Base object for the cola graph
     brainGeometry;
-    physioCoords: number[][]; // In Cola format
     colaCoords: number[][];
     percentiles: number[] = new Array(101);
     physioGraph: Graph;
     colaGraph: Graph;
 
-    nodeCount: number;
-    nodeGroups: number[]; // Associates nodes with a group
     nodeColourings: number[]; // Stores the colourings associated with the groups
-    nodeLabels: string[]; // Associates nodes with a label
-    similarityMatrix: number[][]; // Specifies the similarity between nodes
     dissimilarityMatrix: number[][] = []; // An inversion of the similarity matrix, used for Cola graph distances
     minSimilarity: number = Number.MAX_VALUE;
     maxSimilarity: number = 0;
@@ -56,14 +48,125 @@ class Brain3DApp implements Application, Loopable {
     colaLinkDistance = 15;
     d3ColorSelector = d3.scale.category20();
 
-    init(canvasParent, canvasWidth, canvasHeight) {
+    constructor(commonData: CommonData, jDiv, input: InputTarget) {
+        this.commonData = commonData;
+        this.input = input;
+
+        // Register callbacks
+        input.regKeyDownCallback('1', () => {
+            if (this.currentThreshold > 0) {
+                this.currentThreshold -= 1;
+                this.filteredAdjMatrix = this.adjMatrixFromThreshold(this.currentThreshold);
+                this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+            }
+        });
+        input.regKeyDownCallback('2', () => {
+            if (this.currentThreshold < 3) {
+                this.currentThreshold += 1;
+                this.filteredAdjMatrix = this.adjMatrixFromThreshold(this.currentThreshold);
+                this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+            }
+        });
+
+        input.regKeyTickCallback('a', (deltaTime: number) => {
+            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y - this.rotationSpeed * deltaTime, 0);
+            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y - this.rotationSpeed * deltaTime, 0);
+        });
+
+        input.regKeyTickCallback('d', (deltaTime: number) => {
+            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + this.rotationSpeed * deltaTime, 0);
+            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + this.rotationSpeed * deltaTime, 0);
+        });
+
+        input.regKeyTickCallback('w', (deltaTime: number) => {
+            this.brainObject.rotation.set(this.brainObject.rotation.x - this.rotationSpeed * deltaTime, this.brainObject.rotation.y, 0);
+            this.colaObject.rotation.set(this.colaObject.rotation.x - this.rotationSpeed * deltaTime, this.colaObject.rotation.y, 0);
+        });
+
+        input.regKeyTickCallback('s', (deltaTime: number) => {
+            this.brainObject.rotation.set(this.brainObject.rotation.x + this.rotationSpeed * deltaTime, this.brainObject.rotation.y, 0);
+            this.colaObject.rotation.set(this.colaObject.rotation.x + this.rotationSpeed * deltaTime, this.colaObject.rotation.y, 0);
+        });
+
+        input.regKeyDownCallback(' ', () => {
+            if (!this.transitionInProgress) {
+                // Leave *showingCola* on permanently after first turn-on
+
+                /*if (this.showingCola) {
+                    this.showingCola = false;
+                    this.colaGraph.setVisible(false);
+                } else {*/
+                this.showingCola = true;
+
+                var edges = [];
+                var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
+                for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
+                    for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
+                        if (this.filteredAdjMatrix[i][j] === 1) {
+                            edges.push({ source: i, target: j });
+                            hasNeighbours[i] = true;
+                            hasNeighbours[j] = true;
+                        }
+                    }
+                }
+
+                this.colaGraph.setNodeVisibilities(hasNeighbours);
+                this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+
+                var distanceMatrix = (new shortestpaths.Calculator(this.commonData.nodeCount, edges)).DistanceMatrix();
+
+                var D = cola.Descent.createSquareMatrix(this.commonData.nodeCount, (i, j) => {
+                    return distanceMatrix[i][j] * this.colaLinkDistance;
+                });
+
+                var clonedPhysioCoords = this.commonData.brainCoords.map(function (dim) {
+                    return dim.map(function (element) {
+                        return element;
+                    });
+                });
+                this.descent = new cola.Descent(clonedPhysioCoords, D);
+                this.colaCoords = this.descent.x; // Hold a reference to the solver's coordinates
+                for (var i = 0; i < 10; ++i) {
+                    this.descent.reduceStress();
+                }
+
+                // Set up a coroutine to do the animation
+                var origin = new THREE.Vector3(-this.graphOffset, 0, 0);
+                var target = new THREE.Vector3(this.graphOffset, 0, 0);
+                this.colaObject.position = origin;
+                this.colaGraph.setNodePositions(this.commonData.brainCoords);
+                this.colaGraph.setVisible(true);
+                this.transitionInProgress = true;
+
+                setCoroutine({ currentTime: 0, endTime: this.modeLerpLength }, (o, deltaTime) => {
+                    o.currentTime += deltaTime;
+
+                    if (o.currentTime >= o.endTime) {
+                        this.colaObject.position = target;
+                        this.colaGraph.setNodePositions(this.colaCoords);
+                        this.transitionInProgress = false;
+                        return true;
+                    }
+                    else {
+                        var percentDone = o.currentTime / o.endTime;
+                        this.colaObject.position = origin.clone().add(target.clone().sub(origin).multiplyScalar(percentDone));
+                        this.colaGraph.setNodePositionsLerp(this.commonData.brainCoords, this.colaCoords, percentDone);
+                        return false;
+                    }
+                });
+            }
+        });
+
+        // Set the background colour
+        jDiv.css({backgroundColor: '#ffffff' });
+
         // Set up renderer
         this.renderer = new THREE.WebGLRenderer();
-        this.renderer.setSize(canvasWidth, canvasHeight);
-        canvasParent.appendChild(this.renderer.domElement);
+        this.renderer.setSize(jDiv.width(), jDiv.height());
+        jDiv.get(0).appendChild(this.renderer.domElement);
 
         // Set up camera
-        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, this.nearClip, this.farClip);
+        this.camera = new THREE.PerspectiveCamera(45, jDiv.width() / jDiv.height(), this.nearClip, this.farClip);
         this.camera.position.set(0, 0, 400);
 
         // Set up scene
@@ -76,91 +179,6 @@ class Brain3DApp implements Application, Loopable {
         directionalLight.position.set(0, 0, 1);
         this.scene.add(directionalLight);
 
-        // Set up resource loading
-        var manager = new THREE.LoadingManager();
-        manager.onProgress = function (item, loaded, total) {
-            console.log(item, loaded, total);
-        };
-
-        // Load the brain model
-        var loader = new THREE.OBJLoader(manager);
-        loader.load('../examples/graphdata/BrainLSDecimated0.01.obj', (geometry) => {
-            this.prereqBrain = geometry;
-            this.tryBegin();
-        });
-
-        // Load the similarity matrix
-        d3.text("../examples/graphdata/signed_weighted.txt",
-            (error, text) => {
-                var lines = text.split('\n').map(function (s) { return s.trim() });
-                this.prereqSimMatrix = [];
-                lines.forEach((line, i) => {
-                    if (line.length > 0) {
-                        this.prereqSimMatrix.push(line.split(',').map(function (string) {
-                            return parseFloat(string);
-                        }));
-                    }
-                });
-                this.tryBegin();
-            });
-
-        // Load the group affiliations
-        d3.text("../examples/graphdata/signed_weighted_affil.txt",
-            (error, text) => {
-                var groups = text.split(',').map(function (s) { return s.trim() });
-                this.prereqNodeGroups = groups.map(function (group) {
-                    return parseInt(group);
-                });
-                this.tryBegin();
-            });
-
-        // Load the labels
-        d3.text("../examples/graphdata/labels.txt",
-            (error, text) => {
-                this.prereqNodeLabels = text.split('\n').map(function (s) { return s.trim() });
-                this.tryBegin();
-            });
-
-        // Load the physiological coordinates of each node in the brain
-        d3.csv('../examples/graphdata/coordinates.csv', (coords) => {
-            this.prereqCoords = [Array(coords.length), Array(coords.length), Array(coords.length)];
-
-            for (var i = 0; i < coords.length; ++i) {
-                // Translate the coords into Cola's format
-                this.prereqCoords[0][i] = parseFloat(coords[i].x);
-                this.prereqCoords[1][i] = parseFloat(coords[i].y);
-                this.prereqCoords[2][i] = parseFloat(coords[i].z);
-            }
-
-            this.tryBegin();
-        });
-
-        // Return the resize callback
-        return (width: number, height: number) => {
-            this.camera.aspect = width / height;
-            this.camera.updateProjectionMatrix();
-            this.renderer.setSize(width, height);
-        };
-    }
-
-    // This is where the main loop tries to start. We begin when all resources are loaded.
-    tryBegin() {
-        if (this.prereqBrain && this.prereqSimMatrix && this.prereqNodeGroups && this.prereqNodeLabels && this.prereqCoords) {
-            this.begin(this.prereqBrain, this.prereqSimMatrix, this.prereqNodeGroups, this.prereqNodeLabels, this.prereqCoords);
-        }
-    }
-
-    begin(brainGeometry, simMatrix: number[][], nodeGroups: number[], nodeLabels: string[], physioCoords: number[][]) {
-        this.nodeCount = nodeGroups.length;
-        this.similarityMatrix = simMatrix;
-        this.createDissimilarityMatrix();
-        this.nodeGroups = nodeGroups;
-        this.nodeLabels = nodeLabels;
-        this.physioCoords = physioCoords;
-
-        // Set up loop
-        this.loop = new Loop(this, 0.03);
-
         // Set up the base objects for the graphs
         this.brainObject = new THREE.Object3D();
         this.brainObject.position = new THREE.Vector3(-this.graphOffset, 0, 0);
@@ -170,36 +188,73 @@ class Brain3DApp implements Application, Loopable {
         this.colaObject.position = new THREE.Vector3(-this.graphOffset, 0, 0);
         this.scene.add(this.colaObject);
 
-        // Set up the brain model/object
-        this.brainGeometry = brainGeometry;
-        this.setUpBrainModel();
-        this.brainObject.add(this.brainGeometry);
+        // Register the data callbacks
+        var coords = () => {
+            this.restart();
+        };
+        var lab = () => {
+            // We don't use labels in this visualisation yet
+        };
+        var surf = () => {
+            // Remove the old mesh and add the new one (we don't need a restart)
+            this.brainObject.remove(this.brainSurface);
+            this.brainSurface = this.commonData.brainSurface;
+            this.brainObject.add(this.brainSurface);
+        };
+        commonData.regNotifyCoords(coords);
+        commonData.regNotifyLabels(lab);
+        commonData.regNotifySurface(surf);
+        if (commonData.brainCoords) coords();
+        if (commonData.brainLabels) lab();
+        if (commonData.brainSurface) surf();
+    }
+
+    resize(width: number, height: number) {
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(width, height);
+    }
+
+    setDataSet(dataSet: DataSet) {
+        this.dataSet = dataSet;
+
+        var sim = () => {
+            this.restart();
+        };
+        var att = () => {
+            this.restart(); // TODO: We're currently destroying the entire graph to switch out the node group information - we can do better than that
+        };
+        dataSet.regNotifySim(sim);
+        dataSet.regNotifyAttributes(att);
+        if (dataSet.simMatrix) sim();
+        if (dataSet.attributes) att();
+    }
+
+    // Initialize or re-initialize the visualisation.
+    restart() {
+        if (!this.commonData.brainCoords || !this.dataSet || !this.dataSet.simMatrix || !this.dataSet.attributes) return;
+
+        this.createDissimilarityMatrix();
 
         // Set up the node colourings
-        this.nodeColourings = this.nodeGroups.map((group: number) => {
+        this.nodeColourings = this.dataSet.attributes.get('module_id').map((group: number) => {
             var str = this.d3ColorSelector(group).replace("#", "0x");
             return parseInt(str);
-            /*
-            switch (group) {
-                case 1:
-                    return 0xff0000;
-                case 2:
-                    return 0x00ff00;
-                case 3:
-                    return 0x0000ff;
-                default:
-                    return 0xffffff;
-            }
-            */
         });
 
-        // Set up the two graphs
-        var completeAdjMatrix = cola.Descent.createSquareMatrix(this.nodeCount, function () { return 1; });
-        this.physioGraph = new Graph(this.brainObject, completeAdjMatrix, this.nodeColourings);
-        this.physioGraph.setNodePositions(this.physioCoords);
+        // Set up loop
+        if (!this.loop)
+            this.loop = new Loop(this, 0.03);
 
-        completeAdjMatrix = cola.Descent.createSquareMatrix(this.nodeCount, function () { return 1; });
-        this.colaGraph = new Graph(this.colaObject, completeAdjMatrix, this.nodeColourings);
+        // Set up the two graphs
+        var edgeMatrix = this.adjMatrixFromThreshold(3); // Limit the edge creation to the 3rd percentile
+        if (this.physioGraph) this.physioGraph.destroy();
+        this.physioGraph = new Graph(this.brainObject, edgeMatrix, this.nodeColourings);
+        this.physioGraph.setNodePositions(this.commonData.brainCoords);
+
+        var edgeMatrix = this.adjMatrixFromThreshold(3);
+        if (this.colaGraph) this.colaGraph.destroy();
+        this.colaGraph = new Graph(this.colaObject, edgeMatrix, this.nodeColourings);
         this.colaGraph.setVisible(false);
 
         // Initialize the filtering
@@ -208,45 +263,9 @@ class Brain3DApp implements Application, Loopable {
         this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
     }
 
-    setUpBrainModel() {
-        // Set brain mesh material
-        this.brainGeometry.traverse(function (child) {
-
-            if (child instanceof THREE.Mesh) {
-                child.material =
-                new THREE.MeshLambertMaterial(
-                    {
-                        color: 0xffaaaa,
-                        transparent: true,
-                        opacity: 0.3
-                    });
-                //new THREE.MeshPhongMaterial({
-                //    // light
-                //    specular: '#a9fcff',
-                //    // intermediate
-                //    color: '#00abb1',
-                //    // dark
-                //    emissive: '#006063',
-                //    shininess: 100,
-                //    transparent: true,
-                //    opacity: 0.3
-                //});
-                //new THREE.MeshBasicMaterial({
-                //    wireframe: true,
-                //    color: 'gray'
-                //});
-            }
-        });
-
-        this.brainGeometry.position.y = 0;
-        // Setting scale to some arbitrarily larger value
-        var scale = 1.5;
-        this.brainGeometry.scale = new THREE.Vector3(scale, scale, scale);
-    }
-
     createDissimilarityMatrix() {
-        for (var i = 0; i < this.similarityMatrix.length; ++i) {
-            this.dissimilarityMatrix.push(this.similarityMatrix[i].map(
+        for (var i = 0; i < this.dataSet.simMatrix.length; ++i) {
+            this.dissimilarityMatrix.push(this.dataSet.simMatrix[i].map(
                 (sim) => {
                     this.minSimilarity = Math.min(this.minSimilarity, sim);
                     this.maxSimilarity = Math.max(this.maxSimilarity, sim);
@@ -257,8 +276,8 @@ class Brain3DApp implements Application, Loopable {
 
         // Calculate the percentiles
         var orderedWeights = [];
-        for (var i = 0; i < this.similarityMatrix.length; ++i) {
-            var row = this.similarityMatrix[i];
+        for (var i = 0; i < this.dataSet.simMatrix.length; ++i) {
+            var row = this.dataSet.simMatrix[i];
             for (var j = 0; j < row.length; ++j) {
                 orderedWeights.push(row[j]);
             }
@@ -275,15 +294,15 @@ class Brain3DApp implements Application, Loopable {
     // TODO: REMOVE SYMMETRIC FILLING IF NOT NEEDED
     adjMatrixFromThreshold(percent: number) {
         var threshold = this.percentiles[percent];
-        var adjMatrix: number[][] = Array<Array<number>>(this.nodeCount);
-        for (var i = 0; i < this.nodeCount; ++i) {
-            adjMatrix[i] = new Array<number>(this.nodeCount);
+        var adjMatrix: number[][] = Array<Array<number>>(this.commonData.nodeCount);
+        for (var i = 0; i < this.commonData.nodeCount; ++i) {
+            adjMatrix[i] = new Array<number>(this.commonData.nodeCount);
         }
 
-        for (var i = 0; i < this.nodeCount - 1; ++i) {
-            adjMatrix[i] = new Array<number>(this.nodeCount);
-            for (var j = i + 1; j < this.nodeCount; ++j) {
-                var val = this.similarityMatrix[i][j];
+        for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
+            adjMatrix[i] = new Array<number>(this.commonData.nodeCount);
+            for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
+                var val = this.dataSet.simMatrix[i][j];
                 if (val < threshold) {
                     adjMatrix[i][j] = adjMatrix[j][i] = 1;
                 }
@@ -323,7 +342,7 @@ class Brain3DApp implements Application, Loopable {
                 ++i;
         }
 
-        var node = this.getNodeUnderPointer(input.mouse);
+        var node = this.getNodeUnderPointer(this.input.localMousePosition());
         if (node) {
             // If we already have a node ID selected, deselect it
             if (this.selectedNodeID >= 0) {
@@ -336,117 +355,12 @@ class Brain3DApp implements Application, Loopable {
             this.colaGraph.selectNode(this.selectedNodeID);
         }
 
-        if (input.keyboard.keyPressed[' '] && !this.transitionInProgress) {
-            // Leave *showingCola* on permanently after first turn-on
-
-            /*if (this.showingCola) {
-                this.showingCola = false;
-                this.colaGraph.setVisible(false);
-            } else*/ {
-                this.showingCola = true;
-
-                var edges = [];
-                var hasNeighbours = Array<boolean>(this.nodeCount);
-                for (var i = 0; i < this.nodeCount - 1; ++i) {
-                    for (var j = i + 1; j < this.nodeCount; ++j) {
-                        if (this.filteredAdjMatrix[i][j] === 1) {
-                            edges.push({ source: i, target: j });
-                            hasNeighbours[i] = true;
-                            hasNeighbours[j] = true;
-                        }
-                    }
-                }
-
-                this.colaGraph.setNodeVisibilities(hasNeighbours);
-                this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
-
-                var distanceMatrix = (new shortestpaths.Calculator(this.nodeCount, edges)).DistanceMatrix();
-
-                var D = cola.Descent.createSquareMatrix(this.nodeCount, (i, j) => {
-                    return distanceMatrix[i][j] * this.colaLinkDistance;
-                });
-
-                var clonedPhysioCoords = this.physioCoords.map(function (dim) {
-                    return dim.map(function (element) {
-                        return element;
-                    });
-                });
-                this.descent = new cola.Descent(clonedPhysioCoords, D);
-                this.colaCoords = this.descent.x; // Hold a reference to the solver's coordinates
-                for (var i = 0; i < 10; ++i) {
-                    this.descent.reduceStress();
-                }
-
-                // Set up a coroutine to do the animation
-                var origin = new THREE.Vector3(-this.graphOffset, 0, 0);
-                var target = new THREE.Vector3(this.graphOffset, 0, 0);
-                this.colaObject.position = origin;
-                this.colaGraph.setNodePositions(this.physioCoords);
-                this.colaGraph.setVisible(true);
-                this.transitionInProgress = true;
-
-                setCoroutine({ currentTime: 0, endTime: this.modeLerpLength },
-                    (o, deltaTime) => {
-                        o.currentTime += deltaTime;
-
-                        if (o.currentTime >= o.endTime) {
-                            this.colaObject.position = target;
-                            this.colaGraph.setNodePositions(this.colaCoords);
-                            this.transitionInProgress = false;
-                            return true;
-                        }
-                        else {
-                            var percentDone = o.currentTime / o.endTime;
-                            this.colaObject.position = origin.clone().add(target.clone().sub(origin).multiplyScalar(percentDone));
-                            this.colaGraph.setNodePositionsLerp(this.physioCoords, this.colaCoords, percentDone);
-                            return false;
-                        }
-                    }
-                    );
-            }
-        }
-
-        if (input.keyboard.keyPressed['2']) {
-            if (this.currentThreshold < 100) {
-                this.currentThreshold += 1;
-                this.filteredAdjMatrix = this.adjMatrixFromThreshold(this.currentThreshold);
-                this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
-            }
-        }
-
-        if (input.keyboard.keyPressed['1']) {
-            if (this.currentThreshold > 0) {
-                this.currentThreshold -= 1;
-                this.filteredAdjMatrix = this.adjMatrixFromThreshold(this.currentThreshold);
-                this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
-            }
-        }
-
-        if (input.keyboard.key['a']) {
-            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y - this.rotationSpeed * deltaTime, 0);
-            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y - this.rotationSpeed * deltaTime, 0);
-        }
-
-        if (input.keyboard.key['d']) {
-            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + this.rotationSpeed * deltaTime, 0);
-            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + this.rotationSpeed * deltaTime, 0);
-        }
-
-        if (input.keyboard.key['w']) {
-            this.brainObject.rotation.set(this.brainObject.rotation.x - this.rotationSpeed * deltaTime, this.brainObject.rotation.y, 0);
-            this.colaObject.rotation.set(this.colaObject.rotation.x - this.rotationSpeed * deltaTime, this.colaObject.rotation.y, 0);
-        }
-
-        if (input.keyboard.key['s']) {
-            this.brainObject.rotation.set(this.brainObject.rotation.x + this.rotationSpeed * deltaTime, this.brainObject.rotation.y, 0);
-            this.colaObject.rotation.set(this.colaObject.rotation.x + this.rotationSpeed * deltaTime, this.colaObject.rotation.y, 0);
-        }
-
         if (this.showingCola)
             this.descent.rungeKutta();
 
         this.colaGraph.update(); // Updates all the edge positions
-        input.reset();
+
+        this.draw(); // Draw the graph
     }
 
     draw() {
@@ -508,7 +422,6 @@ class Graph {
     // Lerp between the physio and Cola positions of the nodes
     // 0 <= t <= 1
     setNodePositionsLerp(colaCoords1: number[][], colaCoords2: number[][], t: number) {
-        debugger
         for (var i = 0; i < this.nodeMeshes.length; ++i) {
             this.nodeMeshes[i].position.x = colaCoords1[0][i] * (1 - t) + colaCoords2[0][i] * t;
             this.nodeMeshes[i].position.y = colaCoords1[1][i] * (1 - t) + colaCoords2[1][i] * t;
@@ -543,7 +456,8 @@ class Graph {
         var len = visMatrix.length;
         for (var i = 0; i < len - 1; ++i) {
             for (var j = i + 1; j < len; ++j) {
-                this.edgeMatrix[i][j].setVisible(visMatrix[i][j] === 1 ? true : false);
+                var edge = this.edgeMatrix[i][j];
+                if (edge) edge.setVisible(visMatrix[i][j] === 1 ? true : false);
             }
         }
     }
@@ -560,6 +474,11 @@ class Graph {
         this.edgeList.forEach(function (edge) {
             edge.update();
         });
+    }
+
+    // Remove self from the scene so that the object can be GC'ed
+    destroy() {
+        this.parentObject.remove(this.rootObject);
     }
 }
 

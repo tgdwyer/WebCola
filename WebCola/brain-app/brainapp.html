@@ -17,11 +17,17 @@
         h1 {
             font-size: 30px;
             font-weight: bold;
-            line-height: 0;
+            line-height: normal;
         }
 
         h2 {
-            font-size: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            line-height: normal;
+        }
+
+        h3 {
+            font-size: 14px;
             font-weight: bold;
             line-height: normal;
         }
@@ -29,18 +35,19 @@
         #control-panel {
             position: absolute;
             left: 0px;
-            width: 230px;
+            width: 250px;
             top: 0px;
             bottom: 0px;
             background-color: blanchedalmond;
             overflow: hidden;
             padding: 10px;
             font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
         }
 
         #outer-view-panel {
             position: absolute;
-            left: 250px;
+            left: 272px;
             right: 0px;
             top: 0px;
             bottom: 0px;
@@ -53,14 +60,11 @@
             right: 12px;
             top: 12px;
             bottom: 12px;
-            overflow: hidden;
         }
 
         #view-top-left {
             top: 0px;
-            bottom: 0px;
             left: 0px;
-            right: 0px;
             background-color: #ffcbcb;
         }
 
@@ -85,38 +89,123 @@
         .view {
             position: absolute;
             overflow: hidden;
+            border: 2px solid;
+            border-color: white;
         }
 
+        .tab {
+            padding: 0px;
+            margin-left: -16px;
+            margin-right: -16px;
+        }
+
+        #accordion .ui-accordion-content {
+            padding: 12px;
+        }
+
+        input {
+            width: 196px;
+        }
+
+        .fold {
+            padding: 0;
+        }
+        
         #pin {
             position: absolute;
             width: 24px;
             height: 24px;
             background-color: black;
+            z-index: 1000;
+        }
+
+        .icon {
+            width: 64px;
+            height: 64px;
+        }
+
+        #brain3d-icon-back {
+            background-color: mediumvioletred;
+        }
+
+        #brain3d-icon-front {
+            background-color: palevioletred;
         }
 
     </style>
-
+    <link rel="stylesheet" href="../extern/jquery-ui-1.10.4.custom/css/sunny/jquery-ui-1.10.4.custom.css" />
 </head>
 <body>
     <!-- Page structure -->
     <div id="control-panel">
-        <h1>Control Panel</h1>
-        <br/>
-        <h2>Select Data</h2>
-        <input id="upload" type="file" />
-        <button>Upload</button>
+        <ul>
+            <li><a href="#tab-1">Data</a></li>
+            <li><a href="#tab-2">Visualisations</a></li>
+            <li><a href="#tab-3">Help</a></li>
+        </ul>
+        <div id="tab-1" class="tab">
+            <div id="accordion">
+                <h2>Shared Data</h2>
+                <div class="fold">
+                    <h3>Coordinates</h3>
+                    <input id="select-coords" type="file" />
+                    <button id="upload-coords">Upload</button>
+                    <h3>Labels (Opt)</h3>
+                    <input id="select-labels" type="file" />
+                    <button id="upload-labels">Upload</button>
+                    <!--
+                    <h3>Surface (Hardcoded)</h3>
+                    <input id="select-surface" type="file" />
+                    <button id="upload-surface">Upload</button>
+                    -->
+                    <br />
+                    <br />
+                </div>
+                <h2>Data Set 1</h2>
+                <div class="fold">
+                    <h3>Similarity Matrix</h3>
+                    <input id="select-matrix-1" type="file" />
+                    <button id="upload-matrix-1">Upload</button>
+                    <h3>Attributes (Opt)</h3>
+                    <input id="select-attr-1" type="file" />
+                    <button id="upload-attr-1">Upload</button>
+                    <br />
+                    <br />
+                </div>
+                <h2>Data Set 2</h2>
+                <div class="fold">
+                    <h3>Similarity Matrix</h3>
+                    <input id="select-matrix-2" type="file" />
+                    <button id="upload-matrix-2">Upload</button>
+                    <h3>Attributes (Opt)</h3>
+                    <input id="select-attr-2" type="file" />
+                    <button id="upload-attr-2">Upload</button>
+                    <br />
+                    <br />
+                </div>
+            </div>
+        </div>
+        <div id="tab-2" class="tab">
+            <div id="brain3d-icon-back" class="icon"></div>
+        </div>
+        <div id="tab-3" class="tab">
+            No help available.
+        </div>
     </div>
 
     <div id="outer-view-panel">
+        
         <div id="view-panel">
             <div id="view-top-left" class="view"></div>
             <div id="view-top-right" class="view"></div>
             <div id="view-bottom-left" class="view"></div>
             <div id="view-bottom-right" class="view"></div>
         </div>
+        <div id="pin"></div>
     </div>
 
-    <div id="pin"></div>
+    <!-- Draggable icons -->
+    <div id="brain3d-icon-front" class="icon"></div>
 
     <!-- Required scripts -->
 
