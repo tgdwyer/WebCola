@@ -88,11 +88,15 @@ function applyPacking(graphs, w, h, node_size, desired_ratio){
   function apply(data, desired_ratio){
     data.sort(function (a, b) { return b.height - a.height; });
 
-    min_width = data[0].width;
-    for (var i = 1; i < data.length; i++) {
-      if (min_width > data[i].width)
-        min_width = data[i].width;
-    }
+    // min_width = data[0].width;
+    // for (var i = 1; i < data.length; i++) {
+    //   if (min_width > data[i].width)
+    //     min_width = data[i].width;
+    // }
+
+    min_width = data.reduce(function(a, b) {
+      return a.width < b.width ? a.width : b.width;
+    });
 
     var left = x1 = 10;
     var right = x2 = get_entire_width(data);
@@ -134,7 +138,7 @@ function applyPacking(graphs, w, h, node_size, desired_ratio){
     var parent = undefined;
 
     for (var i = 0; i < line.length; i++){
-      if ((line[i].space_left > rect.height) && (line[i].x + line[i].width + rect.width + applyPacking.PADDING < max_width) ){
+      if ((line[i].space_left >= rect.height) && (line[i].x + line[i].width + rect.width + applyPacking.PADDING <= max_width) ){
         parent = line[i];
         break;
       }

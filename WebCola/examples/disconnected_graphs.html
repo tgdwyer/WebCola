@@ -27,21 +27,22 @@
 	<!--
     <script src="../cola.v1.min.js"></script>
 -->
-    <h1>Packing of Disconnected Components</h1>
+    <!-- <h1>Packing of Disconnected Components</h1> -->
 <script>
     var width = 960,
-        height = 500;
+        // height = 500;
+        height = 700;
 
     var color = d3.scale.category20();
 
     var cola = cola.d3adaptor()
-        .linkDistance(150)
+        .linkDistance(100)
         .handleDisconnected(true)
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")
         .attr("width", width)
-        .attr("height", height);
+        .attr("height", height);    
 
     graph = {
     	nodes: [
@@ -69,25 +70,25 @@
 	    ],
     	links: [
 	    	{source:1, target:2},
-    		{source:0, target:1},
-    		{source:0, target:2},
-    		{source:4, target:5},
-    		{source:3, target:4},
-    		{source:3, target:5},
-            {source:6, target:7},
+    		// {source:0, target:1},
+    		// {source:0, target:2},
+    		// {source:4, target:5},
+    		// {source:3, target:4},
+    		// {source:3, target:5},
+      //       {source:6, target:7},
 
-            {source:8, target:9},
-            {source:9, target:10},
-            {source:8, target:10},
-            {source:10, target:11},
-            {source:11, target:12},
-    		{source:12, target:10},
+      //       {source:8, target:9},
+      //       {source:9, target:10},
+      //       {source:8, target:10},
+      //       {source:10, target:11},
+      //       {source:11, target:12},
+    		// {source:12, target:10},
 
     	]
     };
 
     // packing respects node width and height
-    graph.nodes.forEach(function (v) { v.width = 30, v.height = 30 })
+    graph.nodes.forEach(function (v) { v.width = 10, v.height = 10 })
 
     cola
         .nodes(graph.nodes)
@@ -104,7 +105,7 @@
         .data(graph.nodes)
       .enter().append("circle")
         .attr("class", "node")
-        .attr("r", 15)
+        .attr("r", 5)
         .style("fill", function (d) { return color(d.group); })
         .call(cola.drag);
 
