@@ -43,8 +43,8 @@ function applyPacking(graphs, w, h, node_size, desired_ratio){
             h /= 2;
             max_x = Math.max(v.x + w, max_x);
             min_x = Math.min(v.x - w, min_x);
-            max_y = Math.max(v.x + w, max_y);
-            min_y = Math.min(v.x - w, min_y);
+            max_y = Math.max(v.y + h, max_y);
+            min_y = Math.min(v.y - h, min_y);
         }
 
         graph.width = max_x - min_x;
@@ -87,12 +87,6 @@ function applyPacking(graphs, w, h, node_size, desired_ratio){
   // desired ratio is 1 by default
   function apply(data, desired_ratio){
     data.sort(function (a, b) { return b.height - a.height; });
-
-    // min_width = data[0].width;
-    // for (var i = 1; i < data.length; i++) {
-    //   if (min_width > data[i].width)
-    //     min_width = data[i].width;
-    // }
 
     min_width = data.reduce(function(a, b) {
       return a.width < b.width ? a.width : b.width;
