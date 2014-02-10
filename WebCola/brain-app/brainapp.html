@@ -12,6 +12,8 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
         }
 
         h1 {
@@ -38,13 +40,12 @@
             width: 250px;
             top: 0px;
             bottom: 0px;
-            background-color: blanchedalmond;
             overflow: hidden;
             padding: 10px;
-            font-family: Arial, Helvetica, sans-serif;
             font-size: 12px;
         }
 
+        /* Holds the #view-panel and the #pin. */
         #outer-view-panel {
             position: absolute;
             left: 272px;
@@ -65,25 +66,25 @@
         #view-top-left {
             top: 0px;
             left: 0px;
-            background-color: #ffcbcb;
+            background-color: #ffe5e5;
         }
 
         #view-top-right {
             top: 0px;
             right: 0px;
-            background-color: #ccffb4;
+            background-color: #d7e8ff;
         }
 
         #view-bottom-left {
             bottom: 0px;
             left: 0px;
-            background-color: #afdaff;
+            background-color: #fcffb2;
         }
 
         #view-bottom-right {
             bottom: 0px;
             right: 0px;
-            background-color: #e3afff;
+            background-color: #d2ffbd;
         }
 
         .view {
@@ -99,10 +100,15 @@
             margin-right: -16px;
         }
 
+        #accordion {
+            height: 380px;
+        }
+
         #accordion .ui-accordion-content {
             padding: 12px;
         }
 
+        /* Used to set the size of the input (type = 'file') elements in the accordion */
         input {
             width: 196px;
         }
@@ -111,6 +117,7 @@
             padding: 0;
         }
         
+        /* The element situated at the intersection of the four views that is dragged to resize them */
         #pin {
             position: absolute;
             width: 24px;
@@ -120,16 +127,44 @@
         }
 
         .icon {
-            width: 64px;
-            height: 64px;
+            width: 96px;
+            height: 32px;
+            z-index: 10;
+            text-align: center;
+            line-height: 32px; /* Force vertical alignment to be centred (for text) */
+            font-size: 14px;
+            font-weight: bold;
         }
 
-        #brain3d-icon-back {
-            background-color: mediumvioletred;
+        /* The draggable part of an icon */
+        .icon-front {
+            position: absolute;
         }
 
-        #brain3d-icon-front {
-            background-color: palevioletred;
+        #dataset1-icon-back, #dataset2-icon-back, #brain3d-icon-back {
+            background-color: #133cac;
+        }
+
+        #dataset1-icon-front, #dataset2-icon-front, #brain3d-icon-front {
+            background-color: #6d89d5;
+        }
+
+        .dataset-info {
+            height: 100px;
+        }
+
+        .dataset-component {
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 7px;
+            color: red;
+        }
+
+        #leap-pointer {
+            width: 12px;
+            height: 12px;
+            background-color: blue;
+            z-index: 10000;
         }
 
     </style>
@@ -150,7 +185,7 @@
                     <h3>Coordinates</h3>
                     <input id="select-coords" type="file" />
                     <button id="upload-coords">Upload</button>
-                    <h3>Labels (Opt)</h3>
+                    <h3>Labels</h3>
                     <input id="select-labels" type="file" />
                     <button id="upload-labels">Upload</button>
                     <!--
@@ -166,7 +201,7 @@
                     <h3>Similarity Matrix</h3>
                     <input id="select-matrix-1" type="file" />
                     <button id="upload-matrix-1">Upload</button>
-                    <h3>Attributes (Opt)</h3>
+                    <h3>Attributes</h3>
                     <input id="select-attr-1" type="file" />
                     <button id="upload-attr-1">Upload</button>
                     <br />
@@ -177,19 +212,59 @@
                     <h3>Similarity Matrix</h3>
                     <input id="select-matrix-2" type="file" />
                     <button id="upload-matrix-2">Upload</button>
-                    <h3>Attributes (Opt)</h3>
+                    <h3>Attributes</h3>
                     <input id="select-attr-2" type="file" />
                     <button id="upload-attr-2">Upload</button>
                     <br />
                     <br />
                 </div>
             </div>
+            <button id="load-example-data">Load Example Data</button>
+            <h2>Shared Data</h2>
+            <p id="shared-coords" class="dataset-component">Coordinates</p>
+            <p id="shared-labels" class="dataset-component">Labels</p>
+            <br />
+            <div class="dataset-info">
+                <div id="dataset1-icon-back" class="icon"></div>
+                <p id="d1-mat" class="dataset-component">Similarity Matrix</p>
+                <p id="d1-att" class="dataset-component">Attributes</p>
+            </div>
+            <div class="dataset-info">
+                <div id="dataset2-icon-back" class="icon"></div>
+                <p id="d2-mat" class="dataset-component">Similarity Matrix</p>
+                <p id="d2-att" class="dataset-component">Attributes</p>
+            </div>
         </div>
         <div id="tab-2" class="tab">
             <div id="brain3d-icon-back" class="icon"></div>
         </div>
         <div id="tab-3" class="tab">
-            No help available.
+            <h3>How to use this application</h3>
+            <p>
+                In the data tab, select the data files from the local machine. In the visualisation tab,
+                you can drag one of the available visualisations into any of the four views. The visualisation
+                won't display until you drag one of the data sets (the blue boxes in the data tab) into the view as well.
+                All the necessary data for a visualisation must have been loaded, or else it will not be
+                displayed.
+            </p>
+            <p>
+                To resize the views, drag the black pin around.
+            </p>
+            <p>
+                To direct keyboard / Leap input to a particular view, you must select it with the mouse.
+                The currently-selected view has a black border around it.
+            </p>
+            <br />
+            <h3>"Brain 3D" application controls</h3>
+            <p>
+                Drag the slider to select the number of edges you want in the thresholded graph. Then press space
+                to view the graph. You can rotate the view with the WASD keys, and moving the mouse over a node will
+                enlarge that node in both graphs.
+            </p>
+            <p>
+                There is very limited Leap Motion support available. You can pan your hand around to rotate the view,
+                and you can point at a node to enlarge it.
+            </p>
         </div>
     </div>
 
@@ -204,8 +279,12 @@
         <div id="pin"></div>
     </div>
 
+    <div id="leap-pointer"></div>
+
     <!-- Draggable icons -->
-    <div id="brain3d-icon-front" class="icon"></div>
+    <div id="dataset1-icon-front" class="icon icon-front">Data Set 1</div>
+    <div id="dataset2-icon-front" class="icon icon-front">Data Set 2</div>
+    <div id="brain3d-icon-front" class="icon icon-front">3D Brain</div>
 
     <!-- Required scripts -->
 

@@ -1,9 +1,31 @@
+/**
+    This application uses similarity data between areas of the brain to construct a thresholded graph with edges
+    between the most similar areas. It is designed to be embedded in a view defined in brainapp.html / brainapp.ts.
+*/
+
 // GLOBAL VARIABLES
 declare var THREE;
 declare var d3;
 
+var sliderSpace = 70; // The number of pixels to reserve at the bottom of the div for the slider
+var uniqueID = 0; // Each instance of this application is given a unique ID so that the DOM elements they create can be identified as belonging to them
+var maxEdgesShowable = 500;
+var initialEdgesShown = 20; // The number of edges that are shown when the application starts
+
+// The width and the height of the box in the xy-plane that we must keep inside the camera (by modifying the distance of the camera from the scene)
+var widthInCamera = 520;
+var heightInCamera = 360;
+
+// TODO: Proper reset and destruction of the application (the 'instances' variable will continue to hold a reference - this will cause the application to live indefinitely)
+var instances = Array<Brain3DApp>(0); // Stores each instance of an application under its id, for lookup by the slider input element
+
+function sliderChangeForID(id: number, v: number) {
+    instances[id].sliderChange(v);
+}
+
 class Brain3DApp implements Application, Loopable {
 
+    id: number;
     loop: Loop;
     input: InputTarget;
 
@@ -23,14 +45,12 @@ class Brain3DApp implements Application, Loopable {
     colaObject; // Base object for the cola graph
     brainGeometry;
     colaCoords: number[][];
-    percentiles: number[] = new Array(101);
+    sortedSimilarities: number[];
     physioGraph: Graph;
     colaGraph: Graph;
 
     nodeColourings: number[]; // Stores the colourings associated with the groups
     dissimilarityMatrix: number[][] = []; // An inversion of the similarity matrix, used for Cola graph distances
-    minSimilarity: number = Number.MAX_VALUE;
-    maxSimilarity: number = 0;
 
     // State
     showingCola: boolean = false;
@@ -44,60 +64,55 @@ class Brain3DApp implements Application, Loopable {
     farClip = 2000;
     modeLerpLength: number = 0.6;
     rotationSpeed: number = 1.2;
-    graphOffset: number = 100;
+    graphOffset: number = 120;
     colaLinkDistance = 15;
     d3ColorSelector = d3.scale.category20();
 
-    constructor(commonData: CommonData, jDiv, input: InputTarget) {
+    constructor(commonData: CommonData, jDiv, inputTargetCreator: (l:number, r:number, t:number, b:number) => InputTarget) {
+        this.id = uniqueID++;
+        instances[this.id] = this;
         this.commonData = commonData;
-        this.input = input;
+        this.input = inputTargetCreator(0, 0, 0, sliderSpace);
 
         // Register callbacks
-        input.regKeyDownCallback('1', () => {
-            if (this.currentThreshold > 0) {
-                this.currentThreshold -= 1;
-                this.filteredAdjMatrix = this.adjMatrixFromThreshold(this.currentThreshold);
-                this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
-            }
-        });
-        input.regKeyDownCallback('2', () => {
-            if (this.currentThreshold < 3) {
-                this.currentThreshold += 1;
-                this.filteredAdjMatrix = this.adjMatrixFromThreshold(this.currentThreshold);
-                this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
-            }
+        this.input.regKeyTickCallback('a', (deltaTime: number) => {
+            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y - this.rotationSpeed * deltaTime, this.brainObject.rotation.z);
+            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y - this.rotationSpeed * deltaTime, this.colaObject.rotation.z);
         });
 
-        input.regKeyTickCallback('a', (deltaTime: number) => {
-            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y - this.rotationSpeed * deltaTime, 0);
-            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y - this.rotationSpeed * deltaTime, 0);
+        this.input.regKeyTickCallback('d', (deltaTime: number) => {
+            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + this.rotationSpeed * deltaTime, this.brainObject.rotation.z);
+            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + this.rotationSpeed * deltaTime, this.colaObject.rotation.z);
         });
 
-        input.regKeyTickCallback('d', (deltaTime: number) => {
-            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + this.rotationSpeed * deltaTime, 0);
-            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + this.rotationSpeed * deltaTime, 0);
+        this.input.regKeyTickCallback('w', (deltaTime: number) => {
+            this.brainObject.rotation.set(this.brainObject.rotation.x - this.rotationSpeed * deltaTime, this.brainObject.rotation.y, this.brainObject.rotation.z);
+            this.colaObject.rotation.set(this.colaObject.rotation.x - this.rotationSpeed * deltaTime, this.colaObject.rotation.y, this.colaObject.rotation.z);
         });
 
-        input.regKeyTickCallback('w', (deltaTime: number) => {
-            this.brainObject.rotation.set(this.brainObject.rotation.x - this.rotationSpeed * deltaTime, this.brainObject.rotation.y, 0);
-            this.colaObject.rotation.set(this.colaObject.rotation.x - this.rotationSpeed * deltaTime, this.colaObject.rotation.y, 0);
+        this.input.regKeyTickCallback('s', (deltaTime: number) => {
+            this.brainObject.rotation.set(this.brainObject.rotation.x + this.rotationSpeed * deltaTime, this.brainObject.rotation.y, this.brainObject.rotation.z);
+            this.colaObject.rotation.set(this.colaObject.rotation.x + this.rotationSpeed * deltaTime, this.colaObject.rotation.y, this.colaObject.rotation.z);
         });
 
-        input.regKeyTickCallback('s', (deltaTime: number) => {
-            this.brainObject.rotation.set(this.brainObject.rotation.x + this.rotationSpeed * deltaTime, this.brainObject.rotation.y, 0);
-            this.colaObject.rotation.set(this.colaObject.rotation.x + this.rotationSpeed * deltaTime, this.colaObject.rotation.y, 0);
+        var leapRotationSpeed = 0.03; // radians per mm
+        this.input.regLeapXCallback((mm: number) => {
+            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y, this.brainObject.rotation.z + leapRotationSpeed * mm);
+            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y, this.colaObject.rotation.z + leapRotationSpeed * mm);
         });
 
-        input.regKeyDownCallback(' ', () => {
+        this.input.regLeapYCallback((mm: number) => {
+            this.brainObject.rotation.set(this.brainObject.rotation.x - leapRotationSpeed * mm, this.brainObject.rotation.y, this.brainObject.rotation.z);
+            this.colaObject.rotation.set(this.colaObject.rotation.x - leapRotationSpeed * mm, this.colaObject.rotation.y, this.colaObject.rotation.z);
+        });
+
+        this.input.regKeyDownCallback(' ', () => {
             if (!this.transitionInProgress) {
                 // Leave *showingCola* on permanently after first turn-on
-
-                /*if (this.showingCola) {
-                    this.showingCola = false;
-                    this.colaGraph.setVisible(false);
-                } else {*/
                 this.showingCola = true;
 
+                // Find the edges that have been selected after thresholding, and all the
+                // nodes that have neighbours after the thresholding of the edges takes place.
                 var edges = [];
                 var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
                 for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
@@ -110,9 +125,10 @@ class Brain3DApp implements Application, Loopable {
                     }
                 }
 
-                this.colaGraph.setNodeVisibilities(hasNeighbours);
-                this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+                this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
+                this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
 
+                // Create the distance matrix that Cola needs
                 var distanceMatrix = (new shortestpaths.Calculator(this.commonData.nodeCount, edges)).DistanceMatrix();
 
                 var D = cola.Descent.createSquareMatrix(this.commonData.nodeCount, (i, j) => {
@@ -124,8 +140,9 @@ class Brain3DApp implements Application, Loopable {
                         return element;
                     });
                 });
-                this.descent = new cola.Descent(clonedPhysioCoords, D);
+                this.descent = new cola.Descent(clonedPhysioCoords, D); // Create the solver
                 this.colaCoords = this.descent.x; // Hold a reference to the solver's coordinates
+                // Relieve some of the initial stress
                 for (var i = 0; i < 10; ++i) {
                     this.descent.reduceStress();
                 }
@@ -134,20 +151,20 @@ class Brain3DApp implements Application, Loopable {
                 var origin = new THREE.Vector3(-this.graphOffset, 0, 0);
                 var target = new THREE.Vector3(this.graphOffset, 0, 0);
                 this.colaObject.position = origin;
-                this.colaGraph.setNodePositions(this.commonData.brainCoords);
+                this.colaGraph.setNodePositions(this.commonData.brainCoords); // Move the Cola graph nodes to their starting position
                 this.colaGraph.setVisible(true);
                 this.transitionInProgress = true;
 
                 setCoroutine({ currentTime: 0, endTime: this.modeLerpLength }, (o, deltaTime) => {
                     o.currentTime += deltaTime;
 
-                    if (o.currentTime >= o.endTime) {
+                    if (o.currentTime >= o.endTime) { // The animation has finished
                         this.colaObject.position = target;
                         this.colaGraph.setNodePositions(this.colaCoords);
                         this.transitionInProgress = false;
                         return true;
                     }
-                    else {
+                    else { // Update the animation
                         var percentDone = o.currentTime / o.endTime;
                         this.colaObject.position = origin.clone().add(target.clone().sub(origin).multiplyScalar(percentDone));
                         this.colaGraph.setNodePositionsLerp(this.commonData.brainCoords, this.colaCoords, percentDone);
@@ -160,14 +177,17 @@ class Brain3DApp implements Application, Loopable {
         // Set the background colour
         jDiv.css({backgroundColor: '#ffffff' });
 
-        // Set up renderer
+        // Set up renderer, and add the canvas and the slider to the div
         this.renderer = new THREE.WebGLRenderer();
-        this.renderer.setSize(jDiv.width(), jDiv.height());
-        jDiv.get(0).appendChild(this.renderer.domElement);
+        this.renderer.setSize(jDiv.width(), (jDiv.height() - sliderSpace));
+        jDiv.append(this.renderer.domElement)
+            .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
+            .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown +
+                '" onchange="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/>').css({ width: '400px' }));
 
         // Set up camera
-        this.camera = new THREE.PerspectiveCamera(45, jDiv.width() / jDiv.height(), this.nearClip, this.farClip);
-        this.camera.position.set(0, 0, 400);
+        this.camera = new THREE.PerspectiveCamera(45, 1, this.nearClip, this.farClip);
+        this.resize(jDiv.width(), jDiv.height());
 
         // Set up scene
         this.scene = new THREE.Scene();
@@ -198,7 +218,17 @@ class Brain3DApp implements Application, Loopable {
         var surf = () => {
             // Remove the old mesh and add the new one (we don't need a restart)
             this.brainObject.remove(this.brainSurface);
-            this.brainSurface = this.commonData.brainSurface;
+            // Clone the mesh - we can't share it between different canvases without cloning it
+            var clonedObject = new THREE.Object3D();
+            this.commonData.brainSurface.traverse(function (child) {
+                if (child instanceof THREE.Mesh) {
+                    clonedObject.add(new THREE.Mesh(child.geometry.clone(), child.material.clone()));
+                }
+            });
+            // Setting scale to some arbitrarily larger value, because the mesh isn't the right size
+            var scale = 1.5;
+            clonedObject.scale = new THREE.Vector3(scale, scale, scale);
+            this.brainSurface = clonedObject;
             this.brainObject.add(this.brainSurface);
         };
         commonData.regNotifyCoords(coords);
@@ -209,10 +239,32 @@ class Brain3DApp implements Application, Loopable {
         if (commonData.brainSurface) surf();
     }
 
+    sliderChange(numEdges) {
+        var max = this.commonData.nodeCount * (this.commonData.nodeCount - 1) / 2;
+        if (numEdges > max) numEdges = max;
+        $('#count-' + this.id).get(0).textContent = numEdges;
+        var percentile = numEdges * 100 / max;
+        $('#percentile-' + this.id).get(0).textContent = percentile.toFixed(2);
+        this.filteredAdjMatrix = this.adjMatrixFromEdgeCount(numEdges);
+        this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+    }
+
     resize(width: number, height: number) {
-        this.camera.aspect = width / height;
+        // Resize the renderer
+        this.renderer.setSize(width, height - sliderSpace);
+        // Calculate the aspect ratio
+        var aspect = width / (height - sliderSpace);
+        this.camera.aspect = aspect;
+        // Calculate the FOVs
+        var verticalFov = Math.atan(height / window.outerHeight); // Scale the vertical fov with the vertical height of the window (up to 45 degrees)
+        var horizontalFov = verticalFov * aspect;
+        this.camera.fov = verticalFov * 180 / Math.PI;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(width, height);
+        // Work out how far away the camera needs to be
+        var distanceByH = (widthInCamera / 2) / Math.tan(horizontalFov / 2);
+        var distanceByV = (heightInCamera / 2) / Math.tan(verticalFov / 2);
+        // Select the maximum distance of the two
+        this.camera.position.set(0, 0, Math.max(distanceByH, distanceByV));
     }
 
     setDataSet(dataSet: DataSet) {
@@ -234,7 +286,22 @@ class Brain3DApp implements Application, Loopable {
     restart() {
         if (!this.commonData.brainCoords || !this.dataSet || !this.dataSet.simMatrix || !this.dataSet.attributes) return;
 
-        this.createDissimilarityMatrix();
+        // Sort the similarities into a list so we can filter edges
+        this.sortedSimilarities = [];
+        for (var i = 0; i < this.dataSet.simMatrix.length; ++i) {
+            var row = this.dataSet.simMatrix[i];
+            for (var j = i + 1; j < row.length; ++j) { // Only take the values in the upper-triangular portion of the matrix
+                this.sortedSimilarities.push(row[j]);
+            }
+        }
+        this.sortedSimilarities.sort(function (a, b) { return b - a; });
+
+        // Create the dissimilarity matrix from the similarity matrix (we need dissimilarity for Cola)
+        for (var i = 0; i < this.dataSet.simMatrix.length; ++i) {
+            this.dissimilarityMatrix.push(this.dataSet.simMatrix[i].map((sim) => {
+                return 15 / (sim + 1); // Convert similarities to distances
+            }));
+        }
 
         // Set up the node colourings
         this.nodeColourings = this.dataSet.attributes.get('module_id').map((group: number) => {
@@ -247,53 +314,31 @@ class Brain3DApp implements Application, Loopable {
             this.loop = new Loop(this, 0.03);
 
         // Set up the two graphs
-        var edgeMatrix = this.adjMatrixFromThreshold(3); // Limit the edge creation to the 3rd percentile
+        var edgeMatrix = this.adjMatrixFromEdgeCount(maxEdgesShowable); // Don''t create more edges than we will ever be showing
         if (this.physioGraph) this.physioGraph.destroy();
         this.physioGraph = new Graph(this.brainObject, edgeMatrix, this.nodeColourings);
         this.physioGraph.setNodePositions(this.commonData.brainCoords);
 
-        var edgeMatrix = this.adjMatrixFromThreshold(3);
+        var edgeMatrix = this.adjMatrixFromEdgeCount(maxEdgesShowable);
         if (this.colaGraph) this.colaGraph.destroy();
         this.colaGraph = new Graph(this.colaObject, edgeMatrix, this.nodeColourings);
         this.colaGraph.setVisible(false);
 
         // Initialize the filtering
-        this.filteredAdjMatrix = this.adjMatrixFromThreshold(this.currentThreshold);
+        this.filteredAdjMatrix = this.adjMatrixFromEdgeCount(initialEdgesShown);
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
         this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+        this.sliderChange(initialEdgesShown);
+
+        // Enable the slider
+        $('#edge-count-slider-' + this.id).prop('disabled', false);
     }
 
-    createDissimilarityMatrix() {
-        for (var i = 0; i < this.dataSet.simMatrix.length; ++i) {
-            this.dissimilarityMatrix.push(this.dataSet.simMatrix[i].map(
-                (sim) => {
-                    this.minSimilarity = Math.min(this.minSimilarity, sim);
-                    this.maxSimilarity = Math.max(this.maxSimilarity, sim);
-                    return 15 / (sim + 1); // Convert similarities to distances
-                }
-                ));
-        }
-
-        // Calculate the percentiles
-        var orderedWeights = [];
-        for (var i = 0; i < this.dataSet.simMatrix.length; ++i) {
-            var row = this.dataSet.simMatrix[i];
-            for (var j = 0; j < row.length; ++j) {
-                orderedWeights.push(row[j]);
-            }
-        }
-        orderedWeights.sort(function (a, b) { return a - b });
-        var k = orderedWeights.length / 100;
-        for (var i = 0; i < 100; ++i) {
-            this.percentiles[i] = orderedWeights[Math.floor(i * k)];
-        }
-        this.percentiles[100] = orderedWeights[orderedWeights.length - 1];
-    }
-
-    // Select the given percentage of links
-    // TODO: REMOVE SYMMETRIC FILLING IF NOT NEEDED
-    adjMatrixFromThreshold(percent: number) {
-        var threshold = this.percentiles[percent];
+    // Create a matrix where a 1 in (i, j) means the edge between node i and node j is selected
+    adjMatrixFromEdgeCount(count: number) {
+        var max = this.commonData.nodeCount * (this.commonData.nodeCount - 1) / 2;
+        if (count > max) count = max;
+        var threshold = this.sortedSimilarities[count - 1];
         var adjMatrix: number[][] = Array<Array<number>>(this.commonData.nodeCount);
         for (var i = 0; i < this.commonData.nodeCount; ++i) {
             adjMatrix[i] = new Array<number>(this.commonData.nodeCount);
@@ -303,7 +348,7 @@ class Brain3DApp implements Application, Loopable {
             adjMatrix[i] = new Array<number>(this.commonData.nodeCount);
             for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
                 var val = this.dataSet.simMatrix[i][j];
-                if (val < threshold) {
+                if (val >= threshold) { // Accept an edge between nodes that are at least as similar as the threshold value
                     adjMatrix[i][j] = adjMatrix[j][i] = 1;
                 }
                 else {
@@ -311,7 +356,6 @@ class Brain3DApp implements Application, Loopable {
                 }
             }
         }
-
         return adjMatrix;
     }
 
@@ -325,7 +369,7 @@ class Brain3DApp implements Application, Loopable {
         var intersected = raycaster.intersectObjects(this.scene.children, true);
 
         for (var i = 0; i < intersected.length; ++i) {
-            if (intersected[i].object.isNode) { // Nodes have this special boolean flag
+            if (intersected[i].object.isNode) { // Node objects have this special boolean flag
                 return intersected[i].object;
             }
         }
@@ -342,7 +386,7 @@ class Brain3DApp implements Application, Loopable {
                 ++i;
         }
 
-        var node = this.getNodeUnderPointer(this.input.localMousePosition());
+        var node = this.getNodeUnderPointer(this.input.localPointerPosition());
         if (node) {
             // If we already have a node ID selected, deselect it
             if (this.selectedNodeID >= 0) {
@@ -356,10 +400,9 @@ class Brain3DApp implements Application, Loopable {
         }
 
         if (this.showingCola)
-            this.descent.rungeKutta();
+            this.descent.rungeKutta(); // Do an iteration of the solver
 
-        this.colaGraph.update(); // Updates all the edge positions
-
+        this.colaGraph.update(); // Update all the edge positions
         this.draw(); // Draw the graph
     }
 
@@ -514,71 +557,6 @@ class Edge {
         this.geometry.verticesNeedUpdate = true;
     }
 }
-
-/*
-class Edge {
-    static construct = Edge.staticConstructor();
-    static material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 0xFFFFFF }); // DOUBLE SIDE used for debug
-    static geometryTemplate;
-
-    object;
-    visible: boolean = false;
-
-    static staticConstructor() {
-        var geo = new THREE.Geometry();
-        // Left tip
-        geo.vertices.push(new THREE.Vector3(-0.5, 0, 0));
-        geo.vertices.push(new THREE.Vector3(-0.45, -0.05, 0));
-        geo.vertices.push(new THREE.Vector3(-0.45, 0.05, 0));
-        // Right tip
-        geo.vertices.push(new THREE.Vector3(0.5, 0, 0));
-        geo.vertices.push(new THREE.Vector3(0.45, 0.05, 0));
-        geo.vertices.push(new THREE.Vector3(0.45, -0.05, 0));
-        geo.faces.push(new THREE.Face3(0, 1, 2, new THREE.Vector3(0, 0, 1)));
-        geo.faces.push(new THREE.Face3(3, 4, 5, new THREE.Vector3(0, 0, 1)));
-        geo.faces.push(new THREE.Face3(1, 4, 2, new THREE.Vector3(0, 0, 1)));
-        geo.faces.push(new THREE.Face3(1, 5, 4, new THREE.Vector3(0, 0, 1)));
-        Edge.geometryTemplate = geo;
-    }
-
-    constructor(public parentObject, public endPoint1, public endPoint2) {
-        this.object = new THREE.Object3D();
-        this.object.add(Edge.geometryTemplate.clone());
-        this.visible = false;
-        //this.highlighted = false;
-    }
-
-    static createArrowHead(dir) {
-    var geo = new THREE.Geometry();
-    
-    geo.faces[0] = new THREE.Face3(0, 1, 2, new THREE.Vector3(0, 0, 1));
-    geo.faces[0].vertexColors = [edgeTailColor, edgeTailColor, edgeTailColor];
-    return geo;
-    }
-
-    setOpacity(opacity: number) {
-
-    }
-
-    update() {
-
-    }
-}
-
-var edgeHeadColorBase = new THREE.Color();
-edgeHeadColorBase.setRGB(1, 0, 0);
-var edgeHeadColorBright = new THREE.Color();
-edgeHeadColorBright.setRGB(1, 1, 0);
-var edgeTailColor = new THREE.Color();
-edgeTailColor.setRGB(0.5, 0, 1);
-
-var edgeHeadColorBaseH = new THREE.Color();
-edgeHeadColorBaseH.setRGB(1, 0, 0);
-var edgeHeadColorBrightH = new THREE.Color();
-edgeHeadColorBrightH.setRGB(1, 1, 0);
-var edgeTailColorH = new THREE.Color();
-edgeTailColorH.setRGB(1, 0.3, 1);
-*/
 
 /* Functions can be pushed to the coroutines array to be executed as if they are
  * occuring in parallel with the program execution.

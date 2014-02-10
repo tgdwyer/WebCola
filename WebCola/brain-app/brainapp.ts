@@ -1,6 +1,11 @@
-// Constants
-var controlPanelWidth = 250;
+/**
+    This file contains all the control logic for brainapp.html (to manage interaction with
+    the page, and the execution of applications/visualisations within the four views).
 
+    Not implemented: removal of applications
+*/
+
+// Holds data common to all datasets, and sends notifications when data changes
 class CommonData {
     public brainCoords: number[][];
     public brainLabels: string[];
@@ -32,6 +37,7 @@ class CommonData {
     }
 }
 
+// Holds data for a specific dataset, and sends notifications when data changes
 class DataSet {
     public simMatrix: number[][];
     public attributes: Attributes;
@@ -53,6 +59,7 @@ class DataSet {
     }
 }
 
+// Parses, stores, and provides access to brain node attributes from a file
 class Attributes {
     values = {};
 
@@ -81,10 +88,8 @@ class Attributes {
     }
 }
 
-// Sub-applications implement this interface
-
+// Sub-applications implement this interface so they can be notified when they are assigned a dataset or when their view is resized
 interface Application {
-    //init(commonData: CommonData, parent: Node, width: number, height: number); // We're using constructors now
     setDataSet(dataSet: DataSet);
     resize(width: number, height: number);
 }
@@ -128,14 +133,125 @@ class Loop {
     }
 }
 
-// Shorten the names of the views
+// Set up jQuery UI layout objects
+$('#control-panel').tabs({
+    activate: function (event, ui) {
+        if (ui.newPanel[0].id == 'tab-1') {
+            // Reset data set icon positions
+            resetDataSet1();
+            resetDataSet2();
+            $('#dataset1-icon-front').show();
+            $('#dataset2-icon-front').show();
+        } else {
+            $('#dataset1-icon-front').hide();
+            $('#dataset2-icon-front').hide();
+        }
+        if (ui.newPanel[0].id == 'tab-2') {
+            // Reset all (visualisation) icons
+            resetBrain3D();
+            // Show all icons
+            showVisIcons();
+        } else {
+            // Hide all icons
+            hideVisIcons();
+        }
+    }
+});
+
+$('#accordion').accordion({ heightStyle: 'fill' });
+
+// Set up data upload buttons
+$('#select-coords').button();
+$('#upload-coords').button().click(function () {
+    var file = $('#select-coords').get(0).files[0];
+    if (file) {
+        loadCoordinates(file);
+        $('#shared-coords').css({ color: 'green' });
+    }
+});
+$('#select-labels').button();
+$('#upload-labels').button().click(function () {
+    var file = $('#select-labels').get(0).files[0];
+    if (file) {
+        loadLabels(file);
+        $('#shared-labels').css({ color: 'green' });
+    }
+});
+$('#select-matrix-1').button();
+$('#upload-matrix-1').button().click(function () {
+    var file = $('#select-matrix-1').get(0).files[0];
+    if (file) {
+        loadSimilarityMatrix(file, dataSets[0]);
+        $('#d1-mat').css({color: 'green'});
+    }
+});
+$('#select-attr-1').button();
+$('#upload-attr-1').button().click(function () {
+    var file = $('#select-attr-1').get(0).files[0];
+    if (file) {
+        loadAttributes(file, dataSets[0]);
+        $('#d1-att').css({ color: 'green' });
+    }
+});
+$('#select-matrix-2').button();
+$('#upload-matrix-2').button().click(function () {
+    var file = $('#select-matrix-2').get(0).files[0];
+    if (file) {
+        loadSimilarityMatrix(file, dataSets[1]);
+        $('#d2-mat').css({ color: 'green' });
+    }
+});
+$('#select-attr-2').button();
+$('#upload-attr-2 ').button().click(function () {
+    var file = $('#select-attr-2').get(0).files[0]
+    if (file) {
+        loadAttributes(file, dataSets[1]);
+        $('#d2-att').css({ color: 'green' });
+    }
+});
+
+$('#load-example-data').button().click(function () {
+    $.get('data/coords.txt', function (text) {
+        parseCoordinates(text);
+        $('#shared-coords').css({ color: 'green' });
+    });
+    $.get('data/labels.txt', function (text) {
+        parseLabels(text);
+        $('#shared-labels').css({ color: 'green' });
+    });
+    $.get('data/mat1.txt', function (text) {
+        parseSimilarityMatrix(text, dataSets[0]);
+        $('#d1-mat').css({ color: 'green' });
+    });
+    $.get('data/attributes1.txt', function (text) {
+        parseAttributes(text, dataSets[0]);
+        $('#d1-att').css({ color: 'green' });
+    });
+});
+
+// Shorten the names of the views - they are referenced quite often
 var tl_view = '#view-top-left';
 var tr_view = '#view-top-right';
 var bl_view = '#view-bottom-left';
 var br_view = '#view-bottom-right';
 
+// Create the object that the input target manager will use to update the pointer position when we're using the Leap
+class PointerImageImpl {
+    updatePosition(position) {
+        $('#leap-pointer').offset({ left: position.x - 6, top: position.y - 6 });
+    }
+    show() {
+        $('#leap-pointer').show();
+    }
+    hide() {
+        $('#leap-pointer').hide();
+    }
+}
+
+var pointerImage = new PointerImageImpl;
+
 // Set up the class that will manage which view should be receiving input
-var input = new InputTargetManager([tl_view, tr_view, bl_view, br_view]);
+var input = new InputTargetManager([tl_view, tr_view, bl_view, br_view], pointerImage);
 input.setActiveTarget(0);
 
 // Set up selectability
@@ -146,6 +262,7 @@ var selectTLView = function () {
     $(bl_view).css({ borderColor: 'white', zIndex: 0 });
     $(br_view).css({ borderColor: 'white', zIndex: 0 });
 };
+selectTLView(); // Select the top-left view straight away.
 $(tl_view).click(selectTLView);
 $(tr_view).click(function () {
     input.setActiveTarget(1);
@@ -168,7 +285,6 @@ $(br_view).click(function () {
     $(bl_view).css({ borderColor: 'white', zIndex: 0 });
     $(br_view).css({ borderColor: 'black', zIndex: 1 });
 });
-selectTLView(); // Select the top-left view straight away.
 
 // Set up icons
 
@@ -179,26 +295,67 @@ $('#brain3d-icon-front').draggable(
             resetBrain3D();
             switch (getViewUnderMouse(event.pageX, event.pageY)) {
                 case tl_view:
-                    apps[0] = new Brain3DApp(commonData, $(tl_view), input.getTarget(0));
-                    apps[0].setDataSet(dataSets[0]);
+                    apps[0] = new Brain3DApp(commonData, $(tl_view), input.newTarget(0));
                     break;
                 case tr_view:
-                    apps[1] = new Brain3DApp(commonData, $(tr_view), input.getTarget(1));
-                    apps[1].setDataSet(dataSets[0]);
+                    apps[1] = new Brain3DApp(commonData, $(tr_view), input.newTarget(1));
                     break;
                 case bl_view:
-                    apps[2] = new Brain3DApp(commonData, $(bl_view), input.getTarget(2));
-                    apps[2].setDataSet(dataSets[0]);
+                    apps[2] = new Brain3DApp(commonData, $(bl_view), input.newTarget(2));
                     break;
                 case br_view:
-                    apps[3] = new Brain3DApp(commonData, $(br_view), input.getTarget(3));
-                    apps[3].setDataSet(dataSets[0]);
+                    apps[3] = new Brain3DApp(commonData, $(br_view), input.newTarget(3));
+                    break;
+            }
+        }
+    }
+);
+$('#dataset1-icon-front').draggable(
+    {
+        containment: 'body',
+        stop: function (event) {
+            resetDataSet1();
+            switch (getViewUnderMouse(event.pageX, event.pageY)) {
+                case tl_view:
+                    if (apps[0]) apps[0].setDataSet(dataSets[0]);
+                    break;
+                case tr_view:
+                    if (apps[1]) apps[1].setDataSet(dataSets[0]);
+                    break;
+                case bl_view:
+                    if (apps[2]) apps[2].setDataSet(dataSets[0]);
+                    break;
+                case br_view:
+                    if (apps[3]) apps[3].setDataSet(dataSets[0]);
+                    break;
+            }
+        }
+    }
+);
+$('#dataset2-icon-front').draggable(
+    {
+        containment: 'body',
+        stop: function (event) {
+            resetDataSet2();
+            switch (getViewUnderMouse(event.pageX, event.pageY)) {
+                case tl_view:
+                    if (apps[0]) apps[0].setDataSet(dataSets[1]);
+                    break;
+                case tr_view:
+                    if (apps[1]) apps[1].setDataSet(dataSets[1]);
+                    break;
+                case bl_view:
+                    if (apps[2]) apps[2].setDataSet(dataSets[1]);
+                    break;
+                case br_view:
+                    if (apps[3]) apps[3].setDataSet(dataSets[1]);
                     break;
             }
         }
     }
 );
 
+// Move an icon back to its origin
 function resetIcon(object: string, location: string) {
     return function () {
         var rect = $(location).get(0).getBoundingClientRect();
@@ -207,84 +364,36 @@ function resetIcon(object: string, location: string) {
 }
 
 var resetBrain3D = resetIcon('#brain3d-icon-front', '#brain3d-icon-back');
+var resetDataSet1 = resetIcon('#dataset1-icon-front', '#dataset1-icon-back');
+var resetDataSet2 = resetIcon('#dataset2-icon-front', '#dataset2-icon-back');
+// Data set icons are visible when the page loads - reset them immediately
+resetDataSet1();
+resetDataSet2();
 
-var icons = [$('#brain3d-icon-front')];
+var visIcons = [$('#brain3d-icon-front')];
 
-function showIcons() {
-    icons.forEach(function (icon) {
+// These functions show and hide the icons for all the visualisations - they're called when we change tabs
+function showVisIcons() {
+    visIcons.forEach(function (icon) {
         icon.show();
     });
 }
-function hideIcons() {
-    icons.forEach(function (icon) {
+function hideVisIcons() {
+    visIcons.forEach(function (icon) {
         icon.hide();
     });
 }
-hideIcons(); // Hide all the icons immediately
+hideVisIcons(); // Hide all the icons immediately
 
-// Set up jQuery UI layout objects
-$('#control-panel').tabs({
-    activate: function (event, ui) {
-        if (ui.newPanel[0].id == 'tab-2') {
-            // Reset all icons
-            resetBrain3D();
-            // Show all icons
-            showIcons();
-        } else {
-            // Hide all icons
-            hideIcons();
-        }
-    }
-});
-$('#accordion').accordion({
-    heightStyle: "content"
-});
-
-// Set up data upload buttons
-$('#select-coords').button();
-$('#upload-coords').button().click(function () {
-    var file = $('#select-coords').get(0).files[0];
-    if (file) loadCoordinates(file);
-});
-$('#select-labels').button();
-$('#upload-labels').button().click(function () {
-    var file = $('#select-labels').get(0).files[0];
-    if (file) loadLabels(file);
-});
-$('#select-matrix-1').button();
-$('#upload-matrix-1').button().click(function () {
-    var file = $('#select-matrix-1').get(0).files[0];
-    if (file) loadSimilarityMatrix(file, dataSets[0]);
-});
-$('#select-attr-1').button();
-$('#upload-attr-1').button().click(function () {
-    var file = $('#select-attr-1').get(0).files[0];
-    if (file) loadAttributes(file, dataSets[0]);
-});
-$('#select-matrix-2').button();
-$('#upload-matrix-2').button().click(function () {
-    var file = $('#select-matrix-2').get(0).files[0];
-    if (file) loadSimilarityMatrix(file, dataSets[1]);
-});
-$('#select-attr-2').button();
-$('#upload-attr-2 ').button().click(function () {
-    var file = $('#select-attr-2').get(0).files[0]
-    if (file) loadAttributes(file, dataSets[1]);
-});
-
-/*
-    [0]: top-left
-    [1]: top-right
-    [2]: bottom-left
-    [3]: bottom-right
-*/
 var apps = Array<Application>(new DummyApp(), new DummyApp(), new DummyApp(), new DummyApp());
 
+// Initialize the view sizes and pin location
 var viewWidth = $('#outer-view-panel').width();
 var viewHeight = $('#outer-view-panel').height();
 $('#pin').css({ left: viewWidth / 2, top: viewHeight / 2 });
 setViewCrossroads(viewWidth / 2, viewHeight / 2);
 
+// Set up the pin behaviour
 $('#pin').draggable({ containment: '#outer-view-panel' }).on('drag', function (event: JQueryEventObject, ...args: any[]) {
     var ui = args[0];
     var x = ui.position.left;
@@ -292,6 +401,7 @@ $('#pin').draggable({ containment: '#outer-view-panel' }).on('drag', function (e
     setViewCrossroads(x, y);
 });
 
+// Resizes the views such that the crossroads is located at (x, y) on the screen
 function setViewCrossroads(x, y) {
     var viewWidth = $('#view-panel').width();
     var viewHeight = $('#view-panel').height();
@@ -327,11 +437,13 @@ window.addEventListener('resize', function () {
     viewHeight = newViewHeight;
 }, false);
 
+// Find which view is currently located under the mouse
 function getViewUnderMouse(x, y) {
-    if (x < controlPanelWidth) {
+    var innerViewLeft = $(tl_view).offset().left;
+    if (x < innerViewLeft) {
         return null;
     } else {
-        x -= controlPanelWidth;
+        x -= innerViewLeft;
         if (y < $(tl_view).height()) {
             if (x < $(tl_view).width()) {
                 return tl_view;
@@ -358,31 +470,39 @@ dataSets[1] = new DataSet();
 function loadCoordinates(file) {
     var reader = new FileReader();
     reader.onload = function () {
-        // For some reason the text file uses a carriage return to separate coordinates (ARGGgggh!!!!)
-        var lines = reader.result.split(String.fromCharCode(13));
-        var len = lines.length - 1; // First line is just labels
-        commonData.brainCoords = [Array(len), Array(len), Array(len)];
-        commonData.nodeCount = len;
-        for (var i = 0; i < len; ++i) {
-            var words = lines[i+1].split('\t');
-            // Translate the coords into Cola's format
-            commonData.brainCoords[0][i] = parseFloat(words[0]);
-            commonData.brainCoords[1][i] = parseFloat(words[1]);
-            commonData.brainCoords[2][i] = parseFloat(words[2]);
-        }
-        commonData.notifyCoords();
+        parseCoordinates(reader.result);
     }
     reader.readAsText(file);
+}
+
+function parseCoordinates(text: string) {
+    // For some reason the text file uses a carriage return to separate coordinates (ARGGgggh!!!!)
+    var lines = text.split(String.fromCharCode(13));
+    var len = lines.length - 1; // First line is just labels
+    commonData.brainCoords = [Array(len), Array(len), Array(len)];
+    commonData.nodeCount = len;
+    for (var i = 0; i < len; ++i) {
+        var words = lines[i + 1].split('\t');
+        // Translate the coords into Cola's format
+        commonData.brainCoords[0][i] = parseFloat(words[0]);
+        commonData.brainCoords[1][i] = parseFloat(words[1]);
+        commonData.brainCoords[2][i] = parseFloat(words[2]);
+    }
+    commonData.notifyCoords();
 }
 
 // Load the labels
 function loadLabels(file) {
     var reader = new FileReader();
     reader.onload = function () {
-        commonData.brainLabels = reader.result.split('\n').map(function (s) { return s.trim() });
-        commonData.notifyLabels();
+        parseLabels(reader.result);
     }
     reader.readAsText(file);
+}
+
+function parseLabels(text: string) {
+    commonData.brainLabels = text.split('\n').map(function (s) { return s.trim() });
+    commonData.notifyLabels();
 }
 
 // Set up OBJ loading
@@ -391,7 +511,9 @@ manager.onProgress = function (item, loaded, total) {
     console.log(item, loaded, total);
 };
 var loader = new THREE.OBJLoader(manager);
-// Load the brain surface (hardcoded)
+// Load the brain surface (hardcoded - it is not simple to load geometry from the local machine, but this has not been deeply explored yet).
+// NOTE: The loaded model cannot be used in more than one WebGL context (scene) at a time - the geometry and materials must be .cloned() into
+// new THREE.Mesh() objects by the application wishing to use the model.
 function loadBrainModel() {
     loader.load('../examples/graphdata/BrainLSDecimated0.01.obj', function (object) {
         if (!object) {
@@ -426,11 +548,6 @@ function loadBrainModel() {
             }
         });
 
-        object.position.y = 0;
-        // Setting scale to some arbitrarily larger value
-        var scale = 1.5;
-        object.scale = new THREE.Vector3(scale, scale, scale);
-
         commonData.brainSurface = object;
         commonData.notifySurface();
     });
@@ -441,28 +558,34 @@ loadBrainModel(); // Load the model right away
 function loadSimilarityMatrix(file, dataSet: DataSet) {
     var reader = new FileReader();
     reader.onload = function () {
-        var lines = reader.result.split('\n').map(function (s) { return s.trim() });
-        dataSet.simMatrix = [];
-        lines.forEach((line, i) => {
-            if (line.length > 0) {
-                dataSet.simMatrix.push(line.split(' ').map(function (string) {
-                    return parseFloat(string);
-                }));
-            }
-        });
-        dataSet.notifySim();
+        parseSimilarityMatrix(reader.result, dataSet);
     }
     reader.readAsText(file);
+}
+
+function parseSimilarityMatrix(text: string, dataSet: DataSet) {
+    var lines = text.split('\n').map(function (s) { return s.trim() });
+    dataSet.simMatrix = [];
+    lines.forEach((line, i) => {
+        if (line.length > 0) {
+            dataSet.simMatrix.push(line.split(' ').map(function (string) {
+                return parseFloat(string);
+            }));
+        }
+    });
+    dataSet.notifySim();
 }
 
 // Load the attributes for the specified dataSet
 function loadAttributes(file, dataSet: DataSet) {
     var reader = new FileReader();
     reader.onload = function () {
-        dataSet.attributes = new Attributes(reader.result);
-        dataSet.notifyAttributes();
+        parseAttributes(reader.result, dataSet);
     }
     reader.readAsText(file);
 }
 
-// Leap Motion stuff
+function parseAttributes(text: string, dataSet: DataSet) {
+    dataSet.attributes = new Attributes(text);
+    dataSet.notifyAttributes();
+}
