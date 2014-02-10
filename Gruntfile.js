@@ -33,7 +33,7 @@ module.exports = function (grunt) {
                     //sourceMapRoot: 'WebCola'
                 },
                 files: {
-                    'WebCola/cola.v1.min.js': ['WebCola/compiledtypescript.js', 'WebCola/src/d3adaptor.js', 'WebCola/src/rbtree.js', 'WebCola/src/scc.js']
+                    'WebCola/cola.v1.min.js': ['WebCola/compiledtypescript.js', 'WebCola/src/d3adaptor.js', 'WebCola/src/rbtree.js', 'WebCola/src/scc.js','WebCola/src/handle_disconnected.js']
                 }
             }
         },
