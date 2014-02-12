@@ -172,7 +172,7 @@ module cola {
 
         public computeDerivatives(x: number[][]) {
             var n: number = this.n;
-            if (n <= 1) return;
+            if (n < 1) return;
             var i: number;
 /* DEBUG
             for (var u: number = 0; u < n; ++u)

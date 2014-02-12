@@ -21,7 +21,7 @@ module.exports = function (grunt) {
 		concat: {
 			options: {},
 			dist: {
-				src: ['WebCola/compiledtypescript.js', 'WebCola/src/d3adapter.js', 'WebCola/src/rbtree.js', 'WebCola/src/scc.js'],
+				src: ['WebCola/compiledtypescript.js', 'WebCola/src/d3adaptor.js', 'WebCola/src/rbtree.js', 'WebCola/src/scc.js','WebCola/src/handle_disconnected.js'],
 				dest: 'WebCola/cola.v1.min.js'
 			}
 		},
