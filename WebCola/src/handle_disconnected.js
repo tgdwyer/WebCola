@@ -19,6 +19,9 @@ function applyPacking(graphs, w, h, node_size, desired_ratio){
 
       global_bottom,
       line;
+	  
+  if (graphs.length == 0)
+    return;
 
   calculate_bb(graphs);
   apply(graphs);
@@ -26,7 +29,7 @@ function applyPacking(graphs, w, h, node_size, desired_ratio){
 
   // get bounding boxes for all separate graphs
   function calculate_bb(graphs){
-    for (var i in graphs){
+    for (var i = 0; i < graphs.length; i++){
         var graph = graphs[i];
         calculate_single_bb(graph);
     }
@@ -176,7 +179,7 @@ function separateGraphs(nodes, links){
     graphs = [];
     var clusters = 0;
 
-    for (var i in links){
+    for (var i = 0; i < links.length; i++){
         var link = links[i];
         var n1 = link.source;
         var n2 = link.target;
@@ -191,7 +194,7 @@ function separateGraphs(nodes, links){
             ways[n2.index] = [n1];
     }
 
-    for (var i in nodes){
+    for (var i = 0; i < nodes.length; i++){
         var node = nodes[i];
         if (marks[node.index]) continue;
         explore_node(node, true);
@@ -208,7 +211,7 @@ function separateGraphs(nodes, links){
         var adjasent = ways[n.index];
         if (!adjasent) return;
         
-        for (var j in adjasent){
+		for (var j = 0; j < adjasent.length; j++){
             explore_node(adjasent[j], false);
         }
     }
