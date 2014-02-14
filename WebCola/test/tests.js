@@ -1,10 +1,46 @@
 ﻿/// <reference path="d3.v3.min.js"/>
-/// <reference path="cola.js"/>
-/// <reference path="shortestpaths.js"/>
-/// <reference path="descent.js"/>
-/// <reference path="vpsc.js"/>
-/// <reference path="rectangle.js"/>
-/// <reference path="geom.js"/>
+/// <reference path="../src/d3adaptor.js"/>
+/// <reference path="../src/shortestpaths.js"/>
+/// <reference path="../src/descent.js"/>
+/// <reference path="../src/vpsc.js"/>
+/// <reference path="../src/rectangle.js"/>
+/// <reference path="../src/geom.js"/>
+/// <reference path="../src/powergraph.js"/>
+
+asyncTest("small power-graph", function () {
+    d3.json("../examples/graphdata/n7e23.json", function (error, graph) {
+        var n = graph.nodes.length;
+        ok(n == 7);
+        var c = new powergraph.Configuration(n, graph.links);
+        ok(c.modules.length == 7);
+        var es;
+        ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
+        var m = c.merge(c.modules[0], c.modules[4]);
+        ok(0 in m.children);
+        ok(4 in m.children);
+        ok(1 in m.outgoing);
+        ok(3 in m.outgoing);
+        ok(5 in m.outgoing);
+        ok(6 in m.outgoing);
+        ok(2 in m.incoming);
+        ok(5 in m.incoming);
+        ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
+        m = c.merge(c.modules[2], c.modules[3]);
+        ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
+
+        c = new powergraph.Configuration(n, graph.links);
+        var lastR = c.R;
+        while (c.greedyMerge()) {
+            ok(c.R < lastR);
+            lastR = c.R;
+        }
+        var finalEdges = [];
+        var groups = c.getGroupHierarchy(finalEdges);
+        ok(groups.length == 4);
+        start();
+    });
+    ok(true);
+});
 
 asyncTest("all-pairs shortest paths", function () {
     var d3cola = cola.d3adaptor();
@@ -136,7 +172,7 @@ test("radial sort", function () {
 })
 
 test("tangents", function () {
-    var draw = true;
+    var draw = false;
     var rand = new cola.PseudoRandom();
     for (var j = 0; j < 100; j++) {
         var length = function (p, q) { var dx = p.x - q.x, dy = p.y - q.y; return dx * dx + dy * dy; };

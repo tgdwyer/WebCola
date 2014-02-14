@@ -27,6 +27,7 @@
     <Content Include="examples\graphdata\SucroseBreakdownDicots-flowlayout.svg" />
     <Content Include="examples\movies.html" />
     <Content Include="examples\browsemovies.html" />
+    <Content Include="examples\powergraph.html" />
     <Content Include="examples\sucrosebreakdown-handdrawn.png" />
     <Content Include="examples\sucrosebreakdown.html" />
     <Content Include="examples\alignment.png" />
@@ -159,6 +160,10 @@
       <DependentUpon>geom.ts</DependentUpon>
     </Content>
     <TypeScriptCompile Include="src\linklengths.ts" />
+    <TypeScriptCompile Include="src\powergraph.ts" />
+    <Content Include="src\powergraph.js">
+      <DependentUpon>powergraph.ts</DependentUpon>
+    </Content>
     <TypeScriptCompile Include="src\vpsc.ts" />
     <TypeScriptCompile Include="src\rbtree.d.ts" />
     <Content Include="src\rectangle.js">
@@ -212,6 +217,10 @@
     <Content Include="src\rectangle.js.map">
       <DependentUpon>rectangle.ts</DependentUpon>
     </Content>
+    <Content Include="src\powergraph.js.map">
+      <DependentUpon>powergraph.ts</DependentUpon>
+    </Content>
+    <Content Include="examples\graphdata\n7e23.json" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>
