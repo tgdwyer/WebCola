@@ -4,6 +4,8 @@ module geom {
         y: number;
     }
 
+
+
     export class PolyPoint extends Point {
         polyIndex: number;
     }
@@ -280,6 +282,76 @@ module geom {
         lr: BiTangent;
         ll: BiTangent;
         rr: BiTangent;
+    }
+
+    export class VisibilityVertex {
+        constructor(
+            public polyid: number,
+            public polyvertid: number,
+            public p: Point) { }
+    }
+
+    export class VisibilityEdge {
+        constructor(
+            public source: VisibilityVertex,
+            public target: VisibilityVertex) {}
+    }
+
+    export class TangentVisibilityGraph {
+        V: VisibilityVertex[];
+        E: VisibilityEdge[];
+        constructor(public P: Point[][]) {
+            var T = [];
+            var n = P.length;
+            this.V = [];
+            for (var i = 0; i < n; i++) {
+                var p = P[i];
+                for (var j = 0; j < p.length; ++j) {
+                    var pj = p[j];
+                    var vv = new VisibilityVertex(i, j, pj);
+                    (<any>pj).vv = vv;
+                    this.V.push(vv);
+                }
+            }
+            this.E = [];
+            for (var i = 0; i < n - 1; i++) {
+                for (var j = i + 1; j < n; j++) {
+                    var t = geom.tangents(P[i], P[j]);
+                    for (var q in t) {
+                        var c = t[q];
+                        var source = P[i][c.t1];
+                        var target = P[j][c.t2];
+                        var l = { x1: source.x, y1: source.y, x2: target.x, y2: target.y };
+                        if (!this.intersectsPolys(l, i, j)) {
+                            this.E.push(new VisibilityEdge((<any>source).vv, (<any>target).vv));
+                        }
+                    }
+                }
+            }
+        }
+        private intersectsPolys(l, i1: number, i2: number): boolean {
+            var n = this.P.length;
+            for (var i = 0; i < n; i++) {
+                if (i != i1 && i != i2 && intersects(l, this.P[i]).length > 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    function intersects(l, P) {
+        var ints = [];
+        for (var i = 1; i < P.length; ++i) {
+            var int = vpsc.Rectangle.lineIntersection(
+                l.x1, l.y1,
+                l.x2, l.y2,
+                P[i - 1].x, P[i - 1].y,
+                P[i].x, P[i].y
+                );
+            if (int) ints.push(int);
+        }
+        return ints;
     }
 
     export function tangents(V: Point[], W: Point[]): BiTangents

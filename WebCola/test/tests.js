@@ -109,7 +109,7 @@ test("radial sort", function () {
         var svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
     }
     var P = [];
-    var x=0, y=0;
+    var x = 0, y = 0;
     var rand = new cola.PseudoRandom(5);
     var nextInt = function (r) { return Math.round(rand.getNext() * r) }
     for (var i = 0; i < n; ++i) {
@@ -133,73 +133,111 @@ test("radial sort", function () {
                 .attr("stroke-width", 2)
         }
     });
-})
+});
 
-test("tangents", function () {
+function makePoly(rand) {
+    var length = function (p, q) { var dx = p.x - q.x, dy = p.y - q.y; return dx * dx + dy * dy; };
+    var nextInt = function (r) { return Math.round(rand.getNext() * r) }
+    var n = nextInt(7) + 3, width = 10, height = 10;
+    var P = [];
+    loop: for (var i = 0; i < n; ++i) {
+        var p = { x: nextInt(width), y: nextInt(height) };
+        var ctr = 0;
+        while (i > 0 && length(P[i - 1], p) < 1
+            || i > 1 && (
+                   geom.isLeft(P[i - 2], P[i - 1], p) <= 0
+                || geom.isLeft(P[i - 1], p, P[0]) <= 0
+                || geom.isLeft(p, P[0], P[1]) <= 0)) {
+            if (ctr++ > 10) break loop;
+            p = { x: nextInt(width), y: nextInt(height) };
+        }
+        P.push(p);
+    }
+    P.push({ x: P[0].x, y: P[0].y });
+    return P;
+}
+
+function drawPoly(svg, P) {
+    for (var i = 0; i < P.length; ++i) {
+        var lineFunction = d3.svg.line().x(function (d) { return d.x * 10; }).y(function (d) { return d.y * 10; }).interpolate("linear");
+        svg.append("path").attr("d", lineFunction(P))
+            .attr("stroke", "blue")
+            .attr("stroke-width", 1)
+            .attr("fill", "none");
+    }
+}
+
+function drawLine(svg, l) {
+    svg.append("line").attr('x1', 10 * l.x1).attr('y1', 10 * l.y1).attr('x2', 10 * l.x2).attr("y2", 10 * l.y2)
+        .attr("stroke", "green")
+        .attr("stroke-width", 1);
+};
+
+function drawCircle(svg, p) {
+    svg.append("circle").attr("cx", 10 * p.x).attr("cy", 10 * p.y).attr('fill', 'red').attr("r", 2);
+}
+
+test("tangent visibility graph", function () {
     var draw = true;
     var rand = new cola.PseudoRandom();
-    for (var j = 0; j < 100; j++) {
-        var length = function (p, q) { var dx = p.x - q.x, dy = p.y - q.y; return dx * dx + dy * dy; };
-        var nextInt = function (r) { return Math.round(rand.getNext() * r) }
-        var makePoly = function () {
-            var n = nextInt(7) + 3, width = 10, height = 10;
-            var P = [];
-            loop: for (var i = 0; i < n; ++i) {
-                var p = { x: nextInt(width), y: nextInt(height) };
-                var ctr = 0;
-                while (i > 0 && length(P[i - 1], p) < 1
-                    || i > 1 && (
-                           geom.isLeft(P[i - 2], P[i - 1], p) <= 0
-                        || geom.isLeft(P[i - 1], p, P[0]) <= 0
-                        || geom.isLeft(p, P[0], P[1]) <= 0)) {
-                    if (ctr++ > 10) break loop;
-                    p = { x: nextInt(width), y: nextInt(height) };
-                }
-                P.push(p);
-            }
-            P.push({ x: P[0].x, y: P[0].y });
-            return P;
+    var nextInt = function (r) { return Math.round(rand.getNext() * r) }
+    var n = 10;
+    var P = [];
+    for (var i = 0; i < n; i++) {
+        var p = makePoly(rand);
+        var dx = 10 * nextInt(10), dy = 10 * nextInt(10);
+        p.forEach(function (p) { p.x += dx; p.y += dy; });
+        P.push(p);
+    }
+    var T = [];
+    for (var i = 0; i < n - 1; i++) {
+        for (var j = i + 1; j < n; j++) {
+            var t = geom.tangents(P[i], P[j]);
+            T.push({ u: i, v: j, tangents: t });
         }
-        var A = makePoly(), B = makePoly();
+    }
+    var L = [];
+    for (var i = 0; i < T.length; i++) {
+        var t = T[i];
+        for (var p in t.tangents) {
+            L.push({ u: t.u, i: t.tangents[p].t1, v: t.v, j: t.tangents[p].t2 });
+        }
+    }
+    var g = new geom.TangentVisibilityGraph(P);
+    if (draw) {
+        var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 100);
+        P.forEach(function (p) {
+            drawPoly(svg, p);
+        });
+        g.E.forEach(function (e) {
+            drawLine(svg, { x1: e.source.p.x, y1: e.source.p.y, x2: e.target.p.x, y2: e.target.p.y });
+        });
+    }
+    ok(true);
+});
+
+test("tangents", function () {
+    var draw = false;
+    var rand = new cola.PseudoRandom();
+    for (var j = 0; j < 100; j++) {
+        var A = makePoly(rand), B = makePoly(rand);
         if (A.length <= 3 || B.length <= 3) continue;
         B.forEach(function (p) { p.x += 11 });
         //if (j !== 207) continue;
         var t = geom.tangents(A, B);
         // ok(t.length === 4, t.length + " tangents found at j="+j);
         if (draw) {
-            var embiggen = function (p) { return { x: p.x * 10, y: p.y * 10 } };
-            var A_ = A.map(embiggen);
-            var B_ = B.map(embiggen);
             var getLine = function (tp) {
-                return { x1: A_[tp.t1].x, y1: A_[tp.t1].y, x2: B_[tp.t2].x, y2: B_[tp.t2].y };
+                return { x1: A[tp.t1].x, y1: A[tp.t1].y, x2: B[tp.t2].x, y2: B[tp.t2].y };
             }
             d3.select("body").append("p").html(j);
             var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 100);
-            var drawPoly = function (P) {
-                if (draw) {
-                    for (var i = 0; i < P.length; ++i) {
-                        var lineFunction = d3.svg.line().x(function (d) { return d.x * 10; }).y(function (d) { return d.y * 10; }).interpolate("linear");
-                        svg.append("path").attr("d", lineFunction(P))
-                            .attr("stroke", "blue")
-                            .attr("stroke-width", 1)
-                            .attr("fill", "none");
-                    }
-                }
-            }
-            var drawLine = function (l) {
-                svg.append("line").attr('x1', l.x1).attr('y1', l.y1).attr('x2', l.x2).attr("y2", l.y2)
-                    .attr("stroke", "green")
-                    .attr("stroke-width", 1);
-            };
-            var drawCircle = function (p) {
-                svg.append("circle").attr("cx", p.x).attr("cy", p.y).attr('fill', 'red').attr("r", 2);
-            }
-            drawPoly(A);
-            drawPoly(B);
+            drawPoly(svg, A);
+            drawPoly(svg, B);
             for (var p in t) {
                 var l = getLine(t[p]);
-                drawLine(l);
-                var ints = intersects(l, A_).concat(intersects(l, B_));
+                drawLine(svg, l);
+                var ints = intersects(l, A).concat(intersects(l, B));
                 ok (ints.length <= 4, ints.length + " intersects found at "+j);
             }
         }
