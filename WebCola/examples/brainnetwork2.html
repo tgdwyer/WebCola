@@ -262,6 +262,7 @@
         gc2.cola
             .nodes(relaxedGraph.nodes)
             .links(relaxedGraph.links)
+            .handleDisconnected(false)
             //.symmetricDiffLinkLengths(1)
             .start(20,20,60);
         gc2.cola.stop();

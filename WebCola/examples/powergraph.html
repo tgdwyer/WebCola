@@ -1,0 +1,160 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Power graph representation of a dense graph</title>
+    <style>
+        @import url(../style.css);
+
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+    cursor: move;
+  fill: green;
+}
+
+.group {
+  stroke: #fff;
+  stroke-width: 1.5px;
+  cursor: move;
+  opacity: 0.7;
+}
+
+.link {
+    stroke: #555;
+    stroke-width: 3px;
+    stroke-opacity: 1;
+    marker-end: url(#end-arrow);
+}
+
+.label {
+    fill: white;
+    font-family: Verdana;
+    font-size: 25px;
+    text-anchor: middle;
+    cursor: move;
+}
+
+</style>
+</head>
+<body>
+    <h1>Power graph representation of a dense graph</h1>
+<script src="../extern/d3.v3.js"></script>
+    <script src="../cola.v1.min.js"></script>
+    <script src="../src/powergraph.js"></script>
+<script>
+    var width = 960,
+        height = 500;
+
+    var color = d3.scale.category20();
+
+    var cola = cola.d3adaptor()
+        .linkDistance(120)
+        .avoidOverlaps(true)
+        .size([width, height]);
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+    // define arrow markers for graph links
+    svg.append('svg:defs').append('svg:marker')
+        .attr('id', 'end-arrow')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 5)
+        .attr('markerWidth', 3)
+        .attr('markerHeight', 3)
+        .attr('orient', 'auto')
+      .append('svg:path')
+        .attr('d', 'M0,-5L10,0L0,5L2,0')
+        .attr('stroke-width', '0px')
+        .attr('fill', '#555');
+
+    d3.json("graphdata/n7e23.json", function (error, graph) {
+        var g = powergraph.getGroups(graph.nodes.length, graph.links);
+        g.powerEdges.forEach(function (e) {
+            var f = function (end) {
+                var g = e[end];
+                if (typeof g == "number") {
+                    e[end] = graph.nodes[g];
+                }
+            }
+            f("source");
+            f("target");
+        });
+        cola
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .groups(g.groups)
+            .start(10,10,10);
+
+        var group = svg.selectAll(".group")
+            .data(g.groups)
+          .enter().append("rect")
+            .attr("rx", 8).attr("ry", 8)
+            .attr("class", "group")
+            .style("fill", function (d, i) { return color(i); });
+
+        var link = svg.selectAll(".link")
+            .data(g.powerEdges)
+          .enter().append("line")
+            .attr("class", "link");
+
+        var margin = 6, pad = 12;
+        var node = svg.selectAll(".node")
+            .data(graph.nodes)
+          .enter().append("rect")
+            .attr("class", "node")
+            .attr("width", function (d) { return d.width + 2 * pad + 2 * margin; })
+            .attr("height", function (d) { return d.height + 2 * pad + 2 * margin; })
+            .attr("rx", 4).attr("ry", 4)
+            .call(cola.drag);
+        var label = svg.selectAll(".label")
+            .data(graph.nodes)
+           .enter().append("text")
+            .attr("class", "label")
+            .text(function (d) { return d.name; })
+            .call(cola.drag);
+
+        node.append("title")
+            .text(function (d) { return d.name; });
+
+        cola.on("tick", function () {
+            node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
+            group.each(function (d) { d.innerBounds = d.bounds.inflate(0) });
+            link.each(function (d) {
+                vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                if (isIE()) this.parentNode.insertBefore(this, this);
+            });
+
+            link.attr("x1", function (d) { return d.sourceIntersection.x; })
+                .attr("y1", function (d) { return d.sourceIntersection.y; })
+                .attr("x2", function (d) { return d.arrowStart.x; })
+                .attr("y2", function (d) { return d.arrowStart.y; });
+
+            node.attr("x", function (d) { return d.innerBounds.x; })
+                .attr("y", function (d) { return d.innerBounds.y; })
+                .attr("width", function (d) { return d.innerBounds.width(); })
+                .attr("height", function (d) { return d.innerBounds.height(); });
+
+            group.attr("x", function (d) { return d.bounds.x; })
+                 .attr("y", function (d) { return d.bounds.y; })
+                .attr("width", function (d) { return d.bounds.width(); })
+                .attr("height", function (d) { return d.bounds.height(); });
+
+            label.attr("x", function (d) { return d.x; })
+                 .attr("y", function (d) {
+                     var h = this.getBBox().height;
+                     return d.y + h / 3.5;
+                 });
+        });
+    });
+    function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
+
+</script>
+    <p>This graph has a hierarchical grouping defined over the nodes.  We generate constraints to keep the bounding boxes of
+        disjoint groups from overlapping and to keep nested groups fully contained within their parents' bounding boxes.
+    Try dragging the nodes so that they bump into other nodes and groups.
+    </p>
+</body>
+</html>

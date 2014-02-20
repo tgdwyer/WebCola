@@ -1,10 +1,46 @@
 ﻿/// <reference path="d3.v3.min.js"/>
-/// <reference path="cola.js"/>
-/// <reference path="shortestpaths.js"/>
-/// <reference path="descent.js"/>
-/// <reference path="vpsc.js"/>
-/// <reference path="rectangle.js"/>
-/// <reference path="geom.js"/>
+/// <reference path="../src/d3adaptor.js"/>
+/// <reference path="../src/shortestpaths.js"/>
+/// <reference path="../src/descent.js"/>
+/// <reference path="../src/vpsc.js"/>
+/// <reference path="../src/rectangle.js"/>
+/// <reference path="../src/geom.js"/>
+/// <reference path="../src/powergraph.js"/>
+
+asyncTest("small power-graph", function () {
+    d3.json("../examples/graphdata/n7e23.json", function (error, graph) {
+        var n = graph.nodes.length;
+        ok(n == 7);
+        var c = new powergraph.Configuration(n, graph.links);
+        ok(c.modules.length == 7);
+        var es;
+        ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
+        var m = c.merge(c.modules[0], c.modules[4]);
+        ok(0 in m.children);
+        ok(4 in m.children);
+        ok(1 in m.outgoing);
+        ok(3 in m.outgoing);
+        ok(5 in m.outgoing);
+        ok(6 in m.outgoing);
+        ok(2 in m.incoming);
+        ok(5 in m.incoming);
+        ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
+        m = c.merge(c.modules[2], c.modules[3]);
+        ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
+
+        c = new powergraph.Configuration(n, graph.links);
+        var lastR = c.R;
+        while (c.greedyMerge()) {
+            ok(c.R < lastR);
+            lastR = c.R;
+        }
+        var finalEdges = [];
+        var groups = c.getGroupHierarchy(finalEdges);
+        ok(groups.length == 4);
+        start();
+    });
+    ok(true);
+});
 
 asyncTest("all-pairs shortest paths", function () {
     var d3cola = cola.d3adaptor();
@@ -136,42 +172,42 @@ test("radial sort", function () {
 });
 
 function makePoly(rand) {
-    var length = function (p, q) { var dx = p.x - q.x, dy = p.y - q.y; return dx * dx + dy * dy; };
-    var nextInt = function (r) { return Math.round(rand.getNext() * r) }
-    var n = nextInt(7) + 3, width = 10, height = 10;
-    var P = [];
-    loop: for (var i = 0; i < n; ++i) {
-        var p = { x: nextInt(width), y: nextInt(height) };
-        var ctr = 0;
-        while (i > 0 && length(P[i - 1], p) < 1
-            || i > 1 && (
-                   geom.isLeft(P[i - 2], P[i - 1], p) <= 0
-                || geom.isLeft(P[i - 1], p, P[0]) <= 0
-                || geom.isLeft(p, P[0], P[1]) <= 0)) {
-            if (ctr++ > 10) break loop;
-            p = { x: nextInt(width), y: nextInt(height) };
+        var length = function (p, q) { var dx = p.x - q.x, dy = p.y - q.y; return dx * dx + dy * dy; };
+        var nextInt = function (r) { return Math.round(rand.getNext() * r) }
+            var n = nextInt(7) + 3, width = 10, height = 10;
+            var P = [];
+            loop: for (var i = 0; i < n; ++i) {
+                var p = { x: nextInt(width), y: nextInt(height) };
+                var ctr = 0;
+                while (i > 0 && length(P[i - 1], p) < 1
+                    || i > 1 && (
+                           geom.isLeft(P[i - 2], P[i - 1], p) <= 0
+                        || geom.isLeft(P[i - 1], p, P[0]) <= 0
+                        || geom.isLeft(p, P[0], P[1]) <= 0)) {
+                    if (ctr++ > 10) break loop;
+                    p = { x: nextInt(width), y: nextInt(height) };
+                }
+                P.push(p);
+            }
+            P.push({ x: P[0].x, y: P[0].y });
+            return P;
         }
-        P.push(p);
-    }
-    P.push({ x: P[0].x, y: P[0].y });
-    return P;
-}
 
 function drawPoly(svg, P) {
-    for (var i = 0; i < P.length; ++i) {
-        var lineFunction = d3.svg.line().x(function (d) { return d.x * 10; }).y(function (d) { return d.y * 10; }).interpolate("linear");
-        svg.append("path").attr("d", lineFunction(P))
-            .attr("stroke", "blue")
-            .attr("stroke-width", 1)
-            .attr("fill", "none");
-    }
-}
+                    for (var i = 0; i < P.length; ++i) {
+                        var lineFunction = d3.svg.line().x(function (d) { return d.x * 10; }).y(function (d) { return d.y * 10; }).interpolate("linear");
+                        svg.append("path").attr("d", lineFunction(P))
+                            .attr("stroke", "blue")
+                            .attr("stroke-width", 1)
+                            .attr("fill", "none");
+                    }
+                }
 
 function drawLine(svg, l) {
     svg.append("line").attr('x1', 10 * l.x1).attr('y1', 10 * l.y1).attr('x2', 10 * l.x2).attr("y2", 10 * l.y2)
-        .attr("stroke", "green")
-        .attr("stroke-width", 1);
-};
+                    .attr("stroke", "green")
+                    .attr("stroke-width", 1);
+            };
 
 function drawCircle(svg, p) {
     svg.append("circle").attr("cx", 10 * p.x).attr("cy", 10 * p.y).attr('fill', 'red').attr("r", 2);
