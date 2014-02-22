@@ -4,7 +4,9 @@ module geom {
         y: number;
     }
 
-
+    export class LineSegment {
+        constructor(public x1: number, public y1: number, public x2: number, public y2: number) { }
+    }
 
     export class PolyPoint extends Point {
         polyIndex: number;
@@ -145,6 +147,12 @@ module geom {
             return 0;               // V[0] is the maximum tangent point
 
         for (a = 0, b = n; ;) {          // start chain = [0,n] with V[n]=V[0]
+            if (b - a === 1) 
+                if (above(P, V[a], V[b]))
+                    return a;
+                else 
+                    return b;
+
             c = Math.floor((a + b) / 2);        // midpoint of [a,b], and 0<c<n
             dnC = below(P, V[c + 1], V[c]);
             if (dnC && !above(P, V[c - 1], V[c]))
@@ -193,6 +201,12 @@ module geom {
             return 0;               // V[0] is the minimum tangent point
 
         for (a = 0, b = n; ;) {          // start chain = [0,n] with V[n] = V[0]
+            if (b - a === 1)
+                if (below(P, V[a], V[b]))
+                    return a;
+                else
+                    return b;
+
             c = Math.floor((a + b) / 2);        // midpoint of [a,b], and 0<c<n
             dnC = below(P, V[c + 1], V[c]);
             if (above(P, V[c - 1], V[c]) && !dnC)
@@ -256,6 +270,7 @@ module geom {
         }
         return { t1: ix1, t2: ix2 };
     }
+
     export function LRtangent_PolyPolyC(V: Point[], W: Point[]): { t1: number; t2: number } {
         var rl = RLtangent_PolyPolyC(W, V);
         return { t1: rl.t2, t2: rl.t1 };
@@ -284,54 +299,78 @@ module geom {
         rr: BiTangent;
     }
 
+    export class TVGPoint extends Point {
+        vv: VisibilityVertex;
+    }
+
     export class VisibilityVertex {
         constructor(
+            public id: number,
             public polyid: number,
             public polyvertid: number,
-            public p: Point) { }
+            public p: TVGPoint)
+        {
+            p.vv = this;
+        }
     }
 
     export class VisibilityEdge {
         constructor(
             public source: VisibilityVertex,
-            public target: VisibilityVertex) {}
+            public target: VisibilityVertex) { }
+        length(): number {
+            var dx = this.source.p.x - this.target.p.x;
+            var dy = this.source.p.y - this.target.p.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
     }
 
     export class TangentVisibilityGraph {
-        V: VisibilityVertex[];
-        E: VisibilityEdge[];
-        constructor(public P: Point[][]) {
-            var T = [];
+        V: VisibilityVertex[] = [];
+        E: VisibilityEdge[] = [];
+        constructor(public P: TVGPoint[][]) {
             var n = P.length;
-            this.V = [];
             for (var i = 0; i < n; i++) {
                 var p = P[i];
                 for (var j = 0; j < p.length; ++j) {
-                    var pj = p[j];
-                    var vv = new VisibilityVertex(i, j, pj);
-                    (<any>pj).vv = vv;
+                    var pj = p[j],
+                        vv = new VisibilityVertex(this.V.length, i, j, pj);
                     this.V.push(vv);
+                    if (j > 0) this.E.push(new VisibilityEdge(p[j - 1].vv, vv));
                 }
             }
-            this.E = [];
             for (var i = 0; i < n - 1; i++) {
+                var Pi = P[i];
                 for (var j = i + 1; j < n; j++) {
-                    var t = geom.tangents(P[i], P[j]);
+                    var Pj = P[j],
+                        t = geom.tangents(Pi, Pj);
                     for (var q in t) {
-                        var c = t[q];
-                        var source = P[i][c.t1];
-                        var target = P[j][c.t2];
-                        var l = { x1: source.x, y1: source.y, x2: target.x, y2: target.y };
-                        if (!this.intersectsPolys(l, i, j)) {
-                            this.E.push(new VisibilityEdge((<any>source).vv, (<any>target).vv));
-                        }
+                        var c = t[q],
+                            source = Pi[c.t1], target = Pj[c.t2];
+                        this.addEdgeIfVisible(source, target, i, j);
                     }
                 }
             }
         }
-        private intersectsPolys(l, i1: number, i2: number): boolean {
+        addEdgeIfVisible(u: TVGPoint, v: TVGPoint, i1: number, i2: number) {
+            if (!this.intersectsPolys(new LineSegment(u.x, u.y, v.x, v.y), i1, i2)) {
+                this.E.push(new VisibilityEdge(u.vv, v.vv));
+            }
+        }
+        addPoint(p: TVGPoint, i1: number): VisibilityVertex {
             var n = this.P.length;
-            for (var i = 0; i < n; i++) {
+            this.V.push(new VisibilityVertex(this.V.length, n, 0, p));
+            for (var i = 0; i < n; ++i) {
+                if (i === i1) continue;
+                var poly = this.P[i],
+                    t = tangent_PointPolyC(p, poly);
+                this.addEdgeIfVisible(p, poly[t.ltan], i1, i);
+                this.addEdgeIfVisible(p, poly[t.rtan], i1, i);
+            }
+            return p.vv;
+        }
+        private intersectsPolys(l: LineSegment, i1: number, i2: number): boolean {
+            for (var i = 0, n = this.P.length; i < n; ++i) {
                 if (i != i1 && i != i2 && intersects(l, this.P[i]).length > 0) {
                     return true;
                 }
@@ -340,9 +379,9 @@ module geom {
         }
     }
 
-    function intersects(l, P) {
+    function intersects(l: LineSegment, P: Point[]) {
         var ints = [];
-        for (var i = 1; i < P.length; ++i) {
+        for (var i = 1, n = P.length; i < n; ++i) {
             var int = vpsc.Rectangle.lineIntersection(
                 l.x1, l.y1,
                 l.x2, l.y2,
@@ -388,5 +427,25 @@ module geom {
             }
         }
         return bt;
+    }
+
+    function isPointInsidePoly(p: Point, poly: Point[]): boolean {
+        for (var i = 1, n = poly.length; i < n; ++i) 
+            if (below(poly[i - 1], poly[i], p)) return false;
+        return true;
+    }
+
+    function isAnyPInQ(p: Point[], q: Point[]): boolean {
+        return !p.every(v => !isPointInsidePoly(v, q));
+    }
+
+    export function polysOverlap(p: Point[], q: Point[]): boolean {
+        if (isAnyPInQ(p, q)) return true;
+        if (isAnyPInQ(q, p)) return true;
+        for (var i = 1, n = p.length; i < n; ++i) {
+            var v = p[i], u = p[i - 1];
+            if (intersects(new LineSegment(u.x, u.y, v.x, v.y), q).length > 0) return true;
+        }
+        return false;
     }
 } 

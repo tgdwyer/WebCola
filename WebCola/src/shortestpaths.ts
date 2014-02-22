@@ -36,6 +36,7 @@ module shortestpaths {
         }
         neighbours: Neighbour[];
         d: number;
+        prev: Node;
         q: PairingHeap<Node>;
     }
 
@@ -88,7 +89,11 @@ module shortestpaths {
             return this.dijkstraNeighbours(start);
         }
 
-        private dijkstraNeighbours(start: number): number[] {
+        PathFromNodeToNode(start: number, end: number): number[]{
+            return this.dijkstraNeighbours(start, end);
+        }
+
+        private dijkstraNeighbours(start: number, dest: number = -1): number[] {
             var q = new PriorityQueue<Node>((a, b) => a.d <= b.d),
                 i = this.neighbours.length,
                 d: number[] = new Array(i);
@@ -101,12 +106,22 @@ module shortestpaths {
                 // console.log(q.toString(function (u) { return u.id + "=" + (u.d === Number.MAX_VALUE ? "\u221E" : u.d) }));
                 var u = q.pop();
                 d[u.id] = u.d;
+                if (u.id === dest) {
+                    var path: number[] = [];
+                    var v = u;
+                    while (typeof v.prev !== 'undefined') {
+                        path.push(v.prev.id);
+                        v = v.prev;
+                    }
+                    return path;
+                }
                 i = u.neighbours.length; while (i--) {
                     var neighbour = u.neighbours[i];
                     var v = this.neighbours[neighbour.id];
                     var t = u.d + neighbour.distance;
                     if (u.d !== Number.MAX_VALUE && v.d > t) {
                         v.d = t;
+                        v.prev = u;
                         v.q = q.reduceKey(v.q, v);
                     }
                 }
