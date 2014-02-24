@@ -270,9 +270,8 @@ function midPoint(p) {
 }
 
 test("tangent visibility graph", function () {
-    var draw = true;
+    var draw = false;
     for (var tt = 0; tt < 100; tt++) {
-        d3.select("body").append("p").html(tt);
         var rand = new cola.PseudoRandom(tt),
             nextInt = function (r) { return Math.round(rand.getNext() * r) },
             n = 10,
@@ -286,6 +285,7 @@ test("tangent visibility graph", function () {
         var es = g.E.map(function (e) { return { source: e.source.id, target: e.target.id, length: e.length() } }),
             shortestPath = (new shortestpaths.Calculator(g.V.length, es)).PathFromNodeToNode(start.id, end.id);
         if (draw) {
+            d3.select("body").append("p").html(tt);
             var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 250);
             P.forEach(function (p, i) { drawPoly(svg, p /*, i*/) });
             //g.E.forEach(function (e) {

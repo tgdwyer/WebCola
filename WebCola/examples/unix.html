@@ -40,6 +40,9 @@
     <script src="../extern/graphlib-dot.min.js"> </script> 
     <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v1.min.js"></script>
+    <script src="../src/geom.js"></script>
+    <script src="../src/shortestpaths.js"></script>
+    <script src="../src/rectangle.js"></script>
     <link rel="stylesheet" href="../extern/hljs/styles/github.css">
     <script src="../extern/hljs/highlight.pack.js"></script>
     <script>
@@ -105,12 +108,12 @@
                 .links(edges)
                 .jaccardLinkLengths();
 
-            var link = vis.selectAll(".link")
-                .data(edges)
-                .enter().append("line")
-                .attr("class", "link");
+            //var link = vis.selectAll(".link")
+            //    .data(edges)
+            //    .enter().append("line")
+            //    .attr("class", "link");
 
-            var margin = 6, pad = 12;
+            var margin = 10, pad = 12;
             var node = vis.selectAll(".node")
                 .data(nodes)
                 .enter().append("rect")
@@ -131,30 +134,73 @@
                     d.height = b.height + extra;
                 });
 
-            cola.start(20, 20, 20).on("tick", function () {
+            var lineFunction = d3.svg.line()
+                .x(function (d) { return d.x; })
+                .y(function (d) { return d.y; })
+                .interpolate("linear");
+
+            cola.start(30, 30, 100).on("tick", function () {
                 node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin); })
                     .attr("x", function (d) { return d.innerBounds.x; })
                     .attr("y", function (d) { return d.innerBounds.y; })
                     .attr("width", function (d) { return d.innerBounds.width(); })
                     .attr("height", function (d) { return d.innerBounds.height(); });
 
-                link.each(function (d) {
-                    if (d.source === d.target) {
-                            // self edge... need to do something better here.
-                            d.sourceIntersection = { x: d.source.x, y: d.source.y };
-                            d.arrowStart = { x: d.target.x, y: d.target.y };
-                            return;
-                        }
-                        vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
-                        if (isIE()) this.parentNode.insertBefore(this, this);})
-                    .attr("x1", function (d) { return d.sourceIntersection.x; })
-                    .attr("y1", function (d) { return d.sourceIntersection.y; })
-                    .attr("x2", function (d) { return d.arrowStart.x; })
-                    .attr("y2", function (d) { return d.arrowStart.y; });
+                vis.selectAll("path").remove();
+                edges.forEach(function (d) {
+                    vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                    var lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
+                    vis.append("path")
+                        .attr("d", lineFunction(lineData))
+                        .attr("class", "link");
+                });
 
                 label
                     .attr("x", function (d) { return d.x })
                     .attr("y", function (d) { return d.y + (margin + pad) / 2 });
+
+            }).on("end", function () {
+                vis.selectAll("path").remove();
+                var polys = nodes.map(function (v) {
+                    var b = v.bounds.inflate(-margin / 3);
+                    return [{ x: b.x, y: b.y }, { x: b.X, y: b.y }, { x: b.X, y: b.Y }, { x: b.x, y: b.Y }, { x: b.x, y: b.y }];
+                });
+                var vg = new geom.TangentVisibilityGraph(polys);
+                //vg.E.forEach(function (e) {
+                //    drawLine(vis, { x1: e.source.p.x, y1: e.source.p.y, x2: e.target.p.x, y2: e.target.p.y });
+                //});
+
+                edges.forEach(function (d) {
+                    var lineData = [];
+                    var vg2 = new geom.TangentVisibilityGraph(polys, {V: vg.V, E: vg.E}),
+                        port1 = { x: d.source.x, y: d.source.y },
+                        port2 = { x: d.target.x, y: d.target.y },
+                        start = vg2.addPoint(port1, d.source.id),
+                        end = vg2.addPoint(port2, d.target.id);
+                    vg2.addEdgeIfVisible(port1, port2, d.source.id, d.target.id);
+                    var es = vg2.E.map(function (e) { return { source: e.source.id, target: e.target.id, length: e.length() } }),
+                        spCalc = new shortestpaths.Calculator(vg2.V.length, es),
+                        shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
+                    if (shortestPath.length === 1 || shortestPath.length === vg2.V.length) {
+                        vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                        lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
+                    } else {
+                        var q = vg2.V[shortestPath[0]].p,
+                            p = vpsc.makeEdgeTo(q, d.target.innerBounds, 5);
+                        lineData = [p];
+                        for (var i = 0; i < shortestPath.length; i++) {
+                            q = i === shortestPath.length - 1
+                                ? d.source.innerBounds.rayIntersection(p.x, p.y)
+                                : vg2.V[shortestPath[i]].p;
+                            lineData.push(q);
+                            p = q;
+                        }
+                        lineData = lineData.reverse();
+                    }
+                    vis.append("path")
+                        .attr("d", lineFunction(lineData))
+                        .attr("class", "link");
+                });
             });
         });
         function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }

@@ -129,6 +129,15 @@ module vpsc {
         link.arrowStart = { x: si.x + al * dx / l, y: si.y + al * dy / l };
     }
 
+    export function makeEdgeTo(s: { x: number; y: number }, target: Rectangle, ah: number): { x: number; y: number } {
+        var ti = target.rayIntersection(s.x, s.y);
+        if (!ti) ti = { x: target.cx(), y: target.cy() };
+        var dx = ti.x - s.x,
+            dy = ti.y - s.y,
+            l = Math.sqrt(dx * dx + dy * dy);
+        return { x: ti.x - ah * dx / l, y: ti.y - ah * dy / l };
+    }
+
     class Node {
         prev: RBTree<Node>;
         next: RBTree<Node>;

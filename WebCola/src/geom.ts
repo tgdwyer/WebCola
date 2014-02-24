@@ -328,28 +328,33 @@ module geom {
     export class TangentVisibilityGraph {
         V: VisibilityVertex[] = [];
         E: VisibilityEdge[] = [];
-        constructor(public P: TVGPoint[][]) {
-            var n = P.length;
-            for (var i = 0; i < n; i++) {
-                var p = P[i];
-                for (var j = 0; j < p.length; ++j) {
-                    var pj = p[j],
-                        vv = new VisibilityVertex(this.V.length, i, j, pj);
-                    this.V.push(vv);
-                    if (j > 0) this.E.push(new VisibilityEdge(p[j - 1].vv, vv));
-                }
-            }
-            for (var i = 0; i < n - 1; i++) {
-                var Pi = P[i];
-                for (var j = i + 1; j < n; j++) {
-                    var Pj = P[j],
-                        t = geom.tangents(Pi, Pj);
-                    for (var q in t) {
-                        var c = t[q],
-                            source = Pi[c.t1], target = Pj[c.t2];
-                        this.addEdgeIfVisible(source, target, i, j);
+        constructor(public P: TVGPoint[][], g0?: { V: VisibilityVertex[]; E: VisibilityEdge[] }) {
+            if (!g0) {
+                var n = P.length;
+                for (var i = 0; i < n; i++) {
+                    var p = P[i];
+                    for (var j = 0; j < p.length; ++j) {
+                        var pj = p[j],
+                            vv = new VisibilityVertex(this.V.length, i, j, pj);
+                        this.V.push(vv);
+                        if (j > 0) this.E.push(new VisibilityEdge(p[j - 1].vv, vv));
                     }
                 }
+                for (var i = 0; i < n - 1; i++) {
+                    var Pi = P[i];
+                    for (var j = i + 1; j < n; j++) {
+                        var Pj = P[j],
+                            t = geom.tangents(Pi, Pj);
+                        for (var q in t) {
+                            var c = t[q],
+                                source = Pi[c.t1], target = Pj[c.t2];
+                            this.addEdgeIfVisible(source, target, i, j);
+                        }
+                    }
+                }
+            } else {
+                this.V = g0.V.slice(0);
+                this.E = g0.E.slice(0);
             }
         }
         addEdgeIfVisible(u: TVGPoint, v: TVGPoint, i1: number, i2: number) {
