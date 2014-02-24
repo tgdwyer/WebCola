@@ -40,9 +40,6 @@
     <script src="../extern/graphlib-dot.min.js"> </script> 
     <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v1.min.js"></script>
-    <script src="../src/geom.js"></script>
-    <script src="../src/shortestpaths.js"></script>
-    <script src="../src/rectangle.js"></script>
     <link rel="stylesheet" href="../extern/hljs/styles/github.css">
     <script src="../extern/hljs/highlight.pack.js"></script>
     <script>
@@ -108,10 +105,10 @@
                 .links(edges)
                 .jaccardLinkLengths();
 
-            //var link = vis.selectAll(".link")
-            //    .data(edges)
-            //    .enter().append("line")
-            //    .attr("class", "link");
+            var link = vis.selectAll(".link")
+                .data(edges)
+                .enter().append("path")
+                .attr("class", "link");
 
             var margin = 10, pad = 12;
             var node = vis.selectAll(".node")
@@ -139,28 +136,7 @@
                 .y(function (d) { return d.y; })
                 .interpolate("linear");
 
-            cola.start(30, 30, 100).on("tick", function () {
-                node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin); })
-                    .attr("x", function (d) { return d.innerBounds.x; })
-                    .attr("y", function (d) { return d.innerBounds.y; })
-                    .attr("width", function (d) { return d.innerBounds.width(); })
-                    .attr("height", function (d) { return d.innerBounds.height(); });
-
-                vis.selectAll("path").remove();
-                edges.forEach(function (d) {
-                    vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
-                    var lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
-                    vis.append("path")
-                        .attr("d", lineFunction(lineData))
-                        .attr("class", "link");
-                });
-
-                label
-                    .attr("x", function (d) { return d.x })
-                    .attr("y", function (d) { return d.y + (margin + pad) / 2 });
-
-            }).on("end", function () {
-                vis.selectAll("path").remove();
+            var routeEdges = function () {
                 var polys = nodes.map(function (v) {
                     var b = v.bounds.inflate(-margin / 3);
                     return [{ x: b.x, y: b.y }, { x: b.X, y: b.y }, { x: b.X, y: b.Y }, { x: b.x, y: b.Y }, { x: b.x, y: b.y }];
@@ -170,13 +146,30 @@
                 //    drawLine(vis, { x1: e.source.p.x, y1: e.source.p.y, x2: e.target.p.x, y2: e.target.p.y });
                 //});
 
-                edges.forEach(function (d) {
-                    var lineData = cola.routeEdge(vg, d);
-                    vis.append("path")
-                        .attr("d", lineFunction(lineData))
-                        .attr("class", "link");
+                link.attr("d", function (d) {
+                    return lineFunction(cola.routeEdge(vg, d));
                 });
-            });
+                if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
+            }
+            cola.start(10, 30, 100).on("tick", function () {
+                node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin); })
+                    .attr("x", function (d) { return d.innerBounds.x; })
+                    .attr("y", function (d) { return d.innerBounds.y; })
+                    .attr("width", function (d) { return d.innerBounds.width(); })
+                    .attr("height", function (d) { return d.innerBounds.height(); });
+
+                link.attr("d", function (d) {
+                    vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                    var lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
+                    return lineFunction(lineData);
+                });
+                if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
+
+                label
+                    .attr("x", function (d) { return d.x })
+                    .attr("y", function (d) { return d.y + (margin + pad) / 2 });
+
+            }).on("end", routeEdges);
         });
         function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
     </script>

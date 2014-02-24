@@ -49,7 +49,7 @@ module cola {
      * @class Descent
      */
     export class Descent {
-        public threshold: number = 0.00001;
+        public threshold: number = 0.0001;
         /** Hessian Matrix
          * @property H {number[][][]}
          */
