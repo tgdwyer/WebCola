@@ -340,7 +340,6 @@ var cola;
                     descent.x[0][i] = v.x, descent.x[1][i] = v.y;
                 });
             }
-            
 
             return d3adaptor.resume();
         };
@@ -355,6 +354,32 @@ var cola;
 
         function d3_identity(d) {
             return d;
+        }
+
+        d3adaptor.routeEdge = function(vg, d) {
+            var lineData = [];
+            var vg2 = new geom.TangentVisibilityGraph(vg.P, {V: vg.V, E: vg.E}),
+                port1 = { x: d.source.x, y: d.source.y },
+                port2 = { x: d.target.x, y: d.target.y },
+                start = vg2.addPoint(port1, d.source.id),
+                end = vg2.addPoint(port2, d.target.id);
+            vg2.addEdgeIfVisible(port1, port2, d.source.id, d.target.id);
+            var es = vg2.E.map(function (e) { return { source: e.source.id, target: e.target.id, length: e.length() } }),
+                spCalc = new shortestpaths.Calculator(vg2.V.length, es),
+                shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
+            if (shortestPath.length === 1 || shortestPath.length === vg2.V.length) {
+                vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
+            } else {
+                var n = shortestPath.length - 2,
+                    p = vg2.V[shortestPath[n]].p,
+                    q = vg2.V[shortestPath[0]].p,
+                    lineData = [d.source.innerBounds.rayIntersection(p.x, p.y)];
+                for (var i = n; i >= 0; --i) 
+                    lineData.push(vg2.V[shortestPath[i]].p);
+                lineData.push(vpsc.makeEdgeTo(q, d.target.innerBounds, 5));
+            }
+            return lineData;
         }
 
         // use `node.call(d3adaptor.drag)` to make nodes draggable
