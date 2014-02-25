@@ -369,6 +369,12 @@ module vpsc {
 
             if (avoidOverlaps && rootGroup && typeof rootGroup.groups !== 'undefined') {
                 nodes.forEach(v => {
+					if (!v.width || !v.height)
+					{
+						//If undefined, default to nothing
+						v.bounds = new vpsc.Rectangle(v.x, v.x, v.y, v.y);
+						return;
+					}
                     var w2 = v.width / 2, h2 = v.height / 2;
                     v.bounds = new vpsc.Rectangle(v.x - w2, v.x + w2, v.y - h2, v.y + h2);
                 });
@@ -432,7 +438,7 @@ module vpsc {
                 } else {
                     v.variable.weight = 1;
                 }
-                var w = v.width / 2, h = v.height / 2;
+                var w = (v.width || 0) / 2, h = (v.height || 0) / 2;
                 var ix = x0[i], iy = y0[i];
                 v.bounds = new Rectangle(ix - w, ix + w, iy - h, iy + h);
             });

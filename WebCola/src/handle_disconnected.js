@@ -1,5 +1,6 @@
 applyPacking.PADDING = 10;
 applyPacking.GOLDEN_SECTION = (1 + Math.sqrt(5)) / 2;
+applyPacking.FLOAT_EPSILON = 0.00001;
 
 // assign x, y to nodes while using box packing algorithm for disconnected graphs
 function applyPacking(graphs, w, h, node_size, desired_ratio){
@@ -101,7 +102,7 @@ function applyPacking(graphs, w, h, node_size, desired_ratio){
     f_x1 = 0;
     f_x2 = 10;
 
-    while ((Math.abs(x1 - x2) > min_width) || (f_x1 != f_x2 ) ) {
+    while ((Math.abs(x1 - x2) > min_width) || Math.abs(f_x1 - f_x2) > applyPacking.FLOAT_EPSILON ) {
 
       var x1 = right - (right - left) / applyPacking.GOLDEN_SECTION;
       var x2 = left + (right - left) / applyPacking.GOLDEN_SECTION; 
@@ -135,7 +136,7 @@ function applyPacking(graphs, w, h, node_size, desired_ratio){
     var parent = undefined;
 
     for (var i = 0; i < line.length; i++){
-      if ((line[i].space_left >= rect.height) && (line[i].x + line[i].width + rect.width + applyPacking.PADDING <= max_width) ){
+      if ((line[i].space_left >= rect.height) && (line[i].x + line[i].width + rect.width + applyPacking.PADDING - max_width) <= applyPacking.FLOAT_EPSILON){
         parent = line[i];
         break;
       }
@@ -156,8 +157,8 @@ function applyPacking(graphs, w, h, node_size, desired_ratio){
       rect.space_left = rect.height;
     }
 
-    if (rect.y + rect.height > real_height) real_height = rect.y + rect.height - init_y;
-    if (rect.x + rect.width > real_width) real_width = rect.x + rect.width - init_x;
+    if (rect.y + rect.height - real_height > -applyPacking.FLOAT_EPSILON) real_height = rect.y + rect.height - init_y;
+    if (rect.x + rect.width - real_width > -applyPacking.FLOAT_EPSILON) real_width = rect.x + rect.width - init_x;
   };
 
   function get_entire_width(data){

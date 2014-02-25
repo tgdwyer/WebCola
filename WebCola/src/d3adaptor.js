@@ -19,6 +19,7 @@ var cola;
             drag,
             alpha,
             lastStress,
+			running = false,
             nodes = [],
             groups = [],
             variables = [],
@@ -33,6 +34,7 @@ var cola;
             if (alpha < descent.threshold) {
                 event.end({ type: "end", alpha: alpha = 0 });
                 delete lastStress;
+				running = false;
                 return true;
             }
 
@@ -194,11 +196,12 @@ var cola;
         };
 
         d3adaptor.linkDistance = function (x) {
-            if (!arguments.length) return linkDistance;
+            if (!arguments.length) 
+				return typeof linkDistance === "function" ? linkDistance() : linkDistance;
             linkDistance = typeof x === "function" ? x : +x;
             return d3adaptor;
         };
-
+		
         d3adaptor.alpha = function (x) {
             if (!arguments.length) return alpha;
 
@@ -207,8 +210,12 @@ var cola;
                 if (x > 0) alpha = x; // we might keep it hot
                 else alpha = 0; // or, next tick will dispatch "end"
             } else if (x > 0) { // otherwise, fire it up!
-                event.start({ type: "start", alpha: alpha = x });
-                d3.timer(d3adaptor.tick);
+				if (!running)
+				{
+					running = true;
+					event.start({ type: "start", alpha: alpha = x });
+					d3.timer(d3adaptor.tick);
+				}
             }
 
             return d3adaptor;
@@ -285,7 +292,7 @@ var cola;
             }
 
             var D = cola.Descent.createSquareMatrix(N, function (i, j) {
-                return distances[i][j] * linkDistance;
+                return distances[i][j] * d3adaptor.linkDistance();
             });
 
             if (rootGroup && typeof rootGroup.groups !== 'undefined') {
