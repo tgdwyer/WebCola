@@ -27,10 +27,11 @@ var cola;
             constraints = [],
             distanceMatrix = null,
             descent = null,
-            directedLinkConstraints = null;
+            directedLinkConstraints = null,
+            threshold = 1e-5;
 
         d3adaptor.tick = function () {
-            if (alpha < descent.threshold) {
+            if (alpha < threshold) {
                 event.end({ type: "end", alpha: alpha = 0 });
                 delete lastStress;
                 return true;
@@ -55,7 +56,7 @@ var cola;
 
             var s1 = descent.rungeKutta();
             //var s1 = descent.reduceStress();
-            if (typeof lastStress !== 'undefined' && lastStress > s1 - descent.threshold) {
+            if (typeof lastStress !== 'undefined' && lastStress > s1 - threshold) {
                 alpha = lastStress / s1 - 1;
             }
             lastStress = s1;
@@ -199,6 +200,12 @@ var cola;
             return d3adaptor;
         };
 
+        d3adaptor.convergenceThreshold = function (x) {
+            if (!arguments.length) return threshold;
+            threshold = typeof x === "function" ? x : +x;
+            return d3adaptor;
+        };
+
         d3adaptor.alpha = function (x) {
             if (!arguments.length) return alpha;
 
@@ -308,6 +315,7 @@ var cola;
             var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;
             this.avoidOverlaps(false);
             descent = new cola.Descent([x, y], D);
+            descent.threshold = threshold;
 
             // apply initialIterations without user constraints or nonoverlap constraints
             descent.run(initialUnconstrainedIterations);

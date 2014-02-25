@@ -65,7 +65,7 @@
 
     // Add node B back.
     setTimeout(function () {
-        var a = nodes[0], b = { id: "b" }, c = nodes[1];
+        var a = nodes[0], b = { id: "b", x: 0, y: 0 }, c = nodes[1];
         nodes.push(b);
         links.push({ source: a, target: b }, { source: b, target: c });
         start();

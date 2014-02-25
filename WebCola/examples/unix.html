@@ -36,7 +36,7 @@
     </head > 
 <body > 
     <h1>Unix Family Tree</h1>
-    <h2>Directed graph flow layout example</h2>
+    <h2>Directed graph flow layout and shortest-path edge routing</h2>
     <script src="../extern/graphlib-dot.min.js"> </script> 
     <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v1.min.js"></script>
@@ -44,7 +44,7 @@
     <script src="../extern/hljs/highlight.pack.js"></script>
     <script>
         hljs.initHighlightingOnLoad();
-        var cola = cola.d3adaptor();
+        var cola = cola.d3adaptor().convergenceThreshold(1e-3);
 
         var width = 960, height = 700;
 
@@ -137,18 +137,11 @@
                 .interpolate("linear");
 
             var routeEdges = function () {
-                var polys = nodes.map(function (v) {
-                    var b = v.bounds.inflate(-margin / 3);
-                    return [{ x: b.x, y: b.y }, { x: b.X, y: b.y }, { x: b.X, y: b.Y }, { x: b.x, y: b.Y }, { x: b.x, y: b.y }];
-                });
-                var vg = new geom.TangentVisibilityGraph(polys);
-                //vg.E.forEach(function (e) {
-                //    drawLine(vis, { x1: e.source.p.x, y1: e.source.p.y, x2: e.target.p.x, y2: e.target.p.y });
-                //});
-
-                link.attr("d", function (d) {
-                    return lineFunction(cola.routeEdge(vg, d));
-                });
+                var vg = new geom.TangentVisibilityGraph(
+                    nodes.map(function (v) {
+                        return v.bounds.inflate(-margin / 3).vertices();
+                    }));
+                link.attr("d", function (d) { return lineFunction(cola.routeEdge(vg, d)); });
                 if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
             }
             cola.start(10, 30, 100).on("tick", function () {
@@ -187,5 +180,28 @@
     In particular, the call to <code>flowLayout</code> causes all edges not involved in a cycle (strongly connected component) to have a separation constraint generated between their source and sink, 
     with a minimum spacing set to the ideal linkDistance.  Specifying the <code>'x'</code> axis achieves a left-to-right flow layout.  The default is top-to-bottom flow layout (i.e. <code>'y'</code>).
     The default minimum separation between source and target of such edges is <code>linkDistance</code>.  Specify a different minimum as a second parameter to <code>flowLayout</code>.
+    <p>
+    Another feature of this example is <i>shortest-path edge routing</i>.  That is, after layout stops, the edge paths are routed to avoid passing through node boundaries.
+    To do this, we call the following function on the layout "end" event:
+    </p>
+<pre><code>var routeEdges = function () {
+    var vg = new geom.TangentVisibilityGraph(
+        nodes.map(function (v) {
+            return v.bounds.inflate(-margin / 3).vertices();
+        }));
+    link.attr("d", function (d) { return lineFunction(cola.routeEdge(vg, d)); });
+    if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
+}</code></pre>
+    <p>
+        <code>geom.TangentVisibilityGraph</code> is the <i>tangent visibility graph</i> over the polygonal boundaries of the nodes, which looks like this:
+    </p>
+<img src="unixVisibilityGraph.png" width="400px"/>
+<p>
+    The call to <code>d3adaptor.routeEdge</code> for each edge, uses the Dijkstra algorithm to find a shortest path through the visibility graph from the 
+    centre of the source node to the centre of the target node.
+    </p></p>
+    The last bit: <code>if (isIE()) link.each(...</code> is an IE specific hack to force it to redraw the edges.  This is necessary because
+    IE has trouble with SVG markers (in this case the arrow heads).
+</p>
 </body>
 </html>

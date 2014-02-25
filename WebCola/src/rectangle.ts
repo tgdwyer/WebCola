@@ -88,6 +88,15 @@ module vpsc {
             return null;
         }
 
+        vertices(): { x: number; y: number }[] {
+            return [
+                { x: this.x, y: this.y },
+                { x: this.X, y: this.y },
+                { x: this.X, y: this.Y },
+                { x: this.x, y: this.Y },
+                { x: this.x, y: this.y }];
+        }
+
         static lineIntersection(
             x1: number, y1: number,
             x2: number, y2: number,
