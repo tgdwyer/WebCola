@@ -189,7 +189,7 @@
             In other words, just set linkDistance to something reasonable for the size of your nodes (in the same coordinate system).
         </p>
         <p>
-            There are some other optional parameters available.  In the <a href="downwardedges.html">downward pointing edges example</a>
+            There are some other optional parameters available.  In the <a href="examples/downwardedges.html">downward pointing edges example</a>
             we kick off layout like so:
         </p>
 <pre><code>cola
@@ -203,7 +203,7 @@
         <p>We specify nodes and links exactly as in D3 force layout.  However, <code>constraints</code> is a new parameter.  It is an array containing constraints specified like so:<p>
         <p><pre><code>{"axis":"y", "left":0, "right":1, "gap":25}</code></pre></p>
         <p>This says that the center of <code>graph.nodes[0]</code> must be at least 25 pixels above the center of <code>graph.nodes[1]</code>.  To be more precise, it is an inequality constraint that requires: <pre><code>graph.nodes[0].y + gap <= graph.nodes[1].y</code></pre></p>
-        <p><code>avoidOverlaps(true)</code> dynamically generates constraints while layout progresses in order to prevent the bounding boxes of nodes from sliding over one another (see <a href="smallnonoverlappinggraph.html">this example</a>).</p>
+        <p><code>avoidOverlaps(true)</code> dynamically generates constraints while layout progresses in order to prevent the bounding boxes of nodes from sliding over one another (see <a href="examples/smallnonoverlappinggraph.html">this example</a>).</p>
         <p><code>symmetricDiffLinkLengths()</code> adjusts the ideal lengths (from that specified by <code>linkDistance</code>) on each link to make extra space around high-degree nodes.  Alternately, you can specify individual lengths on each link which will override the default.</p>
         <p>
             The <code>start()</code> method now includes up to three integer arguments.  In the example above, start will initially apply 10 iterations of layout with no constraints, 15 iterations with only structural (user-specified) constraints and 20 iterations of layout with all constraints including anti-overlap constraints.

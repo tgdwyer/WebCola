@@ -32,6 +32,7 @@
     <Content Include="examples\sucrosebreakdown-handdrawn.png" />
     <Content Include="examples\sucrosebreakdown.html" />
     <Content Include="examples\alignment.png" />
+    <Content Include="examples\ariel.html" />
     <Content Include="examples\unix.html" />
     <Content Include="examples\unix.png" />
     <Content Include="src\d3adaptor.js" />

@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Unconstrained Layout</title>
+    <style>
+        
+@import url(../style.css);
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .8;
+}
+
+.slider {
+    width: 500px;
+}
+
+</style>
+</head>
+<body>
+    <h1>Ariel's Power Grid Network</h1>
+<script src="../extern/d3.v3.js"></script>
+    <script src="../cola.v1.min.js"></script>
+    <script src="../src/descent.js"></script>
+<script>
+    var width = 960,
+        height = 500;
+
+    var color = d3.scale.category20();
+
+    var cola = cola.d3adaptor()
+        .linkDistance(15)
+        .size([width, height]);
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    var g = { nodes: [], links: [] };
+    var edgeLookup = {};
+    var dates = [];
+    var minFlow = Number.MAX_VALUE, maxFlow = -Number.MAX_VALUE;
+    d3.csv("graphdata/ariel/geofudge.csv", function (d) {
+        if (d.Node.length > 0) {
+            var label = d["Geo Fudge for Tim"];
+            if (label.length === 0) {
+                label = d.Node;
+            }
+            g.nodes.push({ name: label });
+        }
+    }, function (error, rows) {
+        d3.csv("graphdata/ariel/EdgeTopology.csv", function (d) {
+            var edge = { source: d["Node From"] - 1, target: d["Node To"] - 1, flows: [] };
+            g.links.push(edge);
+            edgeLookup[d.Line] = edge;
+        }, function (error, rows) {
+            //d3.text("graphdata/ariel/dailyflow.csv", function (error, d) {
+            //    d3.csv.parseRows(d, function (d) {
+            //        var eid = d[0];
+            //        if (eid in edgeLookup) {
+            //            var e = edgeLookup[eid];
+            //            e.flows.push(d[1]);
+            //        }
+            //    });
+            d3.text("graphdata/ariel/Flows.csv", function (error, d) {
+                d3.csv.parseRows(d, function (d) {
+                    var property = d[4];
+                    if (property === "Flow") {
+                        var eid = d[2];
+                        if (eid === "01. 1-2") {
+                            dates.push(d[6]);
+                        }
+                        if (eid in edgeLookup) {
+                            var e = edgeLookup[eid];
+                            var flow = d[9] - 0;
+                            minFlow = Math.min(minFlow, flow);
+                            maxFlow = Math.max(maxFlow, flow);
+                            e.flows.push(flow);
+                        }
+                    }
+                });
+
+                g.links.forEach(function (l) {
+                    l.length = (100 + l.flows[0])/30;
+                });
+                cola
+                    .nodes(g.nodes)
+                    .links(g.links)
+                    .handleDisconnected(false)
+                    //.symmetricDiffLinkLengths()
+                    .start(30);
+
+                var link = svg.selectAll(".link")
+                    .data(g.links)
+                  .enter().append("line")
+                    .attr("class", "link")
+                    .style("stroke-width", function (d) { return Math.log(Math.abs(d.flows[0])); });
+
+                changeData(0);
+
+                var node = svg.selectAll(".node")
+                    .data(g.nodes)
+                  .enter().append("circle")
+                    .attr("class", "node")
+                    .attr("r", 5)
+                    .style("fill", function (d) { return color(d.group); })
+                    .call(cola.drag);
+
+                var label = svg.selectAll(".label")
+                    .data(g.nodes)
+                    .enter().append("text")
+                    .attr("class", "label")
+                    .text(function (d) { return d.name; })
+                    .call(cola.drag);
+
+                node.append("title")
+                    .text(function (d) { return d.name; });
+
+                cola.on("tick", function () {
+                    link.attr("x1", function (d) { return d.source.x; })
+                        .attr("y1", function (d) { return d.source.y; })
+                        .attr("x2", function (d) { return d.target.x; })
+                        .attr("y2", function (d) { return d.target.y; });
+
+                    node.attr("cx", function (d) { return d.x; })
+                        .attr("cy", function (d) { return d.y; });
+
+                    label
+                        .attr("x", function (d) { return d.x })
+                        .attr("y", function (d) { return d.y + 10 });
+                });
+            });
+        });
+    });
+
+    function changeData(v) {
+        var l = document.getElementById("sliderLabel");
+        l.textContent = dates[v];
+        var min = Number.MAX_VALUE, max = -Number.MAX_VALUE;
+        g.links.forEach(function (l) {
+            var f = Math.log(Math.abs(l.flows[v]) + 1);
+            l.delta = typeof l.value === "undefined" ? 0 : f - l.value;
+            l.value = f;
+            min = Math.min(min, l.delta);
+            max = Math.max(max, l.delta);
+            l.length = (100 + Math.abs(l.flows[v])) / 30;
+        });
+        var color = d3.scale.linear().domain([min, 0, max]).range(["green", "gray", "red"]);
+        svg.selectAll(".link")
+                    .attr("class", "link")
+                    .style("stroke-width", function (d) { return d.value; })
+                    .transition().duration(0).style("stroke", function (d) { return color(d.delta) })
+                    .transition().duration(1000).style("stroke", "gray");
+        cola.start();
+    }
+</script>
+    <p>Flow for <label id="sliderLabel">0</label></p>
+<input class="slider" id="dateSlider" type="range" min="0" max="480" value="0" onchange="changeData(this.value)" />
+    <ul>
+        <li>Slider changes the date.</li>
+        <li>
+            Line thickness shows log of absolute value of aggregate flow for the day.
+        </li>
+        <li>Line color indicates delta from previous slider selection.</li>
+</ul>
+</body>
+</html>
