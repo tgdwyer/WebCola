@@ -170,6 +170,7 @@ module cola {
             return u.map(x=> x *= this.minD / l);
         }
 
+        // compute first and second derivative information storing results in this.g and this.H
         public computeDerivatives(x: number[][]) {
             var n: number = this.n;
             if (n < 1) return;
@@ -249,6 +250,8 @@ DEBUG */
             while (i--) r[i] = Descent.dotProd(m[i], v);
         }
 
+        // computes the optimal step size to take in direction d using the
+        // derivative information in this.g and this.H
         public computeStepSize(d: number[][]): number {
             var numerator = 0, denominator = 0;
             for (var i = 0; i < 2; ++i) {
@@ -278,7 +281,13 @@ DEBUG */
             }
         }
 
-        private stepAndProject(x0: number[][], r: number[][], d: number[][], stepSize: number) {
+        // takes a step of stepSize * d from x0, and then project against any constraints.
+        // result is returned in r.
+        // x0: starting positions
+        // r: result positions will be returned here
+        // d: unconstrained descent vector
+        // stepSize: amount to step along d
+        private stepAndProject(x0: number[][], r: number[][], d: number[][], stepSize: number): void {
             Descent.copy(x0, r);
             this.takeDescentStep(r[0], d[0], stepSize);
             if (this.project) this.project[0](x0[0], x0[1], r[0]);
