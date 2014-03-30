@@ -2,9 +2,13 @@
  * @module cola
  */
 module cola {
+    export interface Node {
+        index: number;
+    }
+
     export interface Link {
-        source: number;
-        target: number;
+        source: Node;
+        target: Node;
         length: number;
     }
 
@@ -29,8 +33,8 @@ module cola {
             neighbours[i] = {};
         }
         links.forEach(e => {
-            neighbours[e.source][e.target] = {};
-            neighbours[e.target][e.source] = {};
+            neighbours[e.source.index][e.target.index] = {};
+            neighbours[e.target.index][e.source.index] = {};
         });
         return neighbours;
     }
@@ -39,8 +43,8 @@ module cola {
     function computeLinkLengths(n: number, links: Link[], w: number, f: (a:number[], b: number[]) => number) {
         var neighbours = getNeighbours(n, links);
         links.forEach(l => {
-            var a = neighbours[l.source];
-            var b = neighbours[l.target];
+            var a = neighbours[l.source.index];
+            var b = neighbours[l.target.index];
             //var jaccard = intersectionCount(a, b) / unionCount(a, b);
             //if (Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1) {
             //    jaccard = 0;
@@ -86,17 +90,17 @@ module cola {
     {
         var components = stronglyConnectedComponents(n, links);
         var nodes = {};
-        components.filter(c => c.length > 1).forEach(c => 
+        components.filter(c => c.length > 1).forEach(c =>
             c.forEach(v => nodes[v] = c)
         );
         var constraints: any[] = [];
         links.forEach(l => {
-            var u = nodes[l.source], v = nodes[l.target];
+            var u = nodes[l.source.index], v = nodes[l.target.index];
             if (!u || !v || u.component !== v.component) {
                 constraints.push({
                     axis: axis,
-                    left: l.source,
-                    right: l.target,
+                    left: l.source.index,
+                    right: l.target.index,
                     gap: minSeparation
                 });
             }
@@ -145,7 +149,7 @@ module cola {
 
         //Build adjacency list representation
         for (var i = 0; i < edges.length; ++i) {
-            adjList[edges[i].source].push(edges[i].target)
+            adjList[edges[i].source.index].push(edges[i].target.index)
         }
 
         var count = 0
