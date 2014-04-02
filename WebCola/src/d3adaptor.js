@@ -58,7 +58,9 @@ var cola;
 
             var s1 = descent.rungeKutta();
             //var s1 = descent.reduceStress();
-            if (typeof lastStress !== 'undefined' && lastStress > s1 - threshold) {
+            if (s1 === 0) {
+                alpha = 0;
+            } else if (typeof lastStress !== 'undefined' && lastStress > s1 - threshold) {
                 alpha = lastStress / s1 - 1;
             }
             lastStress = s1;
@@ -432,8 +434,8 @@ var cola;
     }
 
     function colaDragend(d) {
-        //d.fixed &= ~6; // unset bits 2 and 3
-        d.fixed = 0;
+        d.fixed &= ~6; // unset bits 2 and 3
+        //d.fixed = 0;
     }
 
     function colaMouseover(d) {

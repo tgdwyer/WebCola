@@ -28,9 +28,10 @@
 <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v1.min.js"></script>
     <script src="../src/descent.js"></script>
+    <script src="../src/d3adaptor.js"></script>
 <script>
     var width = 960,
-        height = 500;
+        height = 650;
 
     var color = d3.scale.category20();
 
@@ -41,18 +42,28 @@
     var svg = d3.select("body").append("svg")
         .attr("width", width)
         .attr("height", height);
+    svg.append("clipPath")
+        .attr("id","clipMask")
+       .append("rect").attr("x", 320).attr("y", 120).attr("width", 600).attr("height", 650);
+
+    //svg.append("image")
+    //  .attr("xlink:href", "graphdata/ariel/australia.png")
+    //  .attr("width", "800")
+    //  .attr("clip-path", "url(#clipMask)")
+    //  .attr("height", "600");
 
     var g = { nodes: [], links: [] };
     var edgeLookup = {};
     var dates = [];
     var minFlow = Number.MAX_VALUE, maxFlow = -Number.MAX_VALUE;
+    var node;
     d3.csv("graphdata/ariel/geofudge.csv", function (d) {
         if (d.Node.length > 0) {
-            var label = d["Geo Fudge for Tim"];
+            var label = d["Node"];
             if (label.length === 0) {
                 label = d.Node;
             }
-            g.nodes.push({ name: label });
+            g.nodes.push({ name: label/*, x: parseFloat(d["x"]), y: parseFloat(d["y"]), fixed: true */ });
         }
     }, function (error, rows) {
         d3.csv("graphdata/ariel/EdgeTopology.csv", function (d) {
@@ -94,7 +105,7 @@
                     .links(g.links)
                     .handleDisconnected(false)
                     //.symmetricDiffLinkLengths()
-                    .start(30);
+                    .start();
 
                 var link = svg.selectAll(".link")
                     .data(g.links)
@@ -104,13 +115,20 @@
 
                 changeData(0);
 
-                var node = svg.selectAll(".node")
+                node = svg.selectAll(".node")
                     .data(g.nodes)
                   .enter().append("circle")
                     .attr("class", "node")
                     .attr("r", 5)
                     .style("fill", function (d) { return color(d.group); })
                     .call(cola.drag);
+
+                node.on("click", function (d) {
+                    if (d3.event.shiftKey) {
+                        d.fixed = true;
+                        this.setAttribute("r", 3);
+                    }
+                })
 
                 var label = svg.selectAll(".label")
                     .data(g.nodes)
@@ -149,7 +167,7 @@
             l.value = f;
             min = Math.min(min, l.delta);
             max = Math.max(max, l.delta);
-            l.length = (100 + Math.abs(l.flows[v])) / 30;
+            l.length = (50 + Math.abs(l.flows[v])) / 30;
         });
         var color = d3.scale.linear().domain([min, 0, max]).range(["green", "gray", "red"]);
         svg.selectAll(".link")
@@ -159,9 +177,22 @@
                     .transition().duration(1000).style("stroke", "gray");
         cola.start();
     }
+
+    var positionText = null;
+    function showPositions() {
+        var ps = "";
+        node.each(function (d) {
+            ps += d.name + "," + d.x + "," + d.y + "<br>";
+        });
+        if (positionText === null) {
+            positionText = d3.select("body").append("div").attr("id", "positions");
+        }
+        positionText.html(ps);
+    }
 </script>
     <p>Flow for <label id="sliderLabel">0</label></p>
 <input class="slider" id="dateSlider" type="range" min="0" max="480" value="0" onchange="changeData(this.value)" />
+<button onclick="showPositions()">Dump positions</button>
     <ul>
         <li>Slider changes the date.</li>
         <li>
@@ -171,3 +202,4 @@
 </ul>
 </body>
 </html>
+

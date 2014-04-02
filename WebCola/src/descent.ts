@@ -252,6 +252,7 @@ DEBUG */
 
         // computes the optimal step size to take in direction d using the
         // derivative information in this.g and this.H
+        // returns the scalar multiplier to apply to d to get the optimal step
         public computeStepSize(d: number[][]): number {
             var numerator = 0, denominator = 0;
             for (var i = 0; i < 2; ++i) {
