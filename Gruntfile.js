@@ -1,5 +1,6 @@
 module.exports = function (grunt) {
   require('load-grunt-tasks')(grunt);
+  require('./tasks/examples')(grunt);
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -38,7 +39,7 @@ module.exports = function (grunt) {
           'WebCola/src/scc.js',
           'WebCola/src/handle_disconnected.js'
         ],
-        dest: 'WebCola/cola.v1.js'
+        dest: 'WebCola/cola.v1.min.js'
       }
     },
     umd: {
@@ -68,6 +69,9 @@ module.exports = function (grunt) {
     qunit: {
       all: ['WebCola/test/*.html']
     },
+    examples: {
+      all: ["WebCola/examples/*.html"]
+    },
     yuidoc: {
       compile: {
         name: 'cola.js',
@@ -82,7 +86,7 @@ module.exports = function (grunt) {
     }
   });
  
-  grunt.registerTask('default', ['typescript', 'concat', 'umd', 'uglify', 'qunit', 'yuidoc']);
+  grunt.registerTask('default', ['typescript', 'concat', 'umd', 'uglify', 'qunit']);
   grunt.registerTask('nougly', ['typescript', 'concat', 'qunit']);
   grunt.registerTask('nougly-notest', ['typescript', 'concat']);
 };
