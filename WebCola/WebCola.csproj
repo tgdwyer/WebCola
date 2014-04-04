@@ -25,7 +25,6 @@
     <Content Include="examples\brainnetwork2.html" />
     <Content Include="examples\disconnected_graphs.html" />
     <Content Include="examples\graphdata\SucroseBreakdownDicots-flowlayout.svg" />
-    <Content Include="examples\HtmlPage1.html" />
     <Content Include="examples\movies.html" />
     <Content Include="examples\browsemovies.html" />
     <Content Include="examples\powergraph.html" />
@@ -33,6 +32,7 @@
     <Content Include="examples\sucrosebreakdown.html" />
     <Content Include="examples\alignment.png" />
     <Content Include="examples\ariel.html" />
+    <Content Include="examples\AlexNetwork.html" />
     <Content Include="examples\unix.html" />
     <Content Include="examples\unix.png" />
     <Content Include="src\d3adaptor.js" />

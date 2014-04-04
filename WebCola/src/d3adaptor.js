@@ -29,7 +29,8 @@ var cola;
             distanceMatrix = null,
             descent = null,
             directedLinkConstraints = null,
-            threshold = 1e-5;
+            threshold = 1e-5,
+            defaultNodeSize = 10;
 
         d3adaptor.tick = function () {
             if (alpha < threshold) {
@@ -80,12 +81,26 @@ var cola;
         };
 
         /**
-         * a list of nodes
+         * the list of nodes.
+         * If nodes has not been set, but links has, then we instantiate a nodes list here, of the correct size,
+         * before returning it.
          * @property nodes {Array}
          * @default empty list
          */
         d3adaptor.nodes = function (v) {
-            if (!arguments.length) return nodes;
+            if (!arguments.length) {
+                if (nodes.length === 0 && links.length > 0) {
+                    var n = 0;
+                    links.forEach(function (l) {
+                        n = Math.max(n, l.source, l.target);
+                    });
+                    nodes = new Array(++n);
+                    for (var i = 0; i < n; ++i) {
+                        nodes[i] = {};
+                    }
+                }
+                return nodes;
+            }
             nodes = v;
             return d3adaptor;
         };
@@ -198,6 +213,17 @@ var cola;
             return d3adaptor;
         };
 
+        /**
+         * Default size (assume nodes are square so both width and height) to use in packing if node width/height are not specified.
+         * @property defaultNodeSize
+         * @type {Number}
+         */
+        d3adaptor.defaultNodeSize = function (x) {
+            if (!arguments.length) return defaultNodeSize;
+            defaultNodeSize = x;
+            return d3adaptor;
+        };
+
         d3adaptor.linkDistance = function (x) {
             if (!arguments.length) 
 				return typeof linkDistance === "function" ? linkDistance() : linkDistance;
@@ -231,12 +257,12 @@ var cola;
         };
 
         d3adaptor.symmetricDiffLinkLengths = function (w) {
-            cola.symmetricDiffLinkLengths(nodes.length, links, w);
+            cola.symmetricDiffLinkLengths(this.nodes().length, links, w);
             return d3adaptor;
         }
 
         d3adaptor.jaccardLinkLengths = function (w) {
-            cola.jaccardLinkLengths(nodes.length, links, w)
+            cola.jaccardLinkLengths(this.nodes().length, links, w)
             return d3adaptor;
         }
 
@@ -250,7 +276,7 @@ var cola;
         d3adaptor.start = function () {
             var i,
                 j,
-                n = nodes.length,
+                n = this.nodes().length,
                 N = n + 2 * groups.length,
                 m = links.length,
                 w = size[0],
@@ -351,7 +377,7 @@ var cola;
 
             // recalculate nodes position for disconnected graphs
             if (!distanceMatrix && handleDisconnected) {
-                applyPacking(separateGraphs(nodes, links), w, h);
+                applyPacking(separateGraphs(nodes, links), w, h, defaultNodeSize);
 
                 nodes.forEach(function (v, i) {
                     descent.x[0][i] = v.x, descent.x[1][i] = v.y;

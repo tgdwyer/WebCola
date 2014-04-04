@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Egocentric Network</title>
+    <style>
+        
+@import url(../style.css);
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .8;
+}
+
+</style>
+</head>
+<body>
+    <h1>Egocentric Network</h1>
+<script src="../extern/d3.v3.js"></script>
+    <script src="../cola.v1.min.js"></script>
+    <script src="../src/d3adaptor.js"></script>
+    <script src="../src/linklengths.js"></script>
+<script>
+    var width = 700,
+        height = 350;
+
+    var color = d3.scale.category20();
+
+    var cola = cola.d3adaptor()
+        .linkDistance(10)
+        .size([width, height]);
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    d3.select("body").append("button").attr("id", "removeSelfButton").text("Disconnect Self").on("click", disconnectNode0);
+    
+    var edges = [];
+    var n = 0;
+
+    d3.text("alex/matrix_ego.txt",
+        function (error, text) {
+            var lines = text.split('\n').map(function (s) { return s.trim() });
+            lines.forEach(function (l, i) {
+                if (l.length > 0) {
+                    l.split(' ').forEach(function (d, j) {
+                        if (Number(d) > 0) {
+                            edges.push({source: i, target: j});
+                        }
+                    });
+                }
+                ++n;
+            });
+            loaded();
+        });
+
+    var link, node;
+
+    function disconnectNode0() {
+        edges = edges.filter(function (e) {
+            return e.source.index !== 0 && e.target.index !== 0;
+        });
+        cola.stop();
+        cola.on("tick", null);
+        cola.links(edges).start(30);
+        link.data(cola.links(), function (d) {
+            return d.source.index + "-" + d.target.index;
+        }).exit().remove();
+        cola.on("tick", function () {
+            link.transition().duration(2000).attr("x1", function (d) { return d.source.x; })
+                .attr("y1", function (d) { return d.source.y; })
+                .attr("x2", function (d) { return d.target.x; })
+                .attr("y2", function (d) { return d.target.y; });
+
+            node.transition().duration(2000).attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; }).each("end", function () {
+                    cola.on("tick", regularTick);
+                });
+        });
+    }
+
+    function regularTick () {
+        link.attr("x1", function (d) { return d.source.x; })
+            .attr("y1", function (d) { return d.source.y; })
+            .attr("x2", function (d) { return d.target.x; })
+            .attr("y2", function (d) { return d.target.y; });
+
+        node.attr("cx", function (d) { return d.x; })
+            .attr("cy", function (d) { return d.y; });
+    };
+
+    function loaded() {
+        cola
+            .links(edges)
+        //.jaccardLinkLengths(0.1)
+        .symmetricDiffLinkLengths()
+            .defaultNodeSize(20)
+            .start(30);
+
+        var nodes = cola.nodes();
+
+        link = svg.selectAll(".link")
+            .data(cola.links(), function (d) {
+                return d.source.index + "-" + d.target.index;
+            });
+
+        link.enter().append("line")
+            .attr("class", "link")
+            .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+
+
+        node = svg.selectAll(".node")
+            .data(nodes)
+          .enter().append("circle")
+            .attr("class", "node")
+            .attr("r", 5)
+            .style("fill", function (d, i) { return color(i > 0) })
+            .call(cola.drag);
+
+        node.append("title")
+            .text(function (d) { return d.index; });
+
+        cola.on("tick", regularTick);
+    };
+
+</script>
+</body>
+</html>

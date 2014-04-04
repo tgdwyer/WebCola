@@ -97,13 +97,12 @@
             }
 
             cola
-                .linkDistance(150)
+                .linkDistance(function () { return 150; })
                 .avoidOverlaps(true)
                 .flowLayout('x')
                 .size([width, height])
                 .nodes(nodes)
-                .links(edges)
-                .jaccardLinkLengths();
+                .links(edges);
 
             var link = vis.selectAll(".link")
                 .data(edges)
