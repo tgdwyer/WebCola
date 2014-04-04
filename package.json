@@ -19,7 +19,7 @@
   "main": "Gruntfile.js",
   "dependencies": {},
   "scripts": {
-    "test": "grunt"
+    "test": "grunt full"
   },
   "repository": {
     "type": "git",
