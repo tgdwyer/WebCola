@@ -21,6 +21,16 @@
     "bower_components",
     "app/bower_components",
     "test",
-    "tests"
+    "tests",
+    "templates",
+    "tasks",
+    "*.sln",
+    "*.config",
+    "*.css",
+    "*.html",
+    "*.ts",
+    "*.csproj*",
+    "Gruntfile.js",
+    "WebCola/*/"
   ]
 }
