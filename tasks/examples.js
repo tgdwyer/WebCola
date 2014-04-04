@@ -18,6 +18,13 @@ module.exports = function(grunt){
           ":" + frame.line;
       }).join("\n"));
     });
+    
+    phantomjs.on('onResourceReceived', function(res){
+      if(res.stage === 'end' && res.status && res.status >= 400){
+        errors.push(res.status + " " + res.status_text + " " +
+          res.url.split("/").slice(-2).join("/"));
+      }
+    });
 
     // Built-in error handlers.
     phantomjs.on('fail.load', function(url) {
@@ -48,8 +55,7 @@ module.exports = function(grunt){
         // Log results.
         grunt.log.writeln();
         if (errors.length) {
-          grunt.log.error(errors.join("\n"));
-          grunt.fail();
+          grunt.fail.warn(errors.join("\n"));
         } else {
           grunt.log.ok();
         }
