@@ -30,7 +30,7 @@
     "*.html",
     "*.htm",
     "**/compiledtypescript.js",
-    "**/linklengths.js"
+    "**/linklengths.js",
     "*.ts",
     "*.csproj*",
     "Gruntfile.js",
