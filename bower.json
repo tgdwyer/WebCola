@@ -28,6 +28,9 @@
     "*.config",
     "*.css",
     "*.html",
+    "*.htm",
+    "**/compiledtypescript.js",
+    "**/linklengths.js"
     "*.ts",
     "*.csproj*",
     "Gruntfile.js",
