@@ -32,13 +32,15 @@ module.exports = function(grunt){
       grunt.log.write('.');
       phantomjs.halt();
     });
-    
+
     async.eachLimit(urls, 10,
       function(url, next){
         // try to load each example page
         phantomjs.spawn(url, {
           options: {},
-          done: function(err) { err ? done() : next(); }
+          done: function(err) {
+            err ? done() : next();
+          }
         });
       },
       // All tests have been run.
@@ -47,6 +49,7 @@ module.exports = function(grunt){
         grunt.log.writeln();
         if (errors.length) {
           grunt.log.error(errors.join("\n"));
+          grunt.fail();
         } else {
           grunt.log.ok();
         }
