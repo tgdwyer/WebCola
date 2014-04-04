@@ -27,6 +27,14 @@ module.exports = function (grunt) {
           target: 'es5',
           sourcemap: false
         }
+      },
+      examples: {
+        src: ['WebCola/examples/*.ts'],
+        options: {
+          module: 'amd',
+          target: 'es5',
+          sourcemap: false
+        }
       }
     },
     concat: {

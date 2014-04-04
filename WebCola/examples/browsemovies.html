@@ -40,7 +40,7 @@
 
     var red = "rgb(254, 137, 137)";
 
-    var cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor()
         .linkDistance(60)
         .size([width, height]);
 
@@ -144,7 +144,7 @@
                 h = nodeHeight - 6,
                 x = w / 2 + 25 * Math.cos(r * i),
                 y = h / 2 + 30 * Math.sin(r * i),
-                rect = new vpsc.Rectangle(0, w, 0, h),
+                rect = new cola.vpsc.Rectangle(0, w, 0, h),
                 vi = rect.rayIntersection(x, y);
             var dview = d3.select("#"+v.name()+"_spikes");
 
@@ -196,7 +196,7 @@
     }
 
     function update() {
-        cola.nodes(viewgraph.nodes)
+        d3cola.nodes(viewgraph.nodes)
             .links(viewgraph.links)
             .start();
 
@@ -228,7 +228,7 @@
             .on("touchmove", function () { d3.event.preventDefault() })
             .on("mouseenter", function (d) { hintNeighbours(d) }) // on mouse over nodes we show "spikes" indicating there are hidden neighbours
             .on("mouseleave", function (d) { unhintNeighbours(d) })
-            .call(cola.drag);
+            .call(d3cola.drag);
 
         nodeEnter.append("g").attr("id", function (d) { return d.name() + "_spikes" })
             .attr("transform", "translate(3,3)");
@@ -244,7 +244,7 @@
 
         node.style("fill", function (d) { return d.colour; });
 
-        cola.on("tick", function () {
+        d3cola.on("tick", function () {
             link.attr("transform", function (d) {
                 var dx = d.source.x - d.target.x, dy = d.source.y - d.target.y;
                 var r = 180 * Math.atan2(dy, dx) / Math.PI;

@@ -27,15 +27,13 @@
     <h1>Ariel's Power Grid Network</h1>
 <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v1.min.js"></script>
-    <script src="../src/descent.js"></script>
-    <script src="../src/d3adaptor.js"></script>
 <script>
     var width = 960,
         height = 650;
 
     var color = d3.scale.category20();
 
-    var cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor()
         .linkDistance(15)
         .size([width, height]);
 
@@ -100,7 +98,7 @@
                 g.links.forEach(function (l) {
                     l.length = (100 + l.flows[0])/30;
                 });
-                cola
+                d3cola
                     .nodes(g.nodes)
                     .links(g.links)
                     .handleDisconnected(false)
@@ -121,7 +119,7 @@
                     .attr("class", "node")
                     .attr("r", 5)
                     .style("fill", function (d) { return color(d.group); })
-                    .call(cola.drag);
+                    .call(d3cola.drag);
 
                 node.on("click", function (d) {
                     if (d3.event.shiftKey) {
@@ -135,12 +133,12 @@
                     .enter().append("text")
                     .attr("class", "label")
                     .text(function (d) { return d.name; })
-                    .call(cola.drag);
+                    .call(d3cola.drag);
 
                 node.append("title")
                     .text(function (d) { return d.name; });
 
-                cola.on("tick", function () {
+                d3cola.on("tick", function () {
                     link.attr("x1", function (d) { return d.source.x; })
                         .attr("y1", function (d) { return d.source.y; })
                         .attr("x2", function (d) { return d.target.x; })
@@ -175,7 +173,7 @@
                     .style("stroke-width", function (d) { return d.value; })
                     .transition().duration(0).style("stroke", function (d) { return color(d.delta) })
                     .transition().duration(1000).style("stroke", "gray");
-        cola.start();
+        d3cola.start();
     }
 
     var positionText = null;
