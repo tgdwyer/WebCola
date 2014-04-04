@@ -154,10 +154,10 @@ function removeOverlaps(rects) {
     rects.forEach(function (r, i) {
         var x = r.attr('x'), y = r.attr('y'), w = r.attr('width'), h = r.attr('height');
         dims.push({ x: x, y: y, w: w, h: h });
-        rs[i] = new vpsc.Rectangle(x, x + w, y, y + h);
+        rs[i] = new cola.vpsc.Rectangle(x, x + w, y, y + h);
     });
     undoStack.push(dims);
-    vpsc.removeOverlaps(rs);
+    cola.vpsc.removeOverlaps(rs);
     rects.forEach(function (r, i) {
         var t = rs[i];
         if (animate) {

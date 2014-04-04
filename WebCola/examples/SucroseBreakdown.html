@@ -59,7 +59,7 @@
     var width = 800,
         height = 520;
 
-    var cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor()
         .linkDistance(50)
         .avoidOverlaps(true)
         .size([width, height]);
@@ -133,7 +133,7 @@
             }
         });
 
-        cola
+        d3cola
             .nodes(graph.nodes)
             .links(graph.links)
             .groups(graph.groups)
@@ -177,13 +177,13 @@
             .attr("width", function (d) { return d.width + 2 * pad + 2 * margin; })
             .attr("height", function (d) { return d.height + 2 * pad + 2 * margin; })
             .attr("rx", function (d) { return d.rx; }).attr("ry", function (d) { return d.rx; })
-            .call(cola.drag);
+            .call(d3cola.drag);
 
         var label = nodesLayer.selectAll(".label")
             .data(graph.nodes)
            .enter().append("text")
             .attr("class", "label")
-            .call(cola.drag);
+            .call(d3cola.drag);
 
         var insertLinebreaks = function (d) {
             var el = d3.select(this);
@@ -202,12 +202,12 @@
         node.append("title")
             .text(function (d) { return d.label; });
 
-        cola.on("tick", function () {
+        d3cola.on("tick", function () {
             node.each(function (d) {
                 d.innerBounds = d.bounds.inflate(- margin);
             });
             link.each(function (d) {
-                vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE())  this.parentNode.insertBefore(this, this);
             });
             
