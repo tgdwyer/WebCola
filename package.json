@@ -3,22 +3,23 @@
   "version": "0.1.0",
   "devDependencies": {
     "grunt": "~0.4.2",
-    "grunt-contrib-uglify": "~0.2.2",
-    "grunt-contrib-qunit": "~0.3.0",
-    "grunt-contrib-yuidoc": "~0.5.0",
     "grunt-contrib-concat": "~0.3.0",
-    "typescript": "~0.9.5"
+    "grunt-contrib-qunit": "~0.3.0",
+    "grunt-contrib-uglify": "~0.2.2",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-contrib-yuidoc": "~0.5.0",
+    "grunt-typescript": "~0.2.7",
+    "grunt-umd": "~1.7.3",
+    "load-grunt-tasks": "~0.4.0",
+    "typescript": "~0.9.5",
+    "uglifyjs": "~2.3.6",
+    "async": "~0.6.2"
   },
   "description": "WebCola =======",
   "main": "Gruntfile.js",
-  "dependencies": {
-    "grunt-typescript": "~0.2.7",
-    "grunt": "~0.4.2",
-    "uglifyjs": "~2.3.6",
-    "grunt-contrib-qunit": "~0.3.0"
-  },
+  "dependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "grunt full"
   },
   "repository": {
     "type": "git",

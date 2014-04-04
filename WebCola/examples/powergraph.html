@@ -42,14 +42,13 @@
     <h1>Power graph representation of a dense graph</h1>
 <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v1.min.js"></script>
-    <script src="../src/powergraph.js"></script>
 <script>
     var width = 960,
         height = 500;
 
     var color = d3.scale.category20();
 
-    var cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor()
         .linkDistance(80)
         .avoidOverlaps(true)
         .size([width, height]);
@@ -71,7 +70,7 @@
         .attr('fill', '#555');
 
     d3.json("graphdata/n7e23.json", function (error, graph) {
-        var g = powergraph.getGroups(graph.nodes.length, graph.links);
+        var g = cola.powergraph.getGroups(graph.nodes.length, graph.links);
         g.powerEdges.forEach(function (e) {
             var f = function (end) {
                 var g = e[end];
@@ -82,7 +81,7 @@
             f("source");
             f("target");
         });
-        cola
+        d3cola
             .nodes(graph.nodes)
             .links(graph.links)
             .groups(g.groups)
@@ -108,22 +107,22 @@
             .attr("width", function (d) { return d.width + 2 * pad + 2 * margin; })
             .attr("height", function (d) { return d.height + 2 * pad + 2 * margin; })
             .attr("rx", 4).attr("ry", 4)
-            .call(cola.drag);
+            .call(d3cola.drag);
         var label = svg.selectAll(".label")
             .data(graph.nodes)
            .enter().append("text")
             .attr("class", "label")
             .text(function (d) { return d.name; })
-            .call(cola.drag);
+            .call(d3cola.drag);
 
         node.append("title")
             .text(function (d) { return d.name; });
 
-        cola.on("tick", function () {
+        d3cola.on("tick", function () {
             node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
             group.each(function (d) { d.innerBounds = d.bounds.inflate(0) });
             link.each(function (d) {
-                vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE()) this.parentNode.insertBefore(this, this);
             });
 

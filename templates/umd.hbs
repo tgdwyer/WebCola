@@ -1,0 +1,24 @@
+(function(root, factory) {
+    if(typeof exports === 'object') {
+        module.exports = factory({{{cjsDependencies}}});
+    }
+    else if(typeof define === 'function' && define.amd) {
+        define({{#if amdModuleId}}'{{amdModuleId}}', {{/if}}[{{{amdDependencies}}}], factory);
+    }
+    else {
+        {{#if globalAlias}}root['{{{globalAlias}}}'] = {{else}}{{#if objectToExport}}root['{{{objectToExport}}}'] = {{/if}}{{/if}}factory({{{globalDependencies}}});
+    }
+}(this, function({{dependencies}}) {
+
+{{{code}}}
+
+cola.powergraph = powergraph;
+cola.shortestpaths = shortestpaths;
+cola.geom = geom;
+cola.vpsc = vpsc;
+cola.PriorityQueue = PriorityQueue;
+
+{{#if objectToExport}}
+{{indent}}return {{{objectToExport}}};
+{{/if}}
+}));
