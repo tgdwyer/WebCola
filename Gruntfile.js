@@ -84,8 +84,22 @@ module.exports = function (grunt) {
           outdir: 'WebCola/doc'
         }
       }
+    },
+    jade: {
+      compile: {
+        options: {
+          data: function(dest, src){
+            return grunt.config.data;
+          }
+        },
+        files: {
+          "dist/index.html": ["templates/jade/index.jade"]
+        }
+      }
     }
   });
+
+  console.log();
 
   grunt.registerTask('build', [
     'typescript:base',
