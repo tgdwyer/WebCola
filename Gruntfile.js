@@ -4,6 +4,7 @@ module.exports = function (grunt) {
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    bwr: grunt.file.readJSON('bower.json'),
     watch: {
       default: {
         files: ["<%= concat.dist.src %>", "Gruntfile.js", "templates/*"],
@@ -20,8 +21,8 @@ module.exports = function (grunt) {
     },
     typescript: {
       base: {
-        src: ['WebCola/src/*.ts'],
-        dest: 'WebCola/compiledtypescript.js',
+        src: ['src/**/*.ts'],
+        dest: '.tmp',
         options: {
           module: 'amd',
           target: 'es5',
@@ -40,19 +41,14 @@ module.exports = function (grunt) {
     concat: {
       options: {},
       dist: {
-        src: [
-          'WebCola/compiledtypescript.js',
-          'WebCola/src/d3adaptor.js',
-          'WebCola/src/rbtree.js',
-          'WebCola/src/scc.js',
-          'WebCola/src/handle_disconnected.js'
-        ],
-        dest: 'WebCola/cola.v2.min.js'
+        src: ['lib/**/*.js', '.tmp/lib/**/*.js'],
+        dest: 'dist/cola.js'
       }
     },
     umd: {
       all: {
         src: '<%= concat.dist.dest %>',
+        dest: '<%= concat.dist.dest %>',
         template: 'templates/umd.hbs',
         objectToExport: 'cola',
         deps: {
@@ -67,11 +63,8 @@ module.exports = function (grunt) {
           //sourceMapIn: 'WebCola/compiledtypescript.js.map',
           //sourceMapRoot: 'WebCola'
         },
-        files: {
-          'WebCola/cola.v2.min.js': [
-            '<%= concat.dist.dest %>'
-          ]
-        }
+        src: ['<%= umd.all.dest %>'],
+        dest: 'dist/cola.min.js'
       }
     },
     qunit: {
@@ -93,10 +86,32 @@ module.exports = function (grunt) {
       }
     }
   });
+
+  grunt.registerTask('build', [
+    'typescript:base',
+    'concat',
+    'umd'
+  ]);
  
-  grunt.registerTask('default', ['typescript:base', 'concat', 'umd', 'uglify', 'qunit']);
-  grunt.registerTask('nougly', ['typescript:base', 'concat', 'umd', 'qunit']);
-  grunt.registerTask('nougly-notest', ['typescript', 'concat']);
-  grunt.registerTask('docs', ['yuidoc', 'typescript:examples']);
-  grunt.registerTask('full', ['default', 'typescript:examples', 'examples']);
+  grunt.registerTask('default', [
+    'build',
+    'uglify',
+    'qunit'
+  ]);
+
+  grunt.registerTask('nougly', [
+    'build',
+    'qunit'
+  ]);
+
+  grunt.registerTask('docs', [
+    'yuidoc',
+    'typescript:examples'
+  ]);
+
+  grunt.registerTask('full', [
+    'default',
+    'typescript:examples',
+    'examples'
+  ]);
 };
