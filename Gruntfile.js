@@ -9,12 +9,18 @@ module.exports = function (grunt) {
   require('load-grunt-tasks')(grunt);
   require('./tasks/examples')(grunt);
 
-  function _build_examples(){
+  function _build_examples(action){
     var examples = grunt.file.expand(['site/examples/*/index.jade']);
     return examples.map(function(example){
-      return {
-        src: example,
-        dest: example.replace(/^site(.*)jade$/, 'dist$1html')
+      var html = example.replace(/^site(.*)jade$/, 'dist$1html');
+      if(action === "jade"){
+        return {src: example, dest: html};
+      }else if(action="screenshot"){
+        return {
+          url: html,
+          file: html.replace("index.html", "thumbnail.png"),
+          selector: "#example"
+        };
       }
     });
   }
@@ -103,8 +109,14 @@ module.exports = function (grunt) {
     qunit: {
       all: ['WebCola/test/*.html']
     },
-    examples: {
+    "examples-smoke": {
       all: ['site/examples/*/']
+    },
+    "screenshot-element": {
+      examples: {
+        options: {timeout: 1000},
+        images: _build_examples("screenshot")
+      },
     },
     yuidoc: {
       compile: {
@@ -146,7 +158,7 @@ module.exports = function (grunt) {
           }
         },
         files: [{src: ['site/index.jade'], dest: 'dist/index.html'}]
-          .concat(_build_examples())
+          .concat(_build_examples("jade"))
       }
     },
     less: {
