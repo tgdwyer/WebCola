@@ -1,5 +1,5 @@
 {
-  "name": "webcola",
+  "name": "cola",
   "version": "0.1.0",
   "devDependencies": {
     "grunt": "~0.4.2",
@@ -14,9 +14,12 @@
     "typescript": "~0.9.5",
     "uglifyjs": "~2.3.6",
     "async": "~0.6.2",
-    "grunt-contrib-jade": "~0.11.0"
+    "grunt-contrib-jade": "~0.11.0",
+    "marked": "~0.3.2",
+    "underscore": "~1.6.0",
+    "grunt-contrib-less": "~0.11.0"
   },
-  "description": "WebCola =======",
+  "description": "Constraint-based Layout in the Browser",
   "main": "Gruntfile.js",
   "dependencies": {},
   "scripts": {

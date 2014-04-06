@@ -1,0 +1,36 @@
+doctype html
+html(lang="en")
+  head
+    title
+      block title
+      | #{pkg.name}: #{pkg.description}
+
+    block styles
+      link(rel="stylesheet", href=bc + "highlightjs/styles/github.css")
+      link(rel="stylesheet", href="style.css")
+
+    block page-styles
+
+  body
+    header
+      block menu
+        a(href="/") Overview
+        a(href="https://github.com/tgdwyer/WebCola/wiki") Wiki
+        a(href="./api") API
+        a(href=pkg.repository.url) Repository
+
+    block header
+      h1= pkg.name
+      h2= pkg.description
+    
+    #body
+      block body
+
+    block scripts
+      script(src=bc + 'highlightjs/highlight.pack.js')
+      script.
+        hljs.initHighlightingOnLoad();
+      script(src=bc + 'd3/d3.min.js')
+      script(src='cola.js')
+      
+    block page-scripts

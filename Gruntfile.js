@@ -1,6 +1,18 @@
 module.exports = function (grunt) {
+  var _ = require("underscore"),
+    fs = require("fs");
   require('load-grunt-tasks')(grunt);
-  require('./tasks/examples')(grunt);
+  require('./tasks/examples_smoke')(grunt);
+
+  function _build_examples(){
+    var examples = grunt.file.expand(["site/examples/*/index.jade"]);
+    return examples.map(function(example){
+      return {
+        src: example,
+        dest: example.replace(/^site(.*)jade$/, "dist$1html")
+      }
+    });
+  }
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -17,12 +29,20 @@ module.exports = function (grunt) {
       test: {
         files: ["WebCola/test/*.js"],
         tasks: ["qunit"]
+      },
+      jade: {
+        files: ["site/**/*.jade"],
+        tasks: ["jade"]
+      },
+      jade: {
+        files: ["site/**/*.less"],
+        tasks: ["less"]
       }
     },
     typescript: {
       base: {
         src: ['src/**/*.ts'],
-        dest: '.tmp',
+        dest: '.tmp/compiledtypescript.js',
         options: {
           module: 'amd',
           target: 'es5',
@@ -41,7 +61,7 @@ module.exports = function (grunt) {
     concat: {
       options: {},
       dist: {
-        src: ['lib/**/*.js', '.tmp/lib/**/*.js'],
+        src: ['<%= typescript.base.dest %>', 'lib/**/*.js'],
         dest: 'dist/cola.js'
       }
     },
@@ -71,7 +91,7 @@ module.exports = function (grunt) {
       all: ['WebCola/test/*.html']
     },
     examples: {
-      all: ["WebCola/examples/*.html"]
+      all: ["site/examples/*/"]
     },
     yuidoc: {
       compile: {
@@ -86,20 +106,32 @@ module.exports = function (grunt) {
       }
     },
     jade: {
-      compile: {
+      site: {
         options: {
           data: function(dest, src){
-            return grunt.config.data;
+            return _.extend({},
+              grunt.config.data,
+              {
+                bc: "bower_components/",
+                examples: grunt.file.expand(grunt.config.data.examples.all)
+                  .map(function(ex){ return ex.replace(/^site\//, ""); })
+              }
+            );
           }
         },
-        files: {
-          "dist/index.html": ["templates/jade/index.jade"]
-        }
+        files: [{src: ["site/index.jade"], dest: "dist/index.html"}]
+          .concat(_build_examples())
+      }
+    },
+    less: {
+      default: {
+        files: [{
+          src: ["site/style.less"],
+          dest: "dist/style.css"
+        }]
       }
     }
   });
-
-  console.log();
 
   grunt.registerTask('build', [
     'typescript:base',
@@ -119,13 +151,15 @@ module.exports = function (grunt) {
   ]);
 
   grunt.registerTask('docs', [
+    'jade',
+    'less',
     'yuidoc',
     'typescript:examples'
   ]);
 
   grunt.registerTask('full', [
     'default',
-    'typescript:examples',
+    'docs',
     'examples'
   ]);
 };
