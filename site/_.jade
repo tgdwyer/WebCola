@@ -1,4 +1,8 @@
 doctype html
+
+block vars
+  - var subheader = ""
+
 html(lang="en")
   head
     title
@@ -17,16 +21,18 @@ html(lang="en")
       block menu
         a(href=root) Overview
         a(href="https://github.com/tgdwyer/WebCola/wiki") Wiki
-        a(href=root + "api/") API
+        a(href=root + "api") API
         a(href=pkg.repository.url) Repository
 
-    h1
-      block header
-        block title
-    h2
-      block subheader
-    
+    block header
+      if header
+        h1= header
+    block subheader
+      if subheader
+        h2= subheader
+
     #body
+      #example
       block body
 
     block scripts

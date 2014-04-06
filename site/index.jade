@@ -1,9 +1,8 @@
 extends _
 
-block header
-  | #{pkg.name}
-block subheader
-  | #{pkg.description}
+block vars
+  - var header = pkg.name;
+  - var subheader = pkg.description;
 
 block body
   #examples
@@ -12,11 +11,11 @@ block body
     _cola.js_ (a.k.a. "WebCoLa") is an [open source](./LICENSE) JavaScript
     library for arranging your HTML5 documents and diagrams using
     constraint-based optimization techniques.
-        
+    
     It works well with libraries like [d3.js][] and [svg.js][].
     The core layout is based on a complete rewrite in Javascript of the C++
     [libcola][] library.
-        
+    
     [d3.js]: http://d3js.org
     [svg.js]: http://svg.org
     [libcola]: http://adaptagrams.org
@@ -29,7 +28,7 @@ block body
       - Maxim Shishmarev
       - Nicholas Smith
       - [Matt Ready](https://github.com/Craxic)
-          
+      
       [Tim Dwyer]: http://marvl.infotech.monash.edu/~dwyer
       [MArVL]: http://marvl.infotech.monash.edu
       [MArVL logo]: http://marvl.infotech.monash.edu.au/wp-content/themes/marvl/marvl.png
@@ -39,7 +38,7 @@ block body
     replacement for the [D3 force layout][]. The layout converges to a 
     local optimum unlike the D3 force layout, which forces convergence
     through a simple annealing strategy. Thus, compared to D3 force layout:
-        
+    
     - CoLa achieves higher quality layout;
     - is much more stable in [interactive 
       applications](examples/browsemovies) (no "jitter")
@@ -51,7 +50,7 @@ block body
     - it is may be less scalable to very large graphs.
       - However, it works well on an average machine on graphs with fewer 
       than 100 nodes.
-        
+    
     [D3 force layout]: https://github.com/mbostock/d3/wiki/Force-Layout
 
   aside

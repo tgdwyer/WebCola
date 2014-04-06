@@ -17,7 +17,10 @@
     "grunt-contrib-jade": "~0.11.0",
     "marked": "~0.3.2",
     "underscore": "~1.6.0",
-    "grunt-contrib-less": "~0.11.0"
+    "grunt-contrib-less": "~0.11.0",
+    "grunt-contrib-copy": "~0.5.0",
+    "grunt-newer": "~0.7.0",
+    "grunt-concurrent": "~0.5.0"
   },
   "description": "Constraint-based Layout in the Browser",
   "main": "Gruntfile.js",
@@ -40,5 +43,5 @@
   "bugs": {
     "url": "https://github.com/tgdwyer/WebCola/issues"
   },
-  "homepage": "https://github.com/tgdwyer/WebCola"
+  "homepage": "http://marvl.infotech.monash.edu/webcola/"
 }

@@ -1,4 +1,39 @@
 extends ../../_
 
-block title
-  | Alignment constraints with guidelines
+block vars
+  - var header = "Alignment constraints with guidelines";
+
+block body
+  :markdown
+    Nodes _a_, _b_ and _e_ are constrained to the same y-coordinate.  _b_, _c_
+    and _d_ are constrained to the same x.
+
+block page-scripts
+  script!= inline("alignment.js")
+
+block page-styles
+  style.
+    .node {
+      stroke: #fff;
+      stroke-width: 1.5px;
+      cursor: move;
+    }
+    
+    .link {
+      stroke: #999;
+      stroke-width: 3px;
+      stroke-opacity: 1;
+    }
+    
+    .label {
+      fill: white;
+      font-family: Verdana;
+      font-size: 25px;
+      text-anchor: middle;
+      cursor: move;
+    }
+    
+    .guideline {
+      stroke: orangered;
+      stroke-width: 4px;
+    }
