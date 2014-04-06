@@ -2,7 +2,7 @@ module.exports = function (grunt) {
   var _ = require("underscore"),
     fs = require("fs");
   require('load-grunt-tasks')(grunt);
-  require('./tasks/examples_smoke')(grunt);
+  require('./tasks/examples')(grunt);
 
   function _build_examples(){
     var examples = grunt.file.expand(["site/examples/*/index.jade"]);
@@ -34,7 +34,7 @@ module.exports = function (grunt) {
         files: ["site/**/*.jade"],
         tasks: ["jade"]
       },
-      jade: {
+      less: {
         files: ["site/**/*.less"],
         tasks: ["less"]
       }
@@ -109,10 +109,17 @@ module.exports = function (grunt) {
       site: {
         options: {
           data: function(dest, src){
+            var root = dest.split("/")
+              .slice(2)
+              .map(function(){ return ".."; })
+              .join("/");
+            root = root ? root + "/" : root;
+
             return _.extend({},
               grunt.config.data,
               {
-                bc: "bower_components/",
+                root: root,
+                bc: root + "bower_components/",
                 examples: grunt.file.expand(grunt.config.data.examples.all)
                   .map(function(ex){ return ex.replace(/^site\//, ""); })
               }

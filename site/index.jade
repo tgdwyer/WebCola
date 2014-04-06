@@ -1,5 +1,10 @@
 extends _
 
+block header
+  | #{pkg.name}
+block subheader
+  | #{pkg.description}
+
 block body
   #examples
 
@@ -209,27 +214,13 @@ block page-styles
 block page-scripts
   script.
     ;(function(d3){
-      var examples = [
-        "downwardedges",
-        "unconstrained",
-        "unconstrainedsmallworld",
-        "nonoverlapping",
-        "smallnonoverlappinggraph",
-        "modifyinggraph",
-        "onlinebrowse",
-        "alignment",
-        "smallgroups",
-        "browsemovies",
-        "sucrosebreakdown",
-        "unix",
-        "disconnected_graphs"
-      ];
+      var examples = !{JSON.stringify(examples)};
       
       d3.select("#examples").selectAll(".example")
           .data(d3.shuffle(examples).slice(0, 12))
         .enter().append("a")
           .attr("class", "example")
-          .attr("href", function (d) { return "examples/" + d + ".html"; })
+          .attr("href", String)
         .append("img")
-          .attr("src", function (d) { return "examples/" + d + ".png"; });
+          .attr("src", function (d) { return d + "thumbnail.png"; });
     }).call(this, d3);
