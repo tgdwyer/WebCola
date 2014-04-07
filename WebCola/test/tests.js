@@ -79,6 +79,27 @@ asyncTest("all-pairs shortest paths", function () {
     ok(true);
 });
 
+asyncTest("edge lengths", function () {
+    var d3cola = cola.d3adaptor();
+
+    d3.json("../examples/graphdata/triangle.json", function (error, graph) {
+        d3cola
+            .nodes(graph.nodes)
+            .links(graph.links);
+        d3cola.start(10);
+        var lengths = graph.links.map(function (l) {
+            var u = l.source, v = l.target,
+                dx = u.x - v.x, dy = u.y - v.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }), avg = function (a) { return a.reduce(function (u, v) { return u + v }) / a.length },
+            mean = avg(lengths),
+            variance = avg(lengths.map(function (l) { var d = mean - l; return d * d; }));
+        ok(variance < 0.1);
+        start();
+    });
+    ok(true);
+});
+
 asyncTest("equality constraints", function () {
     var d3cola = cola.d3adaptor();
 
