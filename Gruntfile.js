@@ -13,18 +13,19 @@ module.exports = function (grunt) {
     var examples = grunt.file.expand(['site/examples/*/index.jade']);
     return examples.map(function(example){
       var html = example.replace(/^site(.*)jade$/, 'dist$1html'),
-        thumb = html.replace("index.html", "thumbnail.png");
+        thumb = html.replace("index.html", "thumbnail.png"),
+        screenshot = ".tmp/" + thumb;
       if(action === "jade"){
         return {src: example, dest: html};
       }else if(action === "screenshot"){
         return {
           url: html,
-          file: thumb,
-          selector: "#example"
+          file: screenshot,
+          selector: "svg"
         };
       }else if(action === "crop"){
         return {
-          src: thumb,
+          src: [screenshot],
           dest: thumb
         };
       }
@@ -221,7 +222,9 @@ module.exports = function (grunt) {
   ]);
 
   grunt.registerTask('site', [
-    'concurrent:site'
+    'concurrent:site',
+    'screenshot-element',
+    'image_resize'
   ]);
 
   grunt.registerTask('full', [

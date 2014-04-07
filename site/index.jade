@@ -176,22 +176,25 @@ block page-styles
       margin-bottom: 2em;
     }
       
-    .example img {
+    .example{
       float: left;
       margin-bottom: 13px;
       width: 226px;
       height: 180px;
       border: solid 2px #ccc;
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-position: center;
     }
       
-    .example:hover img {
+    .example:hover{
       border-color: steelblue;
     }
       
-    .example:not(:nth-child(4n)) img {
+    .example:not(:nth-child(4n)){
       margin-right: 13px;
     }
-      
+    
     #left {
       float: right;
       width: 50%;
@@ -212,14 +215,13 @@ block page-styles
 
 block page-scripts
   script.
-    ;(function(d3){
-      var examples = !{JSON.stringify(examples)};
+    var examples = !{JSON.stringify(examples)};
       
-      d3.select("#examples").selectAll(".example")
-          .data(d3.shuffle(examples).slice(0, 12))
-        .enter().append("a")
-          .attr("class", "example")
-          .attr("href", String)
-        .append("img")
-          .attr("src", function (d) { return d + "thumbnail.png"; });
-    }).call(this, d3);
+    d3.select("#examples").selectAll(".example")
+        .data(d3.shuffle(examples).slice(0, 12))
+      .enter().append("a")
+        .attr("class", "example")
+        .attr("href", String)
+        .style("background-image", function (d) {
+          return "url(" + d + "thumbnail.png)";
+        });

@@ -1,5 +1,5 @@
 var width = 800,
-    height = 300;
+    height = 400;
 
 var color = d3.scale.category20();
 
@@ -13,7 +13,7 @@ var svg = d3.select("#example").append("svg")
     .attr("height", height);
 
 d3.json("../../data/alignmentconstraints.json", function (error, graph) {
-    graph.nodes.forEach(function (v) { v.x = 400, v.y = 70 });
+    graph.nodes.forEach(function (v) { v.x = 400, v.y = 20 });
     d3cola
         .nodes(graph.nodes)
         .links(graph.links)
