@@ -37,7 +37,7 @@ module.exports = function (grunt) {
     bwr: bwr,
     watch: {
       default: {
-        files: ['<%= concat.dist.src %>', 'Gruntfile.js', 'templates/*'],
+        files: ['<%= concat.dist.src %>'],
         tasks: ['default']
       },
       typescript: {
@@ -46,7 +46,7 @@ module.exports = function (grunt) {
       },
       test: {
         files: ['test/**/*.js'],
-        tasks: ['qunit']
+        tasks: ['newer:copy', 'qunit']
       },
       site: {
         files: ['site/data/**'],
@@ -63,10 +63,6 @@ module.exports = function (grunt) {
       less: {
         files: ['site/**/*.less'],
         tasks: ['newer:less']
-      },
-      test: {
-        files: ['test/**'],
-        tasks: ['newer:copy', 'qunit']
       }
     },
     typescript: {
@@ -99,7 +95,7 @@ module.exports = function (grunt) {
       all: {
         src: '<%= concat.dist.dest %>',
         dest: '<%= concat.dist.dest %>',
-        template: 'templates/umd.hbs',
+        template: 'site/cola.js.hbs',
         objectToExport: 'cola',
         deps: {
           'default': ['d3']
@@ -153,36 +149,36 @@ module.exports = function (grunt) {
       }
     },
     jade: {
-      site: {
-        options: {
-          pretty: true,
-          data: function(dest, src){
-            var root = dest.split('/')
-              .slice(2)
-              .map(function(){ return '..'; })
-              .join('/');
-            root = root ? root + '/' : root;
+      options: {
+        pretty: true,
+        data: function(dest, src){
+          var root = dest.split('/')
+            .slice(2)
+            .map(function(){ return '..'; })
+            .join('/');
+          root = root ? root + '/' : root;
 
-            return _.extend({},
-              grunt.config.data,
-              {
-                root: root,
-                bc: root + 'bower_components/',
-                examples: grunt.file.expand(grunt.config.data.examples.all)
-                  .map(function(ex){ return ex.replace(/^site\//, ''); }),
-                inline: function(file_src){
-                  return fs.readFileSync(
-                    path.join(path.dirname(src[0]), file_src)
-                  );
-                }
+          return _.extend({},
+            grunt.config.data,
+            {
+              root: root,
+              bc: root + 'bower_components/',
+              examples: grunt.file.expand(grunt.config.data.examples.all)
+                .map(function(ex){ return ex.replace(/^site\//, ''); }),
+              inline: function(file_src){
+                return fs.readFileSync(
+                  path.join(path.dirname(src[0]), file_src)
+                );
               }
-            );
-          }
-        },
-        files: [
-            {src: ['site/index.jade'], dest: 'dist/index.html'},
-            {src: ['site/test/index.jade'], dest: 'dist/test/index.html'}
-          ]
+            }
+          );
+        }
+      },
+      test: {
+        files: [{src: ['site/test/index.jade'], dest: 'dist/test/index.html'}]
+      },
+      site: {
+        files: [{src: ['site/index.jade'], dest: 'dist/index.html'}]
           .concat(_build_examples('jade'))
       }
     },
@@ -219,6 +215,8 @@ module.exports = function (grunt) {
   grunt.registerTask('build', [
     'typescript:base',
     'concat',
+    'copy:test',
+    'jade:test',
     'umd'
   ]);
  
