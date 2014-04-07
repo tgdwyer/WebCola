@@ -45,7 +45,7 @@
 
     var color = d3.scale.category20();
 
-    var cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor()
         .linkDistance(120)
         .avoidOverlaps(true)
         .size([width, height]);
@@ -56,7 +56,7 @@
 
     d3.json("graphdata/alignmentconstraints.json", function (error, graph) {
         graph.nodes.forEach(function (v) { v.x = 400, v.y = 70 });
-        cola
+        d3cola
             .nodes(graph.nodes)
             .links(graph.links)
             .constraints(graph.constraints)
@@ -81,19 +81,19 @@
             .attr("height", function (d) { return d.height; })
             .attr("rx", 5).attr("ry", 5)
             .style("fill", function (d) { return color(1); })
-            .call(cola.drag);
+            .call(d3cola.drag);
 
         var label = svg.selectAll(".label")
             .data(graph.nodes)
            .enter().append("text")
             .attr("class", "label")
             .text(function (d) { return d.name; })
-            .call(cola.drag);
+            .call(d3cola.drag);
 
         node.append("title")
             .text(function (d) { return d.name; });
 
-        cola.on("tick", function () {
+        d3cola.on("tick", function () {
             link.attr("x1", function (d) { return d.source.x; })
                 .attr("y1", function (d) { return d.source.y; })
                 .attr("x2", function (d) { return d.target.x; })
@@ -124,12 +124,12 @@
         var os = c.offsets;
         if (c.axis === 'x') {
             var x = vs[os[0].node].x;
-            c.bounds = new vpsc.Rectangle(x, x, 
+            c.bounds = new cola.vpsc.Rectangle(x, x, 
                 Math.min.apply(Math, os.map(function (o) { return vs[o.node].bounds.y - 20; })),
                 Math.max.apply(Math, os.map(function (o) { return vs[o.node].bounds.Y + 20; })));
         } else {
             var y = vs[os[0].node].y;
-            c.bounds = new vpsc.Rectangle(
+            c.bounds = new cola.vpsc.Rectangle(
                 Math.min.apply(Math, os.map(function (o) { return vs[o.node].bounds.x - 20; })),
                 Math.max.apply(Math, os.map(function (o) { return vs[o.node].bounds.X + 20; })),
                 y, y);

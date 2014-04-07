@@ -44,7 +44,7 @@
     <script src="../extern/hljs/highlight.pack.js"></script>
     <script>
         hljs.initHighlightingOnLoad();
-        var cola = cola.d3adaptor().convergenceThreshold(1e-3);
+        var d3cola = cola.d3adaptor().convergenceThreshold(1e-3);
 
         var width = 960, height = 700;
 
@@ -96,13 +96,14 @@
                 edges.push({ source: digraph._nodes[edge.u].id, target: digraph._nodes[edge.v].id });
             }
 
-            cola
-                .linkDistance(function () { return 150; })
+            d3cola
+                .linkDistance(150)
                 .avoidOverlaps(true)
                 .flowLayout('x')
                 .size([width, height])
                 .nodes(nodes)
-                .links(edges);
+                .links(edges)
+                .jaccardLinkLengths();
 
             var link = vis.selectAll(".link")
                 .data(edges)
@@ -115,14 +116,14 @@
                 .enter().append("rect")
                 .attr("class", "node")
                 .attr("rx", 5).attr("ry", 5)
-                .call(cola.drag);
+                .call(d3cola.drag);
 
             var label = vis.selectAll(".label")
                 .data(nodes)
                 .enter().append("text")
                 .attr("class", "label")
                 .text(function (d) { return d.name; })
-                .call(cola.drag)
+                .call(d3cola.drag)
                 .each(function (d) {
                     var b = this.getBBox();
                     var extra = 2 * margin + 2 * pad;
@@ -136,14 +137,14 @@
                 .interpolate("linear");
 
             var routeEdges = function () {
-                var vg = new geom.TangentVisibilityGraph(
+                var vg = new cola.geom.TangentVisibilityGraph(
                     nodes.map(function (v) {
                         return v.bounds.inflate(-margin / 3).vertices();
                     }));
-                link.attr("d", function (d) { return lineFunction(cola.routeEdge(vg, d)); });
+                link.attr("d", function (d) { return lineFunction(d3cola.routeEdge(vg, d)); });
                 if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
             }
-            cola.start(10, 30, 100).on("tick", function () {
+            d3cola.start(10, 30, 100).on("tick", function () {
                 node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin); })
                     .attr("x", function (d) { return d.innerBounds.x; })
                     .attr("y", function (d) { return d.innerBounds.y; })
@@ -151,7 +152,7 @@
                     .attr("height", function (d) { return d.innerBounds.height(); });
 
                 link.attr("d", function (d) {
-                    vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                    cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
                     var lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
                     return lineFunction(lineData);
                 });
@@ -167,7 +168,7 @@
     </script>
     This is a cola.js rendering of the classic graphviz dot <a href="http://www.graphviz.org/content/unix">example</a>.  We use <a href="https://github.com/cpettitt/graphlib-dot">graphlib-dot.js</a> to parse the dot file.
     The initialization for cola here is interesting:
-    <pre><code>cola
+    <pre><code>d3cola
     .linkDistance(150)
     .avoidOverlaps(true)
     .flowLayout('x')
