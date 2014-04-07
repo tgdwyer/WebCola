@@ -215,7 +215,7 @@ module.exports = function (grunt) {
   grunt.registerTask('build', [
     'typescript:base',
     'concat',
-    'copy:test',
+    'newer:copy',
     'jade:test',
     'umd'
   ]);
