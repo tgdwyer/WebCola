@@ -13,17 +13,17 @@ module.exports = function (grunt) {
     var examples = grunt.file.expand(['site/examples/*/index.jade']);
     return examples.map(function(example){
       var html = example.replace(/^site(.*)jade$/, 'dist$1html'),
-        thumb = html.replace("index.html", "thumbnail.png"),
-        screenshot = ".tmp/" + thumb;
-      if(action === "jade"){
+        thumb = html.replace('index.html', 'thumbnail.png'),
+        screenshot = '.tmp/' + thumb;
+      if(action === 'jade'){
         return {src: example, dest: html};
-      }else if(action === "screenshot"){
+      }else if(action === 'screenshot'){
         return {
           url: html,
           file: screenshot,
-          selector: "svg"
+          selector: 'svg'
         };
-      }else if(action === "crop"){
+      }else if(action === 'crop'){
         return {
           src: [screenshot],
           dest: thumb
@@ -45,7 +45,7 @@ module.exports = function (grunt) {
         tasks: ['typescript']
       },
       test: {
-        files: ['WebCola/test/*.js'],
+        files: ['test/**/*.js'],
         tasks: ['qunit']
       },
       site: {
@@ -63,6 +63,10 @@ module.exports = function (grunt) {
       less: {
         files: ['site/**/*.less'],
         tasks: ['newer:less']
+      },
+      test: {
+        files: ['test/**'],
+        tasks: ['newer:copy', 'qunit']
       }
     },
     typescript: {
@@ -114,15 +118,15 @@ module.exports = function (grunt) {
       }
     },
     qunit: {
-      all: ['WebCola/test/*.html']
+      all: ['dist/test/*.html']
     },
-    "examples": {
+    examples: {
       all: ['site/examples/*/']
     },
-    "screenshot-element": {
+    'screenshot-element': {
       examples: {
         options: {timeout: 1000},
-        images: _build_examples("screenshot")
+        images: _build_examples('screenshot')
       },
     },
     image_resize: {
@@ -133,7 +137,7 @@ module.exports = function (grunt) {
         overwrite: true
       },
       examples: {
-        files: _build_examples("crop")
+        files: _build_examples('crop')
       }
     },
     yuidoc: {
@@ -175,8 +179,11 @@ module.exports = function (grunt) {
             );
           }
         },
-        files: [{src: ['site/index.jade'], dest: 'dist/index.html'}]
-          .concat(_build_examples("jade"))
+        files: [
+            {src: ['site/index.jade'], dest: 'dist/index.html'},
+            {src: ['site/test/index.jade'], dest: 'dist/test/index.html'}
+          ]
+          .concat(_build_examples('jade'))
       }
     },
     less: {
@@ -190,16 +197,21 @@ module.exports = function (grunt) {
     copy: {
       data: {
         files: [
-          {expand: true, cwd: 'site', src: ['data/**'], dest: 'dist'},
+          {expand: true, cwd: 'site', src: ['data/**'], dest: 'dist'}
+        ]
+      },
+      test: {
+        files: [
+          {expand: true, src: ['test/**'], dest: 'dist'}
         ]
       }
     },
     concurrent: {
       site: [
-        'newer:jade',
-        'newer:less',
-        'newer:copy',
-        'newer:yuidoc'
+        'jade',
+        'less',
+        'copy',
+        'yuidoc'
       ]
     }
   });
@@ -229,7 +241,7 @@ module.exports = function (grunt) {
 
   grunt.registerTask('full', [
     'default',
-    'docs',
+    'site',
     'examples'
   ]);
 };

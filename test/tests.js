@@ -8,7 +8,7 @@
 /// <reference path="../src/powergraph.js"/>
 
 asyncTest("small power-graph", function () {
-    d3.json("../examples/graphdata/n7e23.json", function (error, graph) {
+    d3.json("../data/n7e23.json", function (error, graph) {
         var n = graph.nodes.length;
         ok(n == 7);
         var c = new cola.powergraph.Configuration(n, graph.links);
@@ -45,7 +45,7 @@ asyncTest("small power-graph", function () {
 asyncTest("all-pairs shortest paths", function () {
     var d3cola = cola.d3adaptor();
 
-    d3.json("../examples/graphdata/triangle.json", function (error, graph) {
+    d3.json("../data/triangle.json", function (error, graph) {
         d3cola
             .nodes(graph.nodes)
             .links(graph.links)
@@ -116,7 +116,7 @@ asyncTest("edge lengths", function () {
 asyncTest("equality constraints", function () {
     var d3cola = cola.d3adaptor();
 
-    d3.json("../examples/graphdata/triangle.json", function (error, graph) {
+    d3.json("../data/triangle.json", function (error, graph) {
         d3cola
             .nodes(graph.nodes)
             .links(graph.links)

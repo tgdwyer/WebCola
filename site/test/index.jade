@@ -1,0 +1,18 @@
+doctype html
+
+html(lang="en")
+  head
+    meta(charset="utf-8")
+    link(rel="stylesheet", href=bc + "qunit/qunit/qunit.css")
+    script(src=bc + "qunit/qunit/qunit.js")
+    script(src=bc + "d3/d3.js", charset="utf-8")
+    script(src=root + "cola.js")
+    script(src="tests.js")
+    script(src="vpsctests.js")
+
+  body
+    h1#qunit-header. Unit Tests
+    h2#qunit-banner
+    h2#qunit-userAgent
+    ol#qunit-tests
+    #qunit-fixture. test markup, will be hidden

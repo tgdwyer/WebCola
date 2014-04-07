@@ -38,6 +38,7 @@
   ],
   "devDependencies": {
     "d3": "~3.4.4",
-    "highlightjs": "7.5"
+    "highlightjs": "7.5",
+    "qunit": "~1.14.0"
   }
 }
