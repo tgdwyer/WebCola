@@ -128,8 +128,17 @@ class Brain3DApp implements Application, Loopable {
                 this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
                 this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
 
+                var getSourceIndex = function (e) {
+                    return e.source;
+                }
+                var getTargetIndex = function (e) {
+                    return e.target;
+                }
+                var getLength = function (e) {
+                    return 1;
+                }
                 // Create the distance matrix that Cola needs
-                var distanceMatrix = (new shortestpaths.Calculator(this.commonData.nodeCount, edges)).DistanceMatrix();
+                var distanceMatrix = (new shortestpaths.Calculator(this.commonData.nodeCount, edges, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
 
                 var D = cola.Descent.createSquareMatrix(this.commonData.nodeCount, (i, j) => {
                     return distanceMatrix[i][j] * this.colaLinkDistance;

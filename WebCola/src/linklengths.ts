@@ -2,11 +2,6 @@
  * @module cola
  */
 module cola {
-    export interface Link {
-        source: number;
-        target: number;
-        length: number;
-    }
 
     // compute the size of the union of two sets a and b
     function unionCount(a: number[], b: number[]): number {
@@ -23,24 +18,24 @@ module cola {
         return n;
     }
 
-    function getNeighbours(n: number, links: Link[]): any[] {
+    function getNeighbours(n: number, links: any[], getSourceIndex: (any)=>number, getTargetIndex: (any)=>number): any[] {
         var neighbours = new Array(n);
         for (var i = 0; i < n; ++i) {
             neighbours[i] = {};
         }
         links.forEach(e => {
-            neighbours[e.source][e.target] = {};
-            neighbours[e.target][e.source] = {};
+            neighbours[getSourceIndex(e)][getTargetIndex(e)] = {};
+            neighbours[getTargetIndex(e)][getSourceIndex(e)] = {};
         });
         return neighbours;
     }
 
     // modify the lengths of the specified links by the result of function f weighted by w
-    function computeLinkLengths(n: number, links: Link[], w: number, f: (a:number[], b: number[]) => number) {
-        var neighbours = getNeighbours(n, links);
+    function computeLinkLengths(n: number, links: any[], w: number, f: (a: number[], b: number[]) => number, getSourceIndex: (any) => number, getTargetIndex: (any) => number) {
+        var neighbours = getNeighbours(n, links, getSourceIndex, getTargetIndex);
         links.forEach(l => {
-            var a = neighbours[l.source];
-            var b = neighbours[l.target];
+            var a = neighbours[getSourceIndex(l)];
+            var b = neighbours[getTargetIndex(l)];
             //var jaccard = intersectionCount(a, b) / unionCount(a, b);
             //if (Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1) {
             //    jaccard = 0;
@@ -53,19 +48,19 @@ module cola {
     /** modify the specified link lengths based on the symmetric difference of their neighbours
      * @class symmetricDiffLinkLengths
      */
-    export function symmetricDiffLinkLengths(n: number, links: Link[], w: number = 1) {
+    export function symmetricDiffLinkLengths(n: number, links: any[], getSourceIndex: (any) => number, getTargetIndex: (any) => number, w: number = 1) {
         computeLinkLengths(n, links, w, function (a, b) {
             return Math.sqrt(unionCount(a, b) - intersectionCount(a, b));
-        });
+        }, getSourceIndex, getTargetIndex);
     }
 
     /** modify the specified links lengths based on the jaccard difference between their neighbours
      * @class jaccardLinkLengths
      */
-    export function jaccardLinkLengths(n: number, links: Link[], w: number = 1) {
+    export function jaccardLinkLengths(n: number, links: any[], getSourceIndex: (any) => number, getTargetIndex: (any) => number, w: number = 1) {
         computeLinkLengths(n, links, w, (a, b) =>
             Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1 ? 0 : intersectionCount(a, b) / unionCount(a, b)
-            );
+            , getSourceIndex, getTargetIndex);
     }
 
     export interface IConstraint {
@@ -82,22 +77,22 @@ module cola {
     /** generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
      * @class generateDirectedEdgeConstraints
      */
-    export function generateDirectedEdgeConstraints(n: number, links: Link[], axis: string,
-        getMinSeparation: (l:Link)=>number): IConstraint[]
+    export function generateDirectedEdgeConstraints(n: number, links: any[], axis: string,
+        getMinSeparation: (l: any) => number, getSourceIndex: (any) => number, getTargetIndex: (any) => number): IConstraint[]
     {
-        var components = stronglyConnectedComponents(n, links);
+        var components = stronglyConnectedComponents(n, links, getSourceIndex, getTargetIndex);
         var nodes = {};
-        components.filter(c => c.length > 1).forEach(c => 
+        components.filter(c => c.length > 1).forEach(c =>
             c.forEach(v => nodes[v] = c)
         );
         var constraints: any[] = [];
         links.forEach(l => {
-            var u = nodes[l.source], v = nodes[l.target];
+            var u = nodes[l.source.index], v = nodes[l.target.index];
             if (!u || !v || u.component !== v.component) {
                 constraints.push({
                     axis: axis,
-                    left: l.source,
-                    right: l.target,
+                    left: getSourceIndex(l),
+                    right: getTargetIndex(l),
                     gap: getMinSeparation(l)
                 });
             }
@@ -130,7 +125,7 @@ module cola {
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
     */
-    function stronglyConnectedComponents(numVertices: number, edges: Link[]): number[][] {
+    function stronglyConnectedComponents(numVertices: number, edges: any[], getSourceIndex: (any) => number, getTargetIndex: (any) => number): number[][] {
         var adjList: number[][] = new Array(numVertices)
         var index: number[] = new Array(numVertices)
         var lowValue: number[] = new Array(numVertices)
@@ -146,7 +141,7 @@ module cola {
 
         //Build adjacency list representation
         for (var i = 0; i < edges.length; ++i) {
-            adjList[edges[i].source].push(edges[i].target)
+            adjList[getSourceIndex(edges[i])].push(getTargetIndex(edges[i]))
         }
 
         var count = 0

@@ -3,29 +3,6 @@
  * @module shortestpaths
  */
 module shortestpaths {
-    /**
-     * Edges passed into Calculator constructor must have the following properties:
-     * @class Edge
-     */
-    export declare class Edge {
-        /**
-         * index of source node
-         * @property source {number}
-         */
-        source: number;
-        /**
-         * index of target node
-         * @property target {number}
-         */
-        target: number;
-        /**
-         * length of edge
-         * @property length {number}
-         */
-        length: number;
-    }
-
-
     class Neighbour {
         constructor(public id: number, public distance: number) { }
     }
@@ -50,14 +27,14 @@ module shortestpaths {
     export class Calculator {
         private neighbours: Node[];
 
-        constructor(public n: number, public es: Edge[]) {
+        constructor(public n: number, public es: any[], getSourceIndex: (any)=>number, getTargetIndex: (any)=>number, getLength: (any)=>number) {
             this.neighbours = new Array(this.n);
             var i = this.n; while (i--) this.neighbours[i] = new Node(i);
 
             i = this.es.length; while (i--) {
                 var e = this.es[i];
-                var u: number = e.source, v: number = e.target;
-                var d = typeof e.length !== 'undefined' ? e.length : 1;
+                var u: number = getSourceIndex(e), v: number = getTargetIndex(e);
+                var d = getLength(e);
                 this.neighbours[u].neighbours.push(new Neighbour(v, d));
                 this.neighbours[v].neighbours.push(new Neighbour(u, d));
             }

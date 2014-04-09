@@ -26,13 +26,15 @@
 <h1>Directed Graph with downward-pointing edges</h1>
 <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v2.min.js"></script>
+    <script src="../src/d3adaptor.js"></script>
+    <script src="../src/linklengths.js"></script>
 <script>
     var width = 960,
         height = 500;
 
     var color = d3.scale.category20();
 
-    var cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor()
         .avoidOverlaps(true)
         .size([width, height]);
 
@@ -45,13 +47,14 @@
 
         graph.nodes.forEach(function (v) { v.height = v.width = 2 * nodeRadius; });
 
-        cola
+        d3cola
             .nodes(graph.nodes)
             .links(graph.links)
-            .flowLayout("y", 30)
-            .linkDistance(cola.symmetricDiffLinkLengths(6))
-            //.constraints(graph.constraints)
-            .start(10,20,20);
+            .flowLayout("y", 30);
+
+        d3cola//.linkDistance(d3cola.symmetricDiffLinkLengths(6));
+            .constraints(graph.constraints);
+        d3cola.start(10,20,20);
 
         // define arrow markers for graph links
         svg.append('svg:defs').append('svg:marker')
@@ -81,7 +84,7 @@
         node.append("title")
             .text(function (d) { return d.name; });
 
-        cola.on("tick", function () {
+        d3cola.on("tick", function () {
             path.each(function (d) {
                 if (isIE()) this.parentNode.insertBefore(this, this);
             });

@@ -261,12 +261,12 @@ var cola;
         };
 
         d3adaptor.symmetricDiffLinkLengths = function (idealLength, w) {
-            cola.symmetricDiffLinkLengths(this.nodes().length, links, w);
+            cola.symmetricDiffLinkLengths(this.nodes().length, links, getSourceIndex, getTargetIndex, w);
             return function (l) { return idealLength * l.length };
         }
 
         d3adaptor.jaccardLinkLengths = function (idealLength, w) {
-            cola.jaccardLinkLengths(this.nodes().length, links, w)
+            cola.jaccardLinkLengths(this.nodes().length, links, getSourceIndex, getTargetIndex, w);
             return function (l) { return idealLength * l.length };
         }
 
@@ -312,21 +312,16 @@ var cola;
                 // use the user specified distanceMatrix
                 distances = distanceMatrix;
             } else {
+                var getLength = function (e) { return typeof linkDistance === "function" ? +linkDistance.call(this, e, i) : linkDistance };
+
                 // construct an n X n distance matrix based on shortest paths through graph (with respect to edge.length).
-                var edges = links.map(function (e, i) {
-                    return {
-                        source: typeof e.source === 'number' ? e.source : e.source.index,
-                        target: typeof e.target === 'number' ? e.target : e.target.index,
-                        length: typeof linkDistance === "function" ? +linkDistance.call(this, e, i) : linkDistance
-                    };
-                });
-                distances = (new cola.shortestpaths.Calculator(N, edges)).DistanceMatrix();
+                distances = (new cola.shortestpaths.Calculator(N, links, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
 
                 // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
                 // otherwise 2. (
                 G = cola.Descent.createSquareMatrix(N, function () { return 2 });
-                edges.forEach(function (e) {
-                    G[e.source][e.target] = G[e.target][e.source] = 1;
+                links.forEach(function (e) {
+                    G[getSourceIndex(e)][getTargetIndex(e)] = G[getTargetIndex(e)][getSourceIndex(e)] = 1;
                 });
             }
 
@@ -345,7 +340,7 @@ var cola;
             } else rootGroup = { leaves: nodes, groups: [] };
 
             if (directedLinkConstraints) {
-                constraints = (constraints || []).concat(cola.generateDirectedEdgeConstraints(n, links, directedLinkConstraints.axis, directedLinkConstraints.getMinSeparation));
+                constraints = (constraints || []).concat(cola.generateDirectedEdgeConstraints(n, links, directedLinkConstraints.axis, directedLinkConstraints.getMinSeparation, getSourceIndex, getTargetIndex));
             }
 
             
@@ -444,12 +439,18 @@ var cola;
                 .call(drag);
         };
 
+        //The link source and target may be just a node index, or they may be references to nodes themselves.
+        function getSourceIndex(e) {
+            return typeof e.source === 'number' ? e.source : e.source.index;
+        }
+
+        //The link source and target may be just a node index, or they may be references to nodes themselves.
+        function getTargetIndex(e) {
+            return typeof e.target === 'number' ? e.target : e.target.index;
+        }
         // Get a string ID for a given link.
         d3adaptor.linkId = function (e) {
-            //The link source and target may be just a node index, or they may be references to nodes themselves.
-            var source = typeof e.source === 'number' ? e.source : e.source.index;
-            var target = typeof e.target === 'number' ? e.target : e.target.index;
-            return source + "-" + target;
+            return getSourceIndex(e) + "-" + getTargetIndex(e);
         }
 
         function dragmove(d) {
