@@ -47,19 +47,13 @@
     <h1>Metabolic Pathway: Sucrose Breakdown</h1>
 <script src="../extern/d3.v3.js"></script>
 <script src="../cola.v1.min.js"></script>
-<!--<script src="pqueue.js"></script>
-<script src="shortestpaths.js"></script>
-<script src="vpsc.js"></script>
-<script src="rbtree.js"></script>
-<script src="rectangle.js"></script>
-<script src="descent.js"></script>
-<script src="cola.js"></script>-->
+    <!--<script src="../src/d3adaptor.js"></script>-->
 <script>
     var width = 800,
         height = 520;
 
     var d3cola = cola.d3adaptor()
-        .linkDistance(50)
+        .linkDistance(60)
         .avoidOverlaps(true)
         .size([width, height]);
 
@@ -76,7 +70,7 @@
 
     var vis = outer
         .append('g')
-        .attr('transform', 'translate(0,0) scale(0.7)');
+        .attr('transform', 'translate(80,80) scale(0.7)');
 
     function redraw() {
         vis.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");

@@ -99,7 +99,7 @@ module shortestpaths {
                 d: number[] = new Array(i);
             while (i--) {
                 var node: Node = this.neighbours[i];
-                node.d = i === start ? 0 : Number.MAX_VALUE;
+                node.d = i === start ? 0 : Number.POSITIVE_INFINITY;
                 node.q = q.push(node);
             }
             while (!q.empty()) {

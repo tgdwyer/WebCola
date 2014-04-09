@@ -24,17 +24,16 @@
 </style>
 </head>
 <body>
-    <h1>Ariel's Power Grid Network</h1>
+    <h1>Graph with variable link lengths</h1>
 <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v1.min.js"></script>
 <script>
-    var width = 960,
-        height = 650;
+    var width = 800,
+        height = 500;
 
     var color = d3.scale.category20();
 
     var d3cola = cola.d3adaptor()
-        .linkDistance(15)
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")
@@ -96,9 +95,10 @@
                 });
 
                 g.links.forEach(function (l) {
-                    l.length = (100 + l.flows[0])/30;
+                    l.length = (100 + l.flows[0]);
                 });
                 d3cola
+                    .linkDistance(function (l) { return l.length })
                     .nodes(g.nodes)
                     .links(g.links)
                     .handleDisconnected(false)
@@ -165,7 +165,7 @@
             l.value = f;
             min = Math.min(min, l.delta);
             max = Math.max(max, l.delta);
-            l.length = (50 + Math.abs(l.flows[v])) / 30;
+            l.length = (50 + Math.abs(l.flows[v]));
         });
         var color = d3.scale.linear().domain([min, 0, max]).range(["green", "gray", "red"]);
         svg.selectAll(".link")
@@ -189,10 +189,10 @@
     }
 </script>
     <p>Flow for <label id="sliderLabel">0</label></p>
-<input class="slider" id="dateSlider" type="range" min="0" max="480" value="0" onchange="changeData(this.value)" />
+<input class="slider" id="dateSlider" type="range" min="0" max="47" value="0" onchange="changeData(this.value)" />
 <button onclick="showPositions()">Dump positions</button>
     <ul>
-        <li>Slider changes the date.</li>
+        <li>Slider changes the sample time.</li>
         <li>
             Line thickness shows log of absolute value of aggregate flow for the day.
         </li>

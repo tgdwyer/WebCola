@@ -82,7 +82,8 @@ module cola {
     /** generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
      * @class generateDirectedEdgeConstraints
      */
-    export function generateDirectedEdgeConstraints(n: number, links: Link[], axis: string, minSeparation: number): IConstraint[]
+    export function generateDirectedEdgeConstraints(n: number, links: Link[], axis: string,
+        getMinSeparation: (l:Link)=>number): IConstraint[]
     {
         var components = stronglyConnectedComponents(n, links);
         var nodes = {};
@@ -97,7 +98,7 @@ module cola {
                     axis: axis,
                     left: l.source,
                     right: l.target,
-                    gap: minSeparation
+                    gap: getMinSeparation(l)
                 });
             }
         });

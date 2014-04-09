@@ -47,7 +47,7 @@ module.exports = function (grunt) {
           'WebCola/src/scc.js',
           'WebCola/src/handle_disconnected.js'
         ],
-        dest: 'WebCola/cola.v1.min.js'
+        dest: 'WebCola/cola.v2.min.js'
       }
     },
     umd: {
@@ -68,7 +68,7 @@ module.exports = function (grunt) {
           //sourceMapRoot: 'WebCola'
         },
         files: {
-          'WebCola/cola.v1.min.js': [
+          'WebCola/cola.v2.min.js': [
             '<%= concat.dist.dest %>'
           ]
         }

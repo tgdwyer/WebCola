@@ -67,7 +67,7 @@
             lines.forEach(function (l) {
                 if (l.length > 0) {
                     matrix.push(l.split(',').map(function (d) {
-                        var l = 15 / (Number(d) + 1);
+                        var l = 150 / (Number(d) + 1);
                         edgeMinLength = Math.min(edgeMinLength, l);
                         edgeMaxLength = Math.max(edgeMaxLength, l);
                         return l;
