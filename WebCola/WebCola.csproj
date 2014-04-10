@@ -25,6 +25,7 @@
     <Content Include="examples\brainnetwork2.html" />
     <Content Include="examples\disconnected_graphs.html" />
     <Content Include="examples\alexnetwork.html" />
+    <Content Include="examples\friendnetworks.html" />
     <Content Include="examples\egonetwork.html" />
     <Content Include="examples\graphdata\SucroseBreakdownDicots-flowlayout.svg" />
     <Content Include="examples\movies.html" />
