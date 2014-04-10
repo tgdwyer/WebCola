@@ -22,24 +22,24 @@
 <body>
     <h1>Egocentric Network</h1>
 <script src="../extern/d3.v3.js"></script>
-    <script src="../cola.v1.min.js"></script>
+    <script src="../cola.v2.min.js"></script>
     <script src="../src/d3adaptor.js"></script>
     <script src="../src/linklengths.js"></script>
 <script>
-    var width = 700,
+    var width = 300,
         height = 350;
 
     var color = d3.scale.category20();
 
-    var cola = cola.d3adaptor()
-        .linkDistance(10)
+    d3.select("body").append("button").attr("id", "removeSelfButton").text("Disconnect Self").on("click", disconnectNode0);
+
+    var d3cola = cola.d3adaptor().convergenceThreshold(1e-4)
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")
         .attr("width", width)
         .attr("height", height);
 
-    d3.select("body").append("button").attr("id", "removeSelfButton").text("Disconnect Self").on("click", disconnectNode0);
     
     var edges = [];
     var n = 0;
@@ -66,21 +66,21 @@
         edges = edges.filter(function (e) {
             return e.source.index !== 0 && e.target.index !== 0;
         });
-        cola.stop();
-        cola.on("tick", null);
-        cola.links(edges).start(30);
-        link.data(cola.links(), function (d) {
+        d3cola.stop();
+        d3cola.on("tick", null);
+        d3cola.links(edges).start(30);
+        link.data(d3cola.links(), function (d) {
             return d.source.index + "-" + d.target.index;
         }).exit().remove();
-        cola.on("tick", function () {
-            link.transition().duration(2000).attr("x1", function (d) { return d.source.x; })
+        d3cola.on("tick", function () {
+            link.transition().duration(1000).attr("x1", function (d) { return d.source.x; })
                 .attr("y1", function (d) { return d.source.y; })
                 .attr("x2", function (d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
 
-            node.transition().duration(2000).attr("cx", function (d) { return d.x; })
+            node.transition().duration(1000).attr("cx", function (d) { return d.x; })
                 .attr("cy", function (d) { return d.y; }).each("end", function () {
-                    cola.on("tick", regularTick);
+                    d3cola.on("tick", regularTick);
                 });
         });
     }
@@ -96,17 +96,16 @@
     };
 
     function loaded() {
-        cola
+        d3cola
             .links(edges)
-        //.jaccardLinkLengths(0.1)
-        .symmetricDiffLinkLengths()
-            .defaultNodeSize(20)
+            .linkDistance(d3cola.symmetricDiffLinkLengths(8))
             .start(30);
 
-        var nodes = cola.nodes();
+        var nodes = d3cola.nodes();
+        nodes.forEach(function (v) { v.width = 20; v.height = 20; });
 
         link = svg.selectAll(".link")
-            .data(cola.links(), function (d) {
+            .data(d3cola.links(), function (d) {
                 return d.source.index + "-" + d.target.index;
             });
 
@@ -119,16 +118,18 @@
             .data(nodes)
           .enter().append("circle")
             .attr("class", "node")
-            .attr("r", 5)
-            .style("fill", function (d, i) { return color(i > 0) })
-            .call(cola.drag);
+            .attr("r", function (d, i) { return i === 0 ? 7 : 5 })
+            .style("fill", function (d, i) { return i === 0 ? "red" : "#8e8ec7" })
+            .call(d3cola.drag);
 
         node.append("title")
             .text(function (d) { return d.index; });
 
-        cola.on("tick", regularTick);
+        d3cola.on("tick", regularTick);
     };
 
 </script>
+<p>This is the friend network of a particular person (the red node).  Since by definition there is a link from the red node to all the blue nodes (their friends),
+    there's really no point showing all those links.  Therefore, pressing the button removes those links and rearranges the network to tidy it up.
 </body>
 </html>

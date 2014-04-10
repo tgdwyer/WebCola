@@ -76,6 +76,8 @@
             "browsemovies",
             "sucrosebreakdown",
             "unix",
+            "ariel",
+            "egonetwork",
             "disconnected_graphs"
         ];
 
@@ -128,6 +130,7 @@
             <ul> <li>Maxim Shishmarev
                 </li>
                 <li>Nicholas Smith</li>
+                <li><a href="https://github.com/bollwyvl">bollwyvl</a></li>
                 <li><a href="https://github.com/Craxic">Matt Ready</a></li>
             </ul> 
         </p>
@@ -175,7 +178,7 @@
 </code></pre>
                 </td>
                 <td>
-<pre><code>var cola = cola.d3adaptor()
+<pre><code>var d3cola = cola.d3adaptor()
     .linkDistance(30)
     .size([width, height]);
 </code></pre>
@@ -193,11 +196,11 @@
             There are some other optional parameters available.  In the <a href="examples/downwardedges.html">downward pointing edges example</a>
             we kick off layout like so:
         </p>
-<pre><code>cola
+<pre><code>d3cola
     .nodes(graph.nodes)
     .links(graph.links)         
     .constraints(graph.constraints)
-    .linkDistance(cola.symmetricDiffLinkLengths(5))
+    .linkDistance(d3cola.symmetricDiffLinkLengths(5))
     .avoidOverlaps(true)
     .start(10,15,20);
 </code></pre>
@@ -205,7 +208,7 @@
         <p><pre><code>{"axis":"y", "left":0, "right":1, "gap":25}</code></pre></p>
         <p>This says that the center of <code>graph.nodes[0]</code> must be at least 25 pixels above the center of <code>graph.nodes[1]</code>.  To be more precise, it is an inequality constraint that requires: <pre><code>graph.nodes[0].y + gap <= graph.nodes[1].y</code></pre></p>
         <p><code>avoidOverlaps(true)</code> dynamically generates constraints while layout progresses in order to prevent the bounding boxes of nodes from sliding over one another (see <a href="examples/smallnonoverlappinggraph.html">this example</a>).</p>
-        <p><code>linkDistance(symmetricDiffLinkLengths(5))</code> computes ideal lengths on each link to make extra space around high-degree nodes, using 5 as the basic length.  
+        <p><code>linkDistance(d3cola.symmetricDiffLinkLengths(5))</code> computes ideal lengths on each link to make extra space around high-degree nodes, using 5 as the basic length.  
     Alternately, you can pass your own function into linkDistance that returns a specific length for each link (e.g. based on your data).</p>
         <p>
             The <code>start()</code> method now includes up to three integer arguments.  In the example above, start will initially apply 10 iterations of layout with no constraints, 15 iterations with only structural (user-specified) constraints and 20 iterations of layout with all constraints including anti-overlap constraints.

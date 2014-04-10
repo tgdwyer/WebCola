@@ -24,10 +24,10 @@ module shortestpaths {
      * @param n {number} number of nodes
      * @param es {Edge[]} array of edges
      */
-    export class Calculator {
+    export class Calculator<Link> {
         private neighbours: Node[];
 
-        constructor(public n: number, public es: any[], getSourceIndex: (any)=>number, getTargetIndex: (any)=>number, getLength: (any)=>number) {
+        constructor(public n: number, public es: Link[], getSourceIndex: (Link) => number, getTargetIndex: (Link) => number, getLength: (Link)=>number) {
             this.neighbours = new Array(this.n);
             var i = this.n; while (i--) this.neighbours[i] = new Node(i);
 

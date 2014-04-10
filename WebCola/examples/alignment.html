@@ -38,10 +38,10 @@
 <body>
     <h1>Alignment constraints with guidelines</h1>
 <script src="../extern/d3.v3.js"></script>
-<script src="../cola.v1.min.js"></script>
+<script src="../cola.v2.min.js"></script>
 <script>
     var width = 800,
-        height = 300;
+        height = 400;
 
     var color = d3.scale.category20();
 
@@ -55,7 +55,7 @@
         .attr("height", height);
 
     d3.json("graphdata/alignmentconstraints.json", function (error, graph) {
-        graph.nodes.forEach(function (v) { v.x = 400, v.y = 70 });
+        graph.nodes.forEach(function (v) { v.x = 400, v.y = 50 });
         d3cola
             .nodes(graph.nodes)
             .links(graph.links)

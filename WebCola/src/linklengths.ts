@@ -31,36 +31,31 @@ module cola {
     }
 
     // modify the lengths of the specified links by the result of function f weighted by w
-    function computeLinkLengths(n: number, links: any[], w: number, f: (a: number[], b: number[]) => number, getSourceIndex: (any) => number, getTargetIndex: (any) => number) {
+    function computeLinkLengths<Link>(n: number, links: Link[], w: number, f: (a: number[], b: number[]) => number, getSourceIndex: (Link) => number, getTargetIndex: (Link) => number, setLength: (Link, number) => void) {
         var neighbours = getNeighbours(n, links, getSourceIndex, getTargetIndex);
         links.forEach(l => {
             var a = neighbours[getSourceIndex(l)];
             var b = neighbours[getTargetIndex(l)];
-            //var jaccard = intersectionCount(a, b) / unionCount(a, b);
-            //if (Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1) {
-            //    jaccard = 0;
-            //}
-            //l.length = 1 + w * jaccard;
-            l.length = 1 + w * f(a, b);
+            setLength(l, 1 + w * f(a, b));
         });
     }
 
     /** modify the specified link lengths based on the symmetric difference of their neighbours
      * @class symmetricDiffLinkLengths
      */
-    export function symmetricDiffLinkLengths(n: number, links: any[], getSourceIndex: (any) => number, getTargetIndex: (any) => number, w: number = 1) {
+    export function symmetricDiffLinkLengths<Link>(n: number, links: Link[], getSourceIndex: (Link) => number, getTargetIndex: (Link) => number, setLength: (Link, number)=>void, w: number = 1) {
         computeLinkLengths(n, links, w, function (a, b) {
             return Math.sqrt(unionCount(a, b) - intersectionCount(a, b));
-        }, getSourceIndex, getTargetIndex);
+        }, getSourceIndex, getTargetIndex, setLength);
     }
 
     /** modify the specified links lengths based on the jaccard difference between their neighbours
      * @class jaccardLinkLengths
      */
-    export function jaccardLinkLengths(n: number, links: any[], getSourceIndex: (any) => number, getTargetIndex: (any) => number, w: number = 1) {
+    export function jaccardLinkLengths<Link>(n: number, links: Link[], getSourceIndex: (Link) => number, getTargetIndex: (Link) => number, setLength: (Link, number) => void, w: number = 1) {
         computeLinkLengths(n, links, w, (a, b) =>
             Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1 ? 0 : intersectionCount(a, b) / unionCount(a, b)
-            , getSourceIndex, getTargetIndex);
+            , getSourceIndex, getTargetIndex, setLength);
     }
 
     export interface IConstraint {
@@ -77,8 +72,8 @@ module cola {
     /** generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
      * @class generateDirectedEdgeConstraints
      */
-    export function generateDirectedEdgeConstraints(n: number, links: any[], axis: string,
-        getMinSeparation: (l: any) => number, getSourceIndex: (any) => number, getTargetIndex: (any) => number): IConstraint[]
+    export function generateDirectedEdgeConstraints<Link>(n: number, links: Link[], axis: string,
+        getMinSeparation: (l: Link) => number, getSourceIndex: (Link) => number, getTargetIndex: (Link) => number): IConstraint[]
     {
         var components = stronglyConnectedComponents(n, links, getSourceIndex, getTargetIndex);
         var nodes = {};
@@ -87,7 +82,7 @@ module cola {
         );
         var constraints: any[] = [];
         links.forEach(l => {
-            var u = nodes[l.source.index], v = nodes[l.target.index];
+            var u = nodes[getSourceIndex(l)], v = nodes[getTargetIndex(l)];
             if (!u || !v || u.component !== v.component) {
                 constraints.push({
                     axis: axis,
@@ -125,7 +120,7 @@ module cola {
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
     */
-    function stronglyConnectedComponents(numVertices: number, edges: any[], getSourceIndex: (any) => number, getTargetIndex: (any) => number): number[][] {
+    function stronglyConnectedComponents<Link>(numVertices: number, edges: Link[], getSourceIndex: (Link) => number, getTargetIndex: (Link) => number): number[][] {
         var adjList: number[][] = new Array(numVertices)
         var index: number[] = new Array(numVertices)
         var lowValue: number[] = new Array(numVertices)
