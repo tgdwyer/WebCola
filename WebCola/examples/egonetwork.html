@@ -26,107 +26,124 @@
     <script src="../src/d3adaptor.js"></script>
     <script src="../src/linklengths.js"></script>
 <script>
-    var width = 300,
-        height = 350;
+    var width = 280,
+        height = 280;
 
     var color = d3.scale.category20();
 
-    d3.select("body").append("button").attr("id", "removeSelfButton").text("Disconnect Self").on("click", disconnectNode0);
+    function disconnectNode0() {
+        egosvg1.disconnectNode0();
+        egosvg2.disconnectNode0();
+        egosvg1.restart();
+        egosvg2.restart();
+    }
 
-    var d3cola = cola.d3adaptor().convergenceThreshold(1e-4)
-        .size([width, height]);
+    var body = d3.select("body");
+    body.append("center").append("button").attr("id", "removeSelfButton").text("Disconnect Self").on("click", disconnectNode0);
+    body.append("br");
 
-    var svg = d3.select("body").append("svg")
-        .attr("width", width)
-        .attr("height", height);
+    var egosvg = (function () {
+        function egosvg(file) {
+            this.d3cola = cola.d3adaptor().convergenceThreshold(1e-4)
+                .size([width, height]);
 
-    
-    var edges = [];
-    var n = 0;
+            this.svg = d3.select("body").append("svg")
+                .attr("width", width)
+                .attr("height", height);
 
-    d3.text("alex/matrix_ego.txt",
-        function (error, text) {
-            var lines = text.split('\n').map(function (s) { return s.trim() });
-            lines.forEach(function (l, i) {
-                if (l.length > 0) {
-                    l.split(' ').forEach(function (d, j) {
-                        if (Number(d) > 0) {
-                            edges.push({source: i, target: j});
+            this.edges = [];
+
+            var _this = this;
+
+            //d3.text("graphdata/alex/alex_network_sym.txt",
+            d3.text(file,
+                function (error, text) {
+                    var lines = text.split('\n').map(function (s) { return s.trim() });
+                    lines.forEach(function (l, i) {
+                        if (l.length > 0) {
+                            l.split(' ').forEach(function (d, j) {
+                                if (Number(d) > 0) {
+                                    _this.edges.push({ source: i, target: j });
+                                }
+                            });
                         }
                     });
-                }
-                ++n;
+                    _this.loaded();
+                });
+        }
+
+        egosvg.prototype.disconnectNode0 = function () {
+            this.edges = this.edges.filter(function (e) {
+                return e.source.index !== 0 && e.target.index !== 0;
             });
-            loaded();
-        });
-
-    var link, node;
-
-    function disconnectNode0() {
-        edges = edges.filter(function (e) {
-            return e.source.index !== 0 && e.target.index !== 0;
-        });
-        d3cola.stop();
-        d3cola.on("tick", null);
-        d3cola.links(edges).start(30);
-        link.data(d3cola.links(), function (d) {
-            return d.source.index + "-" + d.target.index;
-        }).exit().remove();
-        d3cola.on("tick", function () {
-            link.transition().duration(1000).attr("x1", function (d) { return d.source.x; })
+            this.d3cola.stop();
+            this.d3cola.on("tick", null);
+            this.d3cola.links(this.edges).start(30);
+            this.link.data(this.d3cola.links(), function (d) {
+                return d.source.index + "-" + d.target.index;
+            }).exit().remove();
+        };
+            
+        egosvg.prototype.restart = function () {
+            var _this = this;
+            _this.link.transition().duration(1000).attr("x1", function (d) { return d.source.x; })
                 .attr("y1", function (d) { return d.source.y; })
                 .attr("x2", function (d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
 
-            node.transition().duration(1000).attr("cx", function (d) { return d.x; })
+            _this.node.transition().duration(1000).attr("cx", function (d) { return d.x; })
                 .attr("cy", function (d) { return d.y; }).each("end", function () {
-                    d3cola.on("tick", regularTick);
+                    _this.d3cola.on("tick", function () { regularTick(_this.link, _this.node) });
                 });
-        });
-    }
+        }
 
-    function regularTick () {
-        link.attr("x1", function (d) { return d.source.x; })
-            .attr("y1", function (d) { return d.source.y; })
-            .attr("x2", function (d) { return d.target.x; })
-            .attr("y2", function (d) { return d.target.y; });
+        var regularTick = function (link, node) {
+            link.attr("x1", function (d) { return d.source.x; })
+                .attr("y1", function (d) { return d.source.y; })
+                .attr("x2", function (d) { return d.target.x; })
+                .attr("y2", function (d) { return d.target.y; });
 
-        node.attr("cx", function (d) { return d.x; })
-            .attr("cy", function (d) { return d.y; });
-    };
+            node.attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; });
+        };
 
-    function loaded() {
-        d3cola
-            .links(edges)
-            .linkDistance(d3cola.symmetricDiffLinkLengths(8))
-            .start(30);
+        egosvg.prototype.loaded = function () {
+            var _this = this;
+            this.d3cola
+                .links(this.edges)
+                .linkDistance(this.d3cola.symmetricDiffLinkLengths(8))
+                .start(30);
 
-        var nodes = d3cola.nodes();
-        nodes.forEach(function (v) { v.width = 20; v.height = 20; });
+            var nodes = this.d3cola.nodes();
+            nodes.forEach(function (v) { v.width = 20; v.height = 20; });
 
-        link = svg.selectAll(".link")
-            .data(d3cola.links(), function (d) {
-                return d.source.index + "-" + d.target.index;
-            });
+            this.link = this.svg.selectAll(".link")
+                .data(this.d3cola.links(), function (d) {
+                    return d.source.index + "-" + d.target.index;
+                });
 
-        link.enter().append("line")
-            .attr("class", "link")
-            .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+            this.link.enter().append("line")
+                .attr("class", "link")
+                .style("stroke-width", function (d) { return Math.sqrt(d.value); });
 
 
-        node = svg.selectAll(".node")
-            .data(nodes)
-          .enter().append("circle")
-            .attr("class", "node")
-            .attr("r", function (d, i) { return i === 0 ? 7 : 5 })
-            .style("fill", function (d, i) { return i === 0 ? "red" : "#8e8ec7" })
-            .call(d3cola.drag);
+            this.node = this.svg.selectAll(".node")
+                .data(nodes)
+              .enter().append("circle")
+                .attr("class", "node")
+                .attr("r", function (d, i) { return i === 0 ? 7 : 5 })
+                .style("fill", function (d, i) { return i === 0 ? "red" : "#8e8ec7" })
+                .call(this.d3cola.drag);
 
-        node.append("title")
-            .text(function (d) { return d.index; });
+            this.node.append("title")
+                .text(function (d) { return d.index; });
 
-        d3cola.on("tick", regularTick);
-    };
+            this.d3cola.on("tick", function () { regularTick(_this.link, _this.node) });
+        };
+        return egosvg;
+    })();
+    var egosvg1 = new egosvg("graphdata/alex/no_partner_matrix.txt");
+    var egosvg2 = new egosvg("graphdata/alex/alex_network_sym.txt");
 
 </script>
 <p>This is the friend network of a particular person (the red node).  Since by definition there is a link from the red node to all the blue nodes (their friends),
