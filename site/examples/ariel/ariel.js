@@ -239,3 +239,11 @@ function showPositions() {
     positionText.html(ps);
 
 }
+
+d3.select("#dateSlider").on("input", function(){
+  changeData(this.value);
+});
+ 
+d3.select(".showPositions").on("click", function(){
+  showPositions();
+});
