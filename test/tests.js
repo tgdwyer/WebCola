@@ -92,7 +92,7 @@ asyncTest("all-pairs shortest paths", function () {
 asyncTest("edge lengths", function () {
     var d3cola = cola.d3adaptor();
 
-    d3.json("../examples/graphdata/triangle.json", function (error, graph) {
+    d3.json("../data/triangle.json", function (error, graph) {
         var length = function (l) {
             return d3cola.linkId(l) == "2-3" ? 2 : 1;
         }
