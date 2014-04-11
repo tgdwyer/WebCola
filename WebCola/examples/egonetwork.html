@@ -17,20 +17,55 @@
   stroke-opacity: .8;
 }
 
-button {
-    position: relative; left: -200px; top: 0px;
-    min-width: 130px;
-}
+        .leftheading {
+            position: relative;
+            left: 0px;
+            width: 300px;
+            float: left;
+            font-size: 20px;
+        }
+
+        .rightheading {
+            position: relative;
+            left: 30px;
+            width: 150px;
+            float: left;
+            font-size: 20px;
+        }
+        .leftsvg {
+            position: absolute;
+            left: 0px;
+            top: 50px;
+            width: 300px;
+        }
+
+        .rightsvg {
+            position: absolute;
+            left: 280px;
+            top: 50px;
+            width: 300px;
+        }
+
+        button {
+            position: absolute;
+            left: 250px;
+            top: 60px;
+            width: 80px;
+        }
 
         .logo {
-            text-align: left;
-            font-size: 20px;
+            position: absolute;
+            left: 200px;
+            top: 310px;
+            font-size: 16px;
             opacity: 0.5;
         }
 </style>
 </head>
 <body>
-    <h1>Egocentric Network</h1>
+    <!--<h1>Egocentric Network</h1>-->
+    <div class="leftheading">Jonica’s network</div>
+    <div class="rightheading">Alex’s network</div>
 <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v2.min.js"></script>
     <script src="../src/d3adaptor.js"></script>
@@ -41,6 +76,13 @@ button {
 
     var color = d3.scale.category20();
     var connected = true;
+    //var button;
+    document.onkeyup = keyhandler;
+    function keyhandler(e) {
+        if (e.keyCode === 32) {
+            disconnectNode0();
+        }
+    }
     function disconnectNode0() {
         if (connected) {
             egosvg1.disconnectNode0();
@@ -48,20 +90,19 @@ button {
             egosvg1.restart();
             egosvg2.restart();
             connected = false;
-            button.text("Connect Self");
+            //button.text("Connect Self");
         } else {
             egosvg1.connectNode0();
             egosvg2.connectNode0();
-            //egosvg1.restart();
-            //egosvg2.restart();
+            egosvg1.restart();
+            egosvg2.restart();
             connected = true;
-            button.text("Disconnect Self");
+            //button.text("Disconnect Self");
         }
     }
 
     var body = d3.select("body");
-    var button = body.append("center").append("button").attr("id", "removeSelfButton").text("Disconnect Self").on("click", disconnectNode0);
-    body.append("br");
+  
 
     var egosvg = (function () {
         function egosvg(file) {
@@ -102,13 +143,16 @@ button {
             });
             this.d3cola.stop();
             this.d3cola.on("tick", null);
-            this.d3cola.links(this.edges).start(30);
+            this.d3cola.links(this.edges)
+                .linkDistance(this.d3cola.symmetricDiffLinkLengths(8)).start(0, 0, 10);
             this.link.data(this.d3cola.links(), function (d) {
                 return d.source.index + "-" + d.target.index;
             }).exit().remove();
         };
 
         egosvg.prototype.connectNode0 = function () {
+            this.d3cola.stop();
+            this.d3cola.on("tick", null);
             var node0;
             var node0edges = this.d3cola.nodes().filter(function (d, i) {
                 if (i == 0) {
@@ -120,11 +164,10 @@ button {
                 return { source: node0, target: d };
             });
             this.edges = this.edges.concat(node0edges);
+            this.edges.forEach(function (l) {
+                delete l.length;
+            });
 
-            //this.d3cola.stop();
-            //this.d3cola.on("tick", null);
-            this.d3cola.links(this.edges)
-                .linkDistance(this.d3cola.symmetricDiffLinkLengths(8)).start();
             var _this = this;
             this.link = this.edgegroup.selectAll(".link")
                 .data(this.edges, function (d) {
@@ -132,17 +175,22 @@ button {
                 });
             this.link.enter().append("line")
                 .attr("class", "link")
-                .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+                .style("stroke-width", function (d) { return Math.sqrt(d.value); }).attr("x1", function (d) { return d.source.x; })
+                .attr("y1", function (d) { return d.source.y; })
+                .attr("x2", function (d) { return d.target.x; })
+                .attr("y2", function (d) { return d.target.y; });
+            this.d3cola.links(this.edges)
+                .linkDistance(this.d3cola.symmetricDiffLinkLengths(8)).start(0, 0, 30);
         };
             
         egosvg.prototype.restart = function () {
             var _this = this;
-            _this.link.transition().duration(1000).attr("x1", function (d) { return d.source.x; })
+            _this.link.transition().duration(2000).attr("x1", function (d) { return d.source.x; })
                 .attr("y1", function (d) { return d.source.y; })
                 .attr("x2", function (d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
 
-            _this.node.transition().duration(1000).attr("cx", function (d) { return d.x; })
+            _this.node.transition().duration(2000).attr("cx", function (d) { return d.x; })
                 .attr("cy", function (d) { return d.y; }).each("end", function () {
                     _this.d3cola.on("tick", function () { regularTick(_this.link, _this.node) });
                 });
@@ -196,10 +244,14 @@ button {
     })();
     var egosvg1 = new egosvg("graphdata/alex/no_partner_matrix.txt");
     var egosvg2 = new egosvg("graphdata/alex/alex_network_sym.txt");
+    egosvg1.svg.attr("class", "leftsvg");
+    egosvg2.svg.attr("class", "rightsvg");
     var counter = 0;
     function allDone() {
-        if (++counter === 2)
+        if (++counter === 2) {
+            //button = body.append("center").append("button").attr("id", "removeSelfButton").html("Disconnect Self").on("click", disconnectNode0);
             body.append("p").html('<p class="logo">marvl.infotech.monash.edu</p>');
+        }
         //body.append("p").html('<div class="logo"><img src="http://marvl.infotech.monash.edu.au/wp-content/themes/marvl/marvl.png" width="85px" alt="MArVL Logo" />  Monash Adaptive Visualization Lab</div>');
     }
 

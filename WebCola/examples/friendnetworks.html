@@ -16,7 +16,24 @@
   stroke: #999;
   stroke-opacity: .8;
 }
-
+        svg {
+            position: absolute;
+            left: 0px;
+        }
+        .leftheading {
+            position: relative;
+            left: 0px;
+            width: 300px;
+            float: left;
+            font-size: 20px;
+        }
+        .rightheading {
+            position: relative;
+            left: 20px;
+            width: 150px;
+            float: left;
+            font-size: 20px;
+        }
         #leftButton {
             position: relative;
             left: 0px;
@@ -31,15 +48,20 @@
         }
 
 .logo {
-    text-align: left;
-    font-size: 20px;
+    position: absolute;
+    left: 200px;
+    top: 260px;
+    font-size: 16px;
     opacity: 0.5;
 }
 
 </style>
 </head>
 <body>
-    <h1>Friend Networks</h1>
+    <!--<h1>Friend Networks</h1>-->
+        <div class="leftheading">Acquaintances</div>
+        <div class="rightheading">Close Friends</div>
+    <p />
 <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v2.min.js"></script>
     <script src="../src/d3adaptor.js"></script>
@@ -50,15 +72,29 @@
 
     var color = d3.scale.category20();
     var leftvisible = true;
+    document.onkeyup = keyhandler;
+    var visible = false;
+    function keyhandler(e) {
+        if (e.keyCode === 65 && visible) {
+            showhideleft();
+        }
+        if (e.keyCode === 76 && visible) {
+            showhideright();
+        }
+        if (e.keyCode === 32 && !visible) {
+            go();
+            visible = true;
+        }
+    }
     function showhideleft() {
         if (leftvisible) {
             egosvg1.svg.transition().duration(1000).attr("opacity", 0);
             leftvisible = false;
-            leftbutton.text("show");
+            //leftbutton.text("show");
         } else {
             egosvg1.svg.transition().duration(1000).attr("opacity", 1);
             leftvisible = true;
-            leftbutton.text("hide");
+            //leftbutton.text("hide");
         }
     }
     var rightvisible = true;
@@ -75,9 +111,9 @@
     }
 
     var body = d3.select("body");
-    var leftbutton = body.append("button").attr("id", "leftButton").html("hide").on("click", showhideleft);
-    var rightbutton = body.append("button").attr("id", "rightButton").html("hide").on("click", showhideright);
-    body.append("br");
+    //var leftbutton = body.append("button").attr("id", "leftButton").html("hide").on("click", showhideleft);
+    //var rightbutton = body.append("button").attr("id", "rightButton").html("hide").on("click", showhideright);
+    //body.append("br");
 
     var egosvg = (function () {
         function egosvg(file, edgelength, gender) {
@@ -161,12 +197,15 @@
     })();
     var egosvg1, egosvg2;
     
-    d3.text("graphdata/alex/Full_Network_Sym/gender.txt",
-        function (error, text) {
-            var gender = text.split('\n').map(function (s) { return Number(s.trim()) });
-            egosvg1 = new egosvg("graphdata/alex/Full_Network_Sym/acquaint_core.txt", 25, gender);
-            egosvg2 = new egosvg("graphdata/alex/Full_Network_Sym/closef_core.txt", 6, gender);
-        });
+    function go() {
+        d3.text("graphdata/alex/Full_Network_Sym/gender.txt",
+            function (error, text) {
+                var gender = text.split('\n').map(function (s) { return Number(s.trim()) });
+                egosvg1 = new egosvg("graphdata/alex/Full_Network_Sym/acquaint_core.txt", 25, gender);
+                egosvg2 = new egosvg("graphdata/alex/Full_Network_Sym/closef_core.txt", 6, gender);
+                egosvg2.svg.style("left", "300px");
+            });
+    }
 
     var counter = 0;
     function allDone() {
