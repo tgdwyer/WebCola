@@ -1,0 +1,35 @@
+extends ../_example
+
+block vars
+  - var header = "Brain Network II";
+
+block example
+  p
+    | Showing 
+    label#sliderLabel No Links
+
+  p 
+    label No Links
+    input#edgeThresholdSlider.slider(type="range", min=0, max=100, value=0)
+    label All Links
+
+  :markdown
+    A single subject resting-state connectivity matrix that is +/- signed and
+    weighted (`signed_weighted.txt`) along with an affiliation vector
+    (`signed_weighted_affil.txt`) from a single run of a Q* modularity analysis
+    (Rubinov & Sporns).
+
+block page-scripts
+  script!= inline("brainnetwork2.js")
+
+block page-styles
+  style.
+    .node {
+      stroke: #fff;
+      stroke-width: 1.5px;
+    }
+
+    .link {
+      stroke: #999;
+      stroke-opacity: .8;
+    }
