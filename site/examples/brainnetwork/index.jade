@@ -1,0 +1,31 @@
+extends ../_example
+
+block vars
+  - var header = "Brain Network MDS";
+
+block example
+  p
+    label No Links
+    input#edgeThresholdSlider.slider(type="range", min=0, max=500, value=0)
+    label All Links
+  :markdown
+    CCsum matrix (CCsum.txt) and community affiliation vector (affil.txt).
+
+block page-scripts
+  script!= inline("brainnetwork.js")
+
+block page-styles
+  style.
+    .node {
+      stroke: #fff;
+      stroke-width: 1.5px;
+    }
+
+    .link {
+      stroke: #999;
+      stroke-opacity: .8;
+    }
+
+    .slider {
+      width: 500px;
+    }
