@@ -209,6 +209,11 @@ module.exports = function (grunt) {
         'copy',
         'yuidoc'
       ]
+    },
+    sitemap: {
+      dist: {
+        siteRoot: 'dist/'
+      }
     }
   });
 
@@ -234,7 +239,8 @@ module.exports = function (grunt) {
   grunt.registerTask('site', [
     'concurrent:site',
     'screenshot-element',
-    'image_resize'
+    'image_resize',
+    'sitemap'
   ]);
 
   grunt.registerTask('full', [

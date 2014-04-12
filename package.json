@@ -22,7 +22,8 @@
     "grunt-newer": "~0.7.0",
     "grunt-concurrent": "~0.5.0",
     "grunt-image-resize": "~0.3.0",
-    "grunt-screenshot-element": "git://github.com/bollwyvl/grunt-screenshot-element"
+    "grunt-screenshot-element": "~0.1.9",
+    "grunt-sitemap": "~1.1.0"
   },
   "description": "Constraint-based Layout in the Browser",
   "main": "Gruntfile.js",
