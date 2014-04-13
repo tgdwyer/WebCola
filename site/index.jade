@@ -5,7 +5,7 @@ block vars
   - var subheader = pkg.description;
 
 block body
-  #examples
+  #examples.clearfix
 
   :markdown
     _cola.js_ (a.k.a. "WebCoLa") is an [open source](./LICENSE) JavaScript
@@ -179,6 +179,12 @@ block page-styles
       width: 960px;
       height: 189px;
       margin-bottom: 2em;
+    }
+    
+    .clearfix:after {
+      content: "";
+      display: table;
+      clear: both;
     }
     
     .example{

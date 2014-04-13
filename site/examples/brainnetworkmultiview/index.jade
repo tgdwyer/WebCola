@@ -1,0 +1,27 @@
+extends ../_example
+
+block vars
+  - var header = "Brain Network III";
+
+block example
+  p
+    input.slider(type="range", min=0, max=500, value=500)
+
+  :markdown
+    CCsum matrix (`CCsum.txt`) and community affiliation vector (`affil.txt`). 
+
+block page-scripts
+  script!= inline("brainnetworkmultiview.js")
+
+block page-styles
+  style.
+    .node {
+      stroke: #fff;
+      stroke-width: 1.5px;
+    }
+
+    .link {
+      stroke: #999;
+      stroke-opacity: .2;
+    }
+    
