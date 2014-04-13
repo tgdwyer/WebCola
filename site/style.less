@@ -1,0 +1,147 @@
+html {
+  min-width: 1040px;
+}
+
+body {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  margin: 1em auto 4em auto;
+  width: 960px;
+}
+
+#body {
+  position: relative;
+}
+
+h1 {
+  font-size: 64px;
+  font-weight: 300;
+  letter-spacing: -2px;
+  margin: .3em 0 .1em 0;
+}
+
+h2 {
+  margin-top: 2em;
+  
+  &:empty{
+    display: none;
+  }
+  
+  a {
+    color: #ccc;
+    left: -20px;
+    position: absolute;
+    width: 740px;
+  }
+}
+
+h1, h2 {
+  text-rendering: optimizeLegibility;
+}
+
+footer {
+  font-size: small;
+  margin-top: 8em;
+}
+
+header {
+  a {
+    margin-right: 1em;
+  }
+  aside {
+    margin-top: 82px;
+  }
+}
+
+header aside,
+footer aside {
+  color: #636363;
+  text-align: right;
+}
+
+aside {
+  font-size: small;
+  left: 780px;
+  position: absolute;
+  width: 180px;
+}
+
+.attribution {
+  font-size: small;
+  margin-bottom: 2em;
+}
+
+#body {
+  > p, li > p {
+    line-height: 1.5em;
+  }
+  > p {
+    width: 720px;
+  }
+  > blockquote {
+    width: 640px;
+  }
+  > pre {
+    border-left: solid 2px #ccc;
+    padding-left: 18px;
+    margin: 2em 0 2em -20px;
+  }
+}
+
+
+li {
+  width: 680px;
+}
+
+a {
+  color: steelblue;
+}
+
+a:not(:hover) {
+  text-decoration: none;
+}
+
+pre, code, textarea {
+  font-family: "Menlo", monospace;
+}
+
+code {
+  line-height: 1em;
+}
+
+textarea {
+  font-size: 100%;
+}
+
+svg {
+  font: 10px sans-serif;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+sup, sub {
+  line-height: 0;
+}
+
+q:before,
+blockquote:before {
+  content: "â";
+}
+
+q:after,
+blockquote:after {
+  content: "â";
+}
+
+blockquote:before {
+  position: absolute;
+  left: 2em;
+}
+
+blockquote:after {
+  position: absolute;
+}
+

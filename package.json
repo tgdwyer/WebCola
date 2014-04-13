@@ -1,5 +1,5 @@
 {
-  "name": "webcola",
+  "name": "cola",
   "version": "0.1.0",
   "devDependencies": {
     "grunt": "~0.4.2",
@@ -13,9 +13,19 @@
     "load-grunt-tasks": "~0.4.0",
     "typescript": "~0.9.5",
     "uglifyjs": "~2.3.6",
-    "async": "~0.6.2"
+    "async": "~0.6.2",
+    "grunt-contrib-jade": "~0.11.0",
+    "marked": "~0.3.2",
+    "underscore": "~1.6.0",
+    "grunt-contrib-less": "~0.11.0",
+    "grunt-contrib-copy": "~0.5.0",
+    "grunt-newer": "~0.7.0",
+    "grunt-concurrent": "~0.5.0",
+    "grunt-image-resize": "~0.3.0",
+    "grunt-screenshot-element": "~0.1.9",
+    "grunt-sitemap": "~1.1.0"
   },
-  "description": "WebCola =======",
+  "description": "Constraint-based Layout in the Browser",
   "main": "Gruntfile.js",
   "dependencies": {},
   "scripts": {
@@ -36,5 +46,5 @@
   "bugs": {
     "url": "https://github.com/tgdwyer/WebCola/issues"
   },
-  "homepage": "https://github.com/tgdwyer/WebCola"
+  "homepage": "http://marvl.infotech.monash.edu/webcola/"
 }

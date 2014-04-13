@@ -1,0 +1,35 @@
+extends ../_example
+
+block vars
+  - var header = "Ariel's Power Grid Network";
+
+block example
+  p
+    | Flow for
+    label#sliderLabel 0
+  input#dateSlider.slider(type="range", min=0, max=480, value=0)
+  button.showPositions Dump positions
+
+  :markdown
+    - Graph with variable link lengths.
+    - Line thickness shows log of absolute value of aggregate flow for the day.
+    - Line color indicates delta from previous slider selection.</li>
+
+block page-scripts
+  script!= inline("ariel.js")
+
+block page-styles
+  style.
+    .node {
+      stroke: #fff;
+      stroke-width: 1.5px;
+    }
+
+    .link {
+      stroke: #999;
+      stroke-opacity: .8;
+    }
+
+    .slider {
+      width: 500px;
+    }

@@ -6,7 +6,7 @@
     "Tim Dwyer"
   ],
   "description": "Javascript constraint based layout for high-quality graph visualization and exploration",
-  "main": "WebCola/cola.v2.min.js",
+  "main": "dist/cola.min.js",
   "keywords": [
     "d3",
     "graph",
@@ -35,5 +35,10 @@
     "*.csproj*",
     "Gruntfile.js",
     "WebCola/*/"
-  ]
+  ],
+  "devDependencies": {
+    "d3": "~3.4.4",
+    "highlightjs": "7.5",
+    "qunit": "~1.14.0"
+  }
 }

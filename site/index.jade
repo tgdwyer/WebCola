@@ -1,0 +1,238 @@
+extends _
+
+block vars
+  - var header = pkg.name;
+  - var subheader = pkg.description;
+
+block body
+  #examples.clearfix
+
+  :markdown
+    _cola.js_ (a.k.a. "WebCoLa") is an [open source](./LICENSE) JavaScript
+    library for arranging your HTML5 documents and diagrams using
+    constraint-based optimization techniques.
+    
+    It works well with libraries like [d3.js][] and [svg.js][].
+    The core layout is based on a complete rewrite in Javascript of the C++
+    [libcola][] library.
+    
+    [d3.js]: http://d3js.org
+    [svg.js]: http://svg.org
+    [libcola]: http://adaptagrams.org
+
+  aside
+    :markdown
+      _cola.js_ is developed by [Tim Dwyer][] at the [Monash Adaptive
+      Visualisation Lab. ![MArVL][MArVL logo]][MArVL]
+      Additional contributions gratefully received from:
+      - Maxim Shishmarev
+      - Nicholas Smith
+      - [Matt Ready](https://github.com/Craxic)
+      
+
+      [![build status][]][travis]
+      
+      [Tim Dwyer]: http://marvl.infotech.monash.edu/~dwyer
+      [MArVL]: http://marvl.infotech.monash.edu
+      [MArVL logo]: http://marvl.infotech.monash.edu.au/wp-content/themes/marvl/marvl.png
+      [travis]: https://travis-ci.org/bollwyvl/WebCola
+      [build status]: https://travis-ci.org/bollwyvl/WebCola.svg
+
+  :markdown
+    It has an adaptor for d3.js that allows you to use cola as a drop-in 
+    replacement for the [D3 force layout][]. The layout converges to a 
+    local optimum unlike the D3 force layout, which forces convergence
+    through a simple annealing strategy. Thus, compared to D3 force layout:
+    
+    - CoLa achieves higher quality layout;
+    - is much more stable in [interactive 
+      applications](examples/browsemovies) (no "jitter")
+    - it allows user specified constraints such as 
+      [alignments](examples/alignments) and [grouping](examples/smallgroups)
+    - it can automatically generate constraints to:
+      - [avoid overlapping nodes](examples/smallnonoverlappinggraph); or
+      - provide [flow layout](examples/unix)
+    - it is may be less scalable to very large graphs.
+      - However, it works well on an average machine on graphs with fewer 
+      than 100 nodes.
+    
+    [D3 force layout]: https://github.com/mbostock/d3/wiki/Force-Layout
+
+  aside
+    :markdown
+      _&#8656; NEW! NUOVO! NOUVEAU!_
+
+  :markdown
+    _cola.js_ can now (optionally) [route edges to avoid intersections with 
+    node boundaries](examples/unix).
+
+  h2 Getting Started
+  :markdown
+    Replacing D3 force layout with cola.js is easy.  Include the following
+    in your html:
+
+  pre
+    code.html
+      = '<script src="http://marvl.infotech.monash.edu/webcola/cola.v1.min.js"></script>'
+
+  :markdown
+    Or, if you don't like your javascript files being loaded from Australia,
+    then host the `cola.v1.min.js` file locally.
+      
+    Then replace D3 force with cola as follows:
+
+  table
+    thead
+      tr
+        th= 'D3 force setup:'
+        th= 'cola.js setup:'
+    tbody
+      tr
+        td
+          pre
+            code.javscript.
+              var force = d3.layout.force()
+                .charge(-120)
+                .linkDistance(30)
+                .size([width, height]);
+        td
+          pre
+            code.javscript.
+              var d3cola = cola.d3adaptor()
+                .linkDistance(30)
+                .size([width, height]);
+
+  :markdown
+    You then use `d3cola` as you would `force` (or just continue to call
+    it `force` if you don't care what it's actually doing as much as me).
+          
+    Note that while with D3 force layout you may have had to mess with
+    parameters like "charge" to get reasonable node separation, cola
+    should do a much better job of respecting the specified link distance
+    in the final layout. This is because cola is directly trying to
+    minimize the variance between ideal link distance and the actual
+    distance in the drawing. In other words, just set `linkDistance` to
+    something reasonable for the size of your nodes (in the same
+    coordinate system).
+          
+    There are some other optional parameters available.  In the [downward
+    pointing edges example](examples/downwardedges) we kick off layout
+    like so:
+
+  pre
+    code.javascript.
+      d3.cola
+        .nodes(graph.nodes)
+        .links(graph.links)
+        .constraints(graph.constraints)
+        .symmetricDiffLinkLengths()
+        .avoidOverlaps(true)
+        .start(10,15,20);
+
+  :markdown
+    We specify nodes and links exactly as in D3 force layout.  However,
+    `constraints` is a new parameter.  It is an array containing constraints
+    specified like so:
+
+  pre
+    code.javascript.
+      {axis: "y", left: 0, right: 1, gap: 25}
+
+  :markdown
+    This says that the center of `graph.nodes[0]` must be at least 25 pixels
+    above the center of `graph.nodes[1]`. To be more precise, it is an
+    inequality constraint that requires:
+
+  pre
+    code.javascript.
+      graph.nodes[0].y + gap <= graph.nodes[1].y
+
+  :markdown
+    `avoidOverlaps(true)` dynamically generates constraints while layout
+    progresses in order to prevent the bounding boxes of nodes from sliding
+    over one another (see [this example](examples/smallnonoverlappinggraph).
+        
+    `symmetricDiffLinkLengths()` adjusts the ideal lengths (from that
+    specified by `linkDistance`) on each link to make extra space around
+    high-degree nodes.  Alternately, you can specify individual lengths on
+    each link which will override the default.
+        
+    The `start()` method now includes up to three integer arguments.  In the
+    example above, start will initially apply 10 iterations of layout with
+    no constraints, 15 iterations with only structural (user-specified)
+    constraints and 20 iterations of layout with all constraints including
+    anti-overlap constraints.
+        
+    Specifying such a schedule is useful to allow the graph to untangle
+    before making it relatively "rigid" with constraints.
+        
+    Click through the examples above to see other cola.js features in
+    action.
+        
+    I'm currently working hard to add more options and to support more
+    classes of constraints, so please watch this space - and don't be shy
+    about [sending me feedback](http://marvl.infotech.monash.edu/~dwyer).
+
+block page-styles
+  style.
+    #examples {
+      width: 960px;
+      height: 189px;
+      margin-bottom: 2em;
+    }
+    
+    .clearfix:after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+    
+    .example{
+      float: left;
+      margin-bottom: 13px;
+      width: 226px;
+      height: 180px;
+      border: solid 2px #ccc;
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-position: center;
+    }
+      
+    .example:hover{
+      border-color: steelblue;
+    }
+      
+    .example:not(:nth-child(4n)){
+      margin-right: 13px;
+    }
+    
+    #left {
+      float: right;
+      width: 50%;
+    }
+      
+    #right {
+      margin-right: 50%;
+    }
+    
+    aside img {
+      max-width: 180px;
+    }
+    
+    aside ul {
+      max-width: 180px;
+      overflow-x: hidden;
+    }
+
+block page-scripts
+  script.
+    var examples = !{JSON.stringify(examples)};
+      
+    d3.select("#examples").selectAll(".example")
+        .data(d3.shuffle(examples).slice(0, 12))
+      .enter().append("a")
+        .attr("class", "example")
+        .attr("href", String)
+        .style("background-image", function (d) {
+          return "url(" + d + "thumbnail.png)";
+        });
