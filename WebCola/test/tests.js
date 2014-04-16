@@ -657,7 +657,7 @@ test("cola.vpsc.removeOverlaps", function () {
 });
 
 test("packing", function () {
-    var draw = true;
+    var draw = false;
     var nodes = []
     var drawNodes = function () {
         if (draw) {
