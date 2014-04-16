@@ -31,7 +31,8 @@ var cola;
             descent = null,
             directedLinkConstraints = null,
             threshold = 1e-5,
-            defaultNodeSize = 10;
+            defaultNodeSize = 10,
+            visibilityGraph = null;
 
         d3adaptor.tick = function () {
             if (alpha < threshold) {
@@ -257,6 +258,10 @@ var cola;
             return d3adaptor;
         };
 
+        function getLinkLength(link) {
+            return typeof linkDistance === "function" ? +linkDistance.call(null, link) : linkDistance;
+        }
+
         function setLinkLength(link, length) {
             link.length = length;
         }
@@ -313,10 +318,8 @@ var cola;
                 // use the user specified distanceMatrix
                 distances = distanceMatrix;
             } else {
-                var getLength = function (e) { return typeof linkDistance === "function" ? +linkDistance.call(this, e, i) : linkDistance };
-
                 // construct an n X n distance matrix based on shortest paths through graph (with respect to edge.length).
-                distances = (new cola.shortestpaths.Calculator(N, links, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
+                distances = (new cola.shortestpaths.Calculator(N, links, getSourceIndex, getTargetIndex, getLinkLength)).DistanceMatrix();
 
                 // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
                 // otherwise 2. (
@@ -400,16 +403,23 @@ var cola;
             return d;
         }
 
-        d3adaptor.routeEdge = function(vg, d) {
+        d3adaptor.prepareEdgeRouting = function (nodeMargin) {
+            visibilityGraph = new cola.geom.TangentVisibilityGraph(
+                    nodes.map(function (v) {
+                        return v.bounds.inflate(-nodeMargin).vertices();
+                    }));
+        }
+
+        d3adaptor.routeEdge = function(d) {
             var lineData = [];
-            var vg2 = new geom.TangentVisibilityGraph(vg.P, {V: vg.V, E: vg.E}),
+            var vg2 = new cola.geom.TangentVisibilityGraph(visibilityGraph.P, { V: visibilityGraph.V, E: visibilityGraph.E }),
                 port1 = { x: d.source.x, y: d.source.y },
                 port2 = { x: d.target.x, y: d.target.y },
                 start = vg2.addPoint(port1, d.source.id),
                 end = vg2.addPoint(port2, d.target.id);
             vg2.addEdgeIfVisible(port1, port2, d.source.id, d.target.id);
-            var es = vg2.E.map(function (e) { return { source: e.source.id, target: e.target.id, length: e.length() } }),
-                spCalc = new shortestpaths.Calculator(vg2.V.length, es),
+            var sourceInd = function(e) { return e.source.id }, targetInd = function(e) { return e.target.id }, length = function(e) { return e.length() }, 
+                spCalc = new shortestpaths.Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length),
                 shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
             if (shortestPath.length === 1 || shortestPath.length === vg2.V.length) {
                 vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
