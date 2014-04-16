@@ -1,7 +1,4 @@
-﻿// to do:
-//  - autogenerate downward edge constraints with strongly connected components detection
-//  - 3D! (add a third dimension to descent.ts and try out with three.js)
-/**
+﻿/**
  * @module cola
  */
 var cola;
