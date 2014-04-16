@@ -656,3 +656,41 @@ test("cola.vpsc.removeOverlaps", function () {
     equal(overlaps(rs), 0);
 });
 
+test("packing", function () {
+    var draw = false;
+    var nodes = []
+    var drawNodes = function () {
+        if (draw) {
+            var svg = d3.select("body").append("svg").attr("width", 200).attr("height", 200);
+            nodes.forEach(function (v) {
+                svg.append("rect").attr("x", 100 + v.x - v.width / 2).attr("y", 100 + v.y - v.height / 2).attr("width", v.width).attr("height", v.height).style("fill", "#6600FF").style("fill-opacity", 0.5);
+            });
+        }
+    }
+    for (var i = 0; i < 9; i++) { nodes.push({width: 10, height: 10}) }
+    cola.d3adaptor().nodes(nodes).start();
+    drawNodes();
+    var dim = nodes.reduce(function (p, v) {
+        return {
+            x: Math.min(v.x - v.width / 2, p.x),
+            y: Math.min(v.y - v.height / 2, p.y),
+            X: Math.max(v.x + v.width / 2, p.X),
+            Y: Math.max(v.y + v.height / 2, p.Y)
+        };
+    }, { x: Number.POSITIVE_INFINITY, X: Number.NEGATIVE_INFINITY, y: Number.POSITIVE_INFINITY, Y: Number.NEGATIVE_INFINITY });
+    var width = dim.X - dim.x, height = dim.Y - dim.y;
+    ok(Math.abs(width / height - 1) < 0.001);
+
+    // regression test, used to cause infinite loop
+    nodes = [{ width: 24, height: 35 }, { width: 24, height: 35 }, { width: 32, height: 35 }];
+    cola.d3adaptor().nodes(nodes).start();
+    drawNodes();
+    ok(true);
+
+    // for some reason the first rectangle is offset by the following - no assertion for this yet.
+    var rand = new cola.PseudoRandom();
+    for (var i = 0; i < 9; i++) { nodes.push({ width: rand.getNextBetween(5, 30), height: rand.getNextBetween(5, 30) }) }
+    cola.d3adaptor().nodes(nodes).avoidOverlaps(false).start();
+    drawNodes();
+    ok(true);
+});

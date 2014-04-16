@@ -185,12 +185,12 @@
             
         egosvg.prototype.restart = function () {
             var _this = this;
-            _this.link.transition().duration(2000).attr("x1", function (d) { return d.source.x; })
+            _this.link.transition().duration(3000).attr("x1", function (d) { return d.source.x; })
                 .attr("y1", function (d) { return d.source.y; })
                 .attr("x2", function (d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
 
-            _this.node.transition().duration(2000).attr("cx", function (d) { return d.x; })
+            _this.node.transition().duration(3000).attr("cx", function (d) { return d.x; })
                 .attr("cy", function (d) { return d.y; }).each("end", function () {
                     _this.d3cola.on("tick", function () { regularTick(_this.link, _this.node) });
                 });

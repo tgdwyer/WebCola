@@ -2,10 +2,10 @@
 var cola;
 (function (cola) {
     var applyPacking = {}
-    const applyPacking.PADDING = 10;
-    const applyPacking.GOLDEN_SECTION = (1 + Math.sqrt(5)) / 2;
-    const applyPacking.FLOAT_EPSILON = 0.00001;
-    const applyPacking.MAX_INERATIONS = 100;
+    applyPacking.PADDING = 10;
+    applyPacking.GOLDEN_SECTION = (1 + Math.sqrt(5)) / 2;
+    applyPacking.FLOAT_EPSILON = 0.00001;
+    applyPacking.MAX_INERATIONS = 100;
 
     // assign x, y to nodes while using box packing algorithm for disconnected graphs
     cola.applyPacking = function (graphs, w, h, node_size, desired_ratio){
