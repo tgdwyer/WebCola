@@ -2,9 +2,10 @@
 var cola;
 (function (cola) {
     var applyPacking = {}
-    applyPacking.PADDING = 10;
-    applyPacking.GOLDEN_SECTION = (1 + Math.sqrt(5)) / 2;
-    applyPacking.FLOAT_EPSILON = 0.00001;
+    const applyPacking.PADDING = 10;
+    const applyPacking.GOLDEN_SECTION = (1 + Math.sqrt(5)) / 2;
+    const applyPacking.FLOAT_EPSILON = 0.00001;
+    const applyPacking.MAX_INERATIONS = 100;
 
     // assign x, y to nodes while using box packing algorithm for disconnected graphs
     cola.applyPacking = function (graphs, w, h, node_size, desired_ratio){
@@ -16,7 +17,7 @@ var cola;
             svg_height = h,
 
             desired_ratio = typeof desired_ratio !== 'undefined' ? desired_ratio : 1,
-            node_size = typeof node_size !== 'undefined' ? node_size : 6,
+            node_size = typeof node_size !== 'undefined' ? node_size : 0,
 
             real_width,
             real_height,
@@ -34,17 +35,16 @@ var cola;
 
         // get bounding boxes for all separate graphs
         function calculate_bb(graphs){
-            for (var i = 0; i < graphs.length; i++){
-                var graph = graphs[i];
-                calculate_single_bb(graph);
-            }
+
+            graphs.forEach(function(g) { 
+                calculate_single_bb(g)
+            });
 
             function calculate_single_bb(graph){
                 var min_x = Number.MAX_VALUE, min_y = Number.MAX_VALUE,
                  max_x = 0, max_y = 0;
 
-                for (var j = 0; j < graph.array.length; j++) {
-                    var v = graph.array[j];
+                graph.array.forEach(function(v){
                     var w = typeof v.width !== 'undefined' ? v.width : node_size;
                     var h = typeof v.height !== 'undefined' ? v.height : node_size;
                     w /= 2;
@@ -53,7 +53,7 @@ var cola;
                     min_x = Math.min(v.x - w, min_x);
                     max_y = Math.max(v.y + h, max_y);
                     min_y = Math.min(v.y - h, min_y);
-                }
+                });
 
                 graph.width = max_x - min_x;
                 graph.height = max_y - min_y;
@@ -62,33 +62,27 @@ var cola;
 
         // actuall assigning of position to nodes
         function put_nodes_to_right_positions(graphs){
-    
-
-            for (var i = 0; i < graphs.length; i++){
+            graphs.forEach(function(g){
                 // calculate current graph center:
                 var center = {x: 0, y: 0};
-                for (var j = 0; j < graphs[i].array.length; j++){
-                    var node = graphs[i].array[j];
+                g.array.forEach(function(node){
                     center.x += node.x;
                     center.y += node.y;
-                }
-                center.x /= graphs[i].array.length;
-                center.y /= graphs[i].array.length;
-      
-                // calculate current top left corner:
-                var corner = {x: center.x - graphs[i].width/2, 
-                    y: center.y - graphs[i].height/2}
+                });
+                
+                center.x /= g.array.length;
+                center.y /= g.array.length;
 
-                var offset = {x: graphs[i].x - corner.x,
-                    y: graphs[i].y - corner.y}
+                // calculate current top left corner:
+                var corner = { x: center.x - g.width/2, y: center.y - g.height/2 };
+                var offset = { x: g.x - corner.x, y: g.y - corner.y };
 
                 // put nodes:
-                for (var j = 0; j < graphs[i].array.length; j++){
-                    var node = graphs[i].array[j];
+                g.array.forEach(function(node){
                     node.x = node.x + offset.x + svg_width/2 - real_width/2;
                     node.y = node.y + offset.y + svg_height/2 - real_height/2;
-                }
-            }
+                });
+            });
         }
 
         // starts box packing algorithm
@@ -102,6 +96,7 @@ var cola;
 
             var left = x1 = 10;
             var right = x2 = get_entire_width(data);
+            var interationCounter = 0;
     
             f_x1 = 0;
             f_x2 = 10;
@@ -113,7 +108,8 @@ var cola;
                 var f_x1 = step(data, x1);
                 var f_x2 = step(data, x2);
 
-                if (f_x1 > f_x2) left = x1; else right = x2;    
+                if (f_x1 > f_x2) left = x1; else right = x2;  
+                if (interationCounter++ > 100) break;  
             }
         }
 
