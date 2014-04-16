@@ -189,7 +189,7 @@ test("radial sort", function () {
         if (draw) svg.append("circle").attr("cx", p.x).attr("cy", p.y).attr('fill', 'green').attr("r", 5);
     }
     var q = { x: x / n, y: y / n };
-    console.log(q);
+    //console.log(q);
     var p0 = null;
     cola.geom.clockwiseRadialSweep(q, P, function (p, i) {
         if (p0) {
@@ -657,7 +657,7 @@ test("cola.vpsc.removeOverlaps", function () {
 });
 
 test("packing", function () {
-    var draw = false;
+    var draw = true;
     var nodes = []
     var drawNodes = function () {
         if (draw) {
@@ -688,7 +688,7 @@ test("packing", function () {
     ok(true);
 
     // for some reason the first rectangle is offset by the following - no assertion for this yet.
-    var rand = new cola.PseudoRandom();
+    var rand = new cola.PseudoRandom(2);
     for (var i = 0; i < 9; i++) { nodes.push({ width: rand.getNextBetween(5, 30), height: rand.getNextBetween(5, 30) }) }
     cola.d3adaptor().nodes(nodes).avoidOverlaps(false).start();
     drawNodes();
