@@ -4,7 +4,7 @@ var cola;
     var applyPacking = {}
     applyPacking.PADDING = 10;
     applyPacking.GOLDEN_SECTION = (1 + Math.sqrt(5)) / 2;
-    applyPacking.FLOAT_EPSILON = 0.00001;
+    applyPacking.FLOAT_EPSILON = 0.0001;
     applyPacking.MAX_INERATIONS = 100;
 
     // assign x, y to nodes while using box packing algorithm for disconnected graphs
@@ -19,15 +19,23 @@ var cola;
             desired_ratio = typeof desired_ratio !== 'undefined' ? desired_ratio : 1,
             node_size = typeof node_size !== 'undefined' ? node_size : 0,
 
-            real_width,
-            real_height,
-            min_width,
+            real_width = 0,
+            real_height = 0,
+            min_width = 0,
 
-            global_bottom,
-            line;
+            global_bottom = 0,
+            line = [];
 	  
         if (graphs.length == 0)
             return;
+
+        /// that would take care of single nodes problem
+        // graphs.forEach(function (g) {
+        //     if (g.array.length == 1) {
+        //         g.array[0].x = 0;
+        //         g.array[0].y = 0;
+        //     }
+        // });
 
         calculate_bb(graphs);
         apply(graphs);
@@ -60,11 +68,48 @@ var cola;
             }
         }
 
+        function plot(data, left, right, opt_x, opt_y) {
+                    // plot the cost function
+            var plot_svg = d3.select("body").append("svg")
+                .attr("width", function(){return 2 * (right - left);})
+                .attr("height", 200);
+
+
+            var x = d3.time.scale().range([0, 2 * (right - left)]);
+
+            var xAxis = d3.svg.axis().scale(x).orient("bottom");
+            plot_svg.append("g").attr("class", "x axis")
+                .attr("transform", "translate(0, 199)")
+                .call(xAxis);
+
+            var lastX = 0;
+            var lastY = 0;
+            var value = 0;
+            for (var r = left; r < right; r += 1){
+                value = step(data, r);
+                // value = 1;
+
+                plot_svg.append("line").attr("x1", 2 * (lastX - left))
+                    .attr("y1", 200 - 30 * lastY)
+                    .attr("x2", 2 * r - 2 * left)
+                    .attr("y2", 200 - 30 * value)
+                    .style("stroke", "rgb(6,120,155)");
+
+                lastX = r;
+                lastY = value;
+            }
+
+            plot_svg.append("circle").attr("cx", 2 * opt_x - 2 * left).attr("cy", 200 - 30 * opt_y)
+                .attr("r", 5).style('fill', "rgba(0,0,0,0.5)");
+            
+        }
+
         // actuall assigning of position to nodes
         function put_nodes_to_right_positions(graphs){
             graphs.forEach(function(g){
                 // calculate current graph center:
                 var center = {x: 0, y: 0};
+                
                 g.array.forEach(function(node){
                     center.x += node.x;
                     center.y += node.y;
@@ -88,18 +133,20 @@ var cola;
         // starts box packing algorithm
         // desired ratio is 1 by default
         function apply(data, desired_ratio){
+            var curr_best_f = Number.POSITIVE_INFINITY;
+            var curr_best = 0;
             data.sort(function (a, b) { return b.height - a.height; });
 
             min_width = data.reduce(function(a, b) {
                 return a.width < b.width ? a.width : b.width;
             });
 
-            var left = x1 = 10;
+            var left = x1 = min_width;
             var right = x2 = get_entire_width(data);
-            var interationCounter = 0;
-    
-            f_x1 = 0;
-            f_x2 = 10;
+            var iterationCounter = 0;
+            
+            var f_x1 = 0;
+            var f_x2 = 10;
 
             while ((Math.abs(x1 - x2) > min_width) || Math.abs(f_x1 - f_x2) > applyPacking.FLOAT_EPSILON ) {
 
@@ -108,9 +155,24 @@ var cola;
                 var f_x1 = step(data, x1);
                 var f_x2 = step(data, x2);
 
-                if (f_x1 > f_x2) left = x1; else right = x2;  
-                if (interationCounter++ > 100) break;  
+                if (f_x1 > f_x2) left = x1; else right = x2;
+
+                if (f_x1 < curr_best_f) {
+                    curr_best_f = f_x1;
+                    curr_best = x1;
+                }
+
+                if (f_x2 < curr_best_f) {
+                    curr_best_f = f_x2;
+                    curr_best = x2;
+                }
+
+                if (iterationCounter++ > 100) {
+                    break;
+                }  
             }
+            // plot(data, min_width, get_entire_width(data), curr_best, curr_best_f);
+            step(data, curr_best);
         }
 
         // one iteration of the optimization method
@@ -131,7 +193,7 @@ var cola;
 
         // looking for a position to one box 
         function put_rect(rect, max_width){
-            line.push(rect);
+            
 
             var parent = undefined;
 
@@ -141,6 +203,8 @@ var cola;
                     break;
                 }
             }
+
+            line.push(rect);
 
             if (parent !== undefined){
                 rect.x = parent.x + parent.width + applyPacking.PADDING;

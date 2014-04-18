@@ -661,7 +661,7 @@ test("packing", function () {
     var nodes = []
     var drawNodes = function () {
         if (draw) {
-            var svg = d3.select("body").append("svg").attr("width", 200).attr("height", 200);
+            var svg  = d3.select("body").append("svg").attr("width", 200).attr("height", 200);
             nodes.forEach(function (v) {
                 svg.append("rect").attr("x", 100 + v.x - v.width / 2).attr("y", 100 + v.y - v.height / 2).attr("width", v.width).attr("height", v.height).style("fill", "#6600FF").style("fill-opacity", 0.5);
             });
@@ -688,9 +688,11 @@ test("packing", function () {
     ok(true);
 
     // for some reason the first rectangle is offset by the following - no assertion for this yet.
-    var rand = new cola.PseudoRandom(2);
-    for (var i = 0; i < 9; i++) { nodes.push({ width: rand.getNextBetween(5, 30), height: rand.getNextBetween(5, 30) }) }
+    var rand = new cola.PseudoRandom(51);
+    for (var i = 0; i < 19; i++) { nodes.push({ width: rand.getNextBetween(5, 30), height: rand.getNextBetween(5, 30) }) }
     cola.d3adaptor().nodes(nodes).avoidOverlaps(false).start();
     drawNodes();
     ok(true);
+
+
 });
