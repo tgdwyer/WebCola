@@ -155,7 +155,11 @@
         });
     });
 
+    var lastValue = -1;
+
     function changeData(v) {
+        if (v == lastValue) return;
+        lastValue = v;
         var l = document.getElementById("sliderLabel");
         l.textContent = dates[v];
         var min = Number.MAX_VALUE, max = -Number.MAX_VALUE;
@@ -189,7 +193,7 @@
     }
 </script>
     <p>Flow for <label id="sliderLabel">0</label></p>
-<input class="slider" id="dateSlider" type="range" min="0" max="47" value="0" onchange="changeData(this.value)" />
+<input class="slider" id="dateSlider" type="range" min="0" max="47" value="0" onchange="changeData(this.value)" oninput="changeData(this.value)" />
 <button onclick="showPositions()">Dump positions</button>
     <ul>
         <li>Slider changes the sample time.</li>
