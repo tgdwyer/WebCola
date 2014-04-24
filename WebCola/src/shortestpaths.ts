@@ -45,7 +45,7 @@ module shortestpaths {
          * edges may optionally have a length attribute.  1 is the default.
          * Uses Johnson's algorithm.
          * 
-         * @method GetDistanceMatrix
+         * @method DistanceMatrix
          * @return the distance matrix
          */
         DistanceMatrix(): number[][] {
@@ -58,7 +58,7 @@ module shortestpaths {
 
         /**
          * get shortest paths from a specified start node
-         * @method GetDistancesFromNode
+         * @method DistancesFromNode
          * @param start node index
          * @return array of path lengths
          */
@@ -80,7 +80,7 @@ module shortestpaths {
                 node.q = q.push(node);
             }
             while (!q.empty()) {
-                // console.log(q.toString(function (u) { return u.id + "=" + (u.d === Number.MAX_VALUE ? "\u221E" : u.d) }));
+                // console.log(q.toString(function (u) { return u.id + "=" + (u.d === Number.POSITIVE_INFINITY ? "\u221E" : u.d.toFixed(2) )}));
                 var u = q.pop();
                 d[u.id] = u.d;
                 if (u.id === dest) {
@@ -99,7 +99,7 @@ module shortestpaths {
                     if (u.d !== Number.MAX_VALUE && v.d > t) {
                         v.d = t;
                         v.prev = u;
-                        v.q = q.reduceKey(v.q, v);
+                        q.reduceKey(v.q, v, (e,q)=>e.q = q);
                     }
                 }
             }

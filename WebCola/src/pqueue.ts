@@ -10,7 +10,7 @@ class PairingHeap<T> {
     public toString(selector) : string {
         var str = "", needComma = false;
         for (var i = 0; i < this.subheaps.length; ++i) {
-            var subheap = this.subheaps[i];
+            var subheap: PairingHeap<T> = this.subheaps[i];
             if (!subheap.elem) {
                 needComma = false;
                 continue;
@@ -27,12 +27,37 @@ class PairingHeap<T> {
         return (this.elem ? selector(this.elem) : "") + str;
     }
 
+    public forEach(f) {
+        if (!this.empty()) {
+            f(this.elem, this);
+            this.subheaps.forEach(s => s.forEach(f));
+        }
+    }
+
+    public count(): number {
+        return this.empty() ? 0 : 1 + this.subheaps.reduce((n: number, h: PairingHeap<T>) => {
+            return n + h.count();
+        }, 0);
+    }
+
     public min() : T {
         return this.elem;
     }
 
     public empty() : boolean {
         return this.elem == null;
+    }
+
+    public contains(h: PairingHeap<T>): boolean {
+        if (this === h) return true;
+        for (var i = 0; i < this.subheaps.length; i++) {
+            if (this.subheaps[i].contains(h)) return true;
+        }
+        return false;
+    }
+
+    public isHeap(lessThan: (a: T, b: T) => boolean): boolean {
+        return this.subheaps.every(h=> lessThan(this.elem, h.elem) && h.isHeap(lessThan));
     }
 
     public insert(obj : T, lessThan) : PairingHeap<T> {
@@ -65,24 +90,40 @@ class PairingHeap<T> {
             return firstPair.merge(remaining, lessThan);
         }
     }
-    public decreaseKey(subheap: PairingHeap<T>, newValue: T, lessThan: (a: T, b: T) => boolean): { root: PairingHeap<T>; newNode: PairingHeap<T> } {
+    public decreaseKey(subheap: PairingHeap<T>, newValue: T, setHeapNode: (e: T, h: PairingHeap<T>)=>void, lessThan: (a: T, b: T) => boolean): PairingHeap<T> {
         var newHeap = subheap.removeMin(lessThan);
         //reassign subheap values to preserve tree
         subheap.elem = newHeap.elem;
         subheap.subheaps = newHeap.subheaps;
+        if (setHeapNode !== null && newHeap.elem !== null) {
+            setHeapNode(subheap.elem, subheap);
+        }
         var pairingNode = new PairingHeap(newValue);
-        var heap = this.merge(pairingNode, lessThan);
-        return { root: heap, newNode: pairingNode};
+        if (setHeapNode !== null) {
+            setHeapNode(newValue, pairingNode);
+        }
+        return this.merge(pairingNode, lessThan);
     }
 }
 
+/**
+ * @class PriorityQueue a min priority queue backed by a pairing heap
+ */
 class PriorityQueue<T> {
     private root : PairingHeap<T>;
     constructor(private lessThan: (a: T, b: T) => boolean) { }
+    /**
+     * @method top
+     * @return the top element (the min element as defined by lessThan)
+     */
     public top() : T {
         if (this.empty()) { return null; }
         return this.root.elem;
     }
+    /**
+     * @method push
+     * put things on the heap
+     */
     public push(...args: T[]): PairingHeap<T> {
         var pairingNode;
         for (var i = 0, arg; arg=args[i]; ++i) {
@@ -92,9 +133,30 @@ class PriorityQueue<T> {
         }
         return pairingNode;
     }
+    /**
+     * @method empty
+     * @return true if no more elements in queue
+     */
     public empty(): boolean {
         return !this.root || !this.root.elem;
     }
+    /**
+     * @method isHeap check heap condition (for testing)
+     * @return true if queue is in valid state
+     */
+    public isHeap(): boolean {
+        return this.root.isHeap(this.lessThan);
+    }
+    /**
+     * @method forEach apply f to each element of the queue
+     * @param f function to apply
+     */
+    public forEach(f) {
+        this.root.forEach(f);
+    }
+    /**
+     * @method pop remove and return the min element from the queue
+     */
     public pop(): T {
         if (this.empty()) {
             return null;
@@ -103,12 +165,20 @@ class PriorityQueue<T> {
         this.root = this.root.removeMin(this.lessThan);
         return obj;
     }
-    public reduceKey(heapNode: PairingHeap<T>, newKey: T): PairingHeap<T> {
-        var r = this.root.decreaseKey(heapNode, newKey, this.lessThan);
-        this.root = r.root;
-        return r.newNode;
+    /**
+     * @method reduceKey reduce the key value of the specified heap node
+     */
+    public reduceKey(heapNode: PairingHeap<T>, newKey: T, setHeapNode: (e: T, h: PairingHeap<T>)=>void = null): void {
+        this.root = this.root.decreaseKey(heapNode, newKey, setHeapNode, this.lessThan);
     }
     public toString(selector) {
         return this.root.toString(selector);
+    }
+    /**
+     * @method count
+     * @return number of elements in queue
+     */
+    public count() {
+        return this.root.count();
     }
 }

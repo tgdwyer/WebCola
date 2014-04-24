@@ -73,19 +73,43 @@ module vpsc {
             return new Rectangle(Math.min(this.x, r.x), Math.max(this.X, r.X), Math.min(this.y, r.y), Math.max(this.Y, r.Y));
         }
 
+        /**
+         * return any intersection points between the given line and the sides of this rectangle
+         * @method lineIntersection
+         * @param x1 number first x coord of line
+         * @param y1 number first y coord of line
+         * @param x2 number second x coord of line
+         * @param y2 number second y coord of line
+         * @return any intersection points found
+         */
+        lineIntersections(x1: number, y1: number, x2: number, y2: number): Array<{
+            x: number; y: number
+        }> {
+            var sides = [[this.x, this.y, this.X, this.y],
+                    [this.X, this.y, this.X, this.Y],
+                    [this.X, this.Y, this.x, this.Y],
+                [this.x, this.Y, this.x, this.y]];
+            var intersections = [];
+            for (var i = 0; i < 4; ++i) {
+                var r = Rectangle.lineIntersection(x1, y1, x2, y2, sides[i][0], sides[i][1], sides[i][2], sides[i][3]);
+                if (r !== null) intersections.push({ x: r.x, y: r.y });
+            }
+            return intersections;
+        }
+        
+        /**
+         * return any intersection points between a line extending from the centre of this rectangle to the given point,
+         *  and the sides of this rectangle
+         * @method lineIntersection
+         * @param x2 number second x coord of line
+         * @param y2 number second y coord of line
+         * @return any intersection points found
+         */
         rayIntersection(x2: number, y2: number): {
             x: number; y: number
         } {
-            var x1 = this.cx(), y1 = this.cy(),
-                sides = [[this.x, this.y, this.X, this.y],
-                    [this.X, this.y, this.X, this.Y],
-                    [this.X, this.Y, this.x, this.Y],
-                    [this.x, this.Y, this.x, this.y]];
-            for (var i = 0; i < 4; ++i) {
-                var r = Rectangle.lineIntersection(x1, y1, x2, y2, sides[i][0], sides[i][1], sides[i][2], sides[i][3]);
-                if (r !== null) return { x: r.x, y: r.y };
-            }
-            return null;
+            var ints = this.lineIntersections(this.cx(), this.cy(), x2, y2);
+            return ints.length > 0 ? ints[0] : null;
         }
 
         vertices(): { x: number; y: number }[] {

@@ -410,14 +410,20 @@ var cola;
                     }));
         }
 
-        d3adaptor.routeEdge = function(d) {
+        d3adaptor.routeEdge = function(d, draw) {
             var lineData = [];
+            if (d.source.id === 10 && d.target.id === 11) {
+                debugger;
+            }
             var vg2 = new cola.geom.TangentVisibilityGraph(visibilityGraph.P, { V: visibilityGraph.V, E: visibilityGraph.E }),
                 port1 = { x: d.source.x, y: d.source.y },
                 port2 = { x: d.target.x, y: d.target.y },
                 start = vg2.addPoint(port1, d.source.id),
                 end = vg2.addPoint(port2, d.target.id);
             vg2.addEdgeIfVisible(port1, port2, d.source.id, d.target.id);
+            if (typeof draw !== 'undefined') {
+                draw(vg2);
+            }
             var sourceInd = function(e) { return e.source.id }, targetInd = function(e) { return e.target.id }, length = function(e) { return e.length() }, 
                 spCalc = new shortestpaths.Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length),
                 shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
@@ -433,6 +439,18 @@ var cola;
                     lineData.push(vg2.V[shortestPath[i]].p);
                 lineData.push(vpsc.makeEdgeTo(q, d.target.innerBounds, 5));
             }
+            lineData.forEach(function (v, i) {
+                if (i > 0) {
+                    var u = lineData[i - 1];
+                    nodes.forEach(function (node) {
+                        if (node.id === getSourceIndex(d) || node.id === getTargetIndex(d)) return;
+                        var ints = node.innerBounds.lineIntersections(u.x, u.y, v.x, v.y);
+                        if (ints.length > 0) {
+                            debugger;
+                        }
+                    })
+                }
+            })
             return lineData;
         }
 
