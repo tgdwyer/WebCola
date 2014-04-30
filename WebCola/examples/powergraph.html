@@ -42,118 +42,195 @@
     <h1>Power graph representation of a dense graph</h1>
 <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v2.min.js"></script>
+    <!--<script src="../src/d3adaptor.js"></script>
+    <script src="../src/vpsc.js"></script>
+    <script src="../src/rectangle.js"></script>
+    <script src="../src/powergraph.js"></script>-->
 <script>
-    var width = 960,
-        height = 500;
+    var width = 350,
+        height = 350;
 
     var color = d3.scale.category20();
 
-    var d3cola = cola.d3adaptor()
-        .linkDistance(80)
-        .avoidOverlaps(true)
-        .size([width, height]);
+    function flatGraph() {
+        var d3cola = cola.d3adaptor()
+            .linkDistance(80)
+            .avoidOverlaps(true)
+            .size([width, height]);
 
-    var svg = d3.select("body").append("svg")
-        .attr("width", width)
-        .attr("height", height);
-    // define arrow markers for graph links
-    svg.append('svg:defs').append('svg:marker')
-        .attr('id', 'end-arrow')
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 5)
-        .attr('markerWidth', 3)
-        .attr('markerHeight', 3)
-        .attr('orient', 'auto')
-      .append('svg:path')
-        .attr('d', 'M0,-5L10,0L0,5L2,0')
-        .attr('stroke-width', '0px')
-        .attr('fill', '#555');
+        var svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+        // define arrow markers for graph links
+        svg.append('svg:defs').append('svg:marker')
+            .attr('id', 'end-arrow')
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', 5)
+            .attr('markerWidth', 3)
+            .attr('markerHeight', 3)
+            .attr('orient', 'auto')
+          .append('svg:path')
+            .attr('d', 'M0,-5L10,0L0,5L2,0')
+            .attr('stroke-width', '0px')
+            .attr('fill', '#555');
 
-    d3.json("graphdata/n7e23.json", function (error, graph) {
-        var g = cola.powergraph.getGroups(graph.nodes.length, graph.links);
-        g.powerEdges.forEach(function (e) {
-            var f = function (end) {
-                var g = e[end];
-                if (typeof g == "number") {
-                    e[end] = graph.nodes[g];
-                }
-            }
-            f("source");
-            f("target");
-        });
-        d3cola
-            .nodes(graph.nodes)
-            .links(graph.links)
-            .groups(g.groups)
-            .start(10,10,10);
+        d3.json("graphdata/n7e23.json", function (error, graph) {
+            d3cola
+                .nodes(graph.nodes)
+                .links(graph.links)
+                .start(10, 10, 10);
 
-        var group = svg.selectAll(".group")
-            .data(g.groups)
-          .enter().append("rect")
-            .attr("rx", 8).attr("ry", 8)
-            .attr("class", "group")
-            .style("fill", function (d, i) { return color(i); });
+            var link = svg.selectAll(".link")
+                .data(graph.links)
+              .enter().append("line")
+                .attr("class", "link");
 
-        var link = svg.selectAll(".link")
-            .data(g.powerEdges)
-          .enter().append("line")
-            .attr("class", "link");
+            var margin = 10;
+            var node = svg.selectAll(".node")
+                .data(graph.nodes)
+              .enter().append("rect")
+                .attr("class", "node")
+                .attr("width", function (d) { return d.width + 2 * margin; })
+                .attr("height", function (d) { return d.height + 2 * margin; })
+                .attr("rx", 4).attr("ry", 4)
+                .call(d3cola.drag);
+            var label = svg.selectAll(".label")
+                .data(graph.nodes)
+               .enter().append("text")
+                .attr("class", "label")
+                .text(function (d) { return d.name; })
+                .call(d3cola.drag);
 
-        var margin = 6, pad = 12;
-        var node = svg.selectAll(".node")
-            .data(graph.nodes)
-          .enter().append("rect")
-            .attr("class", "node")
-            .attr("width", function (d) { return d.width + 2 * pad + 2 * margin; })
-            .attr("height", function (d) { return d.height + 2 * pad + 2 * margin; })
-            .attr("rx", 4).attr("ry", 4)
-            .call(d3cola.drag);
-        var label = svg.selectAll(".label")
-            .data(graph.nodes)
-           .enter().append("text")
-            .attr("class", "label")
-            .text(function (d) { return d.name; })
-            .call(d3cola.drag);
+            node.append("title")
+                .text(function (d) { return d.name; });
 
-        node.append("title")
-            .text(function (d) { return d.name; });
+            d3cola.on("tick", function () {
+                node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
+                link.each(function (d) {
+                    cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                    if (isIE()) this.parentNode.insertBefore(this, this);
+                });
 
-        d3cola.on("tick", function () {
-            node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
-            group.each(function (d) { d.innerBounds = d.bounds.inflate(0) });
-            link.each(function (d) {
-                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
-                if (isIE()) this.parentNode.insertBefore(this, this);
+                link.attr("x1", function (d) { return d.sourceIntersection.x; })
+                    .attr("y1", function (d) { return d.sourceIntersection.y; })
+                    .attr("x2", function (d) { return d.arrowStart.x; })
+                    .attr("y2", function (d) { return d.arrowStart.y; });
+
+                node.attr("x", function (d) { return d.innerBounds.x; })
+                    .attr("y", function (d) { return d.innerBounds.y; })
+                    .attr("width", function (d) { return d.innerBounds.width(); })
+                    .attr("height", function (d) { return d.innerBounds.height(); });
+
+                label.attr("x", function (d) { return d.x; })
+                     .attr("y", function (d) {
+                         var h = this.getBBox().height;
+                         return d.y + h / 3.5;
+                     });
             });
-
-            link.attr("x1", function (d) { return d.sourceIntersection.x; })
-                .attr("y1", function (d) { return d.sourceIntersection.y; })
-                .attr("x2", function (d) { return d.arrowStart.x; })
-                .attr("y2", function (d) { return d.arrowStart.y; });
-
-            node.attr("x", function (d) { return d.innerBounds.x; })
-                .attr("y", function (d) { return d.innerBounds.y; })
-                .attr("width", function (d) { return d.innerBounds.width(); })
-                .attr("height", function (d) { return d.innerBounds.height(); });
-
-            group.attr("x", function (d) { return d.bounds.x; })
-                 .attr("y", function (d) { return d.bounds.y; })
-                .attr("width", function (d) { return d.bounds.width(); })
-                .attr("height", function (d) { return d.bounds.height(); });
-
-            label.attr("x", function (d) { return d.x; })
-                 .attr("y", function (d) {
-                     var h = this.getBBox().height;
-                     return d.y + h / 3.5;
-                 });
         });
-    });
+    }
+
+    function powerGraph() {
+        var d3cola = cola.d3adaptor()
+            .linkDistance(80)
+            .avoidOverlaps(true)
+            .size([width, height]);
+
+        var svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+        // define arrow markers for graph links
+        svg.append('svg:defs').append('svg:marker')
+            .attr('id', 'end-arrow')
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', 5)
+            .attr('markerWidth', 3)
+            .attr('markerHeight', 3)
+            .attr('orient', 'auto')
+          .append('svg:path')
+            .attr('d', 'M0,-5L10,0L0,5L2,0')
+            .attr('stroke-width', '0px')
+            .attr('fill', '#555');
+
+        d3.json("graphdata/n7e23.json", function (error, graph) {
+            var g = cola.powergraph.getGroups(graph.nodes, graph.links);
+            g.groups.forEach(function (v) { v.padding = 20 });
+            d3cola
+                .nodes(graph.nodes)
+                .links(graph.links)
+                .groups(g.groups)
+                .start(10, 10, 10);
+
+            var group = svg.selectAll(".group")
+                .data(g.groups)
+              .enter().append("rect")
+                .attr("rx", 8).attr("ry", 8)
+                .attr("class", "group")
+                .style("fill", function (d, i) { return color(i); });
+
+            var link = svg.selectAll(".link")
+                .data(g.powerEdges)
+              .enter().append("line")
+                .attr("class", "link");
+
+            var margin = 10;
+            var node = svg.selectAll(".node")
+                .data(graph.nodes)
+              .enter().append("rect")
+                .attr("class", "node")
+                .attr("width", function (d) { return d.width + 2 * margin; })
+                .attr("height", function (d) { return d.height + 2 * margin; })
+                .attr("rx", 4).attr("ry", 4)
+                .call(d3cola.drag);
+            var label = svg.selectAll(".label")
+                .data(graph.nodes)
+               .enter().append("text")
+                .attr("class", "label")
+                .text(function (d) { return d.name; })
+                .call(d3cola.drag);
+
+            node.append("title")
+                .text(function (d) { return d.name; });
+
+            d3cola.on("tick", function () {
+                node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
+                group.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
+                link.each(function (d) {
+                    cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                    if (isIE()) this.parentNode.insertBefore(this, this);
+                });
+
+                link.attr("x1", function (d) { return d.sourceIntersection.x; })
+                    .attr("y1", function (d) { return d.sourceIntersection.y; })
+                    .attr("x2", function (d) { return d.arrowStart.x; })
+                    .attr("y2", function (d) { return d.arrowStart.y; });
+
+                node.attr("x", function (d) { return d.innerBounds.x; })
+                    .attr("y", function (d) { return d.innerBounds.y; })
+                    .attr("width", function (d) { return d.innerBounds.width(); })
+                    .attr("height", function (d) { return d.innerBounds.height(); });
+
+                group.attr("x", function (d) { return d.innerBounds.x; })
+                     .attr("y", function (d) { return d.innerBounds.y; })
+                    .attr("width", function (d) { return d.innerBounds.width(); })
+                    .attr("height", function (d) { return d.innerBounds.height(); });
+
+                label.attr("x", function (d) { return d.x; })
+                     .attr("y", function (d) {
+                         var h = this.getBBox().height;
+                         return d.y + h / 3.5;
+                     });
+            });
+        });
+    }
     function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
 
+    flatGraph();
+    powerGraph();
 </script>
-    <p>This graph has a hierarchical grouping defined over the nodes.  We generate constraints to keep the bounding boxes of
-        disjoint groups from overlapping and to keep nested groups fully contained within their parents' bounding boxes.
-    Try dragging the nodes so that they bump into other nodes and groups.
+    <p>The graph on the right is a <a href="http://arxiv.org/abs/1311.6996">Power Graph</a> compression of the one on the left.  
+    A link connected to a group implies a connection to every member of that group.
+    We use a fast heuristic to compute this compression using the <code>cola.powergraph.getGroups()</code> function.
     </p>
 </body>
 </html>

@@ -19,6 +19,8 @@ module vpsc {
         g.bounds = g.leaves.reduce((r: Rectangle, c) => c.bounds.union(r), Rectangle.empty());
         if (typeof g.groups !== "undefined")
             g.bounds = <Rectangle>g.groups.reduce((r: Rectangle, c) => computeGroupBounds(c).union(r), g.bounds);
+        if (typeof g.padding !== "undefined")
+            g.bounds = g.bounds.inflate(g.padding);
         return g.bounds;
     }
 
@@ -243,10 +245,11 @@ module vpsc {
             i = 0,
             add = (r, v) => { rs[i] = r; vs[i++] = v };
         if (isContained) {
+            // if this group is contained by another, then we add two dummy vars and rectangles for the borders
             var b: Rectangle = root.bounds,
                 c = f.getCentre(b), s = f.getSize(b) / 2,
                 open = f.getOpen(b), close = f.getClose(b),
-                min = c - s, max = c + s;
+                min = c - s + padding / 2, max = c + s - padding / 2;
             root.minVar.desiredPosition = min;
             add(f.makeRect(open, close, min, padding), root.minVar);
             root.maxVar.desiredPosition = max;
@@ -262,7 +265,7 @@ module vpsc {
             vs.forEach(v => { v.cOut = [], v.cIn = [] });
             cs.forEach(c => { c.left.cOut.push(c), c.right.cIn.push(c) });
             root.groups.forEach(g => {
-                var gapAdjustment = (padding - f.getSize(g.bounds)) / 2;
+                var gapAdjustment = (g.padding - f.getSize(g.bounds)) / 2;
                 g.minVar.cIn.forEach(c => c.gap += gapAdjustment);
                 g.minVar.cOut.forEach(c => { c.left = g.maxVar; c.gap += gapAdjustment; });
             });
@@ -491,8 +494,11 @@ module vpsc {
             this.project(x0, y0, x0, x, v=> v.px, this.xConstraints, generateXGroupConstraints,
                 v => v.bounds.setXCentre(x[(<IndexedVariable>v.variable).index] = v.variable.position()),
                 g => {
-                    g.bounds.x = x[(<IndexedVariable>g.minVar).index] = g.minVar.position();
-                    g.bounds.X = x[(<IndexedVariable>g.maxVar).index] = g.maxVar.position();
+                    var xmin = x[(<IndexedVariable>g.minVar).index] = g.minVar.position();
+                    var xmax = x[(<IndexedVariable>g.maxVar).index] = g.maxVar.position();
+                    var p2 = g.padding / 2;
+                    g.bounds.x = xmin - p2;
+                    g.bounds.X = xmax + p2;
                 });
         }
 
@@ -501,8 +507,11 @@ module vpsc {
             this.project(x0, y0, y0, y, v=> v.py, this.yConstraints, generateYGroupConstraints,
                 v => v.bounds.setYCentre(y[(<IndexedVariable>v.variable).index] = v.variable.position()),
                 g => {
-                    g.bounds.y = y[(<IndexedVariable>g.minVar).index] = g.minVar.position();
-                    g.bounds.Y = y[(<IndexedVariable>g.maxVar).index] = g.maxVar.position();
+                    var ymin = y[(<IndexedVariable>g.minVar).index] = g.minVar.position();
+                    var ymax = y[(<IndexedVariable>g.maxVar).index] = g.maxVar.position();
+                    var p2 = g.padding / 2;
+                    g.bounds.y = ymin - p2;;
+                    g.bounds.Y = ymax + p2;
                 });
         }
 

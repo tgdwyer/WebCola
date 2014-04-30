@@ -7,6 +7,15 @@
 /// <reference path="../src/geom.js"/>
 /// <reference path="../src/powergraph.js"/>
 
+function nodeDistance(u, v) {
+    var dx = u.x - v.x, dy = u.y - v.y;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function approxEquals(actual, expected, threshold) {
+    return Math.abs(actual - expected) <= threshold;
+}
+
 asyncTest("small power-graph", function () {
     d3.json("../examples/graphdata/n7e23.json", function (error, graph) {
         var n = graph.nodes.length;
@@ -102,15 +111,37 @@ asyncTest("edge lengths", function () {
             .links(graph.links);
         d3cola.start(10);
         var errors = graph.links.map(function (e) {
-            var u = e.source, v = e.target,
-                dx = u.x - v.x, dy = u.y - v.y;
-            var l = Math.sqrt(dx * dx + dy * dy);
+            var l = nodeDistance(e.source, e.target);
             return Math.abs(l - length(e));
         }), max = Math.max.apply(this, errors);
         ok(max < 0.1);
         start();
     });
     ok(true);
+});
+
+test("group", function () {
+    var d3cola = cola.d3adaptor();
+
+    var length = function (l) {
+        return d3cola.linkId(l) == "2-3" ? 2 : 1;
+    }
+    var nodes = [];
+    var u = { x: -5, y: 0, width: 10, height: 10 };
+    var v = { x: 5, y: 0, width: 10, height: 10 };
+    var g = { padding: 10, leaves: [0] };
+
+    d3cola
+        .linkDistance(length)
+        .avoidOverlaps(true)
+        .nodes([u,v])
+        .groups([g]);
+    d3cola.start(10, 10, 10);
+
+    ok(approxEquals(g.bounds.width(), 30, 0.1));
+    ok(approxEquals(g.bounds.height(), 30, 0.1));
+
+    ok(approxEquals(Math.abs(u.y - v.y), 20, 0.1));
 });
 
 asyncTest("equality constraints", function () {

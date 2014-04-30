@@ -165,10 +165,23 @@ module powergraph {
         return Object.keys(intersection(m, n)).length
     }
 
-    export function getGroups(n: number, links: Edge[]): { groups: any[]; powerEdges: Edge[] } {
-        var c = new powergraph.Configuration(n, links);
+    export function getGroups(nodes: any[], links: Edge[]): { groups: any[]; powerEdges: Edge[] } {
+        var n = nodes.length,
+            c = new powergraph.Configuration(n, links);
         while (c.greedyMerge());
         var powerEdges = [];
-        return { groups: c.getGroupHierarchy(powerEdges), powerEdges: powerEdges };
+        var g = c.getGroupHierarchy(powerEdges);
+
+        powerEdges.forEach(function (e) {
+            var f = (end) => {
+                var g = e[end];
+                if (typeof g == "number") {
+                    e[end] = nodes[g];
+                }
+            }
+            f("source");
+            f("target");
+        });
+        return { groups: g, powerEdges: powerEdges };
     } 
 }
