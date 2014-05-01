@@ -127,6 +127,13 @@ var cola;
             return d3adaptor;
         };
 
+        d3adaptor.powerGraphGroups = function (f) {
+            var g = powergraph.getGroups(nodes, links, linkAccessor);
+            this.groups(g.groups);
+            f(g);
+            return d3adaptor;
+        }
+
         /**
          * if true, the layout will not permit overlaps of the node bounding boxes (defined by the width and height properties on nodes)
          * @property avoidOverlaps
@@ -266,14 +273,18 @@ var cola;
             link.length = length;
         }
 
+        var linkAccessor = { getSourceIndex: getSourceIndex, getTargetIndex: getTargetIndex, setLength: setLinkLength };
+
         d3adaptor.symmetricDiffLinkLengths = function (idealLength, w) {
-            cola.symmetricDiffLinkLengths(this.nodes().length, links, getSourceIndex, getTargetIndex, setLinkLength, w);
-            return function (l) { return idealLength * l.length };
+            cola.symmetricDiffLinkLengths(this.nodes().length, links, linkAccessor, w);
+            this.linkDistance(function (l) { return idealLength * l.length });
+            return d3adaptor;
         }
 
         d3adaptor.jaccardLinkLengths = function (idealLength, w) {
-            cola.jaccardLinkLengths(this.nodes().length, links, getSourceIndex, getTargetIndex, setLinkLength, w);
-            return function (l) { return idealLength * l.length };
+            cola.jaccardLinkLengths(this.nodes().length, links, linkAccessor, w);
+            this.linkDistance(function (l) { return idealLength * l.length });
+            return d3adaptor;
         }
 
         /**
@@ -345,7 +356,8 @@ var cola;
 
             var curConstraints = constraints || [];
             if (directedLinkConstraints) {
-                curConstraints = curConstraints.concat(cola.generateDirectedEdgeConstraints(n, links, directedLinkConstraints.axis, directedLinkConstraints.getMinSeparation, getSourceIndex, getTargetIndex));
+                linkAccessor.getMinSeparation = directedLinkConstraints.getMinSeparation;
+                curConstraints = curConstraints.concat(cola.generateDirectedEdgeConstraints(n, links, directedLinkConstraints.axis, linkAccessor));
             }
 
             

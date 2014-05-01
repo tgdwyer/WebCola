@@ -67,7 +67,7 @@
     <div class="leftheading">Jonica’s network</div>
     <div class="rightheading">Alex’s network</div>
 <script src="../extern/d3.v3.js"></script>
-    <script src="../cola.v2.min.js"></script>
+    <script src="../cola.v3.min.js"></script>
     <script src="../src/d3adaptor.js"></script>
     <script src="../src/linklengths.js"></script>
 <script>
@@ -144,7 +144,7 @@
             this.d3cola.stop();
             this.d3cola.on("tick", null);
             this.d3cola.links(this.edges)
-                .linkDistance(this.d3cola.symmetricDiffLinkLengths(8)).start(0, 0, 10);
+                .symmetricDiffLinkLengths(8).start(0, 0, 10);
             this.link.data(this.d3cola.links(), function (d) {
                 return d.source.index + "-" + d.target.index;
             }).exit().remove();
@@ -180,7 +180,7 @@
                 .attr("x2", function (d) { return d.target.x; })
                 .attr("y2", function (d) { return d.target.y; });
             this.d3cola.links(this.edges)
-                .linkDistance(this.d3cola.symmetricDiffLinkLengths(8)).start(0, 0, 30);
+                .symmetricDiffLinkLengths(8).start(0, 0, 30);
         };
             
         egosvg.prototype.restart = function () {
@@ -210,7 +210,7 @@
             var _this = this;
             this.d3cola
                 .links(this.edges)
-                .linkDistance(this.d3cola.symmetricDiffLinkLengths(8))
+                .symmetricDiffLinkLengths(8)
                 .start(30);
 
             var nodes = this.d3cola.nodes();

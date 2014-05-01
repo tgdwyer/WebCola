@@ -63,7 +63,7 @@
         <div class="rightheading">Close Friends</div>
     <p />
 <script src="../extern/d3.v3.js"></script>
-    <script src="../cola.v2.min.js"></script>
+    <script src="../cola.v3.min.js"></script>
     <script src="../src/d3adaptor.js"></script>
     <script src="../src/linklengths.js"></script>
 <script>
@@ -163,7 +163,7 @@
             var _this = this;
             this.d3cola
                 .links(this.edges)
-                .linkDistance(this.d3cola.symmetricDiffLinkLengths(this.edgelength))
+                .symmetricDiffLinkLengths(this.edgelength)
                 .start(30);
 
             var nodes = this.d3cola.nodes();

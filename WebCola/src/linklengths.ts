@@ -3,6 +3,15 @@
  */
 module cola {
 
+    export interface LinkAccessor<Link> {
+        getSourceIndex(l: Link): number;
+        getTargetIndex(l: Link): number;
+    }
+
+    export interface LinkLengthAccessor<Link> extends LinkAccessor<Link> {
+        setLength(l: Link, value: number): void;
+    }
+
     // compute the size of the union of two sets a and b
     function unionCount(a: number[], b: number[]): number {
         var u = {};
@@ -18,44 +27,43 @@ module cola {
         return n;
     }
 
-    function getNeighbours(n: number, links: any[], getSourceIndex: (any)=>number, getTargetIndex: (any)=>number): any[] {
+    function getNeighbours<Link>(n: number, links: Link[], la: LinkAccessor<Link>): any[] {
         var neighbours = new Array(n);
         for (var i = 0; i < n; ++i) {
             neighbours[i] = {};
         }
         links.forEach(e => {
-            neighbours[getSourceIndex(e)][getTargetIndex(e)] = {};
-            neighbours[getTargetIndex(e)][getSourceIndex(e)] = {};
+            var u = la.getSourceIndex(e), v = la.getTargetIndex(e);
+            neighbours[u][v] = {};
+            neighbours[v][u] = {};
         });
         return neighbours;
     }
 
     // modify the lengths of the specified links by the result of function f weighted by w
-    function computeLinkLengths<Link>(n: number, links: Link[], w: number, f: (a: number[], b: number[]) => number, getSourceIndex: (Link) => number, getTargetIndex: (Link) => number, setLength: (Link, number) => void) {
-        var neighbours = getNeighbours(n, links, getSourceIndex, getTargetIndex);
+    function computeLinkLengths<Link>(n: number, links: Link[], w: number, f: (a: number[], b: number[]) => number, la: LinkLengthAccessor<Link>) {
+        var neighbours = getNeighbours(n, links, la);
         links.forEach(l => {
-            var a = neighbours[getSourceIndex(l)];
-            var b = neighbours[getTargetIndex(l)];
-            setLength(l, 1 + w * f(a, b));
+            var a = neighbours[la.getSourceIndex(l)];
+            var b = neighbours[la.getTargetIndex(l)];
+            la.setLength(l, 1 + w * f(a, b));
         });
     }
 
     /** modify the specified link lengths based on the symmetric difference of their neighbours
      * @class symmetricDiffLinkLengths
      */
-    export function symmetricDiffLinkLengths<Link>(n: number, links: Link[], getSourceIndex: (Link) => number, getTargetIndex: (Link) => number, setLength: (Link, number)=>void, w: number = 1) {
-        computeLinkLengths(n, links, w, function (a, b) {
-            return Math.sqrt(unionCount(a, b) - intersectionCount(a, b));
-        }, getSourceIndex, getTargetIndex, setLength);
+    export function symmetricDiffLinkLengths<Link>(n: number, links: Link[], la: LinkLengthAccessor<Link>, w: number = 1) {
+        computeLinkLengths(n, links, w, (a, b) => Math.sqrt(unionCount(a, b) - intersectionCount(a, b)), la);
     }
 
     /** modify the specified links lengths based on the jaccard difference between their neighbours
      * @class jaccardLinkLengths
      */
-    export function jaccardLinkLengths<Link>(n: number, links: Link[], getSourceIndex: (Link) => number, getTargetIndex: (Link) => number, setLength: (Link, number) => void, w: number = 1) {
+    export function jaccardLinkLengths<Link>(n: number, links: Link[], la: LinkLengthAccessor<Link>, w: number = 1) {
         computeLinkLengths(n, links, w, (a, b) =>
             Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1 ? 0 : intersectionCount(a, b) / unionCount(a, b)
-            , getSourceIndex, getTargetIndex, setLength);
+            , la);
     }
 
     export interface IConstraint {
@@ -69,26 +77,31 @@ module cola {
         gap: number;
     }
 
+    export interface LinkSepAccessor<Link> extends LinkAccessor<Link> {
+        getMinSeparation(l: Link): number;
+    }
+
     /** generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
      * @class generateDirectedEdgeConstraints
      */
     export function generateDirectedEdgeConstraints<Link>(n: number, links: Link[], axis: string,
-        getMinSeparation: (l: Link) => number, getSourceIndex: (Link) => number, getTargetIndex: (Link) => number): IConstraint[]
+        la: LinkSepAccessor<Link>): IConstraint[]
     {
-        var components = stronglyConnectedComponents(n, links, getSourceIndex, getTargetIndex);
+        var components = stronglyConnectedComponents(n, links, la);
         var nodes = {};
         components.filter(c => c.length > 1).forEach(c =>
             c.forEach(v => nodes[v] = c)
         );
         var constraints: any[] = [];
         links.forEach(l => {
-            var u = nodes[getSourceIndex(l)], v = nodes[getTargetIndex(l)];
+            var ui = la.getSourceIndex(l), vi = la.getTargetIndex(l),
+                u = nodes[ui], v = nodes[vi];
             if (!u || !v || u.component !== v.component) {
                 constraints.push({
                     axis: axis,
-                    left: getSourceIndex(l),
-                    right: getTargetIndex(l),
-                    gap: getMinSeparation(l)
+                    left: ui,
+                    right: vi,
+                    gap: la.getMinSeparation(l)
                 });
             }
         });
@@ -120,7 +133,7 @@ module cola {
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
     */
-    function stronglyConnectedComponents<Link>(numVertices: number, edges: Link[], getSourceIndex: (Link) => number, getTargetIndex: (Link) => number): number[][] {
+    function stronglyConnectedComponents<Link>(numVertices: number, edges: Link[], la: LinkAccessor<Link>): number[][] {
         var adjList: number[][] = new Array(numVertices)
         var index: number[] = new Array(numVertices)
         var lowValue: number[] = new Array(numVertices)
@@ -136,7 +149,7 @@ module cola {
 
         //Build adjacency list representation
         for (var i = 0; i < edges.length; ++i) {
-            adjList[getSourceIndex(edges[i])].push(getTargetIndex(edges[i]))
+            adjList[la.getSourceIndex(edges[i])].push(la.getTargetIndex(edges[i]))
         }
 
         var count = 0

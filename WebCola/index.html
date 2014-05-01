@@ -161,9 +161,9 @@
     <h2>Getting Started</h2>
         <p>
             Replacing D3 force layout with cola.js is easy.  Include the following in your html:
-            <pre><code class="html">&lt;script src="http://marvl.infotech.monash.edu/webcola/cola.v2.min.js"&gt;&lt;/script&gt;</code></pre>
+            <pre><code class="html">&lt;script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"&gt;&lt;/script&gt;</code></pre>
         </p>
-        <p>Or, if you don't like your javascript files being loaded from Australia, then host the cola.v2.min.js file locally.</p>
+        <p>Or, if you don't like your javascript files being loaded from Australia, then host the cola.v3.min.js file locally.</p>
         <p>Then replace D3 force with cola as follows:</p>
         <table>
             <tr>
@@ -201,7 +201,7 @@
     .nodes(graph.nodes)
     .links(graph.links)         
     .constraints(graph.constraints)
-    .linkDistance(d3cola.symmetricDiffLinkLengths(5))
+    .symmetricDiffLinkLengths(5)
     .avoidOverlaps(true)
     .start(10,15,20);
 </code></pre>
@@ -209,8 +209,8 @@
         <p><pre><code>{"axis":"y", "left":0, "right":1, "gap":25}</code></pre></p>
         <p>This says that the center of <code>graph.nodes[0]</code> must be at least 25 pixels above the center of <code>graph.nodes[1]</code>.  To be more precise, it is an inequality constraint that requires: <pre><code>graph.nodes[0].y + gap <= graph.nodes[1].y</code></pre></p>
         <p><code>avoidOverlaps(true)</code> dynamically generates constraints while layout progresses in order to prevent the bounding boxes of nodes from sliding over one another (see <a href="examples/smallnonoverlappinggraph.html">this example</a>).</p>
-        <p><code>linkDistance(d3cola.symmetricDiffLinkLengths(5))</code> computes ideal lengths on each link to make extra space around high-degree nodes, using 5 as the basic length.  
-    Alternately, you can pass your own function into linkDistance that returns a specific length for each link (e.g. based on your data).</p>
+        <p><code>symmetricDiffLinkLengths(5)</code> computes ideal lengths on each link to make extra space around high-degree nodes, using 5 as the basic length.  
+    Alternately, you can pass your own function <code>f</code> into <code>linkDistance(f)</code> that returns a specific length for each link (e.g. based on your data).</p>
         <p>
             The <code>start()</code> method now includes up to three integer arguments.  In the example above, start will initially apply 10 iterations of layout with no constraints, 15 iterations with only structural (user-specified) constraints and 20 iterations of layout with all constraints including anti-overlap constraints.
             Specifying such a schedule is useful to allow the graph to untangle before making it relatively "rigid" with constraints.

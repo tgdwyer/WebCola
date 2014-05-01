@@ -1,14 +1,20 @@
 module powergraph {
-    export interface Edge {
-        source: number;
-        target: number;
+    export interface LinkAccessor<Link> {
+        getSourceIndex(l: Link): number;
+        getTargetIndex(l: Link): number;
     }
 
-    export class Configuration {
+    export class PowerEdge {
+        constructor(
+            public source: any,
+            public target: any) { }
+    }
+
+    export class Configuration<Link> {
         modules: Module[];
         roots: any;
         R: number;
-        constructor(n: number, edges: Edge[]) {
+        constructor(n: number, edges: Link[], private linkAccessor: LinkAccessor<Link>) {
             this.modules = new Array(n);
             this.roots = new Array(n);
             for (var i = 0; i < n; ++i) {
@@ -16,8 +22,8 @@ module powergraph {
             }
             this.R = edges.length;
             edges.forEach(e => {
-                var s = this.modules[e.source],
-                    t = this.modules[e.target];
+                var s = this.modules[linkAccessor.getSourceIndex(e)],
+                    t = this.modules[linkAccessor.getTargetIndex(e)];
                 s.outgoing[t.id] = t;
                 t.incoming[s.id] = s;
             });
@@ -80,7 +86,7 @@ module powergraph {
             return this.R - intersectionCount(a.outgoing, b.outgoing) - intersectionCount(a.incoming, b.incoming);
         }
 
-        getGroupHierarchy(retargetedEdges: Edge[]): any[]{
+        getGroupHierarchy(retargetedEdges: PowerEdge[]): any[]{
             var groups = [];
             var root = {};
             toGroups(this.roots, root, groups);
@@ -88,26 +94,26 @@ module powergraph {
             es.forEach(e => {
                 var a = this.modules[e.source];
                 var b = this.modules[e.target];
-                retargetedEdges.push({
-                    source: e.source = typeof a.gid === "undefined" ? e.source : groups[a.gid],
-                    target: e.target = typeof b.gid === "undefined" ? e.target : groups[b.gid]
-                });
+                retargetedEdges.push(new PowerEdge(
+                    typeof a.gid === "undefined" ? e.source : groups[a.gid],
+                    typeof b.gid === "undefined" ? e.target : groups[b.gid]
+                ));
             });
             return groups;
         }
 
-        allEdges(): Edge[]{
+        allEdges(): PowerEdge[] {
             var es = [];
-            getEdges(this.roots, es);
+            Configuration.getEdges(this.roots, es);
             return es;
         }
-    }
 
-    function getEdges(modules, es) {
-        for (var i in modules) {
-            var m = modules[i];
-            m.getEdges(es);
-            getEdges(m.children, es);
+        static getEdges(modules: Module[], es: PowerEdge[]) {
+            for (var i in modules) {
+                var m = modules[i];
+                m.getEdges(es);
+                Configuration.getEdges(m.children, es);
+            }
         }
     }
 
@@ -140,12 +146,11 @@ module powergraph {
             public incoming: any,
             public children: any) { }
 
-        getEdges(es: Edge[]) {
+        getEdges(es: PowerEdge[]) {
             for (var o in this.outgoing) {
                 es.push({ source: this.id, target: this.outgoing[o].id });
             }
         }
-
         isLeaf() {
             return Object.keys(this.children).length == 0;
         }
@@ -165,19 +170,16 @@ module powergraph {
         return Object.keys(intersection(m, n)).length
     }
 
-    export function getGroups(nodes: any[], links: Edge[]): { groups: any[]; powerEdges: Edge[] } {
+    export function getGroups<Link>(nodes: any[], links: Link[], la: LinkAccessor<Link>): { groups: any[]; powerEdges: PowerEdge[] } {
         var n = nodes.length,
-            c = new powergraph.Configuration(n, links);
+            c = new powergraph.Configuration(n, links, la);
         while (c.greedyMerge());
-        var powerEdges = [];
+        var powerEdges: PowerEdge[] = [];
         var g = c.getGroupHierarchy(powerEdges);
-
         powerEdges.forEach(function (e) {
             var f = (end) => {
                 var g = e[end];
-                if (typeof g == "number") {
-                    e[end] = nodes[g];
-                }
+                if (typeof g == "number") e[end] = nodes[g];
             }
             f("source");
             f("target");

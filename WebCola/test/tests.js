@@ -20,7 +20,12 @@ asyncTest("small power-graph", function () {
     d3.json("../examples/graphdata/n7e23.json", function (error, graph) {
         var n = graph.nodes.length;
         ok(n == 7);
-        var c = new cola.powergraph.Configuration(n, graph.links);
+        var linkAccessor = {
+            getSourceIndex: function (e) { return e.source; },
+            getTargetIndex: function (e) { return e.target; },
+            makeLink: function (u, v) { return { source: u, target: v } }
+        };
+        var c = new cola.powergraph.Configuration(n, graph.links, linkAccessor);
         ok(c.modules.length == 7);
         var es;
         ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
@@ -37,7 +42,7 @@ asyncTest("small power-graph", function () {
         m = c.merge(c.modules[2], c.modules[3]);
         ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
 
-        c = new cola.powergraph.Configuration(n, graph.links);
+        c = new cola.powergraph.Configuration(n, graph.links, linkAccessor);
         var lastR = c.R;
         while (c.greedyMerge()) {
             ok(c.R < lastR);

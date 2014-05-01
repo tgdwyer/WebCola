@@ -39,7 +39,7 @@
     <h2>Directed graph flow layout and shortest-path edge routing</h2>
     <script src="../extern/graphlib-dot.min.js"> </script> 
     <script src="../extern/d3.v3.js"></script>
-    <script src="../cola.v2.min.js"></script>
+    <script src="../cola.v3.min.js"></script>
     <link rel="stylesheet" href="../extern/hljs/styles/github.css">
     <script src="../extern/hljs/highlight.pack.js"></script>
     <script>
@@ -102,7 +102,7 @@
                 .size([width, height])
                 .nodes(nodes)
                 .links(edges)
-                .linkDistance(d3cola.jaccardLinkLengths(150));
+                .jaccardLinkLengths(150);
 
             var link = vis.selectAll(".link")
                 .data(edges)
@@ -182,7 +182,7 @@
     .size([width, height])
     .nodes(nodes)
     .links(edges)             
-    .linkDistance(d3cola.jaccardLinkLengths(150));
+    .jaccardLinkLengths(150);
 </code></pre>
     In particular, the call to <code>flowLayout</code> causes all edges not involved in a cycle (strongly connected component) to have a separation constraint generated between their source and sink, 
     with a minimum spacing set to 150.  Specifying the <code>'x'</code> axis achieves a left-to-right flow layout.  The default is top-to-bottom flow layout (i.e. <code>'y'</code>).
