@@ -18,16 +18,16 @@
 }
 
         .leftheading {
-            position: relative;
-            left: 0px;
+            position: absolute;
+            left: 60px;
             width: 300px;
             float: left;
             font-size: 20px;
         }
 
         .rightheading {
-            position: relative;
-            left: 30px;
+            position: absolute;
+            left: 360px;
             width: 150px;
             float: left;
             font-size: 20px;
@@ -60,6 +60,13 @@
             font-size: 16px;
             opacity: 0.5;
         }
+
+        .info {
+            position: absolute;
+            top: 350px;
+            left: 30px;
+            width: 500px;
+        }
 </style>
 </head>
 <body>
@@ -76,7 +83,7 @@
 
     var color = d3.scale.category20();
     var connected = true;
-    //var button;
+    var button;
     document.onkeyup = keyhandler;
     function keyhandler(e) {
         if (e.keyCode === 32) {
@@ -90,14 +97,14 @@
             egosvg1.restart();
             egosvg2.restart();
             connected = false;
-            //button.text("Connect Self");
+            button.text("Connect Self");
         } else {
             egosvg1.connectNode0();
             egosvg2.connectNode0();
             egosvg1.restart();
             egosvg2.restart();
             connected = true;
-            //button.text("Disconnect Self");
+            button.text("Disconnect Self");
         }
     }
 
@@ -249,14 +256,14 @@
     var counter = 0;
     function allDone() {
         if (++counter === 2) {
-            //button = body.append("center").append("button").attr("id", "removeSelfButton").html("Disconnect Self").on("click", disconnectNode0);
+            button = body.append("center").append("button").attr("id", "removeSelfButton").html("Disconnect Self").on("click", disconnectNode0);
             body.append("p").html('<p class="logo">marvl.infotech.monash.edu</p>');
         }
         //body.append("p").html('<div class="logo"><img src="http://marvl.infotech.monash.edu.au/wp-content/themes/marvl/marvl.png" width="85px" alt="MArVL Logo" />  Monash Adaptive Visualization Lab</div>');
     }
 
 </script>
-<!--<p>This is the friend network of a particular person (the red node).  Since by definition there is a link from the red node to all the blue nodes (their friends),
-    there's really no point showing all those links.  Therefore, pressing the button removes those links and rearranges the network to tidy it up.-->
+<p class="info">This is the friend network of a particular person (the red node).  Since by definition there is a link from the red node to all the blue nodes (their friends),
+    there's really no point showing all those links.  Therefore, pressing the button removes those links and rearranges the network to tidy it up.
 </body>
 </html>
