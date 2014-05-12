@@ -339,8 +339,14 @@ DEBUG */
             Descent.mid(this.x, this.b, this.ib);
             this.computeNextPosition(this.ib, this.c);
             this.computeNextPosition(this.c, this.d);
-            this.matrixApply((i, j) => this.x[i][j] = (this.a[i][j] + 2.0 * this.b[i][j] + 2.0 * this.c[i][j] + this.d[i][j]) / 6.0);
-            return this.computeStress();
+            var disp = 0;
+            this.matrixApply((i, j) => {
+                var x = (this.a[i][j] + 2.0 * this.b[i][j] + 2.0 * this.c[i][j] + this.d[i][j]) / 6.0,
+                    d = this.x[i][j] - x;
+                disp += d * d;
+                this.x[i][j] = x;
+            });
+            return disp;
         }
 
         private static mid(a: number[][], b: number[][], m: number[][]): void {

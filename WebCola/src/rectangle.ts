@@ -19,8 +19,7 @@ module vpsc {
         g.bounds = g.leaves.reduce((r: Rectangle, c) => c.bounds.union(r), Rectangle.empty());
         if (typeof g.groups !== "undefined")
             g.bounds = <Rectangle>g.groups.reduce((r: Rectangle, c) => computeGroupBounds(c).union(r), g.bounds);
-        if (typeof g.padding !== "undefined")
-            g.bounds = g.bounds.inflate(g.padding);
+        g.bounds = g.bounds.inflate(g.padding);
         return g.bounds;
     }
 
@@ -234,7 +233,7 @@ module vpsc {
 
     function generateGroupConstraints(root: Group, f: RectAccessors, minSep: number, isContained: boolean = false): Constraint[]
     {
-        var padding = typeof root.padding === 'undefined' ? 1 : root.padding,
+        var padding = root.padding,
             gn = typeof root.groups !== 'undefined' ? root.groups.length : 0,
             ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0,
             childConstraints: Constraint[] = !gn ? []
