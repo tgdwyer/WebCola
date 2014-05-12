@@ -158,8 +158,6 @@
     <TypeScriptCompile Include="brain-app\brain3d.ts" />
     <TypeScriptCompile Include="brain-app\brainapp.ts" />
     <TypeScriptCompile Include="examples\3dlayout.ts" />
-    <TypeScriptCompile Include="examples\jquery.d.ts" />
-    <TypeScriptCompile Include="examples\jqueryui.d.ts" />
     <TypeScriptCompile Include="examples\powergraphexample.ts" />
     <TypeScriptCompile Include="examples\tmdbgraph.ts" />
     <TypeScriptCompile Include="src\geom.ts" />

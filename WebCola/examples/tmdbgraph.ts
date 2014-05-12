@@ -1,4 +1,4 @@
-///<reference path="jquery.d.ts"/>
+///<reference path="../extern/jquery.d.ts"/>
 module tmdb {
     export class NodeType {
         constructor(
