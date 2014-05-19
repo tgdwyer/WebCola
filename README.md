@@ -25,9 +25,23 @@ Building
 
 > grunt
 
-This creates the cola.v1.min.js file in the webcola directory.
+This creates the cola.v3.min.js file in the WebCola directory.
 
 *Visual Studio:*
 
  - get the [typescript plugin](http://www.typescriptlang.org/#Download)
  - open webcola.sln
+
+Running
+-------
+
+*Linux/Mac/Windows Command Line:*
+
+Install the Node.js http-server module:
+
+> npm install -g http-server
+
+After installing http-server, we can serve out the example content in the WebCola directory.
+> http-server WebCola
+
+The default configuration of http-server will serve the exampes on [http://localhost:8080](http://localhost:8080).
