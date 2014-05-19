@@ -99,7 +99,7 @@
     cola
         .nodes(graph.nodes)
         .links(graph.links)
-        .start(30); // need to obtain an initial layout for the node packing to work with by specifying 30 iterations here
+        .start(30, 30, 30); // need to obtain an initial layout for the node packing to work with by specifying 30 iterations here
 
     var link = svg.selectAll(".link")
         .data(graph.links)

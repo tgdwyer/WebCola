@@ -3,14 +3,12 @@
 /// <reference path="../src/shortestpaths.ts"/>
 /// <reference path="../src/linklengths.ts"/>
 /// <reference path="../src/descent.ts"/>
-module cola3 {
-    export class Graph {
-        parentObject;
-        rootObject;
-        nodeMeshes: any[];
-        edgeList: Edge[] = [];
-
-        constructor(parentObject, n: number, edges: { source: number; target: number }[], nodeColourings: number[]) {
+var cola3;
+(function (cola3) {
+    var Graph = (function () {
+        function Graph(parentObject, n, edges, nodeColourings) {
+            var _this = this;
+            this.edgeList = [];
             this.parentObject = parentObject;
             this.rootObject = new THREE.Object3D();
             parentObject.add(this.rootObject);
@@ -18,22 +16,17 @@ module cola3 {
             // Create all the node meshes
             this.nodeMeshes = Array(n);
             for (var i = 0; i < n; ++i) {
-                var sphere = this.nodeMeshes[i] = new THREE.Mesh(
-                    new THREE.SphereGeometry(1, 10, 10), new THREE.MeshLambertMaterial(
-                        { color: nodeColourings[i] }
-                        )
-                    );
+                var sphere = this.nodeMeshes[i] = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), new THREE.MeshLambertMaterial({ color: nodeColourings[i] }));
                 sphere.id = i;
                 this.rootObject.add(sphere);
             }
 
             // Create all the edges
-            edges.forEach(e => {
-                this.edgeList.push(new Edge(this.rootObject, this.nodeMeshes[e.source].position, this.nodeMeshes[e.target].position));
+            edges.forEach(function (e) {
+                _this.edgeList.push(new Edge(_this.rootObject, _this.nodeMeshes[e.source].position, _this.nodeMeshes[e.target].position));
             });
         }
-
-        setNodePositions(colaCoords: number[][]) {
+        Graph.prototype.setNodePositions = function (colaCoords) {
             var x = colaCoords[0], y = colaCoords[1], z = colaCoords[2];
             for (var i = 0; i < this.nodeMeshes.length; ++i) {
                 var p = this.nodeMeshes[i].position;
@@ -41,49 +34,53 @@ module cola3 {
                 p.y = y[i];
                 p.z = z[i];
             }
-        }
+        };
 
-        update() {
-            this.edgeList.forEach(e => e.update());
-        }
+        Graph.prototype.update = function () {
+            this.edgeList.forEach(function (e) {
+                return e.update();
+            });
+        };
 
         // Remove self from the scene so that the object can be GC'ed
-        destroy() {
+        Graph.prototype.destroy = function () {
             this.parentObject.remove(this.rootObject);
-        }
-    }
+        };
+        return Graph;
+    })();
+    cola3.Graph = Graph;
 
-    export class Edge {
-        shape;
-        constructor(public parentObject, private sourcePoint, private targetPoint) {
+    var Edge = (function () {
+        function Edge(parentObject, sourcePoint, targetPoint) {
+            this.parentObject = parentObject;
+            this.sourcePoint = sourcePoint;
+            this.targetPoint = targetPoint;
             this.shape = this.makeCylinder();
             parentObject.add(this.shape);
         }
-
-        makeCylinder() {
-            var n = 12, points = [],
-                cosh = v => (Math.pow(Math.E, v) + Math.pow(Math.E, -v)) / 2;
+        Edge.prototype.makeCylinder = function () {
+            var n = 12, points = [], cosh = function (v) {
+                return (Math.pow(Math.E, v) + Math.pow(Math.E, -v)) / 2;
+            };
             var xmax = 2, m = 2 * cosh(xmax);
             for (var i = 0; i < n + 1; i++) {
                 var x = 2 * xmax * (i - n / 2) / n;
                 points.push(new THREE.Vector3(cosh(x) / m, 0, (i - n / 2) / n));
             }
-            var material = new THREE.MeshLambertMaterial({ color: 0xcfcfcf }),
-                geometry = new THREE.LatheGeometry(points, 12),
-                cylinder = new THREE.Mesh(geometry, material);
+            var material = new THREE.MeshLambertMaterial({ color: 0xcfcfcf }), geometry = new THREE.LatheGeometry(points, 12), cylinder = new THREE.Mesh(geometry, material);
             return cylinder;
-        }
+        };
 
-        update() {
+        Edge.prototype.update = function () {
             var a = this.sourcePoint, b = this.targetPoint;
             var m = new THREE.Vector3();
-            m.addVectors(a,b).divideScalar(2);
+            m.addVectors(a, b).divideScalar(2);
             this.shape.position = m;
-            var origVec = new THREE.Vector3(0, 0, 1);         //vector of cylinder
+            var origVec = new THREE.Vector3(0, 0, 1);
             var targetVec = new THREE.Vector3();
-            targetVec.subVectors(b,a);
+            targetVec.subVectors(b, a);
             var l = targetVec.length();
-            this.shape.scale.set(1,1,l);  
+            this.shape.scale.set(1, 1, l);
             targetVec.normalize();
 
             var angle = Math.acos(origVec.dot(targetVec));
@@ -92,25 +89,38 @@ module cola3 {
             axis.crossVectors(origVec, targetVec);
             axis.normalize();
             var quaternion = new THREE.Quaternion();
-            quaternion.setFromAxisAngle( axis, angle );
+            quaternion.setFromAxisAngle(axis, angle);
             this.shape.quaternion = quaternion;
-        }
-    }
-}
+        };
+        return Edge;
+    })();
+    cola3.Edge = Edge;
+})(cola3 || (cola3 = {}));
 
-class LinkAccessor implements cola.LinkLengthAccessor<any> {
-    getSourceIndex(e: any): number { return e.source; }
-    getTargetIndex(e: any): number { return e.target; }
-    getLength(e: any): number { return e.length; }
-    setLength(e: any, l: number) { e.length = l; }
-}
+var LinkAccessor = (function () {
+    function LinkAccessor() {
+    }
+    LinkAccessor.prototype.getSourceIndex = function (e) {
+        return e.source;
+    };
+    LinkAccessor.prototype.getTargetIndex = function (e) {
+        return e.target;
+    };
+    LinkAccessor.prototype.getLength = function (e) {
+        return e.length;
+    };
+    LinkAccessor.prototype.setLength = function (e, l) {
+        e.length = l;
+    };
+    return LinkAccessor;
+})();
 
 d3.json("graphdata/miserables.json", function (error, graph) {
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
     var renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth/1.2, window.innerHeight/1.2);
+    renderer.setSize(window.innerWidth / 1.2, window.innerHeight / 1.2);
     var div = document.getElementById("graphdiv");
     div.appendChild(renderer.domElement);
 
@@ -126,7 +136,7 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     var n = graph.nodes.length;
 
     var color = d3.scale.category20();
-    var nodeColourings = graph.nodes.map(v => {
+    var nodeColourings = graph.nodes.map(function (v) {
         var str = color(v.group).replace("#", "0x");
         return parseInt(str);
     });
@@ -136,15 +146,17 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     cola.jaccardLinkLengths(graph.nodes.length, graph.links, linkAccessor, 1.5);
 
     // Create the distance matrix that Cola needs
-    var distanceMatrix = (new shortestpaths.Calculator(n, graph.links,
-        linkAccessor.getSourceIndex, linkAccessor.getTargetIndex, linkAccessor.getLength)).DistanceMatrix();
+    var distanceMatrix = (new shortestpaths.Calculator(n, graph.links, linkAccessor.getSourceIndex, linkAccessor.getTargetIndex, linkAccessor.getLength)).DistanceMatrix();
 
-    var D = cola.Descent.createSquareMatrix(n, (i, j) => {
+    var D = cola.Descent.createSquareMatrix(n, function (i, j) {
         return distanceMatrix[i][j] * 7;
     });
+
     // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
     // otherwise 2. (
-    var G = cola.Descent.createSquareMatrix(n, function () { return 2 });
+    var G = cola.Descent.createSquareMatrix(n, function () {
+        return 2;
+    });
     graph.links.forEach(function (e) {
         var u = linkAccessor.getSourceIndex(e), v = linkAccessor.getTargetIndex(e);
         G[u][v] = G[v][u] = 1;
@@ -174,7 +186,7 @@ d3.json("graphdata/miserables.json", function (error, graph) {
         down: false,
         x: 0, y: 0,
         dx: 0, dy: 0
-    }
+    };
     function mousedownhandler(e) {
         mouse.down = true;
         mouse.x = e.clientX;
