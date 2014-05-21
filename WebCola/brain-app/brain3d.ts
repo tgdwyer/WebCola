@@ -25,7 +25,6 @@ function sliderChangeForID(id: number, v: number) {
 }
 
 class Brain3DApp implements Application, Loopable {
-
     id: number;
     loop: Loop;
     input: InputTarget;
@@ -69,7 +68,7 @@ class Brain3DApp implements Application, Loopable {
     colaLinkDistance = 15;
     d3ColorSelector = d3.scale.category20();
 
-    constructor(commonData: CommonData, jDiv, inputTargetCreator: (l:number, r:number, t:number, b:number) => InputTarget) {
+    constructor(commonData: CommonData, jDiv, inputTargetCreator: (l: number, r: number, t: number, b: number) => InputTarget) {
         this.id = uniqueID++;
         instances[this.id] = this;
         this.commonData = commonData;
@@ -107,85 +106,23 @@ class Brain3DApp implements Application, Loopable {
             this.colaObject.rotation.set(this.colaObject.rotation.x - leapRotationSpeed * mm, this.colaObject.rotation.y, this.colaObject.rotation.z);
         });
 
-        this.input.regKeyDownCallback(' ', () => {
-            if (!this.transitionInProgress) {
-                // Leave *showingCola* on permanently after first turn-on
-                this.showingCola = true;
+        this.input.regMouseDragCallback((dx: number, dy: number) => {
+            var pixelAngleRatio = 50;
+            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + dx / pixelAngleRatio, this.brainObject.rotation.z);
+            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + dx / pixelAngleRatio, this.colaObject.rotation.z);
 
-                // Find the edges that have been selected after thresholding, and all the
-                // nodes that have neighbours after the thresholding of the edges takes place.
-                var edges = [];
-                var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
-                for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
-                    for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
-                        if (this.filteredAdjMatrix[i][j] === 1) {
-                            edges.push({ source: i, target: j });
-                            hasNeighbours[i] = true;
-                            hasNeighbours[j] = true;
-                        }
-                    }
-                }
+            this.brainObject.rotation.set(this.brainObject.rotation.x + dy / pixelAngleRatio, this.brainObject.rotation.y, this.brainObject.rotation.z);
+            this.colaObject.rotation.set(this.colaObject.rotation.x + dy / pixelAngleRatio, this.colaObject.rotation.y, this.colaObject.rotation.z);
 
-                this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
-                this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
-
-                var getSourceIndex = function (e) {
-                    return e.source;
-                }
-                var getTargetIndex = function (e) {
-                    return e.target;
-                }
-                var getLength = function (e) {
-                    return 1;
-                }
-                // Create the distance matrix that Cola needs
-                var distanceMatrix = (new shortestpaths.Calculator(this.commonData.nodeCount, edges, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
-
-                var D = cola.Descent.createSquareMatrix(this.commonData.nodeCount, (i, j) => {
-                    return distanceMatrix[i][j] * this.colaLinkDistance;
-                });
-
-                var clonedPhysioCoords = this.commonData.brainCoords.map(function (dim) {
-                    return dim.map(function (element) {
-                        return element;
-                    });
-                });
-                this.descent = new cola.Descent(clonedPhysioCoords, D); // Create the solver
-                this.colaCoords = this.descent.x; // Hold a reference to the solver's coordinates
-                // Relieve some of the initial stress
-                for (var i = 0; i < 10; ++i) {
-                    this.descent.reduceStress();
-                }
-
-                // Set up a coroutine to do the animation
-                var origin = new THREE.Vector3(-this.graphOffset, 0, 0);
-                var target = new THREE.Vector3(this.graphOffset, 0, 0);
-                this.colaObject.position = origin;
-                this.colaGraph.setNodePositions(this.commonData.brainCoords); // Move the Cola graph nodes to their starting position
-                this.colaGraph.setVisible(true);
-                this.transitionInProgress = true;
-
-                setCoroutine({ currentTime: 0, endTime: this.modeLerpLength }, (o, deltaTime) => {
-                    o.currentTime += deltaTime;
-
-                    if (o.currentTime >= o.endTime) { // The animation has finished
-                        this.colaObject.position = target;
-                        this.colaGraph.setNodePositions(this.colaCoords);
-                        this.transitionInProgress = false;
-                        return true;
-                    }
-                    else { // Update the animation
-                        var percentDone = o.currentTime / o.endTime;
-                        this.colaObject.position = origin.clone().add(target.clone().sub(origin).multiplyScalar(percentDone));
-                        this.colaGraph.setNodePositionsLerp(this.commonData.brainCoords, this.colaCoords, percentDone);
-                        return false;
-                    }
-                });
-            }
+            //console.log("dx: " + dx + "; dy: " + dy);
         });
 
+        var varShowNetwork = () => { this.showNetwork(); }
+
+        this.input.regKeyDownCallback(' ', varShowNetwork);
+
         // Set the background colour
-        jDiv.css({backgroundColor: '#ffffff' });
+        jDiv.css({ backgroundColor: '#ffffff' });
 
         // Set up renderer, and add the canvas and the slider to the div
         this.renderer = new THREE.WebGLRenderer();
@@ -193,7 +130,9 @@ class Brain3DApp implements Application, Loopable {
         jDiv.append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
             .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown +
-                '" onchange="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/>').css({ width: '400px' }));
+                '" onchange="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/>').css({ 'width': '400px' }))
+            .append($('<button id="button-show-network" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px' })
+                .click(function () { varShowNetwork(); }));
 
         // Set up camera
         this.camera = new THREE.PerspectiveCamera(45, 1, this.nearClip, this.farClip);
@@ -248,6 +187,83 @@ class Brain3DApp implements Application, Loopable {
         if (commonData.brainLabels) lab();
         if (commonData.brainSurface) surf();
     }
+
+    showNetwork() {
+        if (!this.transitionInProgress) {
+            // Leave *showingCola* on permanently after first turn-on
+            this.showingCola = true;
+
+            // Find the edges that have been selected after thresholding, and all the
+            // nodes that have neighbours after the thresholding of the edges takes place.
+            var edges = [];
+            var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
+            for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
+                for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
+                    if (this.filteredAdjMatrix[i][j] === 1) {
+                        edges.push({ source: i, target: j });
+                        hasNeighbours[i] = true;
+                        hasNeighbours[j] = true;
+                    }
+                }
+            }
+
+            this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
+            this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
+
+            var getSourceIndex = function (e) {
+                return e.source;
+            }
+                var getTargetIndex = function (e) {
+                return e.target;
+            }
+                var getLength = function (e) {
+                return 1;
+            }
+                // Create the distance matrix that Cola needs
+                var distanceMatrix = (new shortestpaths.Calculator(this.commonData.nodeCount, edges, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
+
+            var D = cola.Descent.createSquareMatrix(this.commonData.nodeCount, (i, j) => {
+                return distanceMatrix[i][j] * this.colaLinkDistance;
+            });
+
+            var clonedPhysioCoords = this.commonData.brainCoords.map(function (dim) {
+                return dim.map(function (element) {
+                    return element;
+                });
+            });
+            this.descent = new cola.Descent(clonedPhysioCoords, D); // Create the solver
+            this.colaCoords = this.descent.x; // Hold a reference to the solver's coordinates
+            // Relieve some of the initial stress
+            for (var i = 0; i < 10; ++i) {
+                this.descent.reduceStress();
+            }
+
+            // Set up a coroutine to do the animation
+            var origin = new THREE.Vector3(-this.graphOffset, 0, 0);
+            var target = new THREE.Vector3(this.graphOffset, 0, 0);
+            this.colaObject.position = origin;
+            this.colaGraph.setNodePositions(this.commonData.brainCoords); // Move the Cola graph nodes to their starting position
+            this.colaGraph.setVisible(true);
+            this.transitionInProgress = true;
+
+            setCoroutine({ currentTime: 0, endTime: this.modeLerpLength }, (o, deltaTime) => {
+                o.currentTime += deltaTime;
+
+                if (o.currentTime >= o.endTime) { // The animation has finished
+                    this.colaObject.position = target;
+                    this.colaGraph.setNodePositions(this.colaCoords);
+                    this.transitionInProgress = false;
+                    return true;
+                }
+                else { // Update the animation
+                    var percentDone = o.currentTime / o.endTime;
+                    this.colaObject.position = origin.clone().add(target.clone().sub(origin).multiplyScalar(percentDone));
+                    this.colaGraph.setNodePositionsLerp(this.commonData.brainCoords, this.colaCoords, percentDone);
+                    return false;
+                }
+            });
+        }
+    }  
 
     sliderChange(numEdges) {
         var max = this.commonData.nodeCount * (this.commonData.nodeCount - 1) / 2;
@@ -342,6 +358,7 @@ class Brain3DApp implements Application, Loopable {
 
         // Enable the slider
         $('#edge-count-slider-' + this.id).prop('disabled', false);
+        $('#button-show-network').prop('disabled', false);
     }
 
     // Create a matrix where a 1 in (i, j) means the edge between node i and node j is selected

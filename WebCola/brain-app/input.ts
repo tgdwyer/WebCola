@@ -40,13 +40,16 @@ class InputTarget {
     keyDownCallbacks = {};
     keyUpCallbacks = {};
     keyTickCallbacks = {};
+
     leapXCallback;
     leapYCallback;
     leapZCallback;
 
+    mouseDragCallback;
+
     // Accepts the CSS ID of the div that is to represent the input target, and the extra borders
     // which describe where in the div the region of interest is (and where the coordinates should be scaled around)
-    constructor(public targetCssId: string, public currentPointer: PointerIndirection, public leftBorder = 0, public rightBorder = 0, public topBorder = 0, public bottomBorder = 0) {}
+    constructor(public targetCssId: string, public currentPointer: PointerIndirection, public leftBorder = 0, public rightBorder = 0, public topBorder = 0, public bottomBorder = 0) { }
 
     regKeyDownCallback(key: string, callback: () => void) {
         this.keyDownCallbacks[key] = callback;
@@ -72,6 +75,10 @@ class InputTarget {
         this.leapZCallback = callback;
     }
 
+    regMouseDragCallback(callback: (dx:number, dy:number) => void) {
+        this.mouseDragCallback = callback;
+    }
+
     // Return the pointer coordinates within the input target as a pair (x, y) E [-1, 1]x[-1, 1] as they lie within the target's borders
     localPointerPosition() {
         var target = $(this.targetCssId);
@@ -79,7 +86,7 @@ class InputTarget {
         return new THREE.Vector2(
             (this.currentPointer.ptr.x - pos.left - this.leftBorder) / (target.width() - this.leftBorder - this.rightBorder) * 2 - 1,
             (pos.top + this.topBorder - this.currentPointer.ptr.y) / (target.height() - this.topBorder - this.bottomBorder) * 2 + 1
-        );
+            );
     }
 }
 
@@ -109,10 +116,18 @@ class InputTargetManager {
     maxPointingHandLenience = 10;
     fingerLostLenience = 0;
     maxFingerLostLenience = 10;
-    
+
     fingerSmoothingLevel = 3; // Finger smoothing when pointing
     fingerPositions;
     fpi = 0;
+
+    isMouseDown: boolean = false;
+    onMouseDownPosition = new THREE.Vector2();
+    mouseDownCallback;
+
+    regMouseDownCallback(callback: (x:number, y:number) => number) {
+        this.mouseDownCallback = callback;
+    }
 
     // Accepts the CSS IDs of each of the divs that represent an input target, as well as an object that implements the interface for a Leap motion pointer
     constructor(public targetCssIds: Array<string>, public pointerImage: PointerImage) {
@@ -171,9 +186,40 @@ class InputTargetManager {
             }
         });*/
 
+
+        document.addEventListener('mousedown', (event) => {
+            var viewID = this.mouseDownCallback(event.clientX, event.clientY);
+
+            if (viewID == this.activeTarget) {
+                this.isMouseDown = true;
+
+                this.mouse.x = event.clientX;
+                this.mouse.y = event.clientY;
+
+                this.onMouseDownPosition.x = event.clientX;
+                this.onMouseDownPosition.y = event.clientY;
+            }
+        }, false);
+
+        document.addEventListener('mouseup', (event) => {
+            this.isMouseDown = false;
+        }, false);
+
         document.addEventListener('mousemove', (event) => {
             this.currentPointer.ptr = this.mouse;
             this.pointerImage.hide();
+
+            if (this.isMouseDown === true) {
+                var it = this.inputTargets[this.activeTarget];
+                if (it) {
+                    var dx = event.clientX - this.mouse.x;
+                    var dy = event.clientY - this.mouse.y;
+
+                    var callback = it.mouseDragCallback;
+                    if (callback) callback(dx, dy);
+                }
+            }
+
             this.mouse.x = event.clientX;
             this.mouse.y = event.clientY;
         }, false);
@@ -275,7 +321,7 @@ class InputTargetManager {
             coords.y = smoothed[1];
             return coords;
         };
-        
+
         // Works out the gestures currently being performed by the given hand
         var checkHandInput = (hand) => {
             var fingers = hand.fingers;
@@ -386,7 +432,7 @@ class InputTargetManager {
                 }
             }
             else this.pointingHandLenience = this.maxPointingHandLenience;
-            
+
             /*
             if (!this.grabbingHandCheckedIn && this.grabbedNode != null) {
                 --this.grabbingHandLenience;
@@ -407,7 +453,7 @@ class InputTargetManager {
 
     // Return a function that can be used to create a new input target with the specified border sizes.
     // This is intended to be passed to an application so they can set their own borders.
-    newTarget(index: number) : (l:number, r:number, t:number, b:number) => InputTarget {
+    newTarget(index: number): (l: number, r: number, t: number, b: number) => InputTarget {
         return (leftBorder = 0, rightBorder = 0, topBorder = 0, bottomBorder = 0) => {
             // Create the input target and return it
             return this.inputTargets[index] = new InputTarget(this.targetCssIds[index], this.currentPointer, leftBorder, rightBorder, topBorder, bottomBorder);

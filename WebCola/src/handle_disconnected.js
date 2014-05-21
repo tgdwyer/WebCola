@@ -145,17 +145,27 @@ var cola;
             var right = x2 = get_entire_width(data);
             var iterationCounter = 0;
             
-            var f_x1 = 0;
-            var f_x2 = 10;
+            var f_x1 = Number.MAX_VALUE;
+            var f_x2 = Number.MAX_VALUE;
+            var flag = -1; // determines which among f_x1 and f_x2 to recompute
 
-            while ((Math.abs(x1 - x2) > min_width) || Math.abs(f_x1 - f_x2) > applyPacking.FLOAT_EPSILON ) {
 
-                var x1 = right - (right - left) / applyPacking.GOLDEN_SECTION;
-                var x2 = left + (right - left) / applyPacking.GOLDEN_SECTION; 
-                var f_x1 = step(data, x1);
-                var f_x2 = step(data, x2);
+            var dx = Number.MAX_VALUE;
+            var df = Number.MAX_VALUE;
 
-                if (f_x1 > f_x2) left = x1; else right = x2;
+            while (( dx > min_width) || df > applyPacking.FLOAT_EPSILON ) {
+
+                if (flag != 1) {
+                    var x1 = right - (right - left) / applyPacking.GOLDEN_SECTION;
+                    var f_x1 = step(data, x1);
+                } 
+                if (flag != 0) {
+                    var x2 = left + (right - left) / applyPacking.GOLDEN_SECTION; 
+                    var f_x2 = step(data, x2);
+                }
+
+                dx = Math.abs(x1 - x2);
+                df = Math.abs(f_x1 - f_x2);
 
                 if (f_x1 < curr_best_f) {
                     curr_best_f = f_x1;
@@ -165,6 +175,18 @@ var cola;
                 if (f_x2 < curr_best_f) {
                     curr_best_f = f_x2;
                     curr_best = x2;
+                }
+
+                if (f_x1 > f_x2) {
+                    left = x1;
+                    x1 = x2;
+                    f_x1 = f_x2;
+                    flag = 1;
+                } else {
+                    right = x2;
+                    x2 = x1;
+                    f_x2 = f_x1;
+                    flag = 0;
                 }
 
                 if (iterationCounter++ > 100) {
