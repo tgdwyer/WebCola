@@ -30,7 +30,7 @@ var cola;
             distanceMatrix = null,
             descent = null,
             directedLinkConstraints = null,
-            threshold = 1e-5,
+            threshold = 0.01,
             defaultNodeSize = 10,
             visibilityGraph = null;
 
@@ -63,8 +63,8 @@ var cola;
             //var s1 = descent.reduceStress();
             if (s1 === 0) {
                 alpha = 0;
-            } else if (typeof lastStress !== 'undefined' && lastStress > s1 - threshold) {
-                alpha = lastStress / s1 - 1;
+            } else if (typeof lastStress !== 'undefined') {
+                alpha = Math.abs(Math.abs(lastStress / s1) - 1);
             }
             lastStress = s1;
 
@@ -117,6 +117,8 @@ var cola;
             groups = x;
             rootGroup = {};
             groups.forEach(function (g) {
+                if (typeof g.padding === "undefined")
+                    g.padding = 1;
                 if (typeof g.leaves !== "undefined")
                     g.leaves.forEach(function (v, i) { (g.leaves[i] = nodes[v]).parent = g });
                 if (typeof g.groups !== "undefined")
@@ -336,7 +338,8 @@ var cola;
                 // otherwise 2. (
                 G = cola.Descent.createSquareMatrix(N, function () { return 2 });
                 links.forEach(function (e) {
-                    G[getSourceIndex(e)][getTargetIndex(e)] = G[getTargetIndex(e)][getSourceIndex(e)] = 1;
+                    var u = getSourceIndex(e), v = getTargetIndex(e);
+                    G[u][v] = G[v][u] = 1;
                 });
             }
 
@@ -359,7 +362,6 @@ var cola;
                 linkAccessor.getMinSeparation = directedLinkConstraints.getMinSeparation;
                 curConstraints = curConstraints.concat(cola.generateDirectedEdgeConstraints(n, links, directedLinkConstraints.axis, linkAccessor));
             }
-
             
             var initialUnconstrainedIterations = arguments.length > 0 ? arguments[0] : 0;
             var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;

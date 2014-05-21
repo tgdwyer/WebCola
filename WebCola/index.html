@@ -79,7 +79,8 @@
             "ariel",
             "egonetwork",
             "disconnected_graphs",
-            "powergraph"
+            "powergraph",
+            "3dLayout"
         ];
 
         function shuffle(array) {
@@ -101,7 +102,7 @@
         }
 
         d3.select("#examples").selectAll(".example")
-            .data(shuffle(examples).slice(0, 12))
+            .data(shuffle(examples).slice(0, 16))
           .enter().append("a")
             .attr("class", "example")
             .attr("href", function (d) { return "examples/" + d + ".html"; })
@@ -149,7 +150,7 @@
                   <li><a href="examples/smallnonoverlappinggraph.html">avoid overlapping nodes</a>; or</li>
                   <li> provide <a href="examples/unix.html">flow layout for directed graphs</a>;</li>
                </ul> </li>
-            <li>it is may be less scalable to very large graphs.</li>
+            <li>it may be less scalable to very large graphs.</li>
         </ul>
         However, it works well on an average machine on graphs with fewer than 100 nodes.
     </p>

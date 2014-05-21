@@ -1,10 +1,11 @@
+/// <reference path="../src/descent.ts"/>
+/// <reference path="../src/shortestpaths.ts"/>
 /**
     This application uses similarity data between areas of the brain to construct a thresholded graph with edges
     between the most similar areas. It is designed to be embedded in a view defined in brainapp.html / brainapp.ts.
 */
 
 // GLOBAL VARIABLES
-declare var THREE;
 declare var d3;
 
 var sliderSpace = 70; // The number of pixels to reserve at the bottom of the div for the slider
@@ -395,7 +396,7 @@ class Brain3DApp implements Application, Loopable {
         var intersected = raycaster.intersectObjects(this.scene.children, true);
 
         for (var i = 0; i < intersected.length; ++i) {
-            if (intersected[i].object.isNode) { // Node objects have this special boolean flag
+            if ((<any>intersected[i].object).isNode) { // Node objects have this special boolean flag
                 return intersected[i].object;
             }
         }
@@ -464,7 +465,7 @@ class Graph {
                     { color: nodeColourings[i] }
                     )
                 );
-            sphere.isNode = true; // A flag to identify the node meshes
+            (<any>sphere).isNode = true; // A flag to identify the node meshes
             sphere.id = i;
             this.rootObject.add(sphere);
         }

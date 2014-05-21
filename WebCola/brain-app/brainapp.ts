@@ -1,3 +1,6 @@
+/// <reference path="../extern/three.d.ts"/>
+/// <reference path="../extern/jquery.d.ts"/>
+/// <reference path="../extern/jqueryui.d.ts"/>
 /**
     This file contains all the control logic for brainapp.html (to manage interaction with
     the page, and the execution of applications/visualisations within the four views).
@@ -163,7 +166,7 @@ $('#accordion').accordion({ heightStyle: 'fill' });
 // Set up data upload buttons
 $('#select-coords').button();
 $('#upload-coords').button().click(function () {
-    var file = $('#select-coords').get(0).files[0];
+    var file = (<any>$('#select-coords').get(0)).files[0];
     if (file) {
         loadCoordinates(file);
         $('#shared-coords').css({ color: 'green' });
@@ -171,7 +174,7 @@ $('#upload-coords').button().click(function () {
 });
 $('#select-labels').button();
 $('#upload-labels').button().click(function () {
-    var file = $('#select-labels').get(0).files[0];
+    var file = (<any>$('#select-labels').get(0)).files[0];
     if (file) {
         loadLabels(file);
         $('#shared-labels').css({ color: 'green' });
@@ -179,7 +182,7 @@ $('#upload-labels').button().click(function () {
 });
 $('#select-matrix-1').button();
 $('#upload-matrix-1').button().click(function () {
-    var file = $('#select-matrix-1').get(0).files[0];
+    var file = (<any>$('#select-matrix-1').get(0)).files[0];
     if (file) {
         loadSimilarityMatrix(file, dataSets[0]);
         $('#d1-mat').css({color: 'green'});
@@ -187,7 +190,7 @@ $('#upload-matrix-1').button().click(function () {
 });
 $('#select-attr-1').button();
 $('#upload-attr-1').button().click(function () {
-    var file = $('#select-attr-1').get(0).files[0];
+    var file = (<any>$('#select-attr-1').get(0)).files[0];
     if (file) {
         loadAttributes(file, dataSets[0]);
         $('#d1-att').css({ color: 'green' });
@@ -195,7 +198,7 @@ $('#upload-attr-1').button().click(function () {
 });
 $('#select-matrix-2').button();
 $('#upload-matrix-2').button().click(function () {
-    var file = $('#select-matrix-2').get(0).files[0];
+    var file = (<any>$('#select-matrix-2').get(0)).files[0];
     if (file) {
         loadSimilarityMatrix(file, dataSets[1]);
         $('#d2-mat').css({ color: 'green' });
@@ -203,7 +206,7 @@ $('#upload-matrix-2').button().click(function () {
 });
 $('#select-attr-2').button();
 $('#upload-attr-2 ').button().click(function () {
-    var file = $('#select-attr-2').get(0).files[0]
+    var file =(<any> $('#select-attr-2').get(0)).files[0]
     if (file) {
         loadAttributes(file, dataSets[1]);
         $('#d2-att').css({ color: 'green' });
@@ -531,7 +534,7 @@ var manager = new THREE.LoadingManager();
 manager.onProgress = function (item, loaded, total) {
     console.log(item, loaded, total);
 };
-var loader = new THREE.OBJLoader(manager);
+var loader = new (<any>THREE).OBJLoader(manager);
 // Load the brain surface (hardcoded - it is not simple to load geometry from the local machine, but this has not been deeply explored yet).
 // NOTE: The loaded model cannot be used in more than one WebGL context (scene) at a time - the geometry and materials must be .cloned() into
 // new THREE.Mesh() objects by the application wishing to use the model.

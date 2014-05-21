@@ -1,3 +1,4 @@
+/// <reference path="../extern/three.d.ts"/>
 /*
 Copyright (c) 2013, Faculty of Information Technology, Monash University.
 All rights reserved.
@@ -336,14 +337,14 @@ class InputTargetManager {
 
                 if (this.pointingHandID === hand.id) {
                     this.pointingHandCheckedIn = true;
-                    if (this.fingerPointer.id !== fingers[0].id) {
+                    if ((<any>this.fingerPointer).id !== fingers[0].id) {
                         // Give a few frames slack if we can't find the finger we had before
                         if (this.fingerLostLenience > 0) {
                             --this.fingerLostLenience;
                             return;
                         }
                         else {
-                            this.fingerPointer.id = fingers[0].id;
+                            (<any>this.fingerPointer).id = fingers[0].id;
                         }
                     }
                     this.fingerLostLenience = this.maxFingerLostLenience;
@@ -355,11 +356,11 @@ class InputTargetManager {
                 // If we see two fingers but one is the finger we were already tracking,
                 // ignore the second finger.
                 this.pointingHandCheckedIn = true;
-                if (fingers[0].id === this.fingerPointer.id) {
+                if (fingers[0].id === (<any>this.fingerPointer).id) {
                     this.fingerPointer.copy(getFingerOnScreen(fingers[0]));
                     //console.log("Lenient.");
                 }
-                else if (fingers[1].id === this.fingerPointer.id) {
+                else if (fingers[1].id === (<any>this.fingerPointer).id) {
                     this.fingerPointer.copy(getFingerOnScreen(fingers[1]));
                     //console.log("Lenient.");
                 }
