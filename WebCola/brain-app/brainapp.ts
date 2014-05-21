@@ -254,6 +254,27 @@ var pointerImage = new PointerImageImpl;
 var input = new InputTargetManager([tl_view, tr_view, bl_view, br_view], pointerImage);
 input.setActiveTarget(0);
 
+function getActiveTargetUnderMouse(x: number, y: number) {
+    var id = -1;
+    switch (getViewUnderMouse(x, y)) {
+        case tl_view:
+            id = 0;
+            break;
+        case tr_view:
+            id = 1;
+            break;
+        case bl_view:
+            id = 2;
+            break;
+        case br_view:
+            id = 3;
+            break;
+    }
+    return id;
+}
+
+input.regMouseDownCallback(getActiveTargetUnderMouse);
+
 // Set up selectability
 var selectTLView = function () {
     input.setActiveTarget(0);
