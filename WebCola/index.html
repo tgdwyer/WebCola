@@ -102,7 +102,7 @@
         }
 
         d3.select("#examples").selectAll(".example")
-            .data(shuffle(examples).slice(0, 12))
+            .data(shuffle(examples).slice(0, 16))
           .enter().append("a")
             .attr("class", "example")
             .attr("href", function (d) { return "examples/" + d + ".html"; })

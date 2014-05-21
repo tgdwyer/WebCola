@@ -105,7 +105,8 @@
         graph.groups = sbsvg.selectAll('.cluster')[0].map(function (g) {
             return {
                 leaves: g.attributes['dunnart:contains'].value.split(' ').map(function (i) { return nodeLookup[i].index }),
-                style: g.attributes['style'].value
+                style: g.attributes['style'].value,
+                padding: 10
             }
         });
         graph.constraints = [];

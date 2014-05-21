@@ -16,7 +16,9 @@ module vpsc {
     }
 
     export function computeGroupBounds(g: Group): Rectangle {
-        g.bounds = g.leaves.reduce((r: Rectangle, c) => c.bounds.union(r), Rectangle.empty());
+        g.bounds = typeof g.leaves !== "undefined" ?
+            g.leaves.reduce((r: Rectangle, c) => c.bounds.union(r), Rectangle.empty()) :
+            Rectangle.empty();
         if (typeof g.groups !== "undefined")
             g.bounds = <Rectangle>g.groups.reduce((r: Rectangle, c) => computeGroupBounds(c).union(r), g.bounds);
         g.bounds = g.bounds.inflate(g.padding);
