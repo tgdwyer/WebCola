@@ -580,6 +580,7 @@ class Graph {
     }
 }
 
+
 class Edge {
     line;
     geometry;
@@ -619,6 +620,8 @@ class Edge {
         this.geometry.verticesNeedUpdate = true;
     }
 }
+
+
 
 /* Functions can be pushed to the coroutines array to be executed as if they are
  * occuring in parallel with the program execution.

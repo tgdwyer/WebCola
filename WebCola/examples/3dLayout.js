@@ -6,7 +6,7 @@
 var cola3;
 (function (cola3) {
     var Graph = (function () {
-        function Graph(parentObject, n, edges, nodeColourings) {
+        function Graph(parentObject, n, edges, nodeColour) {
             var _this = this;
             this.edgeList = [];
             this.parentObject = parentObject;
@@ -16,8 +16,7 @@ var cola3;
             // Create all the node meshes
             this.nodeMeshes = Array(n);
             for (var i = 0; i < n; ++i) {
-                var sphere = this.nodeMeshes[i] = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), new THREE.MeshLambertMaterial({ color: nodeColourings[i] }));
-                sphere.id = i;
+                var sphere = this.nodeMeshes[i] = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), new THREE.MeshLambertMaterial({ color: nodeColour[i] }));
                 this.rootObject.add(sphere);
             }
 
@@ -118,9 +117,10 @@ var LinkAccessor = (function () {
 d3.json("graphdata/miserables.json", function (error, graph) {
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-
     var renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth / 1.2, window.innerHeight / 1.2);
+    var sizeRatio = 0.8;
+    renderer.setSize(window.innerWidth * sizeRatio, window.innerHeight * sizeRatio);
+
     var div = document.getElementById("graphdiv");
     div.appendChild(renderer.domElement);
 
@@ -222,3 +222,4 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     };
     render();
 });
+//# sourceMappingURL=3dlayout.js.map
