@@ -539,7 +539,8 @@ var loader = new (<any>THREE).OBJLoader(manager);
 // NOTE: The loaded model cannot be used in more than one WebGL context (scene) at a time - the geometry and materials must be .cloned() into
 // new THREE.Mesh() objects by the application wishing to use the model.
 function loadBrainModel() {
-    loader.load('../examples/graphdata/BrainLSDecimated0.01.obj', function (object) {
+    //loader.load('../examples/graphdata/BrainLSDecimated0.01.obj', function (object) {
+    loader.load('../examples/graphdata/BrainMesh_Ch2_Inflated.obj', function (object) {
         if (!object) {
             console.log("Failed to load brain surface.");
             return;
@@ -552,7 +553,7 @@ function loadBrainModel() {
                     {
                         color: 0xffaaaa,
                         transparent: true,
-                        opacity: 0.3
+                        opacity: 0.6
                     });
                 //new THREE.MeshPhongMaterial({
                 //    // light

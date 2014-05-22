@@ -220,7 +220,7 @@ class Brain3DApp implements Application, Loopable {
                 return 1;
             }
                 // Create the distance matrix that Cola needs
-                var distanceMatrix = (new shortestpaths.Calculator(this.commonData.nodeCount, edges, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
+                var distanceMatrix = (new cola.shortestpaths.Calculator(this.commonData.nodeCount, edges, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
 
             var D = cola.Descent.createSquareMatrix(this.commonData.nodeCount, (i, j) => {
                 return distanceMatrix[i][j] * this.colaLinkDistance;
@@ -263,7 +263,7 @@ class Brain3DApp implements Application, Loopable {
                 }
             });
         }
-    }  
+    }
 
     sliderChange(numEdges) {
         var max = this.commonData.nodeCount * (this.commonData.nodeCount - 1) / 2;
@@ -419,16 +419,22 @@ class Brain3DApp implements Application, Loopable {
             if (this.selectedNodeID >= 0) {
                 this.physioGraph.deselectNode(this.selectedNodeID);
                 this.colaGraph.deselectNode(this.selectedNodeID);
+
+                this.physioGraph.deselectAdjEdges(this.selectedNodeID);
+                this.colaGraph.deselectAdjEdges(this.selectedNodeID);
             }
             this.selectedNodeID = node.id;
             // Select the new node ID
             this.physioGraph.selectNode(this.selectedNodeID);
             this.colaGraph.selectNode(this.selectedNodeID);
+
+            this.physioGraph.selectAdjEdges(this.selectedNodeID);
+            this.colaGraph.selectAdjEdges(this.selectedNodeID);
         }
+
 
         if (this.showingCola)
             this.descent.rungeKutta(); // Do an iteration of the solver
-
         this.colaGraph.update(); // Update all the edge positions
         this.draw(); // Draw the graph
     }
@@ -540,6 +546,28 @@ class Graph {
         this.nodeMeshes[id].scale.set(1, 1, 1);
     }
 
+    selectAdjEdges(nodeID: number) {
+        for (var j = 0; j < this.edgeMatrix.length; ++j) {
+            var edge = this.edgeMatrix[nodeID][j];
+            if (edge) {
+                if (edge.visible == true) {
+                    edge.setColor(this.nodeMeshes[nodeID].material.color.getHex());
+                }
+            }
+        }
+    }
+
+    deselectAdjEdges(nodeID: number) {
+        for (var j = 0; j < this.edgeMatrix.length; ++j) {
+            var edge = this.edgeMatrix[nodeID][j];
+            if (edge) {
+                if (edge.visible == true) {
+                    edge.setColor(0x000000); // default edge color
+                }
+            }
+        }
+    }
+
     update() {
         this.edgeList.forEach(function (edge) {
             edge.update();
@@ -552,6 +580,7 @@ class Graph {
     }
 }
 
+
 class Edge {
     line;
     geometry;
@@ -561,9 +590,16 @@ class Edge {
         this.geometry = new THREE.Geometry();
         this.geometry.vertices.push(endPoint1);
         this.geometry.vertices.push(endPoint2);
-        this.line = new THREE.Line(this.geometry, new THREE.LineBasicMaterial({ color: 0x000000 }));
+
+        // threejs.org: Due to limitations in the ANGLE layer, on Windows platforms linewidth will always be 1 regardless of the set value.
+        this.line = new THREE.Line(this.geometry, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 3 }));
+
         parentObject.add(this.line);
         //this.highlighted = false;
+    }
+
+    setColor(hex: number) {
+        this.line.material.color.setHex(hex);
     }
 
     setVisible(flag: boolean) {
@@ -584,6 +620,8 @@ class Edge {
         this.geometry.verticesNeedUpdate = true;
     }
 }
+
+
 
 /* Functions can be pushed to the coroutines array to be executed as if they are
  * occuring in parallel with the program execution.

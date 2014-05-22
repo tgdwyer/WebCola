@@ -1,12 +1,11 @@
 /// <reference path="../extern/three.d.ts"/>
-/// <reference path="../extern/d3.d.ts"/>
 /// <reference path="../src/shortestpaths.ts"/>
 /// <reference path="../src/linklengths.ts"/>
 /// <reference path="../src/descent.ts"/>
 var cola3;
 (function (cola3) {
     var Graph = (function () {
-        function Graph(parentObject, n, edges, nodeColourings) {
+        function Graph(parentObject, n, edges, nodeColour) {
             var _this = this;
             this.edgeList = [];
             this.parentObject = parentObject;
@@ -16,8 +15,7 @@ var cola3;
             // Create all the node meshes
             this.nodeMeshes = Array(n);
             for (var i = 0; i < n; ++i) {
-                var sphere = this.nodeMeshes[i] = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), new THREE.MeshLambertMaterial({ color: nodeColourings[i] }));
-                sphere.id = i;
+                var sphere = this.nodeMeshes[i] = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), new THREE.MeshLambertMaterial({ color: nodeColour[i] }));
                 this.rootObject.add(sphere);
             }
 
@@ -59,7 +57,7 @@ var cola3;
             parentObject.add(this.shape);
         }
         Edge.prototype.makeCylinder = function () {
-            var n = 12, points = [], cosh = function (v) {
+            var n = 1, points = [], cosh = function (v) {
                 return (Math.pow(Math.E, v) + Math.pow(Math.E, -v)) / 2;
             };
             var xmax = 2, m = 2 * cosh(xmax);
@@ -118,9 +116,10 @@ var LinkAccessor = (function () {
 d3.json("graphdata/miserables.json", function (error, graph) {
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-
     var renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth / 1.2, window.innerHeight / 1.2);
+    var sizeRatio = 0.8;
+    renderer.setSize(window.innerWidth * sizeRatio, window.innerHeight * sizeRatio);
+
     var div = document.getElementById("graphdiv");
     div.appendChild(renderer.domElement);
 
@@ -146,7 +145,7 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     cola.jaccardLinkLengths(graph.nodes.length, graph.links, linkAccessor, 1.5);
 
     // Create the distance matrix that Cola needs
-    var distanceMatrix = (new shortestpaths.Calculator(n, graph.links, linkAccessor.getSourceIndex, linkAccessor.getTargetIndex, linkAccessor.getLength)).DistanceMatrix();
+    var distanceMatrix = (new cola.shortestpaths.Calculator(n, graph.links, linkAccessor.getSourceIndex, linkAccessor.getTargetIndex, linkAccessor.getLength)).DistanceMatrix();
 
     var D = cola.Descent.createSquareMatrix(n, function (i, j) {
         return distanceMatrix[i][j] * 7;
@@ -222,3 +221,4 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     };
     render();
 });
+//# sourceMappingURL=3dlayout.js.map

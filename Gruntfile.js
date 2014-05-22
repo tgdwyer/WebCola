@@ -94,8 +94,8 @@ module.exports = function (grunt) {
     }
   });
  
-  grunt.registerTask('default', ['typescript:base', 'concat', 'umd', 'uglify', 'qunit']);
-  grunt.registerTask('nougly', ['typescript:base', 'concat', 'umd', 'qunit']);
+  grunt.registerTask('default', ['typescript:base', 'concat', 'uglify', 'qunit']);
+  grunt.registerTask('nougly', ['typescript:base', 'concat', 'qunit']);
   grunt.registerTask('nougly-notest', ['typescript', 'concat']);
   grunt.registerTask('docs', ['yuidoc', 'typescript:examples']);
   grunt.registerTask('full', ['default', 'typescript:examples', 'examples']);

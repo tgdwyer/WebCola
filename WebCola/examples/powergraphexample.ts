@@ -7,9 +7,6 @@ var color = d3.scale.category20();
 
 var makeEdgeBetween;
 var colans = <any>cola;
-var makeEdgeBetween = typeof colans.vpsc.makeEdgeBetween === 'undefined' ?
-    vpsc.makeEdgeBetween :
-    colans.vpsc.makeEdgeBetween;
 function makeSVG() {
     var svg = d3.select("body").append("svg")
         .attr("width", width)
@@ -195,7 +192,7 @@ function confluent() {
             getTargetIndex: l => l.target
         };
 
-        var g = powergraph.getGroups(graph.nodes, graph.links, linkAccessor);
+        var g = cola.powergraph.getGroups(graph.nodes, graph.links, linkAccessor);
 
         d3cola
             .nodes(graph.nodes)

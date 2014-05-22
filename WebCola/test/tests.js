@@ -527,7 +527,7 @@ test("matrix perf test", function () {
 
 /// <reference path="pqueue.js"/>
 test("priority queue test", function () {
-    var q = new cola.PriorityQueue(function (a, b) { return a <= b; });
+    var q = new PriorityQueue(function (a, b) { return a <= b; });
     q.push(42, 5, 23, 5, Math.PI);
     var u = Math.PI, v;
     strictEqual(u, q.top());
