@@ -57,7 +57,7 @@ var cola3;
             parentObject.add(this.shape);
         }
         Edge.prototype.makeCylinder = function () {
-            var n = 1, points = [], cosh = function (v) {
+            var n = 12, points = [], cosh = function (v) {
                 return (Math.pow(Math.E, v) + Math.pow(Math.E, -v)) / 2;
             };
             var xmax = 2, m = 2 * cosh(xmax);

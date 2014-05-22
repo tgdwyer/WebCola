@@ -59,7 +59,7 @@ module cola3 {
         }
 
         makeCylinder() {
-            var n = 1, points = [],
+            var n = 12, points = [],
                 cosh = v => (Math.pow(Math.E, v) + Math.pow(Math.E, -v)) / 2;
             var xmax = 2, m = 2 * cosh(xmax);
             for (var i = 0; i < n + 1; i++) {

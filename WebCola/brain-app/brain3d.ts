@@ -174,9 +174,11 @@ class Brain3DApp implements Application, Loopable {
                     clonedObject.add(new THREE.Mesh(child.geometry.clone(), child.material.clone()));
                 }
             });
+
             // Setting scale to some arbitrarily larger value, because the mesh isn't the right size
-            var scale = 1.5;
-            clonedObject.scale = new THREE.Vector3(scale, scale, scale);
+            //var scale = 1.5;
+            //clonedObject.scale = new THREE.Vector3(scale, scale, scale);
+
             this.brainSurface = clonedObject;
             this.brainObject.add(this.brainSurface);
         };
@@ -435,6 +437,8 @@ class Brain3DApp implements Application, Loopable {
 
         if (this.showingCola)
             this.descent.rungeKutta(); // Do an iteration of the solver
+
+        this.physioGraph.update(); 
         this.colaGraph.update(); // Update all the edge positions
         this.draw(); // Draw the graph
     }
@@ -552,6 +556,7 @@ class Graph {
             if (edge) {
                 if (edge.visible == true) {
                     edge.setColor(this.nodeMeshes[nodeID].material.color.getHex());
+                    edge.setScale(2);
                 }
             }
         }
@@ -562,7 +567,8 @@ class Graph {
             var edge = this.edgeMatrix[nodeID][j];
             if (edge) {
                 if (edge.visible == true) {
-                    edge.setColor(0x000000); // default edge color
+                    edge.setColor(0xcfcfcf); // default edge color
+                    edge.setScale(1); // default edge scale
                 }
             }
         }
@@ -581,6 +587,87 @@ class Graph {
 }
 
 
+class Edge {
+    shape;
+    geometry;
+    visible: boolean = true;
+    scale = 1;
+
+    constructor(public parentObject, private sourcePoint, private targetPoint) {
+        this.shape = this.makeCylinder();
+        parentObject.add(this.shape);
+    }
+
+    makeCylinder() {
+        var n = 1,
+            points = [],
+            cosh = v => (Math.pow(Math.E, v) + Math.pow(Math.E, -v)) / 2;
+
+        var xmax = 2,
+            m = 2 * cosh(xmax);
+
+        for (var i = 0; i < n + 1; i++) {
+            var x = 2 * xmax * (i - n / 2) / n;
+            points.push(new THREE.Vector3(cosh(x) / m, 0, (i - n / 2) / n));
+        }
+
+        this.geometry = new THREE.LatheGeometry(points, 12);
+
+        var material = new THREE.MeshLambertMaterial({ color: 0xcfcfcf });
+        var cylinder = new THREE.Mesh(this.geometry, material);
+
+        return cylinder;
+    }
+
+    setColor(hex: number) {
+        this.shape.material.color.setHex(hex);
+    }
+
+    setScale(s: number) {
+        this.scale = s;
+    }
+
+    setVisible(flag: boolean) {
+        if (flag) {
+            if (!this.visible) {
+                this.parentObject.add(this.shape);
+                this.visible = true;
+            }
+        } else {
+            if (this.visible) {
+                this.parentObject.remove(this.shape);
+                this.visible = false;
+            }
+        }
+    }
+
+    update() {
+        this.geometry.verticesNeedUpdate = true;
+
+        var a = this.sourcePoint, b = this.targetPoint;
+        var m = new THREE.Vector3();
+        m.addVectors(a, b).divideScalar(2);
+        this.shape.position = m;
+        var origVec = new THREE.Vector3(0, 0, 1);         //vector of cylinder
+        var targetVec = new THREE.Vector3();
+        targetVec.subVectors(b, a);
+        var length = targetVec.length();
+        this.shape.scale.set(this.scale, this.scale, length);
+        targetVec.normalize();
+
+        var angle = Math.acos(origVec.dot(targetVec));
+
+        var axis = new THREE.Vector3();
+        axis.crossVectors(origVec, targetVec);
+        axis.normalize();
+        var quaternion = new THREE.Quaternion();
+        quaternion.setFromAxisAngle(axis, angle);
+        this.shape.quaternion = quaternion;
+    }
+}
+
+
+/*
 class Edge {
     line;
     geometry;
@@ -620,7 +707,7 @@ class Edge {
         this.geometry.verticesNeedUpdate = true;
     }
 }
-
+*/
 
 
 /* Functions can be pushed to the coroutines array to be executed as if they are
