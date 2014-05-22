@@ -220,7 +220,7 @@ class Brain3DApp implements Application, Loopable {
                 return 1;
             }
                 // Create the distance matrix that Cola needs
-                var distanceMatrix = (new shortestpaths.Calculator(this.commonData.nodeCount, edges, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
+                var distanceMatrix = (new cola.shortestpaths.Calculator(this.commonData.nodeCount, edges, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
 
             var D = cola.Descent.createSquareMatrix(this.commonData.nodeCount, (i, j) => {
                 return distanceMatrix[i][j] * this.colaLinkDistance;
@@ -263,7 +263,7 @@ class Brain3DApp implements Application, Loopable {
                 }
             });
         }
-    }  
+    }
 
     sliderChange(numEdges) {
         var max = this.commonData.nodeCount * (this.commonData.nodeCount - 1) / 2;
@@ -432,9 +432,9 @@ class Brain3DApp implements Application, Loopable {
             this.colaGraph.selectAdjEdges(this.selectedNodeID);
         }
 
+
         if (this.showingCola)
             this.descent.rungeKutta(); // Do an iteration of the solver
-
         this.colaGraph.update(); // Update all the edge positions
         this.draw(); // Draw the graph
     }

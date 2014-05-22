@@ -3,9 +3,6 @@
  */
 var cola;
 (function (cola) {
-    if (typeof vpsc === 'undefined') {
-        vpsc = cola.vpsc;
-    }
 
     /**
      * @class d3adaptor
@@ -309,7 +306,7 @@ var cola;
             variables = new Array(N);
 
             var makeVariable = function (i, w) {
-                var v = variables[i] = new vpsc.Variable(0, w);
+                var v = variables[i] = new cola.vpsc.Variable(0, w);
                 v.index = i;
                 return v;
             }
@@ -374,12 +371,12 @@ var cola;
             descent.run(initialUnconstrainedIterations);
 
             // apply initialIterations with user constraints but no noverlap constraints
-            if (curConstraints.length > 0) descent.project = new vpsc.Projection(nodes, groups, rootGroup, curConstraints).projectFunctions();
+            if (curConstraints.length > 0) descent.project = new cola.vpsc.Projection(nodes, groups, rootGroup, curConstraints).projectFunctions();
             descent.run(initialUserConstraintIterations);
 
             // subsequent iterations will apply all constraints
             this.avoidOverlaps(ao);
-            if (ao) descent.project = new vpsc.Projection(nodes, groups, rootGroup, curConstraints, true).projectFunctions();
+            if (ao) descent.project = new cola.vpsc.Projection(nodes, groups, rootGroup, curConstraints, true).projectFunctions();
 
             // allow not immediately connected nodes to relax apart (p-stress)
             descent.G = G;
@@ -439,10 +436,10 @@ var cola;
                 draw(vg2);
             }
             var sourceInd = function(e) { return e.source.id }, targetInd = function(e) { return e.target.id }, length = function(e) { return e.length() }, 
-                spCalc = new shortestpaths.Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length),
+                spCalc = new cola.shortestpaths.Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length),
                 shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
             if (shortestPath.length === 1 || shortestPath.length === vg2.V.length) {
-                vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
                 lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
             } else {
                 var n = shortestPath.length - 2,
@@ -451,7 +448,7 @@ var cola;
                     lineData = [d.source.innerBounds.rayIntersection(p.x, p.y)];
                 for (var i = n; i >= 0; --i) 
                     lineData.push(vg2.V[shortestPath[i]].p);
-                lineData.push(vpsc.makeEdgeTo(q, d.target.innerBounds, 5));
+                lineData.push(cola.vpsc.makeEdgeTo(q, d.target.innerBounds, 5));
             }
             lineData.forEach(function (v, i) {
                 if (i > 0) {
