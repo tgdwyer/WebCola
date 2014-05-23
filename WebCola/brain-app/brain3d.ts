@@ -427,8 +427,8 @@ class Brain3DApp implements Application, Loopable {
             }
             this.selectedNodeID = node.id;
             // Select the new node ID
-            this.physioGraph.selectNode(this.selectedNodeID);
-            this.colaGraph.selectNode(this.selectedNodeID);
+            this.physioGraph.selectNode(this.selectedNodeID, this.camera.position);
+            this.colaGraph.selectNode(this.selectedNodeID, this.camera.position);
 
             this.physioGraph.selectAdjEdges(this.selectedNodeID);
             this.colaGraph.selectAdjEdges(this.selectedNodeID);
@@ -451,7 +451,10 @@ class Brain3DApp implements Application, Loopable {
 class Graph {
     parentObject;
     rootObject;
+
     nodeMeshes: any[];
+    nodeLabelList: any[];
+
     edgeMatrix: any[][];
     edgeList: Edge[] = [];
     visible: boolean = true;
@@ -463,12 +466,17 @@ class Graph {
 
         // Create all the node meshes
         this.nodeMeshes = Array(adjMatrix.length);
+        this.nodeLabelList = Array(adjMatrix.length);
+
         for (var i = 0; i < adjMatrix.length; ++i) {
             var sphere = this.nodeMeshes[i] = new THREE.Mesh(
-                new THREE.SphereGeometry(2, 10, 10), new THREE.MeshLambertMaterial(
-                    { color: nodeColourings[i] }
-                    )
+                new THREE.SphereGeometry(2, 10, 10),
+                new THREE.MeshLambertMaterial({ color: nodeColourings[i] })
                 );
+
+            this.nodeLabelList[i] = this.createNodeToolTip(i.toString());
+            //this.parentObject.add(this.nodeLabelList[i]); // to see all labels
+
             (<any>sphere).isNode = true; // A flag to identify the node meshes
             sphere.id = i;
             this.rootObject.add(sphere);
@@ -491,11 +499,59 @@ class Graph {
         this.edgeMatrix = adjMatrix;
     }
 
+    createNodeToolTip(text: string) {
+        // draw text on canvas 
+        var textSize = 60;
+
+        // 1. create a canvas element
+        var canvas = document.createElement('canvas');
+
+        var context = canvas.getContext('2d');
+        context.font = "Bold " + textSize + "px Arial";
+
+        canvas.width = context.measureText(text).width;
+        canvas.height = textSize;
+
+        context.font = textSize + "px Arial";
+        context.fillStyle = "rgba(0,0,0,1)";
+        context.fillText(text, 0, textSize);
+
+        // 2. canvas contents will be used for a texture
+        var texture = new THREE.Texture(canvas)
+	    texture.needsUpdate = true;
+        
+        var material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+        material.transparent = true;
+
+        var mesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(canvas.width, canvas.height),
+            material
+            );
+        mesh.scale.set(0.1,0.1,1);
+        return mesh;
+              
+        /*
+        // another method:
+        var spriteMaterial = new THREE.SpriteMaterial({ map: texture, useScreenCoordinates: true });
+
+        var sprite = new THREE.Sprite(spriteMaterial);
+        sprite.scale.set(200, 100, 1.0);
+        sprite.position.set(50, 50, 0);
+        //scene.add(sprite1);
+        return sprite;
+        */
+    }
+
     setNodePositions(colaCoords: number[][]) {
         for (var i = 0; i < this.nodeMeshes.length; ++i) {
             this.nodeMeshes[i].position.x = colaCoords[0][i];
             this.nodeMeshes[i].position.y = colaCoords[1][i];
             this.nodeMeshes[i].position.z = colaCoords[2][i];
+
+            // set the node label position 
+            this.nodeLabelList[i].position.x = this.nodeMeshes[i].position.x + 7;
+            this.nodeLabelList[i].position.y = this.nodeMeshes[i].position.y + 7;
+            this.nodeLabelList[i].position.z = this.nodeMeshes[i].position.z;
         }
     }
 
@@ -542,12 +598,17 @@ class Graph {
         }
     }
 
-    selectNode(id: number) {
+    selectNode(id: number, position: THREE.Vector3) {
         this.nodeMeshes[id].scale.set(2, 2, 2);
+
+        this.nodeLabelList[id].lookAt(position);
+        this.parentObject.add(this.nodeLabelList[id]);
     }
 
     deselectNode(id: number) {
         this.nodeMeshes[id].scale.set(1, 1, 1);
+
+        this.parentObject.remove(this.nodeLabelList[id]);
     }
 
     selectAdjEdges(nodeID: number) {
@@ -578,6 +639,14 @@ class Graph {
         this.edgeList.forEach(function (edge) {
             edge.update();
         });
+
+        /*
+        for (var i = 0; i < this.nodeLabelList.length; ++i) {
+            if (this.nodeLabelList[i]) {
+                this.nodeLabelList[i].lookAt(p);
+            }
+        }
+        */
     }
 
     // Remove self from the scene so that the object can be GC'ed
