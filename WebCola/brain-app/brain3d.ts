@@ -198,7 +198,7 @@ class Brain3DApp implements Application, Loopable {
         commonData.regNotifySurface(surf);
         if (commonData.brainCoords) coords();
         if (commonData.brainLabels) lab();
-        if (commonData.brainSurface) surf();
+        //if (commonData.brainSurface) surf(); // this line is redundant and has problem, surf() will be called in THREE.OBJLoader
     }
 
     edgesThicknessByWeightedOnChange(b: boolean) {
