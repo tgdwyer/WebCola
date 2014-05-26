@@ -59,6 +59,9 @@ class Brain3DApp implements Application, Loopable {
     filteredAdjMatrix: number[][];
     selectedNodeID = -1;
 
+    lastSliderValue = 0;
+    surfaceLoaded: boolean = false;
+
     // Constants
     nearClip = 1;
     farClip = 2000;
@@ -67,6 +70,7 @@ class Brain3DApp implements Application, Loopable {
     graphOffset: number = 120;
     colaLinkDistance = 15;
     d3ColorSelector = d3.scale.category20();
+
 
     constructor(commonData: CommonData, jDiv, inputTargetCreator: (l: number, r: number, t: number, b: number) => InputTarget) {
         this.id = uniqueID++;
@@ -118,6 +122,7 @@ class Brain3DApp implements Application, Loopable {
         });
 
         var varShowNetwork = () => { this.showNetwork(); }
+        var varEdgesThicknessByWeightedOnChange = (b: boolean) => { this.edgesThicknessByWeightedOnChange(b); }
 
         this.input.regKeyDownCallback(' ', varShowNetwork);
 
@@ -130,8 +135,10 @@ class Brain3DApp implements Application, Loopable {
         jDiv.append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
             .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown +
-                '" onchange="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/>').css({ 'width': '400px' }))
-            .append($('<button id="button-show-network" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px' })
+                '" onchange="sliderChangeForID(' + this.id + ', this.value)" oninput="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/></input>').css({ 'width': '400px' }))
+            .append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px' })
+                .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
+            .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px' })
                 .click(function () { varShowNetwork(); }));
 
         // Set up camera
@@ -165,6 +172,8 @@ class Brain3DApp implements Application, Loopable {
             // We don't use labels in this visualisation yet
         };
         var surf = () => {
+            if (this.surfaceLoaded == true) return;
+
             // Remove the old mesh and add the new one (we don't need a restart)
             this.brainObject.remove(this.brainSurface);
             // Clone the mesh - we can't share it between different canvases without cloning it
@@ -181,6 +190,8 @@ class Brain3DApp implements Application, Loopable {
 
             this.brainSurface = clonedObject;
             this.brainObject.add(this.brainSurface);
+
+            this.surfaceLoaded = true;
         };
         commonData.regNotifyCoords(coords);
         commonData.regNotifyLabels(lab);
@@ -188,6 +199,11 @@ class Brain3DApp implements Application, Loopable {
         if (commonData.brainCoords) coords();
         if (commonData.brainLabels) lab();
         if (commonData.brainSurface) surf();
+    }
+
+    edgesThicknessByWeightedOnChange(b: boolean) {
+        this.physioGraph.edgeThicknessByWeighted = b;
+        this.colaGraph.edgeThicknessByWeighted = b;
     }
 
     showNetwork() {
@@ -268,6 +284,9 @@ class Brain3DApp implements Application, Loopable {
     }
 
     sliderChange(numEdges) {
+        if (numEdges == this.lastSliderValue) return;
+        this.lastSliderValue = numEdges;
+
         var max = this.commonData.nodeCount * (this.commonData.nodeCount - 1) / 2;
         if (numEdges > max) numEdges = max;
         $('#count-' + this.id).get(0).textContent = numEdges;
@@ -344,12 +363,12 @@ class Brain3DApp implements Application, Loopable {
         // Set up the two graphs
         var edgeMatrix = this.adjMatrixFromEdgeCount(maxEdgesShowable); // Don''t create more edges than we will ever be showing
         if (this.physioGraph) this.physioGraph.destroy();
-        this.physioGraph = new Graph(this.brainObject, edgeMatrix, this.nodeColourings);
+        this.physioGraph = new Graph(this.brainObject, edgeMatrix, this.nodeColourings, this.dataSet.simMatrix);
         this.physioGraph.setNodePositions(this.commonData.brainCoords);
 
         var edgeMatrix = this.adjMatrixFromEdgeCount(maxEdgesShowable);
         if (this.colaGraph) this.colaGraph.destroy();
-        this.colaGraph = new Graph(this.colaObject, edgeMatrix, this.nodeColourings);
+        this.colaGraph = new Graph(this.colaObject, edgeMatrix, this.nodeColourings, this.dataSet.simMatrix);
         this.colaGraph.setVisible(false);
 
         // Initialize the filtering
@@ -360,7 +379,8 @@ class Brain3DApp implements Application, Loopable {
 
         // Enable the slider
         $('#edge-count-slider-' + this.id).prop('disabled', false);
-        $('#button-show-network').prop('disabled', false);
+        $('#button-show-network-' + this.id).prop('disabled', false);
+        $('#checkbox-edges-thickness-by-weight-' + this.id).prop('disabled', false);
     }
 
     // Create a matrix where a 1 in (i, j) means the edge between node i and node j is selected
@@ -459,7 +479,9 @@ class Graph {
     edgeList: Edge[] = [];
     visible: boolean = true;
 
-    constructor(parentObject, adjMatrix: any[][], nodeColourings: number[]) {
+    edgeThicknessByWeighted = false;
+
+    constructor(parentObject, adjMatrix: any[][], nodeColourings: number[], weightMatrix: any[][]) {
         this.parentObject = parentObject;
         this.rootObject = new THREE.Object3D();
         parentObject.add(this.rootObject);
@@ -488,7 +510,7 @@ class Graph {
             adjMatrix[i][i] = null;
             for (var j = i + 1; j < len; ++j) {
                 if (adjMatrix[i][j] === 1) {
-                    this.edgeList.push(adjMatrix[i][j] = adjMatrix[j][i] = new Edge(this.rootObject, this.nodeMeshes[i].position, this.nodeMeshes[j].position));
+                    this.edgeList.push(adjMatrix[i][j] = adjMatrix[j][i] = new Edge(this.rootObject, this.nodeMeshes[i].position, this.nodeMeshes[j].position, weightMatrix[i][j])); // assume symmetric matrix
                 } else {
                     adjMatrix[i][j] = adjMatrix[j][i] = null;
                 }
@@ -617,7 +639,7 @@ class Graph {
             if (edge) {
                 if (edge.visible == true) {
                     edge.setColor(this.nodeMeshes[nodeID].material.color.getHex());
-                    edge.setScale(2);
+                    edge.multiplyScale(2);
                 }
             }
         }
@@ -629,21 +651,30 @@ class Graph {
             if (edge) {
                 if (edge.visible == true) {
                     edge.setColor(0xcfcfcf); // default edge color
-                    edge.setScale(1); // default edge scale
+                    edge.multiplyScale(0.5); 
                 }
             }
         }
     }
 
     update() {
-        this.edgeList.forEach(function (edge) {
-            edge.update();
-        });
+        if (this.edgeThicknessByWeighted == true) {
+            this.edgeList.forEach(function (edge) {
+                edge.update(true);
+            });
+        }
+        else {
+            this.edgeList.forEach(function (edge) {
+                edge.update(false);
+            });
+        }
+
+
 
         /*
         for (var i = 0; i < this.nodeLabelList.length; ++i) {
             if (this.nodeLabelList[i]) {
-                this.nodeLabelList[i].lookAt(p);
+                this.nodeLabelList[i].lookAt(0,0,0);
             }
         }
         */
@@ -660,11 +691,15 @@ class Edge {
     shape;
     geometry;
     visible: boolean = true;
-    scale = 1;
+    scaleWeighted = 0.5;
+    scaleNoWeighted = 1;
 
-    constructor(public parentObject, private sourcePoint, private targetPoint) {
+    constructor(public parentObject, private sourcePoint, private targetPoint, private weight) {
         this.shape = this.makeCylinder();
         parentObject.add(this.shape);
+
+        var w = (Math.ceil(weight * 10) - 6) * 0.5;
+        this.scaleWeighted += w; 
     }
 
     makeCylinder() {
@@ -692,8 +727,9 @@ class Edge {
         this.shape.material.color.setHex(hex);
     }
 
-    setScale(s: number) {
-        this.scale = s;
+    multiplyScale(s: number) {
+        this.scaleWeighted *= s;
+        this.scaleNoWeighted *= s;
     }
 
     setVisible(flag: boolean) {
@@ -710,8 +746,17 @@ class Edge {
         }
     }
 
-    update() {
+    update(weightedEdges: boolean) {
         this.geometry.verticesNeedUpdate = true;
+
+        var scale = 1;
+
+        if (weightedEdges == true) {
+            scale = this.scaleWeighted;
+        }
+        else {
+            scale = this.scaleNoWeighted;
+        }
 
         var a = this.sourcePoint, b = this.targetPoint;
         var m = new THREE.Vector3();
@@ -721,7 +766,7 @@ class Edge {
         var targetVec = new THREE.Vector3();
         targetVec.subVectors(b, a);
         var length = targetVec.length();
-        this.shape.scale.set(this.scale, this.scale, length);
+        this.shape.scale.set(scale, scale, length);
         targetVec.normalize();
 
         var angle = Math.acos(origVec.dot(targetVec));

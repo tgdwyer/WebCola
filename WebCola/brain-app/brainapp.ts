@@ -317,6 +317,22 @@ $('#brain3d-icon-front').draggable(
         containment: 'body',
         stop: function (event) {
             resetBrain3D();
+
+            var model = $('#brain3d-model-select').val();
+            var file = 'BrainMesh_ICBM152.obj';
+
+            if (model == 'ch2') {
+                file = 'BrainMesh_ch2.obj';
+            }
+            else if (model == 'ch2_inflated') {
+                file = 'BrainMesh_Ch2_Inflated.obj';
+            }
+            else if (model == 'icbm') {
+                file = 'BrainMesh_ICBM152.obj';
+            }
+
+            loadBrainModel(file);
+
             switch (getViewUnderMouse(event.pageX, event.pageY)) {
                 case tl_view:
                     apps[0] = new Brain3DApp(commonData, $(tl_view), input.newTarget(0));
@@ -331,6 +347,8 @@ $('#brain3d-icon-front').draggable(
                     apps[3] = new Brain3DApp(commonData, $(br_view), input.newTarget(3));
                     break;
             }
+
+ 
         }
     }
 );
@@ -538,8 +556,8 @@ var loader = new (<any>THREE).OBJLoader(manager);
 // Load the brain surface (hardcoded - it is not simple to load geometry from the local machine, but this has not been deeply explored yet).
 // NOTE: The loaded model cannot be used in more than one WebGL context (scene) at a time - the geometry and materials must be .cloned() into
 // new THREE.Mesh() objects by the application wishing to use the model.
-function loadBrainModel() {
-    loader.load('../examples/graphdata/BrainMesh_ICBM152.obj', function (object) {
+function loadBrainModel(fileName: string) {
+    loader.load('../examples/graphdata/' + fileName, function (object) {
         if (!object) {
             console.log("Failed to load brain surface.");
             return;
@@ -576,7 +594,7 @@ function loadBrainModel() {
         commonData.notifySurface();
     });
 }
-loadBrainModel(); // Load the model right away
+loadBrainModel('BrainMesh_ICBM152.obj'); // Load the model right away
 
 // Load the similarity matrix for the specified dataSet
 function loadSimilarityMatrix(file, dataSet: DataSet) {
