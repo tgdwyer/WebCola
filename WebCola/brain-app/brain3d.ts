@@ -123,6 +123,7 @@ class Brain3DApp implements Application, Loopable {
 
         var varShowNetwork = () => { this.showNetwork(); }
         var varEdgesThicknessByWeightedOnChange = (b: boolean) => { this.edgesThicknessByWeightedOnChange(b); }
+        var varAllLabelsOnChange = (b: boolean) => { this.allLabelsOnChange(b); }
 
         this.input.regKeyDownCallback(' ', varShowNetwork);
 
@@ -138,6 +139,8 @@ class Brain3DApp implements Application, Loopable {
                 '" onchange="sliderChangeForID(' + this.id + ', this.value)" oninput="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/></input>').css({ 'width': '400px' }))
             .append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px' })
                 .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
+            .append($('<input type="checkbox" id="checkbox-all-labels-' + this.id + '" disabled="true">All Labels</input>').css({ 'width': '12px' })
+                .click(function () { varAllLabelsOnChange($(this).is(":checked")); }))
             .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px' })
                 .click(function () { varShowNetwork(); }));
 
@@ -147,6 +150,7 @@ class Brain3DApp implements Application, Loopable {
 
         // Set up scene
         this.scene = new THREE.Scene();
+        //this.scene.add(new THREE.AxisHelper(300));
 
         var ambient = new THREE.AmbientLight(0x1f1f1f);
         this.scene.add(ambient);
@@ -204,6 +208,20 @@ class Brain3DApp implements Application, Loopable {
     edgesThicknessByWeightedOnChange(b: boolean) {
         this.physioGraph.edgeThicknessByWeighted = b;
         this.colaGraph.edgeThicknessByWeighted = b;
+    }
+
+    allLabelsOnChange(b: boolean) {
+        this.physioGraph.allLabels = b;
+        this.colaGraph.allLabels = b;
+
+        if (b == true) {
+            this.physioGraph.showAllLabels();
+            this.colaGraph.showAllLabels();
+        }
+        else {
+            this.physioGraph.hideAllLabels();
+            this.colaGraph.hideAllLabels();
+        }
     }
 
     showNetwork() {
@@ -376,11 +394,12 @@ class Brain3DApp implements Application, Loopable {
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
         this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
         this.sliderChange(initialEdgesShown);
-
+        
         // Enable the slider
         $('#edge-count-slider-' + this.id).prop('disabled', false);
         $('#button-show-network-' + this.id).prop('disabled', false);
         $('#checkbox-edges-thickness-by-weight-' + this.id).prop('disabled', false);
+        $('#checkbox-all-labels-' + this.id).prop('disabled', false);
     }
 
     // Create a matrix where a 1 in (i, j) means the edge between node i and node j is selected
@@ -447,8 +466,8 @@ class Brain3DApp implements Application, Loopable {
             }
             this.selectedNodeID = node.id;
             // Select the new node ID
-            this.physioGraph.selectNode(this.selectedNodeID, this.camera.position);
-            this.colaGraph.selectNode(this.selectedNodeID, this.camera.position);
+            this.physioGraph.selectNode(this.selectedNodeID);
+            this.colaGraph.selectNode(this.selectedNodeID);
 
             this.physioGraph.selectAdjEdges(this.selectedNodeID);
             this.colaGraph.selectAdjEdges(this.selectedNodeID);
@@ -479,7 +498,8 @@ class Graph {
     edgeList: Edge[] = [];
     visible: boolean = true;
 
-    edgeThicknessByWeighted = false;
+    edgeThicknessByWeighted: boolean = false;
+    allLabels: boolean = false;
 
     constructor(parentObject, adjMatrix: any[][], nodeColourings: number[], weightMatrix: any[][]) {
         this.parentObject = parentObject;
@@ -496,8 +516,7 @@ class Graph {
                 new THREE.MeshLambertMaterial({ color: nodeColourings[i] })
                 );
 
-            this.nodeLabelList[i] = this.createNodeToolTip(i.toString());
-            //this.parentObject.add(this.nodeLabelList[i]); // to see all labels
+            this.nodeLabelList[i] = this.createNodeLabel(i.toString(), 12);
 
             (<any>sphere).isNode = true; // A flag to identify the node meshes
             sphere.id = i;
@@ -521,27 +540,31 @@ class Graph {
         this.edgeMatrix = adjMatrix;
     }
 
-    createNodeToolTip(text: string) {
+    createNodeLabel(text: string, fontSize: number) {
         // draw text on canvas 
-        var textSize = 60;
+        var multiplyScale = 3; // for higher resolution of the label
+        var varFontSize = fontSize * multiplyScale;
 
         // 1. create a canvas element
         var canvas = document.createElement('canvas');
 
         var context = canvas.getContext('2d');
-        context.font = "Bold " + textSize + "px Arial";
+        context.font = "Bold " + varFontSize + "px Arial";
 
         canvas.width = context.measureText(text).width;
-        canvas.height = textSize;
+        canvas.height = varFontSize;
 
-        context.font = textSize + "px Arial";
+        context.font = varFontSize + "px Arial";
         context.fillStyle = "rgba(0,0,0,1)";
-        context.fillText(text, 0, textSize);
+        context.fillText(text, 0, varFontSize);
 
         // 2. canvas contents will be used for a texture
         var texture = new THREE.Texture(canvas)
 	    texture.needsUpdate = true;
         
+        // 3. map texture to an object
+        // method 1: do not face the camera
+        /*
         var material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
         material.transparent = true;
 
@@ -549,19 +572,16 @@ class Graph {
             new THREE.PlaneGeometry(canvas.width, canvas.height),
             material
             );
-        mesh.scale.set(0.1,0.1,1);
+        mesh.scale.set(0.1, 0.1, 1);
         return mesh;
-              
-        /*
-        // another method:
-        var spriteMaterial = new THREE.SpriteMaterial({ map: texture, useScreenCoordinates: true });
+        */   
 
+        // method 2:
+        var spriteMaterial = new THREE.SpriteMaterial({ map: texture, useScreenCoordinates: false });
         var sprite = new THREE.Sprite(spriteMaterial);
-        sprite.scale.set(200, 100, 1.0);
-        sprite.position.set(50, 50, 0);
-        //scene.add(sprite1);
+        sprite.scale.set(canvas.width / multiplyScale, canvas.height / multiplyScale, 1); 
+
         return sprite;
-        */
     }
 
     setNodePositions(colaCoords: number[][]) {
@@ -620,17 +640,36 @@ class Graph {
         }
     }
 
-    selectNode(id: number, position: THREE.Vector3) {
+    showAllLabels() {
+        for (var i = 0; i < this.nodeLabelList.length; ++i) {
+            if (this.nodeLabelList[i]) {
+                this.parentObject.add(this.nodeLabelList[i]); 
+            }
+        }
+    }
+
+    hideAllLabels() {
+        for (var i = 0; i < this.nodeLabelList.length; ++i) {
+            if (this.nodeLabelList[i]) {
+                this.parentObject.remove(this.nodeLabelList[i]);
+            }
+        }
+    }
+
+    selectNode(id: number) {
         this.nodeMeshes[id].scale.set(2, 2, 2);
 
-        this.nodeLabelList[id].lookAt(position);
-        this.parentObject.add(this.nodeLabelList[id]);
+        if (this.allLabels == false) {
+            this.parentObject.add(this.nodeLabelList[id]);
+        }
     }
 
     deselectNode(id: number) {
         this.nodeMeshes[id].scale.set(1, 1, 1);
 
-        this.parentObject.remove(this.nodeLabelList[id]);
+        if (this.allLabels == false) {
+            this.parentObject.remove(this.nodeLabelList[id]);
+        }
     }
 
     selectAdjEdges(nodeID: number) {
@@ -658,26 +697,10 @@ class Graph {
     }
 
     update() {
-        if (this.edgeThicknessByWeighted == true) {
-            this.edgeList.forEach(function (edge) {
-                edge.update(true);
-            });
-        }
-        else {
-            this.edgeList.forEach(function (edge) {
-                edge.update(false);
-            });
-        }
-
-
-
-        /*
-        for (var i = 0; i < this.nodeLabelList.length; ++i) {
-            if (this.nodeLabelList[i]) {
-                this.nodeLabelList[i].lookAt(0,0,0);
-            }
-        }
-        */
+        var weightedEdges = this.edgeThicknessByWeighted;
+        this.edgeList.forEach(function (edge) {
+            edge.update(weightedEdges);
+        });
     }
 
     // Remove self from the scene so that the object can be GC'ed
