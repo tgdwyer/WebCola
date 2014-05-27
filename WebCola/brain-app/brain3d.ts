@@ -117,8 +117,15 @@ class Brain3DApp implements Application, Loopable {
 
             this.brainObject.rotation.set(this.brainObject.rotation.x + dy / pixelAngleRatio, this.brainObject.rotation.y, this.brainObject.rotation.z);
             this.colaObject.rotation.set(this.colaObject.rotation.x + dy / pixelAngleRatio, this.colaObject.rotation.y, this.colaObject.rotation.z);
+        });
 
-            //console.log("dx: " + dx + "; dy: " + dy);
+        this.input.regMouseRightClickCallback((x: number, y: number) => {
+            var record;
+            var node = this.getNodeUnderPointer(this.input.localPointerPosition());
+            if (node) {
+                record = this.dataSet.attributes.getRecord(node.id);
+            }
+            return record;
         });
 
         var varShowNetwork = () => { this.showNetwork(); }
@@ -721,7 +728,8 @@ class Edge {
         this.shape = this.makeCylinder();
         parentObject.add(this.shape);
 
-        var w = (Math.ceil(weight * 10) - 6) * 0.5;
+        var w = (Math.ceil(weight * 10) - 6) * 0.5; // the edge scale is not proportional to edge weight
+        if (w < 0) w = 0;
         this.scaleWeighted += w; 
     }
 

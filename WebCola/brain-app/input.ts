@@ -46,6 +46,7 @@ class InputTarget {
     leapZCallback;
 
     mouseDragCallback;
+    mouseRightClickCallback;
 
     // Accepts the CSS ID of the div that is to represent the input target, and the extra borders
     // which describe where in the div the region of interest is (and where the coordinates should be scaled around)
@@ -77,6 +78,10 @@ class InputTarget {
 
     regMouseDragCallback(callback: (dx:number, dy:number) => void) {
         this.mouseDragCallback = callback;
+    }
+
+    regMouseRightClickCallback(callback: (x: number, y: number) => void) {
+        this.mouseRightClickCallback = callback;
     }
 
     // Return the pointer coordinates within the input target as a pair (x, y) E [-1, 1]x[-1, 1] as they lie within the target's borders
@@ -199,6 +204,38 @@ class InputTargetManager {
                 this.onMouseDownPosition.x = event.clientX;
                 this.onMouseDownPosition.y = event.clientY;
             }
+        }, false);
+
+        document.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+
+            var record;
+            var x, y;
+
+            var it = this.inputTargets[this.activeTarget];
+            if (it) {
+                x = this.mouse.x;
+                y = this.mouse.y;
+
+                var callback = it.mouseRightClickCallback;
+                if (callback) record = callback(x, y);
+            }
+
+            if (record) {
+                var label = document.createElement('div');
+                label.style.position = 'absolute';
+                label.style.zIndex = '1';    // if you still don't see the label, try uncommenting this
+                label.style.width = 100 + 'px';
+                label.style.height = 100 + 'px';
+                label.style.backgroundColor = "blue";
+                label.innerHTML = record;
+                label.style.left = x + 'px';
+                label.style.top = y + 'px';
+
+                document.body.appendChild(label);
+            }
+
+            return false; // disable the context menu
         }, false);
 
         document.addEventListener('mouseup', (event) => {

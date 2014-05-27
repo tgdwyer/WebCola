@@ -65,12 +65,13 @@ class DataSet {
 // Parses, stores, and provides access to brain node attributes from a file
 class Attributes {
     values = {};
+    columnNames: string[];
 
     constructor(text: string) {
         var lines = text.split(String.fromCharCode(13)); // Lines delimited by carriage returns...
         var numRecords = lines.length - 1;
-        var names = lines[0].split('\t');
-        var numAttributes = names.length;
+        this.columnNames = lines[0].split('\t');
+        var numAttributes = this.columnNames.length;
         var values = new Array<Array<number>>(numAttributes); // Store the values of each attribute by index
         for (var i = 0; i < numAttributes; ++i) {
             values[i] = new Array<number>(numRecords);
@@ -82,8 +83,21 @@ class Attributes {
             }
         }
         for (var i = 0; i < numAttributes; ++i) {
-            this.values[names[i]] = values[i];
+            this.values[this.columnNames[i]] = values[i];
         }
+    }
+
+    getRecord(index: number) {
+        var record = '';
+        var columns = this.columnNames.length;
+
+        for (var j = 0; j < columns; ++j) {
+            var v = this.values[this.columnNames[j]][index];
+            var line = this.columnNames[j] + ": " + v + "; ";
+            record += line;
+        }
+
+        return record
     }
 
     get(attribute: string) {
