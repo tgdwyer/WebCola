@@ -70,7 +70,7 @@ module tmdb {
                 this.addEdge(node, v);
                 f(v);
             }));
-            var d = $.Deferred<Node>();
+            var d = $.Deferred<Node[]>();
             $.when.apply($, dn)
                 .then(() => {
                     var neighbours = Array.prototype.slice.call(arguments);

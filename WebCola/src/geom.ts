@@ -1,4 +1,4 @@
-module geom {
+module cola.geom {
     export class Point {
         x: number;
         y: number;
@@ -30,7 +30,7 @@ module geom {
         return isLeft(p, vi, vj) < 0;
     }
 
-
+    
     /**
      * returns the convex hull of a set of points using Andrew's monotone chain algorithm
      * see: http://geomalgorithms.com/a10-_hull-1.html#Monotone%20Chain
@@ -387,7 +387,7 @@ module geom {
     function intersects(l: LineSegment, P: Point[]) {
         var ints = [];
         for (var i = 1, n = P.length; i < n; ++i) {
-            var int = vpsc.Rectangle.lineIntersection(
+            var int = cola.vpsc.Rectangle.lineIntersection(
                 l.x1, l.y1,
                 l.x2, l.y2,
                 P[i - 1].x, P[i - 1].y,

@@ -1,5 +1,4 @@
 /// <reference path="../extern/three.d.ts"/>
-/// <reference path="../extern/d3.d.ts"/>
 /// <reference path="../src/shortestpaths.ts"/>
 /// <reference path="../src/linklengths.ts"/>
 /// <reference path="../src/descent.ts"/>
@@ -136,7 +135,7 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     cola.jaccardLinkLengths(graph.nodes.length, graph.links, linkAccessor, 1.5);
 
     // Create the distance matrix that Cola needs
-    var distanceMatrix = (new shortestpaths.Calculator(n, graph.links,
+    var distanceMatrix = (new cola.shortestpaths.Calculator(n, graph.links,
         linkAccessor.getSourceIndex, linkAccessor.getTargetIndex, linkAccessor.getLength)).DistanceMatrix();
 
     var D = cola.Descent.createSquareMatrix(n, (i, j) => {

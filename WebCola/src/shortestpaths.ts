@@ -2,7 +2,7 @@
 /**
  * @module shortestpaths
  */
-module shortestpaths {
+module cola.shortestpaths {
     class Neighbour {
         constructor(public id: number, public distance: number) { }
     }
