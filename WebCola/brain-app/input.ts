@@ -130,6 +130,8 @@ class InputTargetManager {
     onMouseDownPosition = new THREE.Vector2();
     mouseDownCallback;
 
+    rightClickLabel;
+    rightClickLabelAppended: boolean = false;
     regMouseDownCallback(callback: (x:number, y:number) => number) {
         this.mouseDownCallback = callback;
     }
@@ -193,6 +195,11 @@ class InputTargetManager {
 
 
         document.addEventListener('mousedown', (event) => {
+            if (this.rightClickLabel && this.rightClickLabelAppended) {
+                document.body.removeChild(this.rightClickLabel);
+                this.rightClickLabelAppended = false;
+            }
+
             var viewID = this.mouseDownCallback(event.clientX, event.clientY);
 
             if (viewID == this.activeTarget) {
@@ -209,7 +216,7 @@ class InputTargetManager {
         document.addEventListener('contextmenu', (event) => {
             event.preventDefault();
 
-            var record;
+            var record: string;
             var x, y;
 
             var it = this.inputTargets[this.activeTarget];
@@ -222,17 +229,19 @@ class InputTargetManager {
             }
 
             if (record) {
-                var label = document.createElement('div');
-                label.style.position = 'absolute';
-                label.style.zIndex = '1';    // if you still don't see the label, try uncommenting this
-                label.style.width = 100 + 'px';
-                label.style.height = 100 + 'px';
-                label.style.backgroundColor = "blue";
-                label.innerHTML = record;
-                label.style.left = x + 'px';
-                label.style.top = y + 'px';
+                this.rightClickLabel = document.createElement('div');
+                this.rightClickLabel.style.position = 'absolute';
+                this.rightClickLabel.style.zIndex = '1';    
+                this.rightClickLabel.style.backgroundColor = '#feeebd'; // the color of the control panel
+                var s = record.replace(/;/g, '<br />');
+                this.rightClickLabel.innerHTML = s;
+                this.rightClickLabel.style.left = x + 'px';
+                this.rightClickLabel.style.top = y + 'px';
+                this.rightClickLabel.style.padding = '5px';
+                this.rightClickLabel.style.borderRadius = '5px';
 
-                document.body.appendChild(label);
+                document.body.appendChild(this.rightClickLabel);
+                this.rightClickLabelAppended = true;
             }
 
             return false; // disable the context menu
