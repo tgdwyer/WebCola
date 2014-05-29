@@ -7,9 +7,6 @@ var color = d3.scale.category20();
 
 var makeEdgeBetween;
 var colans = <any>cola;
-var makeEdgeBetween = typeof colans.vpsc.makeEdgeBetween === 'undefined' ?
-    vpsc.makeEdgeBetween :
-    colans.vpsc.makeEdgeBetween;
 function makeSVG() {
     var svg = d3.select("body").append("svg")
         .attr("width", width)
@@ -36,7 +33,11 @@ function flatGraph() {
 
     var svg = makeSVG();
 
-    d3.json("graphdata/n7e23.json", function (error, graph) {
+    //d3.json("graphdata/n7e23.json", function (error, graph) {
+    d3.json("graphdata/miserables.json", function (error, graph) {
+        graph.nodes.forEach(v=> {
+            v.width = 10; v.height = 10;
+        });
         d3cola
             .nodes(graph.nodes)
             .links(graph.links)
@@ -95,12 +96,13 @@ function flatGraph() {
 function powerGraph() {
     var d3cola = colans.d3adaptor()
         .linkDistance(80)
+        .handleDisconnected(false)
         .avoidOverlaps(true)
         .size([width, height]);
 
     var svg = makeSVG();
 
-    d3.json("graphdata/n7e23.json", function (error, graph) {
+    d3.json("graphdata/miserables.json", function (error, graph) {
 
         var powerGraph;
 
@@ -108,7 +110,7 @@ function powerGraph() {
             .nodes(graph.nodes)
             .links(graph.links)
             .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 20))
-            .start(10, 10, 10);
+            .start(50, 10, 10);
 
         var group = svg.selectAll(".group")
             .data(powerGraph.groups)
@@ -181,7 +183,7 @@ function confluent() {
 
     var svg = makeSVG();
 
-    d3.json("graphdata/n7e23.json", function (error, graph) {
+    d3.json("graphdata/miserables.json", function (error, graph) {
 
         var powerGraph;
 
@@ -190,7 +192,7 @@ function confluent() {
             getTargetIndex: l => l.target
         };
 
-        var g = powergraph.getGroups(graph.nodes, graph.links, linkAccessor);
+        var g = cola.powergraph.getGroups(graph.nodes, graph.links, linkAccessor);
 
         d3cola
             .nodes(graph.nodes)
@@ -264,4 +266,4 @@ function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') |
 
 flatGraph();
 powerGraph();
-confluent();
+//confluent();

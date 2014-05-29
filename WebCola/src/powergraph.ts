@@ -1,4 +1,4 @@
-module powergraph {
+module cola.powergraph {
     export interface LinkAccessor<Link> {
         getSourceIndex(l: Link): number;
         getTargetIndex(l: Link): number;

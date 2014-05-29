@@ -59,6 +59,9 @@ class Brain3DApp implements Application, Loopable {
     filteredAdjMatrix: number[][];
     selectedNodeID = -1;
 
+    lastSliderValue = 0;
+    surfaceLoaded: boolean = false;
+
     // Constants
     nearClip = 1;
     farClip = 2000;
@@ -67,6 +70,7 @@ class Brain3DApp implements Application, Loopable {
     graphOffset: number = 120;
     colaLinkDistance = 15;
     d3ColorSelector = d3.scale.category20();
+
 
     constructor(commonData: CommonData, jDiv, inputTargetCreator: (l: number, r: number, t: number, b: number) => InputTarget) {
         this.id = uniqueID++;
@@ -118,6 +122,8 @@ class Brain3DApp implements Application, Loopable {
         });
 
         var varShowNetwork = () => { this.showNetwork(); }
+        var varEdgesThicknessByWeightedOnChange = (b: boolean) => { this.edgesThicknessByWeightedOnChange(b); }
+        var varAllLabelsOnChange = (b: boolean) => { this.allLabelsOnChange(b); }
 
         this.input.regKeyDownCallback(' ', varShowNetwork);
 
@@ -130,8 +136,12 @@ class Brain3DApp implements Application, Loopable {
         jDiv.append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
             .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown +
-                '" onchange="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/>').css({ 'width': '400px' }))
-            .append($('<button id="button-show-network" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px' })
+                '" onchange="sliderChangeForID(' + this.id + ', this.value)" oninput="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/></input>').css({ 'width': '400px' }))
+            .append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px' })
+                .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
+            .append($('<input type="checkbox" id="checkbox-all-labels-' + this.id + '" disabled="true">All Labels</input>').css({ 'width': '12px' })
+                .click(function () { varAllLabelsOnChange($(this).is(":checked")); }))
+            .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px' })
                 .click(function () { varShowNetwork(); }));
 
         // Set up camera
@@ -140,6 +150,7 @@ class Brain3DApp implements Application, Loopable {
 
         // Set up scene
         this.scene = new THREE.Scene();
+        //this.scene.add(new THREE.AxisHelper(300));
 
         var ambient = new THREE.AmbientLight(0x1f1f1f);
         this.scene.add(ambient);
@@ -165,6 +176,8 @@ class Brain3DApp implements Application, Loopable {
             // We don't use labels in this visualisation yet
         };
         var surf = () => {
+            if (this.surfaceLoaded == true) return;
+
             // Remove the old mesh and add the new one (we don't need a restart)
             this.brainObject.remove(this.brainSurface);
             // Clone the mesh - we can't share it between different canvases without cloning it
@@ -174,18 +187,41 @@ class Brain3DApp implements Application, Loopable {
                     clonedObject.add(new THREE.Mesh(child.geometry.clone(), child.material.clone()));
                 }
             });
+
             // Setting scale to some arbitrarily larger value, because the mesh isn't the right size
-            var scale = 1.5;
-            clonedObject.scale = new THREE.Vector3(scale, scale, scale);
+            //var scale = 1.5;
+            //clonedObject.scale = new THREE.Vector3(scale, scale, scale);
+
             this.brainSurface = clonedObject;
             this.brainObject.add(this.brainSurface);
+
+            this.surfaceLoaded = true;
         };
         commonData.regNotifyCoords(coords);
         commonData.regNotifyLabels(lab);
         commonData.regNotifySurface(surf);
         if (commonData.brainCoords) coords();
         if (commonData.brainLabels) lab();
-        if (commonData.brainSurface) surf();
+        //if (commonData.brainSurface) surf(); // this line is redundant and has problem, surf() will be called in THREE.OBJLoader
+    }
+
+    edgesThicknessByWeightedOnChange(b: boolean) {
+        this.physioGraph.edgeThicknessByWeighted = b;
+        this.colaGraph.edgeThicknessByWeighted = b;
+    }
+
+    allLabelsOnChange(b: boolean) {
+        this.physioGraph.allLabels = b;
+        this.colaGraph.allLabels = b;
+
+        if (b == true) {
+            this.physioGraph.showAllLabels();
+            this.colaGraph.showAllLabels();
+        }
+        else {
+            this.physioGraph.hideAllLabels();
+            this.colaGraph.hideAllLabels();
+        }
     }
 
     showNetwork() {
@@ -220,7 +256,7 @@ class Brain3DApp implements Application, Loopable {
                 return 1;
             }
                 // Create the distance matrix that Cola needs
-                var distanceMatrix = (new shortestpaths.Calculator(this.commonData.nodeCount, edges, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
+                var distanceMatrix = (new cola.shortestpaths.Calculator(this.commonData.nodeCount, edges, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
 
             var D = cola.Descent.createSquareMatrix(this.commonData.nodeCount, (i, j) => {
                 return distanceMatrix[i][j] * this.colaLinkDistance;
@@ -263,9 +299,12 @@ class Brain3DApp implements Application, Loopable {
                 }
             });
         }
-    }  
+    }
 
     sliderChange(numEdges) {
+        if (numEdges == this.lastSliderValue) return;
+        this.lastSliderValue = numEdges;
+
         var max = this.commonData.nodeCount * (this.commonData.nodeCount - 1) / 2;
         if (numEdges > max) numEdges = max;
         $('#count-' + this.id).get(0).textContent = numEdges;
@@ -342,12 +381,12 @@ class Brain3DApp implements Application, Loopable {
         // Set up the two graphs
         var edgeMatrix = this.adjMatrixFromEdgeCount(maxEdgesShowable); // Don''t create more edges than we will ever be showing
         if (this.physioGraph) this.physioGraph.destroy();
-        this.physioGraph = new Graph(this.brainObject, edgeMatrix, this.nodeColourings);
+        this.physioGraph = new Graph(this.brainObject, edgeMatrix, this.nodeColourings, this.dataSet.simMatrix);
         this.physioGraph.setNodePositions(this.commonData.brainCoords);
 
         var edgeMatrix = this.adjMatrixFromEdgeCount(maxEdgesShowable);
         if (this.colaGraph) this.colaGraph.destroy();
-        this.colaGraph = new Graph(this.colaObject, edgeMatrix, this.nodeColourings);
+        this.colaGraph = new Graph(this.colaObject, edgeMatrix, this.nodeColourings, this.dataSet.simMatrix);
         this.colaGraph.setVisible(false);
 
         // Initialize the filtering
@@ -355,10 +394,12 @@ class Brain3DApp implements Application, Loopable {
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
         this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
         this.sliderChange(initialEdgesShown);
-
+        
         // Enable the slider
         $('#edge-count-slider-' + this.id).prop('disabled', false);
-        $('#button-show-network').prop('disabled', false);
+        $('#button-show-network-' + this.id).prop('disabled', false);
+        $('#checkbox-edges-thickness-by-weight-' + this.id).prop('disabled', false);
+        $('#checkbox-all-labels-' + this.id).prop('disabled', false);
     }
 
     // Create a matrix where a 1 in (i, j) means the edge between node i and node j is selected
@@ -419,16 +460,24 @@ class Brain3DApp implements Application, Loopable {
             if (this.selectedNodeID >= 0) {
                 this.physioGraph.deselectNode(this.selectedNodeID);
                 this.colaGraph.deselectNode(this.selectedNodeID);
+
+                this.physioGraph.deselectAdjEdges(this.selectedNodeID);
+                this.colaGraph.deselectAdjEdges(this.selectedNodeID);
             }
             this.selectedNodeID = node.id;
             // Select the new node ID
             this.physioGraph.selectNode(this.selectedNodeID);
             this.colaGraph.selectNode(this.selectedNodeID);
+
+            this.physioGraph.selectAdjEdges(this.selectedNodeID);
+            this.colaGraph.selectAdjEdges(this.selectedNodeID);
         }
+
 
         if (this.showingCola)
             this.descent.rungeKutta(); // Do an iteration of the solver
 
+        this.physioGraph.update(); 
         this.colaGraph.update(); // Update all the edge positions
         this.draw(); // Draw the graph
     }
@@ -441,24 +490,34 @@ class Brain3DApp implements Application, Loopable {
 class Graph {
     parentObject;
     rootObject;
+
     nodeMeshes: any[];
+    nodeLabelList: any[];
+
     edgeMatrix: any[][];
     edgeList: Edge[] = [];
     visible: boolean = true;
 
-    constructor(parentObject, adjMatrix: any[][], nodeColourings: number[]) {
+    edgeThicknessByWeighted: boolean = false;
+    allLabels: boolean = false;
+
+    constructor(parentObject, adjMatrix: any[][], nodeColourings: number[], weightMatrix: any[][]) {
         this.parentObject = parentObject;
         this.rootObject = new THREE.Object3D();
         parentObject.add(this.rootObject);
 
         // Create all the node meshes
         this.nodeMeshes = Array(adjMatrix.length);
+        this.nodeLabelList = Array(adjMatrix.length);
+
         for (var i = 0; i < adjMatrix.length; ++i) {
             var sphere = this.nodeMeshes[i] = new THREE.Mesh(
-                new THREE.SphereGeometry(2, 10, 10), new THREE.MeshLambertMaterial(
-                    { color: nodeColourings[i] }
-                    )
+                new THREE.SphereGeometry(2, 10, 10),
+                new THREE.MeshLambertMaterial({ color: nodeColourings[i] })
                 );
+
+            this.nodeLabelList[i] = this.createNodeLabel(i.toString(), 12);
+
             (<any>sphere).isNode = true; // A flag to identify the node meshes
             sphere.id = i;
             this.rootObject.add(sphere);
@@ -470,7 +529,7 @@ class Graph {
             adjMatrix[i][i] = null;
             for (var j = i + 1; j < len; ++j) {
                 if (adjMatrix[i][j] === 1) {
-                    this.edgeList.push(adjMatrix[i][j] = adjMatrix[j][i] = new Edge(this.rootObject, this.nodeMeshes[i].position, this.nodeMeshes[j].position));
+                    this.edgeList.push(adjMatrix[i][j] = adjMatrix[j][i] = new Edge(this.rootObject, this.nodeMeshes[i].position, this.nodeMeshes[j].position, weightMatrix[i][j])); // assume symmetric matrix
                 } else {
                     adjMatrix[i][j] = adjMatrix[j][i] = null;
                 }
@@ -481,11 +540,60 @@ class Graph {
         this.edgeMatrix = adjMatrix;
     }
 
+    createNodeLabel(text: string, fontSize: number) {
+        // draw text on canvas 
+        var multiplyScale = 3; // for higher resolution of the label
+        var varFontSize = fontSize * multiplyScale;
+
+        // 1. create a canvas element
+        var canvas = document.createElement('canvas');
+
+        var context = canvas.getContext('2d');
+        context.font = "Bold " + varFontSize + "px Arial";
+
+        canvas.width = context.measureText(text).width;
+        canvas.height = varFontSize;
+
+        context.font = varFontSize + "px Arial";
+        context.fillStyle = "rgba(0,0,0,1)";
+        context.fillText(text, 0, varFontSize);
+
+        // 2. canvas contents will be used for a texture
+        var texture = new THREE.Texture(canvas)
+	    texture.needsUpdate = true;
+        
+        // 3. map texture to an object
+        // method 1: do not face the camera
+        /*
+        var material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+        material.transparent = true;
+
+        var mesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(canvas.width, canvas.height),
+            material
+            );
+        mesh.scale.set(0.1, 0.1, 1);
+        return mesh;
+        */   
+
+        // method 2:
+        var spriteMaterial = new THREE.SpriteMaterial({ map: texture, useScreenCoordinates: false });
+        var sprite = new THREE.Sprite(spriteMaterial);
+        sprite.scale.set(canvas.width / multiplyScale, canvas.height / multiplyScale, 1); 
+
+        return sprite;
+    }
+
     setNodePositions(colaCoords: number[][]) {
         for (var i = 0; i < this.nodeMeshes.length; ++i) {
             this.nodeMeshes[i].position.x = colaCoords[0][i];
             this.nodeMeshes[i].position.y = colaCoords[1][i];
             this.nodeMeshes[i].position.z = colaCoords[2][i];
+
+            // set the node label position 
+            this.nodeLabelList[i].position.x = this.nodeMeshes[i].position.x + 7;
+            this.nodeLabelList[i].position.y = this.nodeMeshes[i].position.y + 7;
+            this.nodeLabelList[i].position.z = this.nodeMeshes[i].position.z;
         }
     }
 
@@ -532,17 +640,66 @@ class Graph {
         }
     }
 
+    showAllLabels() {
+        for (var i = 0; i < this.nodeLabelList.length; ++i) {
+            if (this.nodeLabelList[i]) {
+                this.parentObject.add(this.nodeLabelList[i]); 
+            }
+        }
+    }
+
+    hideAllLabels() {
+        for (var i = 0; i < this.nodeLabelList.length; ++i) {
+            if (this.nodeLabelList[i]) {
+                this.parentObject.remove(this.nodeLabelList[i]);
+            }
+        }
+    }
+
     selectNode(id: number) {
         this.nodeMeshes[id].scale.set(2, 2, 2);
+
+        if (this.allLabels == false) {
+            this.parentObject.add(this.nodeLabelList[id]);
+        }
     }
 
     deselectNode(id: number) {
         this.nodeMeshes[id].scale.set(1, 1, 1);
+
+        if (this.allLabels == false) {
+            this.parentObject.remove(this.nodeLabelList[id]);
+        }
+    }
+
+    selectAdjEdges(nodeID: number) {
+        for (var j = 0; j < this.edgeMatrix.length; ++j) {
+            var edge = this.edgeMatrix[nodeID][j];
+            if (edge) {
+                if (edge.visible == true) {
+                    edge.setColor(this.nodeMeshes[nodeID].material.color.getHex());
+                    edge.multiplyScale(2);
+                }
+            }
+        }
+    }
+
+    deselectAdjEdges(nodeID: number) {
+        for (var j = 0; j < this.edgeMatrix.length; ++j) {
+            var edge = this.edgeMatrix[nodeID][j];
+            if (edge) {
+                if (edge.visible == true) {
+                    edge.setColor(0xcfcfcf); // default edge color
+                    edge.multiplyScale(0.5); 
+                }
+            }
+        }
     }
 
     update() {
+        var weightedEdges = this.edgeThicknessByWeighted;
         this.edgeList.forEach(function (edge) {
-            edge.update();
+            edge.update(weightedEdges);
         });
     }
 
@@ -552,6 +709,102 @@ class Graph {
     }
 }
 
+
+class Edge {
+    shape;
+    geometry;
+    visible: boolean = true;
+    scaleWeighted = 0.5;
+    scaleNoWeighted = 1;
+
+    constructor(public parentObject, private sourcePoint, private targetPoint, private weight) {
+        this.shape = this.makeCylinder();
+        parentObject.add(this.shape);
+
+        var w = (Math.ceil(weight * 10) - 6) * 0.5;
+        this.scaleWeighted += w; 
+    }
+
+    makeCylinder() {
+        var n = 1,
+            points = [],
+            cosh = v => (Math.pow(Math.E, v) + Math.pow(Math.E, -v)) / 2;
+
+        var xmax = 2,
+            m = 2 * cosh(xmax);
+
+        for (var i = 0; i < n + 1; i++) {
+            var x = 2 * xmax * (i - n / 2) / n;
+            points.push(new THREE.Vector3(cosh(x) / m, 0, (i - n / 2) / n));
+        }
+
+        this.geometry = new THREE.LatheGeometry(points, 12);
+
+        var material = new THREE.MeshLambertMaterial({ color: 0xcfcfcf });
+        var cylinder = new THREE.Mesh(this.geometry, material);
+
+        return cylinder;
+    }
+
+    setColor(hex: number) {
+        this.shape.material.color.setHex(hex);
+    }
+
+    multiplyScale(s: number) {
+        this.scaleWeighted *= s;
+        this.scaleNoWeighted *= s;
+    }
+
+    setVisible(flag: boolean) {
+        if (flag) {
+            if (!this.visible) {
+                this.parentObject.add(this.shape);
+                this.visible = true;
+            }
+        } else {
+            if (this.visible) {
+                this.parentObject.remove(this.shape);
+                this.visible = false;
+            }
+        }
+    }
+
+    update(weightedEdges: boolean) {
+        this.geometry.verticesNeedUpdate = true;
+
+        var scale = 1;
+
+        if (weightedEdges == true) {
+            scale = this.scaleWeighted;
+        }
+        else {
+            scale = this.scaleNoWeighted;
+        }
+
+        var a = this.sourcePoint, b = this.targetPoint;
+        var m = new THREE.Vector3();
+        m.addVectors(a, b).divideScalar(2);
+        this.shape.position = m;
+        var origVec = new THREE.Vector3(0, 0, 1);         //vector of cylinder
+        var targetVec = new THREE.Vector3();
+        targetVec.subVectors(b, a);
+        var length = targetVec.length();
+        this.shape.scale.set(scale, scale, length);
+        targetVec.normalize();
+
+        var angle = Math.acos(origVec.dot(targetVec));
+
+        var axis = new THREE.Vector3();
+        axis.crossVectors(origVec, targetVec);
+        axis.normalize();
+        var quaternion = new THREE.Quaternion();
+        quaternion.setFromAxisAngle(axis, angle);
+        this.shape.quaternion = quaternion;
+    }
+}
+
+
+/*
 class Edge {
     line;
     geometry;
@@ -561,9 +814,16 @@ class Edge {
         this.geometry = new THREE.Geometry();
         this.geometry.vertices.push(endPoint1);
         this.geometry.vertices.push(endPoint2);
-        this.line = new THREE.Line(this.geometry, new THREE.LineBasicMaterial({ color: 0x000000 }));
+
+        // threejs.org: Due to limitations in the ANGLE layer, on Windows platforms linewidth will always be 1 regardless of the set value.
+        this.line = new THREE.Line(this.geometry, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 3 }));
+
         parentObject.add(this.line);
         //this.highlighted = false;
+    }
+
+    setColor(hex: number) {
+        this.line.material.color.setHex(hex);
     }
 
     setVisible(flag: boolean) {
@@ -584,6 +844,8 @@ class Edge {
         this.geometry.verticesNeedUpdate = true;
     }
 }
+*/
+
 
 /* Functions can be pushed to the coroutines array to be executed as if they are
  * occuring in parallel with the program execution.

@@ -1,5 +1,4 @@
 /// <reference path="../extern/three.d.ts"/>
-/// <reference path="../extern/d3.d.ts"/>
 /// <reference path="../src/shortestpaths.ts"/>
 /// <reference path="../src/linklengths.ts"/>
 /// <reference path="../src/descent.ts"/>
@@ -10,7 +9,7 @@ module cola3 {
         nodeMeshes: any[];
         edgeList: Edge[] = [];
 
-        constructor(parentObject, n: number, edges: { source: number; target: number }[], nodeColourings: number[]) {
+        constructor(parentObject, n: number, edges: { source: number; target: number }[], nodeColour: number[]) {
             this.parentObject = parentObject;
             this.rootObject = new THREE.Object3D();
             parentObject.add(this.rootObject);
@@ -20,10 +19,9 @@ module cola3 {
             for (var i = 0; i < n; ++i) {
                 var sphere = this.nodeMeshes[i] = new THREE.Mesh(
                     new THREE.SphereGeometry(1, 10, 10), new THREE.MeshLambertMaterial(
-                        { color: nodeColourings[i] }
+                        { color: nodeColour[i] }
                         )
                     );
-                sphere.id = i;
                 this.rootObject.add(sphere);
             }
 
@@ -108,9 +106,10 @@ class LinkAccessor implements cola.LinkLengthAccessor<any> {
 d3.json("graphdata/miserables.json", function (error, graph) {
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-
     var renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth/1.2, window.innerHeight/1.2);
+    var sizeRatio = 0.8;
+    renderer.setSize(window.innerWidth * sizeRatio, window.innerHeight * sizeRatio);
+
     var div = document.getElementById("graphdiv");
     div.appendChild(renderer.domElement);
 

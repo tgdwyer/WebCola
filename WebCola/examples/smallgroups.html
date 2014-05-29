@@ -49,6 +49,7 @@
     var cola = cola.d3adaptor()
         .linkDistance(100)
         .avoidOverlaps(true)
+        .handleDisconnected(false)
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")
@@ -60,7 +61,7 @@
             .nodes(graph.nodes)
             .links(graph.links)
             .groups(graph.groups)
-            .start(10,10,10);
+            .start();
 
         var group = svg.selectAll(".group")
             .data(graph.groups)
