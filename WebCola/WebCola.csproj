@@ -32,6 +32,7 @@
     <Content Include="examples\movies.html" />
     <Content Include="examples\browsemovies.html" />
     <Content Include="examples\powergraph.html" />
+    <Content Include="examples\sankey.html" />
     <Content Include="examples\sucrosebreakdown-handdrawn.png" />
     <Content Include="examples\sucrosebreakdown.html" />
     <Content Include="examples\alignment.png" />

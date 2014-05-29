@@ -146,7 +146,7 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     cola.jaccardLinkLengths(graph.nodes.length, graph.links, linkAccessor, 1.5);
 
     // Create the distance matrix that Cola needs
-    var distanceMatrix = (new shortestpaths.Calculator(n, graph.links, linkAccessor.getSourceIndex, linkAccessor.getTargetIndex, linkAccessor.getLength)).DistanceMatrix();
+    var distanceMatrix = (new cola.shortestpaths.Calculator(n, graph.links, linkAccessor.getSourceIndex, linkAccessor.getTargetIndex, linkAccessor.getLength)).DistanceMatrix();
 
     var D = cola.Descent.createSquareMatrix(n, function (i, j) {
         return distanceMatrix[i][j] * 7;
@@ -222,3 +222,4 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     };
     render();
 });
+//# sourceMappingURL=3dlayout.js.map
