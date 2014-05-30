@@ -673,25 +673,31 @@ function parseAttributes(text: string, dataSet: DataSet) {
     dataSet.notifyAttributes();
 }
 
+// this function assumes the columns of the attributes are known
 function setupCrossFilter(attrs: Attributes) {
     if (!attrs) return;
 
-    // put attributes into an object array
+    // put attributes into an object array; round the attribute values for grouping in crossfilter
     var objectArray = new Array();
     for (var i = 0; i < attrs.numRecords; ++i) {
         // create an object for each record:
         var object = new Object();
+        object["index"] = i;
 
         for (var j = 0; j < attrs.columnNames.length; ++j) {
             //object[attrs.columnNames[j]] = attrs.getValue(attrs.columnNames[j], i);
 
             var attrValue: number;
-            if ((j == 1) || (j == 3)) {
+            if (j == 1) {
                 attrValue = attrs.getValue(attrs.columnNames[j], i);
+            }
+            else if (j == 3) {
+                attrValue = attrs.getValue(attrs.columnNames[j], i);
+                attrValue = Math.round(attrValue / 20) * 20;
             }
             else {
                 attrValue = attrs.getValue(attrs.columnNames[j], i);
-                if (attrValue) attrValue = parseFloat(attrValue.toFixed(2));
+                attrValue = parseFloat(attrValue.toFixed(2));
             }
 
             object[attrs.columnNames[j]] = attrValue;
@@ -710,12 +716,18 @@ function setupCrossFilter(attrs: Attributes) {
     var totalReadings = cfilter.size();
     var all = cfilter.groupAll();
 
+    //var indexDim = cfilter.dimension(function (d) { return d["index"]; });
+    var dimArray = new Array();
+
     // create a data count widget
+    // once created data count widget will automatically update the text content of the following elements under the parent element.
+    // ".total-count" - total number of records
+    // ".filter-count" - number of records matched by the current filters
     dc.dataCount(".dc-data-count")
         .dimension(cfilter)
         .group(all);
 
-    var brush = d3.svg.brush();
+
 
     // create the charts 
     for (var j = 0; j < attrs.columnNames.length; ++j) {
@@ -723,52 +735,36 @@ function setupCrossFilter(attrs: Attributes) {
         var chart = dc.barChart("#barChart" + j);
 
         var columnName = attrs.columnNames[j];
-        var minValue = attrs.getMin(attrs.columnNames[j]);
-        var maxValue = attrs.getMax(attrs.columnNames[j]);
+        var minValue = attrs.getMin(columnName);
+        var maxValue = attrs.getMax(columnName);
 
         var dim = cfilter.dimension(function (d) { return d[columnName]; });
+        dimArray.push(dim);
+        var group = dim.group().reduceCount(function (d) { return d[columnName]; });
 
-        if (j == 1) {
-            
-            group = dim.group().reduceCount(function (d) { return d[columnName]; });
-
+        if (j == 1) {           
             chart
                 .width(300)
                 .height(150)
                 .dimension(dim)
                 .group(group)
-                .x(d3.scale.linear()
-                    .domain([0, 10]))
+                .x(d3.scale.linear().domain([0, 10]))
                 .xAxisLabel(columnName)
                 .centerBar(true)
-                .on("brushstart", brushed);
+                .on("filtered", filtered)
         }
         else {
-            var n_bins = 10;
-
-            var binWidth = (maxValue - minValue) / n_bins;
-
-            //var group = dim.group().reduceCount(function (d) { return d[columnName]; });
-            var group = dim.group().reduceCount(function (d) {
-                //var v = Math.floor(((d[columnName] - minValue) * 1000) / binWidth);
-                //v *= binWidth;
-                //return v;
-                return Math.floor(d[columnName] / binWidth) * binWidth;
-            });
-
             chart
                 .gap(5)
                 .width(300)
                 .height(150)
                 .dimension(dim)
                 .group(group)
-            //.x(d3.scale.linear().domain([0, 1]))
-                //.x(d3.scale.linear().domain([minValue, maxValue]).rangeBands([0, 300]))
-                .x(d3.scale.linear().domain([minValue, maxValue]).range([0,n_bins]))
+                .x(d3.scale.linear().domain([minValue, maxValue]))
                 .xAxisLabel(columnName)
                 .xUnits(function () { return 25; })               
                 .centerBar(true)
-                .on("brushstart", brushed)
+                .on("filtered", filtered)
                 .xAxis().ticks(6);
         }
     }
@@ -776,17 +772,21 @@ function setupCrossFilter(attrs: Attributes) {
 	// keep track of total readings
 	d3.select("#total").text(totalReadings);
 
+    // listener
+    function filtered() {
+        console.log("filter event...");
 
-    // First listener test
-    function brushed() {
-        console.log("brush test 1");
-        d3.select("#current").text(all.value());
+        // retrieve all selected nodes
+        var allFilteredIndex = new Array();
+        allFilteredIndex = dimArray[0].top(Infinity);
+        console.log("count: " + allFilteredIndex.length);
+
+        /*
+        for (var i = 0; i < allFilteredIndex.length; ++i) {
+            console.log("index: " + allFilteredIndex[i]);
+        }
+        */
     }
-
-    // Second listener test
-    brush.on("brushstart", function () {
-        console.log("brush test 2");
-    });
 
     // render all charts
     dc.renderAll();
