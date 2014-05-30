@@ -7,6 +7,8 @@
 
     Not implemented: removal of applications
 */
+declare var dc;
+declare var crossfilter;
 
 // Holds data common to all datasets, and sends notifications when data changes
 class CommonData {
@@ -66,17 +68,18 @@ class DataSet {
 class Attributes {
     values = {};
     columnNames: string[];
+    numRecords: number;
 
     constructor(text: string) {
         var lines = text.split(String.fromCharCode(13)); // Lines delimited by carriage returns...
-        var numRecords = lines.length - 1;
+        this.numRecords = lines.length - 1;
         this.columnNames = lines[0].split('\t');
         var numAttributes = this.columnNames.length;
         var values = new Array<Array<number>>(numAttributes); // Store the values of each attribute by index
         for (var i = 0; i < numAttributes; ++i) {
-            values[i] = new Array<number>(numRecords);
+            values[i] = new Array<number>(this.numRecords);
         }
-        for (var i = 1; i <= numRecords; ++i) { // Add the attributes of each record to the right value list
+        for (var i = 1; i <= this.numRecords; ++i) { // Add the attributes of each record to the right value list
             var rec = lines[i].split('\t');
             for (var j = 0; j < numAttributes; ++j) {
                 values[j][i - 1] = parseFloat(rec[j]);
@@ -98,6 +101,28 @@ class Attributes {
         }
 
         return record
+    }
+
+    getValue(attribute: string, index: number) {
+        return this.values[attribute][index];
+    }
+
+    getMin(attribute: string) {
+        var array = this.values[attribute];
+        if (array) {
+            array.sort(function (a, b) { return a - b }); // sort numerically and ascending
+            return array[0];
+        }
+        return null;
+    }
+
+    getMax(attribute: string) {
+        var array = this.values[attribute];
+        if (array) {
+            array.sort(function (a, b) { return b - a }); // sort numerically and descending
+            return array[0];
+        }
+        return null;
     }
 
     get(attribute: string) {
@@ -243,6 +268,8 @@ $('#load-example-data').button().click(function () {
     $.get('data/attributes1.txt', function (text) {
         parseAttributes(text, dataSets[0]);
         $('#d1-att').css({ color: 'green' });
+
+        setupCrossFilter(dataSets[0].attributes);
     });
 });
 
@@ -645,3 +672,123 @@ function parseAttributes(text: string, dataSet: DataSet) {
     dataSet.attributes = new Attributes(text);
     dataSet.notifyAttributes();
 }
+
+function setupCrossFilter(attrs: Attributes) {
+    if (!attrs) return;
+
+    // put attributes into an object array
+    var objectArray = new Array();
+    for (var i = 0; i < attrs.numRecords; ++i) {
+        // create an object for each record:
+        var object = new Object();
+
+        for (var j = 0; j < attrs.columnNames.length; ++j) {
+            //object[attrs.columnNames[j]] = attrs.getValue(attrs.columnNames[j], i);
+
+            var attrValue: number;
+            if ((j == 1) || (j == 3)) {
+                attrValue = attrs.getValue(attrs.columnNames[j], i);
+            }
+            else {
+                attrValue = attrs.getValue(attrs.columnNames[j], i);
+                if (attrValue) attrValue = parseFloat(attrValue.toFixed(2));
+            }
+
+            object[attrs.columnNames[j]] = attrValue;
+
+        }
+
+        objectArray.push(object);
+    }
+
+    // convert the object array to json format
+    var json = JSON.parse(JSON.stringify(objectArray));
+    //console.log(json);
+
+    // create crossfilter
+    var cfilter = crossfilter(json);
+    var totalReadings = cfilter.size();
+    var all = cfilter.groupAll();
+
+    // create a data count widget
+    dc.dataCount(".dc-data-count")
+        .dimension(cfilter)
+        .group(all);
+
+    var brush = d3.svg.brush();
+
+    // create the charts 
+    for (var j = 0; j < attrs.columnNames.length; ++j) {
+
+        var chart = dc.barChart("#barChart" + j);
+
+        var columnName = attrs.columnNames[j];
+        var minValue = attrs.getMin(attrs.columnNames[j]);
+        var maxValue = attrs.getMax(attrs.columnNames[j]);
+
+        var dim = cfilter.dimension(function (d) { return d[columnName]; });
+
+        if (j == 1) {
+            
+            group = dim.group().reduceCount(function (d) { return d[columnName]; });
+
+            chart
+                .width(300)
+                .height(150)
+                .dimension(dim)
+                .group(group)
+                .x(d3.scale.linear()
+                    .domain([0, 10]))
+                .xAxisLabel(columnName)
+                .centerBar(true)
+                .on("brushstart", brushed);
+        }
+        else {
+            var n_bins = 10;
+
+            var binWidth = (maxValue - minValue) / n_bins;
+
+            //var group = dim.group().reduceCount(function (d) { return d[columnName]; });
+            var group = dim.group().reduceCount(function (d) {
+                //var v = Math.floor(((d[columnName] - minValue) * 1000) / binWidth);
+                //v *= binWidth;
+                //return v;
+                return Math.floor(d[columnName] / binWidth) * binWidth;
+            });
+
+            chart
+                .gap(5)
+                .width(300)
+                .height(150)
+                .dimension(dim)
+                .group(group)
+            //.x(d3.scale.linear().domain([0, 1]))
+                //.x(d3.scale.linear().domain([minValue, maxValue]).rangeBands([0, 300]))
+                .x(d3.scale.linear().domain([minValue, maxValue]).range([0,n_bins]))
+                .xAxisLabel(columnName)
+                .xUnits(function () { return 25; })               
+                .centerBar(true)
+                .on("brushstart", brushed)
+                .xAxis().ticks(6);
+        }
+    }
+
+	// keep track of total readings
+	d3.select("#total").text(totalReadings);
+
+
+    // First listener test
+    function brushed() {
+        console.log("brush test 1");
+        d3.select("#current").text(all.value());
+    }
+
+    // Second listener test
+    brush.on("brushstart", function () {
+        console.log("brush test 2");
+    });
+
+    // render all charts
+    dc.renderAll();
+}
+
