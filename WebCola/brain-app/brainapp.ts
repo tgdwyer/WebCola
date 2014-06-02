@@ -66,7 +66,7 @@ class DataSet {
 
 // Parses, stores, and provides access to brain node attributes from a file
 class Attributes {
-    values = {};
+    attrValues: number[][];
     columnNames: string[];
     numRecords: number;
 
@@ -79,6 +79,7 @@ class Attributes {
         var numAttributes = this.columnNames.length;
         var values = new Array<Array<number>>(numAttributes); // Store the values of each attribute by index
         for (var i = 0; i < numAttributes; ++i) {
+            this.columnNames[i].trim();
             values[i] = new Array<number>(this.numRecords);
         }
         for (var i = 1; i <= this.numRecords; ++i) { // Add the attributes of each record to the right value list
@@ -87,9 +88,13 @@ class Attributes {
                 values[j][i - 1] = parseFloat(rec[j]);
             }
         }
+
+        this.attrValues = values;
+        /*
         for (var i = 0; i < numAttributes; ++i) {
             this.values[this.columnNames[i]] = values[i];
         }
+        */
     }
 
     getRecord(index: number) {
@@ -97,7 +102,7 @@ class Attributes {
         var columns = this.columnNames.length;
 
         for (var j = 0; j < columns; ++j) {
-            var v = this.values[this.columnNames[j]][index];
+            var v = this.attrValues[j][index];
             var line = this.columnNames[j] + ": " + v + "; ";
             record += line;
         }
@@ -105,30 +110,45 @@ class Attributes {
         return record
     }
 
-    getValue(attribute: string, index: number) {
-        return this.values[attribute][index];
+    getValue(columnIndex: number, index: number) {
+        return this.attrValues[columnIndex][index];
     }
 
-    getMin(attribute: string) {
-        var array = this.values[attribute];
-        if (array) {
-            array.sort(function (a, b) { return a - b }); // sort numerically and ascending
-            return array[0];
+    getMin(columnIndex: number) {
+        var array = this.attrValues[columnIndex];
+
+        var sortedArray = [];
+        for (var i = 0; i < array.length; ++i) {
+            sortedArray.push(array[i]);
+        }
+
+        if (sortedArray) {
+            sortedArray.sort(function (a, b) { return a - b }); // sort numerically and ascending
+            return sortedArray[0];
         }
         return null;
     }
 
-    getMax(attribute: string) {
-        var array = this.values[attribute];
-        if (array) {
-            array.sort(function (a, b) { return b - a }); // sort numerically and descending
-            return array[0];
+    getMax(columnIndex: number) {
+        var array = this.attrValues[columnIndex];
+
+        var sortedArray = [];
+        for (var i = 0; i < array.length; ++i) {
+            sortedArray.push(array[i]);
+        }
+
+        if (sortedArray) {
+            sortedArray.sort(function (a, b) { return b - a }); // sort numerically and descending
+            return sortedArray[0];
         }
         return null;
     }
 
     get(attribute: string) {
-        return this.values[attribute];
+        var columnIndex = this.columnNames.indexOf(attribute);
+        if (columnIndex != -1)
+            return this.attrValues[columnIndex];
+        return null;
     }
 }
 
@@ -711,14 +731,14 @@ function setupCrossFilter(attrs: Attributes) {
 
             var attrValue: number;
             if (j == 1) {
-                attrValue = attrs.getValue(attrs.columnNames[j], i);
+                attrValue = attrs.getValue(j, i);
             }
             else if (j == 3) {
-                attrValue = attrs.getValue(attrs.columnNames[j], i);
+                attrValue = attrs.getValue(j, i);
                 attrValue = Math.round(attrValue / 20) * 20;
             }
             else {
-                attrValue = attrs.getValue(attrs.columnNames[j], i);
+                attrValue = attrs.getValue(j, i);
                 attrValue = parseFloat(attrValue.toFixed(2));
             }
 
@@ -756,8 +776,8 @@ function setupCrossFilter(attrs: Attributes) {
         var chart = dc.barChart("#barChart" + j);
 
         var columnName = attrs.columnNames[j];
-        var minValue = attrs.getMin(columnName);
-        var maxValue = attrs.getMax(columnName);
+        var minValue = attrs.getMin(j);
+        var maxValue = attrs.getMax(j);
 
         var dim = cfilter.dimension(function (d) { return d[columnName]; });
         dimArray.push(dim);

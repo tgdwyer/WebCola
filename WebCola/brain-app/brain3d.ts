@@ -250,6 +250,7 @@ class Brain3DApp implements Application, Loopable {
                 }
             }
 
+            this.colaGraph.visibleNodeIDs = this.physioGraph.visibleNodeIDs;
             this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
             this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
 
@@ -656,10 +657,22 @@ class Graph {
 
     setNodeVisibilities(visArray: boolean[]) {
         for (var i = 0; i < visArray.length; ++i) {
-            if (visArray[i])
-                this.rootObject.add(this.nodeMeshes[i]);
-            else
+            if (visArray[i]) {
+                if (this.visibleNodeIDs) {
+                    if (this.visibleNodeIDs.indexOf(i) != -1) {
+                        this.rootObject.add(this.nodeMeshes[i]);
+                    }
+                    else {
+                        this.rootObject.remove(this.nodeMeshes[i]);
+                    }
+                }
+                else {
+                    this.rootObject.add(this.nodeMeshes[i]);
+                }
+            }
+            else {
                 this.rootObject.remove(this.nodeMeshes[i]);
+            }
         }
     }
 
