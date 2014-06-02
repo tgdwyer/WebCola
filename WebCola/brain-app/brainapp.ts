@@ -70,6 +70,8 @@ class Attributes {
     columnNames: string[];
     numRecords: number;
 
+    filteredRecords: Array<number>;
+
     constructor(text: string) {
         var lines = text.split(String.fromCharCode(13)); // Lines delimited by carriage returns...
         this.numRecords = lines.length - 1;
@@ -134,11 +136,13 @@ class Attributes {
 interface Application {
     setDataSet(dataSet: DataSet);
     resize(width: number, height: number);
+    applyFilter(filteredIDs: Array<number>);
 }
 
 class DummyApp implements Application {
     setDataSet() { }
     resize() { }
+    applyFilter() { }
 }
 
 // The loop class can be used to run applications that aren't event-based
@@ -272,6 +276,24 @@ $('#load-example-data').button().click(function () {
         setupCrossFilter(dataSets[0].attributes);
     });
 });
+
+$('#button-apply-filter').button().click(function () {
+    if (!dataSets[0].attributes.filteredRecords) return;
+
+    var fRecords = dataSets[0].attributes.filteredRecords;
+    var idArray = new Array();
+
+    for (var i = 0; i < fRecords.length; ++i) {
+        var id = fRecords[i]["index"];
+        if (id) idArray.push(id);
+    } 
+
+    if (apps[0]) apps[0].applyFilter(idArray);
+    if (apps[1]) apps[1].applyFilter(idArray);
+    if (apps[2]) apps[2].applyFilter(idArray);
+    if (apps[3]) apps[3].applyFilter(idArray);
+});
+
 
 // Shorten the names of the views - they are referenced quite often
 var tl_view = '#view-top-left';
@@ -716,7 +738,6 @@ function setupCrossFilter(attrs: Attributes) {
     var totalReadings = cfilter.size();
     var all = cfilter.groupAll();
 
-    //var indexDim = cfilter.dimension(function (d) { return d["index"]; });
     var dimArray = new Array();
 
     // create a data count widget
@@ -774,18 +795,15 @@ function setupCrossFilter(attrs: Attributes) {
 
     // listener
     function filtered() {
-        console.log("filter event...");
+        //console.log("filter event...");
 
-        // retrieve all selected nodes
-        var allFilteredIndex = new Array();
-        allFilteredIndex = dimArray[0].top(Infinity);
-        console.log("count: " + allFilteredIndex.length);
+        dataSets[0].attributes.filteredRecords = dimArray[0].top(Number.POSITIVE_INFINITY);
 
-        /*
-        for (var i = 0; i < allFilteredIndex.length; ++i) {
-            console.log("index: " + allFilteredIndex[i]);
+        if (dataSets[0].attributes.filteredRecords) {
+            console.log("count: " + dataSets[0].attributes.filteredRecords.length);
         }
-        */
+
+        $('#button-apply-filter').button({ disabled: false });
     }
 
     // render all charts

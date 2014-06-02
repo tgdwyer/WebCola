@@ -321,6 +321,16 @@ class Brain3DApp implements Application, Loopable {
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
     }
 
+    applyFilter(filteredIDs: Array<number>) {
+        if (!this.dataSet || !this.dataSet.attributes) return;
+
+        console.log("app id: " + this.id + "; count: " + filteredIDs.length);   
+
+        this.physioGraph.visibleNodeIDs = filteredIDs;
+        this.physioGraph.applyNodeFiltering();
+        this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+    }
+
     resize(width: number, height: number) {
         // Resize the renderer
         this.renderer.setSize(width, height - sliderSpace);
@@ -505,6 +515,8 @@ class Graph {
     edgeList: Edge[] = [];
     visible: boolean = true;
 
+    visibleNodeIDs: Array<number>;
+
     edgeThicknessByWeighted: boolean = false;
     allLabels: boolean = false;
 
@@ -628,6 +640,20 @@ class Graph {
         }
     }
 
+    applyNodeFiltering() {
+        for (var i = 0; i < this.nodeMeshes.length; ++i) {
+            this.rootObject.remove(this.nodeMeshes[i]);
+        }
+
+        if (this.visibleNodeIDs) {
+            for (var j = 0; j < this.visibleNodeIDs.length; ++j) {
+                var nodeID = this.visibleNodeIDs[j];
+
+                this.rootObject.add(this.nodeMeshes[nodeID]);
+            }
+        }
+    }
+
     setNodeVisibilities(visArray: boolean[]) {
         for (var i = 0; i < visArray.length; ++i) {
             if (visArray[i])
@@ -642,7 +668,18 @@ class Graph {
         for (var i = 0; i < len - 1; ++i) {
             for (var j = i + 1; j < len; ++j) {
                 var edge = this.edgeMatrix[i][j];
-                if (edge) edge.setVisible(visMatrix[i][j] === 1 ? true : false);
+
+                if (this.visibleNodeIDs) {
+                    if ((this.visibleNodeIDs.indexOf(i) == -1) || (this.visibleNodeIDs.indexOf(j) == -1)) {
+                        if (edge) edge.setVisible(false);
+                    }
+                    else {
+                        if (edge) edge.setVisible(visMatrix[i][j] === 1 ? true : false);
+                    }
+                }
+                else {
+                    if (edge) edge.setVisible(visMatrix[i][j] === 1 ? true : false);
+                }
             }
         }
     }
