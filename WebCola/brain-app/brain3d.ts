@@ -236,8 +236,14 @@ class Brain3DApp implements Application, Loopable {
             // Leave *showingCola* on permanently after first turn-on
             this.showingCola = true;
 
+            this.colaGraph.visibleNodeIDs = this.physioGraph.visibleNodeIDs;
+
+            //-------------------------------------------------------------------
             // Find the edges that have been selected after thresholding, and all the
             // nodes that have neighbours after the thresholding of the edges takes place.
+
+            // original:
+            /*
             var edges = [];
             var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
             for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
@@ -249,8 +255,32 @@ class Brain3DApp implements Application, Loopable {
                     }
                 }
             }
+            */
 
-            this.colaGraph.visibleNodeIDs = this.physioGraph.visibleNodeIDs;
+            // new:
+            var edges = [];
+            var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
+            for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
+                for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
+                    if (this.filteredAdjMatrix[i][j] === 1) {
+                        if (this.physioGraph.visibleNodeIDs) {
+                            if ((this.physioGraph.visibleNodeIDs.indexOf(i) != -1) && (this.physioGraph.visibleNodeIDs.indexOf(j) != -1)) {
+                                edges.push({ source: i, target: j });
+                                hasNeighbours[i] = true;
+                                hasNeighbours[j] = true;
+                            }
+                        } else {
+                            edges.push({ source: i, target: j });
+                            hasNeighbours[i] = true;
+                            hasNeighbours[j] = true;
+                        }
+                    }
+                }
+            }
+
+            //-------------------------------------------------------------------
+
+
             this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
             this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
 
