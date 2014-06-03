@@ -157,12 +157,14 @@ interface Application {
     setDataSet(dataSet: DataSet);
     resize(width: number, height: number);
     applyFilter(filteredIDs: Array<number>);
+    setNodeSizeOrColor(sizeOrColor: string, attribute: string);
 }
 
 class DummyApp implements Application {
     setDataSet() { }
     resize() { }
     applyFilter() { }
+    setNodeSizeOrColor() { }
 }
 
 // The loop class can be used to run applications that aren't event-based
@@ -293,7 +295,10 @@ $('#load-example-data').button().click(function () {
         parseAttributes(text, dataSets[0]);
         $('#d1-att').css({ color: 'green' });
 
-        setupCrossFilter(dataSets[0].attributes);
+        if (dataSets[0].attributes) {
+            for (var i = 0; i < dataSets[0].attributes.columnNames.length; ++i) {
+                var columnName = dataSets[0].attributes.columnNames[i];
+                $('#attribute-select').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#button-set-scale-color').css({ visibility: 'visible' });            $('#button-set-scale-color').button({ disabled: false });            $('#node-size-color-select').css({ visibility: 'visible' });            $('#attribute-select').css({ visibility: 'visible' });            $('#div-set-node-scale').css({ 'margin-top': '10px' });                        setupCrossFilter(dataSets[0].attributes);        }   
     });
 });
 
@@ -312,6 +317,18 @@ $('#button-apply-filter').button().click(function () {
     if (apps[1]) apps[1].applyFilter(idArray);
     if (apps[2]) apps[2].applyFilter(idArray);
     if (apps[3]) apps[3].applyFilter(idArray);
+});
+
+$('#button-set-scale-color').button().click(function () {
+    var sizeOrColor = $('#node-size-color-select').val();
+    var attribute = $('#attribute-select').val();
+
+    if (sizeOrColor && attribute) {
+        if (apps[0]) apps[0].setNodeSizeOrColor(sizeOrColor, attribute);
+        if (apps[1]) apps[1].setNodeSizeOrColor(sizeOrColor, attribute);
+        if (apps[2]) apps[2].setNodeSizeOrColor(sizeOrColor, attribute);
+        if (apps[3]) apps[3].setNodeSizeOrColor(sizeOrColor, attribute);
+    }
 });
 
 

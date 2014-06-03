@@ -362,6 +362,39 @@ class Brain3DApp implements Application, Loopable {
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
     }
 
+    setNodeSizeOrColor(sizeOrColor: string, attribute: string) {
+        if (!sizeOrColor || !attribute) return;
+        if (!this.dataSet || !this.dataSet.attributes) return;
+
+        if (sizeOrColor == "node-size") {
+            var attrArray = this.dataSet.attributes.get(attribute);
+            if (!attrArray) return;
+
+            var columnIndex = this.dataSet.attributes.columnNames.indexOf(attribute);
+
+            // assume all positive numbers in the array
+            var min = this.dataSet.attributes.getMin(columnIndex);
+            var max = this.dataSet.attributes.getMax(columnIndex); 
+
+            var scaleArray: number[];
+            
+            if (max / min > 10) {
+                scaleArray = attrArray.map((value: number) => { return Math.log(value) / Math.log(min); });
+            }
+            else {
+                scaleArray = attrArray.map((value: number) => { return value / min; });
+            }
+
+            if (!scaleArray) return;
+
+            this.physioGraph.setNodeScaleByAttributes(scaleArray);
+            this.colaGraph.setNodeScaleByAttributes(scaleArray);
+        }
+        else if (sizeOrColor == "node-color") {
+
+        }
+    }
+
     resize(width: number, height: number) {
         // Resize the renderer
         this.renderer.setSize(width, height - sliderSpace);
@@ -743,8 +776,24 @@ class Graph {
         }
     }
 
+    setNodeScaleByAttributes(scaleArray: number[]) {
+        if (!scaleArray) return;
+        if (scaleArray.length != this.nodeMeshes.length) return;
+
+        var scaleFactor = 0.5;
+
+        for (var i = 0; i < this.nodeMeshes.length; ++i) {
+            var scale = scaleFactor * scaleArray[i];
+            this.nodeMeshes[i].scale.set(scale, scale, scale);
+        }
+    }
+
     selectNode(id: number) {
-        this.nodeMeshes[id].scale.set(2, 2, 2);
+        var x = this.nodeMeshes[id].scale.x;
+        var y = this.nodeMeshes[id].scale.y;
+        var z = this.nodeMeshes[id].scale.z;
+
+        this.nodeMeshes[id].scale.set(2*x, 2*y, 2*z);
 
         if (this.allLabels == false) {
             this.parentObject.add(this.nodeLabelList[id]);
@@ -752,7 +801,11 @@ class Graph {
     }
 
     deselectNode(id: number) {
-        this.nodeMeshes[id].scale.set(1, 1, 1);
+        var x = this.nodeMeshes[id].scale.x;
+        var y = this.nodeMeshes[id].scale.y;
+        var z = this.nodeMeshes[id].scale.z;
+
+        this.nodeMeshes[id].scale.set(0.5*x, 0.5*y, 0.5*z);
 
         if (this.allLabels == false) {
             this.parentObject.remove(this.nodeLabelList[id]);
