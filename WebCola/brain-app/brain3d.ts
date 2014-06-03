@@ -366,16 +366,16 @@ class Brain3DApp implements Application, Loopable {
         if (!sizeOrColor || !attribute) return;
         if (!this.dataSet || !this.dataSet.attributes) return;
 
+        var attrArray = this.dataSet.attributes.get(attribute);
+        if (!attrArray) return;
+
+        var columnIndex = this.dataSet.attributes.columnNames.indexOf(attribute);
+
+        // assume all positive numbers in the array
+        var min = this.dataSet.attributes.getMin(columnIndex);
+        var max = this.dataSet.attributes.getMax(columnIndex); 
+
         if (sizeOrColor == "node-size") {
-            var attrArray = this.dataSet.attributes.get(attribute);
-            if (!attrArray) return;
-
-            var columnIndex = this.dataSet.attributes.columnNames.indexOf(attribute);
-
-            // assume all positive numbers in the array
-            var min = this.dataSet.attributes.getMin(columnIndex);
-            var max = this.dataSet.attributes.getMax(columnIndex); 
-
             var scaleArray: number[];
             
             if (max / min > 10) {
@@ -387,11 +387,34 @@ class Brain3DApp implements Application, Loopable {
 
             if (!scaleArray) return;
 
-            this.physioGraph.setNodeScaleByAttributes(scaleArray);
-            this.colaGraph.setNodeScaleByAttributes(scaleArray);
+            this.physioGraph.setNodesScale(scaleArray);
+            this.colaGraph.setNodesScale(scaleArray);
         }
         else if (sizeOrColor == "node-color") {
+            var colorArray: number[];
 
+            var minColor = "yellow";
+            var maxColor = "red";
+
+            if (max / min > 10) {
+                var colorMap = d3.scale.linear().domain([Math.log(min), Math.log(max)]).range([minColor, maxColor]);
+                colorArray = attrArray.map((value: number) => {
+                    var str = colorMap(Math.log(value)).replace("#", "0x");
+                    return parseInt(str);
+                });
+            }
+            else {
+                var colorMap = d3.scale.linear().domain([min, max]).range([minColor, maxColor]);
+                colorArray = attrArray.map((value: number) => {
+                    var str = colorMap(value).replace("#", "0x");
+                    return parseInt(str);
+                });
+            }
+
+            if (!colorArray) return;
+
+            this.physioGraph.setNodesColor(colorArray);
+            this.colaGraph.setNodesColor(colorArray);
         }
     }
 
@@ -776,7 +799,7 @@ class Graph {
         }
     }
 
-    setNodeScaleByAttributes(scaleArray: number[]) {
+    setNodesScale(scaleArray: number[]) {
         if (!scaleArray) return;
         if (scaleArray.length != this.nodeMeshes.length) return;
 
@@ -785,6 +808,15 @@ class Graph {
         for (var i = 0; i < this.nodeMeshes.length; ++i) {
             var scale = scaleFactor * scaleArray[i];
             this.nodeMeshes[i].scale.set(scale, scale, scale);
+        }
+    }
+
+    setNodesColor(colorArray: number[]) {
+        if (!colorArray) return;
+        if (colorArray.length != this.nodeMeshes.length) return;
+
+        for (var i = 0; i < this.nodeMeshes.length; ++i) {
+            this.nodeMeshes[i].material.color.setHex(colorArray[i]);
         }
     }
 
