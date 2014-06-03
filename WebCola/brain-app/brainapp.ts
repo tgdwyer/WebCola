@@ -7,6 +7,8 @@
 
     Not implemented: removal of applications
 */
+declare var dc;
+declare var crossfilter;
 
 // Holds data common to all datasets, and sends notifications when data changes
 class CommonData {
@@ -64,30 +66,89 @@ class DataSet {
 
 // Parses, stores, and provides access to brain node attributes from a file
 class Attributes {
-    values = {};
+    attrValues: number[][];
+    columnNames: string[];
+    numRecords: number;
+
+    filteredRecords: Array<number>;
 
     constructor(text: string) {
         var lines = text.split(String.fromCharCode(13)); // Lines delimited by carriage returns...
-        var numRecords = lines.length - 1;
-        var names = lines[0].split('\t');
-        var numAttributes = names.length;
+        this.numRecords = lines.length - 1;
+        this.columnNames = lines[0].split('\t');
+        var numAttributes = this.columnNames.length;
         var values = new Array<Array<number>>(numAttributes); // Store the values of each attribute by index
         for (var i = 0; i < numAttributes; ++i) {
-            values[i] = new Array<number>(numRecords);
+            this.columnNames[i].trim();
+            values[i] = new Array<number>(this.numRecords);
         }
-        for (var i = 1; i <= numRecords; ++i) { // Add the attributes of each record to the right value list
+        for (var i = 1; i <= this.numRecords; ++i) { // Add the attributes of each record to the right value list
             var rec = lines[i].split('\t');
             for (var j = 0; j < numAttributes; ++j) {
                 values[j][i - 1] = parseFloat(rec[j]);
             }
         }
+
+        this.attrValues = values;
+        /*
         for (var i = 0; i < numAttributes; ++i) {
-            this.values[names[i]] = values[i];
+            this.values[this.columnNames[i]] = values[i];
         }
+        */
+    }
+
+    getRecord(index: number) {
+        var record = '';
+        var columns = this.columnNames.length;
+
+        for (var j = 0; j < columns; ++j) {
+            var v = this.attrValues[j][index];
+            var line = this.columnNames[j] + ": " + v + "; ";
+            record += line;
+        }
+
+        return record
+    }
+
+    getValue(columnIndex: number, index: number) {
+        return this.attrValues[columnIndex][index];
+    }
+
+    getMin(columnIndex: number) {
+        var array = this.attrValues[columnIndex];
+
+        var sortedArray = [];
+        for (var i = 0; i < array.length; ++i) {
+            sortedArray.push(array[i]);
+        }
+
+        if (sortedArray) {
+            sortedArray.sort(function (a, b) { return a - b }); // sort numerically and ascending
+            return sortedArray[0];
+        }
+        return null;
+    }
+
+    getMax(columnIndex: number) {
+        var array = this.attrValues[columnIndex];
+
+        var sortedArray = [];
+        for (var i = 0; i < array.length; ++i) {
+            sortedArray.push(array[i]);
+        }
+
+        if (sortedArray) {
+            sortedArray.sort(function (a, b) { return b - a }); // sort numerically and descending
+            return sortedArray[0];
+        }
+        return null;
     }
 
     get(attribute: string) {
-        return this.values[attribute];
+        var columnIndex = this.columnNames.indexOf(attribute);
+        if (columnIndex != -1)
+            return this.attrValues[columnIndex];
+        return null;
     }
 }
 
@@ -95,11 +156,13 @@ class Attributes {
 interface Application {
     setDataSet(dataSet: DataSet);
     resize(width: number, height: number);
+    applyFilter(filteredIDs: Array<number>);
 }
 
 class DummyApp implements Application {
     setDataSet() { }
     resize() { }
+    applyFilter() { }
 }
 
 // The loop class can be used to run applications that aren't event-based
@@ -229,8 +292,28 @@ $('#load-example-data').button().click(function () {
     $.get('data/attributes1.txt', function (text) {
         parseAttributes(text, dataSets[0]);
         $('#d1-att').css({ color: 'green' });
+
+        setupCrossFilter(dataSets[0].attributes);
     });
 });
+
+$('#button-apply-filter').button().click(function () {
+    if (!dataSets[0].attributes.filteredRecords) return;
+
+    var fRecords = dataSets[0].attributes.filteredRecords;
+    var idArray = new Array();
+
+    for (var i = 0; i < fRecords.length; ++i) {
+        var id = fRecords[i]["index"];
+        if (id) idArray.push(id);
+    } 
+
+    if (apps[0]) apps[0].applyFilter(idArray);
+    if (apps[1]) apps[1].applyFilter(idArray);
+    if (apps[2]) apps[2].applyFilter(idArray);
+    if (apps[3]) apps[3].applyFilter(idArray);
+});
+
 
 // Shorten the names of the views - they are referenced quite often
 var tl_view = '#view-top-left';
@@ -631,3 +714,119 @@ function parseAttributes(text: string, dataSet: DataSet) {
     dataSet.attributes = new Attributes(text);
     dataSet.notifyAttributes();
 }
+
+// this function assumes the columns of the attributes are known
+function setupCrossFilter(attrs: Attributes) {
+    if (!attrs) return;
+
+    // put attributes into an object array; round the attribute values for grouping in crossfilter
+    var objectArray = new Array();
+    for (var i = 0; i < attrs.numRecords; ++i) {
+        // create an object for each record:
+        var object = new Object();
+        object["index"] = i;
+
+        for (var j = 0; j < attrs.columnNames.length; ++j) {
+            //object[attrs.columnNames[j]] = attrs.getValue(attrs.columnNames[j], i);
+
+            var attrValue: number;
+            if (j == 1) {
+                attrValue = attrs.getValue(j, i);
+            }
+            else if (j == 3) {
+                attrValue = attrs.getValue(j, i);
+                attrValue = Math.round(attrValue / 20) * 20;
+            }
+            else {
+                attrValue = attrs.getValue(j, i);
+                attrValue = parseFloat(attrValue.toFixed(2));
+            }
+
+            object[attrs.columnNames[j]] = attrValue;
+
+        }
+
+        objectArray.push(object);
+    }
+
+    // convert the object array to json format
+    var json = JSON.parse(JSON.stringify(objectArray));
+    //console.log(json);
+
+    // create crossfilter
+    var cfilter = crossfilter(json);
+    var totalReadings = cfilter.size();
+    var all = cfilter.groupAll();
+
+    var dimArray = new Array();
+
+    // create a data count widget
+    // once created data count widget will automatically update the text content of the following elements under the parent element.
+    // ".total-count" - total number of records
+    // ".filter-count" - number of records matched by the current filters
+    dc.dataCount(".dc-data-count")
+        .dimension(cfilter)
+        .group(all);
+
+
+
+    // create the charts 
+    for (var j = 0; j < attrs.columnNames.length; ++j) {
+
+        var chart = dc.barChart("#barChart" + j);
+
+        var columnName = attrs.columnNames[j];
+        var minValue = attrs.getMin(j);
+        var maxValue = attrs.getMax(j);
+
+        var dim = cfilter.dimension(function (d) { return d[columnName]; });
+        dimArray.push(dim);
+        var group = dim.group().reduceCount(function (d) { return d[columnName]; });
+
+        if (j == 1) {           
+            chart
+                .width(300)
+                .height(150)
+                .dimension(dim)
+                .group(group)
+                .x(d3.scale.linear().domain([0, 10]))
+                .xAxisLabel(columnName)
+                .centerBar(true)
+                .on("filtered", filtered)
+        }
+        else {
+            chart
+                .gap(5)
+                .width(300)
+                .height(150)
+                .dimension(dim)
+                .group(group)
+                .x(d3.scale.linear().domain([minValue, maxValue]))
+                .xAxisLabel(columnName)
+                .xUnits(function () { return 25; })               
+                .centerBar(true)
+                .on("filtered", filtered)
+                .xAxis().ticks(6);
+        }
+    }
+
+	// keep track of total readings
+	d3.select("#total").text(totalReadings);
+
+    // listener
+    function filtered() {
+        //console.log("filter event...");
+
+        dataSets[0].attributes.filteredRecords = dimArray[0].top(Number.POSITIVE_INFINITY);
+
+        if (dataSets[0].attributes.filteredRecords) {
+            console.log("count: " + dataSets[0].attributes.filteredRecords.length);
+        }
+
+        $('#button-apply-filter').button({ disabled: false });
+    }
+
+    // render all charts
+    dc.renderAll();
+}
+

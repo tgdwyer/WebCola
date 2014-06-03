@@ -46,6 +46,7 @@ class InputTarget {
     leapZCallback;
 
     mouseDragCallback;
+    mouseRightClickCallback;
 
     // Accepts the CSS ID of the div that is to represent the input target, and the extra borders
     // which describe where in the div the region of interest is (and where the coordinates should be scaled around)
@@ -77,6 +78,10 @@ class InputTarget {
 
     regMouseDragCallback(callback: (dx:number, dy:number) => void) {
         this.mouseDragCallback = callback;
+    }
+
+    regMouseRightClickCallback(callback: (x: number, y: number) => void) {
+        this.mouseRightClickCallback = callback;
     }
 
     // Return the pointer coordinates within the input target as a pair (x, y) E [-1, 1]x[-1, 1] as they lie within the target's borders
@@ -125,6 +130,8 @@ class InputTargetManager {
     onMouseDownPosition = new THREE.Vector2();
     mouseDownCallback;
 
+    rightClickLabel;
+    rightClickLabelAppended: boolean = false;
     regMouseDownCallback(callback: (x:number, y:number) => number) {
         this.mouseDownCallback = callback;
     }
@@ -188,6 +195,11 @@ class InputTargetManager {
 
 
         document.addEventListener('mousedown', (event) => {
+            if (this.rightClickLabel && this.rightClickLabelAppended) {
+                document.body.removeChild(this.rightClickLabel);
+                this.rightClickLabelAppended = false;
+            }
+
             var viewID = this.mouseDownCallback(event.clientX, event.clientY);
 
             if (viewID == this.activeTarget) {
@@ -199,6 +211,40 @@ class InputTargetManager {
                 this.onMouseDownPosition.x = event.clientX;
                 this.onMouseDownPosition.y = event.clientY;
             }
+        }, false);
+
+        document.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+
+            var record: string;
+            var x, y;
+
+            var it = this.inputTargets[this.activeTarget];
+            if (it) {
+                x = this.mouse.x;
+                y = this.mouse.y;
+
+                var callback = it.mouseRightClickCallback;
+                if (callback) record = callback(x, y);
+            }
+
+            if (record) {
+                this.rightClickLabel = document.createElement('div');
+                this.rightClickLabel.style.position = 'absolute';
+                this.rightClickLabel.style.zIndex = '1';    
+                this.rightClickLabel.style.backgroundColor = '#feeebd'; // the color of the control panel
+                var s = record.replace(/;/g, '<br />');
+                this.rightClickLabel.innerHTML = s;
+                this.rightClickLabel.style.left = x + 'px';
+                this.rightClickLabel.style.top = y + 'px';
+                this.rightClickLabel.style.padding = '5px';
+                this.rightClickLabel.style.borderRadius = '5px';
+
+                document.body.appendChild(this.rightClickLabel);
+                this.rightClickLabelAppended = true;
+            }
+
+            return false; // disable the context menu
         }, false);
 
         document.addEventListener('mouseup', (event) => {
