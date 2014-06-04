@@ -71,6 +71,7 @@ class Attributes {
     numRecords: number;
 
     filteredRecords: Array<number>;
+    filteredRecordsHighlightChanged: boolean = false;
 
     constructor(text: string) {
         var lines = text.split(String.fromCharCode(13)); // Lines delimited by carriage returns...
@@ -156,8 +157,9 @@ class Attributes {
 interface Application {
     setDataSet(dataSet: DataSet);
     resize(width: number, height: number);
-    applyFilter(filteredIDs: Array<number>);
+    applyFilter(filteredIDs: number[]);
     setNodeSizeOrColor(sizeOrColor: string, attribute: string);
+    highlightSelectedNodes(filteredIDs: number[]);
 }
 
 class DummyApp implements Application {
@@ -165,6 +167,7 @@ class DummyApp implements Application {
     resize() { }
     applyFilter() { }
     setNodeSizeOrColor() { }
+    highlightSelectedNodes() { }
 }
 
 // The loop class can be used to run applications that aren't event-based
@@ -310,13 +313,15 @@ $('#button-apply-filter').button().click(function () {
 
     for (var i = 0; i < fRecords.length; ++i) {
         var id = fRecords[i]["index"];
-        if (id) idArray.push(id);
+        idArray.push(id);
     } 
 
     if (apps[0]) apps[0].applyFilter(idArray);
     if (apps[1]) apps[1].applyFilter(idArray);
     if (apps[2]) apps[2].applyFilter(idArray);
     if (apps[3]) apps[3].applyFilter(idArray);
+
+    //setTimeout(highlightSelectedNodes, 5000);
 });
 
 $('#button-set-scale-color').button().click(function () {
@@ -387,7 +392,34 @@ function getActiveTargetUnderMouse(x: number, y: number) {
     return id;
 }
 
+function highlightSelectedNodes() {
+    if (!dataSets[0].attributes) return;
+
+    if (dataSets[0].attributes.filteredRecordsHighlightChanged == true) {
+        dataSets[0].attributes.filteredRecordsHighlightChanged = false;
+
+        if (!dataSets[0].attributes.filteredRecords) return;
+
+        var fRecords = dataSets[0].attributes.filteredRecords;
+        var idArray = new Array();
+
+        // if all the nodes have been selected, cancel the highlight
+        if (fRecords.length < dataSets[0].attributes.numRecords) {
+            for (var i = 0; i < fRecords.length; ++i) {
+                var id = fRecords[i]["index"];
+                idArray.push(id);
+            }
+        }
+
+        if (apps[0]) apps[0].highlightSelectedNodes(idArray);
+        if (apps[1]) apps[1].highlightSelectedNodes(idArray);
+        if (apps[2]) apps[2].highlightSelectedNodes(idArray);
+        if (apps[3]) apps[3].highlightSelectedNodes(idArray);
+    }
+}
+
 input.regMouseDownCallback(getActiveTargetUnderMouse);
+input.regMouseUpCallback(highlightSelectedNodes);
 
 // Set up selectability
 var selectTLView = function () {
@@ -847,6 +879,7 @@ function setupCrossFilter(attrs: Attributes) {
         //console.log("filter event...");
 
         dataSets[0].attributes.filteredRecords = dimArray[0].top(Number.POSITIVE_INFINITY);
+        dataSets[0].attributes.filteredRecordsHighlightChanged = true;
 
         if (dataSets[0].attributes.filteredRecords) {
             console.log(fcount + "). count: " + dataSets[0].attributes.filteredRecords.length);

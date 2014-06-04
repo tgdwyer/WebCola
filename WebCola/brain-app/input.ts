@@ -129,11 +129,17 @@ class InputTargetManager {
     isMouseDown: boolean = false;
     onMouseDownPosition = new THREE.Vector2();
     mouseDownCallback;
+    mouseUpCallback;
 
     rightClickLabel;
     rightClickLabelAppended: boolean = false;
+
     regMouseDownCallback(callback: (x:number, y:number) => number) {
         this.mouseDownCallback = callback;
+    }
+
+    regMouseUpCallback(callback: () => void) {
+        this.mouseUpCallback = callback;
     }
 
     // Accepts the CSS IDs of each of the divs that represent an input target, as well as an object that implements the interface for a Leap motion pointer
@@ -249,6 +255,8 @@ class InputTargetManager {
 
         document.addEventListener('mouseup', (event) => {
             this.isMouseDown = false;
+
+            setTimeout(this.mouseUpCallback, 200);
         }, false);
 
         document.addEventListener('mousemove', (event) => {

@@ -352,7 +352,7 @@ class Brain3DApp implements Application, Loopable {
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
     }
 
-    applyFilter(filteredIDs: Array<number>) {
+    applyFilter(filteredIDs: number[]) {
         if (!this.dataSet || !this.dataSet.attributes) return;
 
         console.log("app id: " + this.id + "; count: " + filteredIDs.length);   
@@ -360,6 +360,14 @@ class Brain3DApp implements Application, Loopable {
         this.physioGraph.visibleNodeIDs = filteredIDs;
         this.physioGraph.applyNodeFiltering();
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+    }
+
+    highlightSelectedNodes(filteredIDs: number[]) {
+        if (!this.dataSet || !this.dataSet.attributes) return;
+
+        console.log("app id: " + this.id + "; count: " + filteredIDs.length);
+
+        this.physioGraph.highlightSelectedNodes(filteredIDs);
     }
 
     setNodeSizeOrColor(sizeOrColor: string, attribute: string) {
@@ -396,19 +404,27 @@ class Brain3DApp implements Application, Loopable {
             var minColor = "yellow";
             var maxColor = "red";
 
-            if (max / min > 10) {
-                var colorMap = d3.scale.linear().domain([Math.log(min), Math.log(max)]).range([minColor, maxColor]);
-                colorArray = attrArray.map((value: number) => {
-                    var str = colorMap(Math.log(value)).replace("#", "0x");
+            if (attribute == "module_id") {
+                colorArray = this.dataSet.attributes.get('module_id').map((group: number) => {
+                    var str = this.d3ColorSelector(group).replace("#", "0x");
                     return parseInt(str);
                 });
             }
             else {
-                var colorMap = d3.scale.linear().domain([min, max]).range([minColor, maxColor]);
-                colorArray = attrArray.map((value: number) => {
-                    var str = colorMap(value).replace("#", "0x");
-                    return parseInt(str);
-                });
+                if (max / min > 10) {
+                    var colorMap = d3.scale.linear().domain([Math.log(min), Math.log(max)]).range([minColor, maxColor]);
+                    colorArray = attrArray.map((value: number) => {
+                        var str = colorMap(Math.log(value)).replace("#", "0x");
+                        return parseInt(str);
+                    });
+                }
+                else {
+                    var colorMap = d3.scale.linear().domain([min, max]).range([minColor, maxColor]);
+                    colorArray = attrArray.map((value: number) => {
+                        var str = colorMap(value).replace("#", "0x");
+                        return parseInt(str);
+                    });
+                }
             }
 
             if (!colorArray) return;
@@ -482,8 +498,9 @@ class Brain3DApp implements Application, Loopable {
 
         // Set up the node colourings
         this.nodeColourings = this.dataSet.attributes.get('module_id').map((group: number) => {
-            var str = this.d3ColorSelector(group).replace("#", "0x");
-            return parseInt(str);
+            //var str = this.d3ColorSelector(group).replace("#", "0x");
+            //return parseInt(str);
+            return 0xd3d3d3;
         });
 
         // Set up loop
@@ -606,6 +623,7 @@ class Graph {
     nodeMeshes: any[];
     nodeLabelList: any[];
     nodeDefaultColor: number[];
+    nodeCurrentColor: number[];
 
     edgeMatrix: any[][];
     edgeList: Edge[] = [];
@@ -625,6 +643,7 @@ class Graph {
         this.nodeMeshes = Array(adjMatrix.length);
         this.nodeLabelList = Array(adjMatrix.length);
         this.nodeDefaultColor = nodeColourings.slice(0); // clone the array
+        this.nodeCurrentColor = nodeColourings.slice(0); // clone the array
 
         for (var i = 0; i < adjMatrix.length; ++i) {
             var sphere = this.nodeMeshes[i] = new THREE.Mesh(
@@ -737,6 +756,7 @@ class Graph {
         }
     }
 
+    // used by physioGraph
     applyNodeFiltering() {
         for (var i = 0; i < this.nodeMeshes.length; ++i) {
             this.rootObject.remove(this.nodeMeshes[i]);
@@ -751,6 +771,7 @@ class Graph {
         }
     }
 
+    // used by colaGraph
     setNodeVisibilities(visArray: boolean[]) {
         for (var i = 0; i < visArray.length; ++i) {
             if (visArray[i]) {
@@ -768,6 +789,17 @@ class Graph {
             }
             else {
                 this.rootObject.remove(this.nodeMeshes[i]);
+            }
+        }
+    }
+
+    highlightSelectedNodes(filteredIDs: number[]) {
+        for (var i = 0; i < this.nodeMeshes.length; ++i) {
+            if (filteredIDs.indexOf(i) == -1) {
+                this.nodeMeshes[i].material.color.setHex(this.nodeCurrentColor[i]);
+            }
+            else {
+                this.nodeMeshes[i].material.color.setHex(0xFFFF00); // highlight color
             }
         }
     }
@@ -816,6 +848,8 @@ class Graph {
     }
 
     setDefaultNodeColor() {
+        this.nodeCurrentColor = this.nodeDefaultColor.slice(0);
+
         for (var i = 0; i < this.nodeMeshes.length; ++i) {
             this.nodeMeshes[i].material.color.setHex(this.nodeDefaultColor[i]);
         }
@@ -836,6 +870,8 @@ class Graph {
     setNodesColor(colorArray: number[]) {
         if (!colorArray) return;
         if (colorArray.length != this.nodeMeshes.length) return;
+
+        this.nodeCurrentColor = colorArray.slice(0); // clone the array
 
         for (var i = 0; i < this.nodeMeshes.length; ++i) {
             this.nodeMeshes[i].material.color.setHex(colorArray[i]);
