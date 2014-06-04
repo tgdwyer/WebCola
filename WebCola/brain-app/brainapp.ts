@@ -331,6 +331,17 @@ $('#button-set-scale-color').button().click(function () {
     }
 });
 
+$('#node-size-color-select').on('change', function () {
+    var value = $('#node-size-color-select').val();
+
+    if (value == "node-default") {
+        $('#attribute-select').prop("disabled", "disabled");    
+    }
+    else {
+        $('#attribute-select').prop('disabled', false);
+    }
+});
+
 
 // Shorten the names of the views - they are referenced quite often
 var tl_view = '#view-top-left';
@@ -732,6 +743,7 @@ function parseAttributes(text: string, dataSet: DataSet) {
     dataSet.notifyAttributes();
 }
 
+var fcount = 0;
 // this function assumes the columns of the attributes are known
 function setupCrossFilter(attrs: Attributes) {
     if (!attrs) return;
@@ -837,7 +849,8 @@ function setupCrossFilter(attrs: Attributes) {
         dataSets[0].attributes.filteredRecords = dimArray[0].top(Number.POSITIVE_INFINITY);
 
         if (dataSets[0].attributes.filteredRecords) {
-            console.log("count: " + dataSets[0].attributes.filteredRecords.length);
+            console.log(fcount + "). count: " + dataSets[0].attributes.filteredRecords.length);
+            fcount++;
         }
 
         $('#button-apply-filter').button({ disabled: false });

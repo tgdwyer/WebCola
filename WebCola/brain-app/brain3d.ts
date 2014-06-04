@@ -377,7 +377,7 @@ class Brain3DApp implements Application, Loopable {
 
         if (sizeOrColor == "node-size") {
             var scaleArray: number[];
-            
+
             if (max / min > 10) {
                 scaleArray = attrArray.map((value: number) => { return Math.log(value) / Math.log(min); });
             }
@@ -415,6 +415,14 @@ class Brain3DApp implements Application, Loopable {
 
             this.physioGraph.setNodesColor(colorArray);
             this.colaGraph.setNodesColor(colorArray);
+        }
+        else if (sizeOrColor == "node-default") {
+            // set default node color and scale
+            this.physioGraph.setDefaultNodeColor();
+            this.colaGraph.setDefaultNodeColor();
+
+            this.physioGraph.setDefaultNodeScale();
+            this.colaGraph.setDefaultNodeScale();
         }
     }
 
@@ -597,6 +605,7 @@ class Graph {
 
     nodeMeshes: any[];
     nodeLabelList: any[];
+    nodeDefaultColor: number[];
 
     edgeMatrix: any[][];
     edgeList: Edge[] = [];
@@ -615,6 +624,7 @@ class Graph {
         // Create all the node meshes
         this.nodeMeshes = Array(adjMatrix.length);
         this.nodeLabelList = Array(adjMatrix.length);
+        this.nodeDefaultColor = nodeColourings.slice(0); // clone the array
 
         for (var i = 0; i < adjMatrix.length; ++i) {
             var sphere = this.nodeMeshes[i] = new THREE.Mesh(
@@ -796,6 +806,18 @@ class Graph {
             if (this.nodeLabelList[i]) {
                 this.parentObject.remove(this.nodeLabelList[i]);
             }
+        }
+    }
+
+    setDefaultNodeScale() {
+        for (var i = 0; i < this.nodeMeshes.length; ++i) {
+            this.nodeMeshes[i].scale.set(1, 1, 1);
+        }
+    }
+
+    setDefaultNodeColor() {
+        for (var i = 0; i < this.nodeMeshes.length; ++i) {
+            this.nodeMeshes[i].material.color.setHex(this.nodeDefaultColor[i]);
         }
     }
 
