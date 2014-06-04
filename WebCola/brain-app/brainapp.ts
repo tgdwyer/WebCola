@@ -418,7 +418,7 @@ function highlightSelectedNodes() {
     }
 }
 
-input.regMouseDownCallback(getActiveTargetUnderMouse);
+input.regMouseLocationCallback(getActiveTargetUnderMouse);
 input.regMouseUpCallback(highlightSelectedNodes);
 
 // Set up selectability

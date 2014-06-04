@@ -128,6 +128,14 @@ class Brain3DApp implements Application, Loopable {
             return record;
         });
 
+        this.input.regMouseWheelCallback((delta: number) => {
+            var z = 1.0;
+            z += delta;
+
+            this.camera.fov *= z;
+            this.camera.updateProjectionMatrix();
+        });
+
         var varShowNetwork = () => { this.showNetwork(); }
         var varEdgesThicknessByWeightedOnChange = (b: boolean) => { this.edgesThicknessByWeightedOnChange(b); }
         var varAllLabelsOnChange = (b: boolean) => { this.allLabelsOnChange(b); }
