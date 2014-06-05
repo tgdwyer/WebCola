@@ -64,6 +64,7 @@ class Brain3DApp implements Application, Loopable {
 
     defaultFov: number;
     fovZoomRatio = 1;
+    currentViewWidth: number; 
 
     // Constants
     nearClip = 1;
@@ -125,8 +126,13 @@ class Brain3DApp implements Application, Loopable {
             }
             // mouse right button: pan
             else if (mode == 3) {
-                var pixelDistanceRatio = 1.6; // when this.camera.fov = 25
-                pixelDistanceRatio /= (this.camera.fov / 25);
+                var pixelDistanceRatio = 1.6; // with: defaultCameraFov = 25; defaultViewWidth = 800;
+                var defaultCameraFov = 25
+                var defaultViewWidth = 800;
+
+                pixelDistanceRatio /= (this.camera.fov / defaultCameraFov);
+                pixelDistanceRatio *= (this.currentViewWidth / defaultViewWidth);
+
                 this.brainObject.position.set(this.brainObject.position.x + dx / pixelDistanceRatio, this.brainObject.position.y - dy / pixelDistanceRatio, this.brainObject.position.z);          
                 this.colaObject.position.set(this.colaObject.position.x + dx / pixelDistanceRatio, this.colaObject.position.y - dy / pixelDistanceRatio, this.colaObject.position.z);   
                 
@@ -150,7 +156,7 @@ class Brain3DApp implements Application, Loopable {
             this.camera.fov *= z;
             this.fovZoomRatio = this.camera.fov / this.defaultFov;
             this.camera.updateProjectionMatrix();
-            console.log("this.camera.fov: " + this.camera.fov);
+            //console.log("this.camera.fov: " + this.camera.fov);
         });
 
         var varShowNetwork = () => { this.showNetwork(); }
@@ -474,6 +480,7 @@ class Brain3DApp implements Application, Loopable {
     resize(width: number, height: number) {
         // Resize the renderer
         this.renderer.setSize(width, height - sliderSpace);
+        this.currentViewWidth = width;
 
         // Calculate the aspect ratio
         var aspect = width / (height - sliderSpace);
@@ -487,6 +494,7 @@ class Brain3DApp implements Application, Loopable {
 
         this.camera.fov = this.defaultFov * this.fovZoomRatio;       
         this.camera.updateProjectionMatrix();
+        //console.log("this.camera.fov: " + this.camera.fov);
 
         // Work out how far away the camera needs to be
         var distanceByH = (widthInCamera / 2) / Math.tan(horizontalFov / 2);
