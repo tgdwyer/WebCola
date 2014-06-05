@@ -77,7 +77,7 @@ class InputTarget {
         this.leapZCallback = callback;
     }
 
-    regMouseDragCallback(callback: (dx:number, dy:number) => void) {
+    regMouseDragCallback(callback: (dx:number, dy:number, mode: number) => void) {
         this.mouseDragCallback = callback;
     }
 
@@ -131,6 +131,7 @@ class InputTargetManager {
     fingerPositions;
     fpi = 0;
 
+    mouseDownMode: number;
     isMouseDown: boolean = false;
     onMouseDownPosition = new THREE.Vector2();
     mouseLocationCallback;
@@ -211,6 +212,8 @@ class InputTargetManager {
                 this.rightClickLabelAppended = false;
             }
 
+            this.mouseDownMode = event.which;
+
             var viewID = this.mouseLocationCallback(event.clientX, event.clientY);
 
             if (viewID == this.activeTarget) {
@@ -289,7 +292,7 @@ class InputTargetManager {
                     var dy = event.clientY - this.mouse.y;
 
                     var callback = it.mouseDragCallback;
-                    if (callback) callback(dx, dy);
+                    if (callback) callback(dx, dy, this.mouseDownMode);
                 }
             }
 

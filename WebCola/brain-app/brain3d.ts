@@ -62,6 +62,8 @@ class Brain3DApp implements Application, Loopable {
     lastSliderValue = 0;
     surfaceLoaded: boolean = false;
 
+    defaultFov: number;
+
     // Constants
     nearClip = 1;
     farClip = 2000;
@@ -110,13 +112,25 @@ class Brain3DApp implements Application, Loopable {
             this.colaObject.rotation.set(this.colaObject.rotation.x - leapRotationSpeed * mm, this.colaObject.rotation.y, this.colaObject.rotation.z);
         });
 
-        this.input.regMouseDragCallback((dx: number, dy: number) => {
-            var pixelAngleRatio = 50;
-            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + dx / pixelAngleRatio, this.brainObject.rotation.z);
-            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + dx / pixelAngleRatio, this.colaObject.rotation.z);
+        this.input.regMouseDragCallback((dx: number, dy: number, mode: number) => {
+            // mouse left button: rotation
+            if (mode == 1) {
+                var pixelAngleRatio = 50;
+                this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + dx / pixelAngleRatio, this.brainObject.rotation.z);
+                this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + dx / pixelAngleRatio, this.colaObject.rotation.z);
 
-            this.brainObject.rotation.set(this.brainObject.rotation.x + dy / pixelAngleRatio, this.brainObject.rotation.y, this.brainObject.rotation.z);
-            this.colaObject.rotation.set(this.colaObject.rotation.x + dy / pixelAngleRatio, this.colaObject.rotation.y, this.colaObject.rotation.z);
+                this.brainObject.rotation.set(this.brainObject.rotation.x + dy / pixelAngleRatio, this.brainObject.rotation.y, this.brainObject.rotation.z);
+                this.colaObject.rotation.set(this.colaObject.rotation.x + dy / pixelAngleRatio, this.colaObject.rotation.y, this.colaObject.rotation.z);                
+            }
+            // mouse right button: pan
+            else if (mode == 3) {
+                var pixelDistanceRatio = 1.6; // when this.camera.fov = 25
+                pixelDistanceRatio /= (this.camera.fov / 25);
+                this.brainObject.position.set(this.brainObject.position.x + dx / pixelDistanceRatio, this.brainObject.position.y - dy / pixelDistanceRatio, this.brainObject.position.z);          
+                this.colaObject.position.set(this.colaObject.position.x + dx / pixelDistanceRatio, this.colaObject.position.y - dy / pixelDistanceRatio, this.colaObject.position.z);   
+                
+                //console.log(this.brainObject.position.x + "," + this.brainObject.position.y + "," + this.brainObject.position.z);                         
+            }
         });
 
         this.input.regMouseRightClickCallback((x: number, y: number) => {
@@ -134,6 +148,7 @@ class Brain3DApp implements Application, Loopable {
 
             this.camera.fov *= z;
             this.camera.updateProjectionMatrix();
+            console.log("this.camera.fov: " + this.camera.fov);
         });
 
         var varShowNetwork = () => { this.showNetwork(); }
@@ -240,6 +255,8 @@ class Brain3DApp implements Application, Loopable {
     }
 
     showNetwork() {
+        if (!this.brainObject || !this.colaObject) return;
+
         if (!this.transitionInProgress) {
             // Leave *showingCola* on permanently after first turn-on
             this.showingCola = true;
@@ -321,8 +338,10 @@ class Brain3DApp implements Application, Loopable {
             }
 
             // Set up a coroutine to do the animation
-            var origin = new THREE.Vector3(-this.graphOffset, 0, 0);
-            var target = new THREE.Vector3(this.graphOffset, 0, 0);
+            //var origin = new THREE.Vector3(-this.graphOffset, 0, 0);
+            //var target = new THREE.Vector3(this.graphOffset, 0, 0);
+            var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
+            var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
             this.colaObject.position = origin;
             this.colaGraph.setNodePositions(this.commonData.brainCoords); // Move the Cola graph nodes to their starting position
             this.colaGraph.setVisible(true);
@@ -460,6 +479,8 @@ class Brain3DApp implements Application, Loopable {
         var verticalFov = Math.atan(height / window.outerHeight); // Scale the vertical fov with the vertical height of the window (up to 45 degrees)
         var horizontalFov = verticalFov * aspect;
         this.camera.fov = verticalFov * 180 / Math.PI;
+        this.defaultFov = this.camera.fov;
+        //console.log("resize; this.camera.fov: " + this.camera.fov);
         this.camera.updateProjectionMatrix();
         // Work out how far away the camera needs to be
         var distanceByH = (widthInCamera / 2) / Math.tan(horizontalFov / 2);
