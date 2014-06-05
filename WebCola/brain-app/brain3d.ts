@@ -63,6 +63,7 @@ class Brain3DApp implements Application, Loopable {
     surfaceLoaded: boolean = false;
 
     defaultFov: number;
+    fovZoomRatio = 1;
 
     // Constants
     nearClip = 1;
@@ -147,6 +148,7 @@ class Brain3DApp implements Application, Loopable {
             z += delta;
 
             this.camera.fov *= z;
+            this.fovZoomRatio = this.camera.fov / this.defaultFov;
             this.camera.updateProjectionMatrix();
             console.log("this.camera.fov: " + this.camera.fov);
         });
@@ -472,19 +474,24 @@ class Brain3DApp implements Application, Loopable {
     resize(width: number, height: number) {
         // Resize the renderer
         this.renderer.setSize(width, height - sliderSpace);
+
         // Calculate the aspect ratio
         var aspect = width / (height - sliderSpace);
         this.camera.aspect = aspect;
+
         // Calculate the FOVs
         var verticalFov = Math.atan(height / window.outerHeight); // Scale the vertical fov with the vertical height of the window (up to 45 degrees)
         var horizontalFov = verticalFov * aspect;
-        this.camera.fov = verticalFov * 180 / Math.PI;
-        this.defaultFov = this.camera.fov;
-        //console.log("resize; this.camera.fov: " + this.camera.fov);
+
+        this.defaultFov = verticalFov * 180 / Math.PI;
+
+        this.camera.fov = this.defaultFov * this.fovZoomRatio;       
         this.camera.updateProjectionMatrix();
+
         // Work out how far away the camera needs to be
         var distanceByH = (widthInCamera / 2) / Math.tan(horizontalFov / 2);
         var distanceByV = (heightInCamera / 2) / Math.tan(verticalFov / 2);
+
         // Select the maximum distance of the two
         this.camera.position.set(0, 0, Math.max(distanceByH, distanceByV));
     }
