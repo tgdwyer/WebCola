@@ -135,8 +135,8 @@ class Brain3DApp implements Application, Loopable {
 
                 this.brainObject.position.set(this.brainObject.position.x + dx / pixelDistanceRatio, this.brainObject.position.y - dy / pixelDistanceRatio, this.brainObject.position.z);          
                 this.colaObject.position.set(this.colaObject.position.x + dx / pixelDistanceRatio, this.colaObject.position.y - dy / pixelDistanceRatio, this.colaObject.position.z);   
-                
-                //console.log(this.brainObject.position.x + "," + this.brainObject.position.y + "," + this.brainObject.position.z);                         
+
+                console.log(this.brainObject.rotation.x + "," + this.brainObject.rotation.y + "," + this.brainObject.rotation.z);                         
             }
         });
 
@@ -147,6 +147,19 @@ class Brain3DApp implements Application, Loopable {
                 record = this.dataSet.attributes.getRecord(node.id);
             }
             return record;
+        });
+
+        this.input.regMouseDoubleClickCallback(() => {
+            this.camera.fov = this.defaultFov;
+            this.camera.updateProjectionMatrix();
+
+            this.brainObject.position = new THREE.Vector3(-this.graphOffset, 0, 0);
+            this.brainObject.rotation.set(0, 0, 0);
+
+            if (this.showingCola) {
+                this.colaObject.position = new THREE.Vector3(this.graphOffset, 0, 0);
+                this.colaObject.rotation.set(0, 0, 0);
+            }         
         });
 
         this.input.regMouseWheelCallback((delta: number) => {

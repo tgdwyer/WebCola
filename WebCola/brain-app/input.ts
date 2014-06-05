@@ -48,6 +48,7 @@ class InputTarget {
     mouseDragCallback;
     mouseRightClickCallback;
     mouseWheelCallback;
+    mouseDoubleClickCallback;
 
     // Accepts the CSS ID of the div that is to represent the input target, and the extra borders
     // which describe where in the div the region of interest is (and where the coordinates should be scaled around)
@@ -87,6 +88,10 @@ class InputTarget {
 
     regMouseWheelCallback(callback: (delta: number) => void) {
         this.mouseWheelCallback = callback;
+    }
+
+    regMouseDoubleClickCallback(callback: () => void) {
+        this.mouseDoubleClickCallback = callback;
     }
 
     // Return the pointer coordinates within the input target as a pair (x, y) E [-1, 1]x[-1, 1] as they lie within the target's borders
@@ -265,6 +270,22 @@ class InputTargetManager {
             this.isMouseDown = false;
 
             setTimeout(this.mouseUpCallback, 200);
+        }, false);
+
+        document.addEventListener('dblclick', (event) => {
+            event.preventDefault();
+
+            var viewID = this.mouseLocationCallback(event.clientX, event.clientY);
+
+            if (viewID == this.activeTarget) {
+                var it = this.inputTargets[this.activeTarget];
+                if (it) {
+                    var callback = it.mouseDoubleClickCallback;
+                    if (callback) callback();
+
+                    clearSelection();
+                }
+            }
         }, false);
 
         document.addEventListener('mousewheel', (event) => {
@@ -546,4 +567,13 @@ function averageOfVectors(vectors, numVectors) {
         result[i] /= numVectors;
     }
     return result;
+}
+
+function clearSelection() {
+    if (document.selection && document.selection.empty) {
+        document.selection.empty();
+    } else if (window.getSelection) {
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+    }
 }

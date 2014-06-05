@@ -778,7 +778,7 @@ function parseAttributes(text: string, dataSet: DataSet) {
     dataSet.notifyAttributes();
 }
 
-var fcount = 0;
+//var fcount = 0;
 // this function assumes the columns of the attributes are known
 function setupCrossFilter(attrs: Attributes) {
     if (!attrs) return;
@@ -885,8 +885,8 @@ function setupCrossFilter(attrs: Attributes) {
         dataSets[0].attributes.filteredRecordsHighlightChanged = true;
 
         if (dataSets[0].attributes.filteredRecords) {
-            console.log(fcount + "). count: " + dataSets[0].attributes.filteredRecords.length);
-            fcount++;
+            //console.log(fcount + "). count: " + dataSets[0].attributes.filteredRecords.length);
+            //fcount++;
         }
 
         $('#button-apply-filter').button({ disabled: false });
