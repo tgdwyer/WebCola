@@ -115,7 +115,7 @@ class Brain3DApp implements Application, Loopable {
         });
 
         this.input.regMouseDragCallback((dx: number, dy: number, mode: number) => {
-            // mouse left button: rotation
+            // left button: rotation
             if (mode == 1) {
                 var pixelAngleRatio = 50;
                 this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + dx / pixelAngleRatio, this.brainObject.rotation.z);
@@ -124,7 +124,7 @@ class Brain3DApp implements Application, Loopable {
                 this.brainObject.rotation.set(this.brainObject.rotation.x + dy / pixelAngleRatio, this.brainObject.rotation.y, this.brainObject.rotation.z);
                 this.colaObject.rotation.set(this.colaObject.rotation.x + dy / pixelAngleRatio, this.colaObject.rotation.y, this.colaObject.rotation.z);                
             }
-            // mouse right button: pan
+            // right button: pan
             else if (mode == 3) {
                 var pixelDistanceRatio = 1.6; // with: defaultCameraFov = 25; defaultViewWidth = 800;
                 var defaultCameraFov = 25

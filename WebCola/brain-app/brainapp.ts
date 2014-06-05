@@ -473,6 +473,9 @@ $('#brain3d-icon-front').draggable(
             else if (model == 'icbm') {
                 file = 'BrainMesh_ICBM152.obj';
             }
+            else if (model == 'ch2_cerebellum') {
+                file = 'BrainMesh_Ch2withCerebellum.obj';
+            }
 
             loadBrainModel(file);
 
