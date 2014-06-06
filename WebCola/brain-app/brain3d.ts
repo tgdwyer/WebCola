@@ -150,6 +150,7 @@ class Brain3DApp implements Application, Loopable {
         });
 
         this.input.regMouseDoubleClickCallback(() => {
+            this.fovZoomRatio = 1;
             this.camera.fov = this.defaultFov;
             this.camera.updateProjectionMatrix();
 
@@ -695,7 +696,8 @@ class Graph {
     edgeList: Edge[] = [];
     visible: boolean = true;
 
-    visibleNodeIDs: Array<number>;
+    visibleNodeIDs: number[];
+    nodeHasNeighbors: boolean[]; // used for cola graph only
 
     edgeThicknessByWeighted: boolean = false;
     edgeColored: boolean = false;
@@ -840,6 +842,9 @@ class Graph {
 
     // used by colaGraph
     setNodeVisibilities(visArray: boolean[]) {
+        if (!visArray) return;
+        this.nodeHasNeighbors = visArray.slice(0);
+
         for (var i = 0; i < visArray.length; ++i) {
             if (visArray[i]) {
                 if (this.visibleNodeIDs) {
@@ -895,7 +900,30 @@ class Graph {
     showAllLabels() {
         for (var i = 0; i < this.nodeLabelList.length; ++i) {
             if (this.nodeLabelList[i]) {
-                this.parentObject.add(this.nodeLabelList[i]); 
+                //this.parentObject.add(this.nodeLabelList[i]);
+                
+                if (this.visibleNodeIDs && !this.nodeHasNeighbors) {
+                    if (this.visibleNodeIDs.indexOf(i) != -1) {
+                        this.parentObject.add(this.nodeLabelList[i]);
+                    }
+                }
+
+                if (!this.visibleNodeIDs && this.nodeHasNeighbors) {
+                    if (this.nodeHasNeighbors[i] == true) {
+                        this.parentObject.add(this.nodeLabelList[i]);
+                    }
+                }
+
+                if (this.visibleNodeIDs && this.nodeHasNeighbors) {
+                    if ((this.visibleNodeIDs.indexOf(i) != -1) && (this.nodeHasNeighbors[i] == true)) {
+                        this.parentObject.add(this.nodeLabelList[i]);
+                    }
+                }
+
+                if (!this.visibleNodeIDs && !this.nodeHasNeighbors) {
+                    this.parentObject.add(this.nodeLabelList[i]);
+                }
+                
             }
         }
     }
@@ -1101,7 +1129,7 @@ class Edge {
             if (sourceColor == targetColor) {
                 this.setColor(this.sourceNode.material.color.getHex());
             }
-            else if (((sourceColor / targetColor) > 0.95) && ((sourceColor / targetColor) < 1.05)) {
+            else if (((sourceColor / targetColor) > 0.95) && ((sourceColor / targetColor) < 1.05)) { // this line assume the color range is from yellow to red
                 this.setColor(this.sourceNode.material.color.getHex());
             }
             else {
