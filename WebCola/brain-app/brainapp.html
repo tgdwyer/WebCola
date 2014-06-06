@@ -2,6 +2,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <title>Brain Data Viewer</title>
+
+    <link rel="stylesheet" type="text/css" href="../extern/dc.css" />
     <style type="text/css">
         html, body {
             height: 100%;
@@ -176,7 +178,8 @@
         <ul>
             <li><a href="#tab-1">Data</a></li>
             <li><a href="#tab-2">Visualisations</a></li>
-            <li><a href="#tab-3">Help</a></li>
+            <li><a href="#tab-3">Attribute</a></li>
+            <!--<li><a href="#tab-4">Help</a></li>-->
         </ul>
         <div id="tab-1" class="tab">
             <div id="accordion">
@@ -244,6 +247,18 @@
             <div id="brain3d-icon-back" class="icon"></div>
         </div>
         <div id="tab-3" class="tab">
+            <div id="barChart0" class="chart"></div>
+            <div id="barChart1" class="chart"></div>
+            <div id="barChart2" class="chart"></div>
+            <div id="barChart3" class="chart"></div>
+            <div id="barChart4" class="chart"></div>
+            <div style='clear:both'></div> 	
+            <div class="dc-data-count">
+                <button id="button-apply-filter" style="font-size:10px;" disabled="true">Apply</button> <span class="filter-count"></span> selected out of <span class="total-count"></span> | <a href="javascript:dc.filterAll();
+				dc.renderAll();">Reset</a>
+            </div>
+        </div>
+        <!--div id="tab-4" class="tab">
             <h3>How to use this application</h3>
             <p>
                 In the data tab, select the data files from the local machine. In the visualisation tab,
@@ -270,7 +285,7 @@
                 There is very limited Leap Motion support available. You can pan your hand around to rotate the view,
                 and you can point at a node to enlarge it.
             </p>
-        </div>
+        </!--div-->
     </div>
 
     <div id="outer-view-panel">
@@ -302,6 +317,9 @@
     <script src="input.js"></script>
     <!-- Used for resource loading -->
     <script src="../extern/d3.v3.js"></script>
+
+    <script src="../extern/crossfilter.js"></script>
+    <script src="../extern/dc.js"></script>
 
     <script src="../cola.v3.min.js"></script>
     <script src="../src/descent.js"></script>

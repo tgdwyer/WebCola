@@ -117,8 +117,15 @@ class Brain3DApp implements Application, Loopable {
 
             this.brainObject.rotation.set(this.brainObject.rotation.x + dy / pixelAngleRatio, this.brainObject.rotation.y, this.brainObject.rotation.z);
             this.colaObject.rotation.set(this.colaObject.rotation.x + dy / pixelAngleRatio, this.colaObject.rotation.y, this.colaObject.rotation.z);
+        });
 
-            //console.log("dx: " + dx + "; dy: " + dy);
+        this.input.regMouseRightClickCallback((x: number, y: number) => {
+            var record;
+            var node = this.getNodeUnderPointer(this.input.localPointerPosition());
+            if (node) {
+                record = this.dataSet.attributes.getRecord(node.id);
+            }
+            return record;
         });
 
         var varShowNetwork = () => { this.showNetwork(); }
@@ -229,8 +236,14 @@ class Brain3DApp implements Application, Loopable {
             // Leave *showingCola* on permanently after first turn-on
             this.showingCola = true;
 
+            this.colaGraph.visibleNodeIDs = this.physioGraph.visibleNodeIDs;
+
+            //-------------------------------------------------------------------
             // Find the edges that have been selected after thresholding, and all the
             // nodes that have neighbours after the thresholding of the edges takes place.
+
+            // original:
+            /*
             var edges = [];
             var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
             for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
@@ -242,6 +255,31 @@ class Brain3DApp implements Application, Loopable {
                     }
                 }
             }
+            */
+
+            // new:
+            var edges = [];
+            var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
+            for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
+                for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
+                    if (this.filteredAdjMatrix[i][j] === 1) {
+                        if (this.physioGraph.visibleNodeIDs) {
+                            if ((this.physioGraph.visibleNodeIDs.indexOf(i) != -1) && (this.physioGraph.visibleNodeIDs.indexOf(j) != -1)) {
+                                edges.push({ source: i, target: j });
+                                hasNeighbours[i] = true;
+                                hasNeighbours[j] = true;
+                            }
+                        } else {
+                            edges.push({ source: i, target: j });
+                            hasNeighbours[i] = true;
+                            hasNeighbours[j] = true;
+                        }
+                    }
+                }
+            }
+
+            //-------------------------------------------------------------------
+
 
             this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
             this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
@@ -311,6 +349,16 @@ class Brain3DApp implements Application, Loopable {
         var percentile = numEdges * 100 / max;
         $('#percentile-' + this.id).get(0).textContent = percentile.toFixed(2);
         this.filteredAdjMatrix = this.adjMatrixFromEdgeCount(numEdges);
+        this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+    }
+
+    applyFilter(filteredIDs: Array<number>) {
+        if (!this.dataSet || !this.dataSet.attributes) return;
+
+        console.log("app id: " + this.id + "; count: " + filteredIDs.length);   
+
+        this.physioGraph.visibleNodeIDs = filteredIDs;
+        this.physioGraph.applyNodeFiltering();
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
     }
 
@@ -498,6 +546,8 @@ class Graph {
     edgeList: Edge[] = [];
     visible: boolean = true;
 
+    visibleNodeIDs: Array<number>;
+
     edgeThicknessByWeighted: boolean = false;
     allLabels: boolean = false;
 
@@ -621,12 +671,38 @@ class Graph {
         }
     }
 
+    applyNodeFiltering() {
+        for (var i = 0; i < this.nodeMeshes.length; ++i) {
+            this.rootObject.remove(this.nodeMeshes[i]);
+        }
+
+        if (this.visibleNodeIDs) {
+            for (var j = 0; j < this.visibleNodeIDs.length; ++j) {
+                var nodeID = this.visibleNodeIDs[j];
+
+                this.rootObject.add(this.nodeMeshes[nodeID]);
+            }
+        }
+    }
+
     setNodeVisibilities(visArray: boolean[]) {
         for (var i = 0; i < visArray.length; ++i) {
-            if (visArray[i])
-                this.rootObject.add(this.nodeMeshes[i]);
-            else
+            if (visArray[i]) {
+                if (this.visibleNodeIDs) {
+                    if (this.visibleNodeIDs.indexOf(i) != -1) {
+                        this.rootObject.add(this.nodeMeshes[i]);
+                    }
+                    else {
+                        this.rootObject.remove(this.nodeMeshes[i]);
+                    }
+                }
+                else {
+                    this.rootObject.add(this.nodeMeshes[i]);
+                }
+            }
+            else {
                 this.rootObject.remove(this.nodeMeshes[i]);
+            }
         }
     }
 
@@ -635,7 +711,18 @@ class Graph {
         for (var i = 0; i < len - 1; ++i) {
             for (var j = i + 1; j < len; ++j) {
                 var edge = this.edgeMatrix[i][j];
-                if (edge) edge.setVisible(visMatrix[i][j] === 1 ? true : false);
+
+                if (this.visibleNodeIDs) {
+                    if ((this.visibleNodeIDs.indexOf(i) == -1) || (this.visibleNodeIDs.indexOf(j) == -1)) {
+                        if (edge) edge.setVisible(false);
+                    }
+                    else {
+                        if (edge) edge.setVisible(visMatrix[i][j] === 1 ? true : false);
+                    }
+                }
+                else {
+                    if (edge) edge.setVisible(visMatrix[i][j] === 1 ? true : false);
+                }
             }
         }
     }
@@ -721,7 +808,8 @@ class Edge {
         this.shape = this.makeCylinder();
         parentObject.add(this.shape);
 
-        var w = (Math.ceil(weight * 10) - 6) * 0.5;
+        var w = (Math.ceil(weight * 10) - 6) * 0.5; // the edge scale is not proportional to edge weight
+        if (w < 0) w = 0;
         this.scaleWeighted += w; 
     }
 
