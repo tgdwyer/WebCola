@@ -1101,6 +1101,9 @@ class Edge {
             if (sourceColor == targetColor) {
                 this.setColor(this.sourceNode.material.color.getHex());
             }
+            else if (((sourceColor / targetColor) > 0.95) && ((sourceColor / targetColor) < 1.05)) {
+                this.setColor(this.sourceNode.material.color.getHex());
+            }
             else {
                 this.setColor(0xcfcfcf); // default edge color
             }
