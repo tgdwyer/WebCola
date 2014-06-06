@@ -136,7 +136,7 @@ class Brain3DApp implements Application, Loopable {
                 this.brainObject.position.set(this.brainObject.position.x + dx / pixelDistanceRatio, this.brainObject.position.y - dy / pixelDistanceRatio, this.brainObject.position.z);          
                 this.colaObject.position.set(this.colaObject.position.x + dx / pixelDistanceRatio, this.colaObject.position.y - dy / pixelDistanceRatio, this.colaObject.position.z);   
 
-                console.log(this.brainObject.rotation.x + "," + this.brainObject.rotation.y + "," + this.brainObject.rotation.z);                         
+                //console.log(this.brainObject.rotation.x + "," + this.brainObject.rotation.y + "," + this.brainObject.rotation.z);                         
             }
         });
 
@@ -174,6 +174,7 @@ class Brain3DApp implements Application, Loopable {
 
         var varShowNetwork = () => { this.showNetwork(); }
         var varEdgesThicknessByWeightedOnChange = (b: boolean) => { this.edgesThicknessByWeightedOnChange(b); }
+        var varEdgesColoredOnChange = (b: boolean) => { this.edgesColoredOnChange(b); }
         var varAllLabelsOnChange = (b: boolean) => { this.allLabelsOnChange(b); }
 
         this.input.regKeyDownCallback(' ', varShowNetwork);
@@ -190,6 +191,8 @@ class Brain3DApp implements Application, Loopable {
                 '" onchange="sliderChangeForID(' + this.id + ', this.value)" oninput="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/></input>').css({ 'width': '400px' }))
             .append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px' })
                 .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
+            .append($('<input type="checkbox" id="checkbox-edge-color-' + this.id + '" disabled="true">Colored Edge</input>').css({ 'width': '12px' })
+                .click(function () { varEdgesColoredOnChange($(this).is(":checked")); }))
             .append($('<input type="checkbox" id="checkbox-all-labels-' + this.id + '" disabled="true">All Labels</input>').css({ 'width': '12px' })
                 .click(function () { varAllLabelsOnChange($(this).is(":checked")); }))
             .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px' })
@@ -259,6 +262,11 @@ class Brain3DApp implements Application, Loopable {
     edgesThicknessByWeightedOnChange(b: boolean) {
         this.physioGraph.edgeThicknessByWeighted = b;
         this.colaGraph.edgeThicknessByWeighted = b;
+    }
+
+    edgesColoredOnChange(b: boolean) {
+        this.physioGraph.edgeColored = b;
+        this.colaGraph.edgeColored = b;
     }
 
     allLabelsOnChange(b: boolean) {
@@ -586,6 +594,7 @@ class Brain3DApp implements Application, Loopable {
         $('#button-show-network-' + this.id).prop('disabled', false);
         $('#checkbox-edges-thickness-by-weight-' + this.id).prop('disabled', false);
         $('#checkbox-all-labels-' + this.id).prop('disabled', false);
+        $('#checkbox-edge-color-' + this.id).prop('disabled', false);
     }
 
     // Create a matrix where a 1 in (i, j) means the edge between node i and node j is selected
@@ -689,6 +698,7 @@ class Graph {
     visibleNodeIDs: Array<number>;
 
     edgeThicknessByWeighted: boolean = false;
+    edgeColored: boolean = false;
     allLabels: boolean = false;
 
     constructor(parentObject, adjMatrix: any[][], nodeColourings: number[], weightMatrix: any[][]) {
@@ -721,7 +731,7 @@ class Graph {
             adjMatrix[i][i] = null;
             for (var j = i + 1; j < len; ++j) {
                 if (adjMatrix[i][j] === 1) {
-                    this.edgeList.push(adjMatrix[i][j] = adjMatrix[j][i] = new Edge(this.rootObject, this.nodeMeshes[i].position, this.nodeMeshes[j].position, weightMatrix[i][j])); // assume symmetric matrix
+                    this.edgeList.push(adjMatrix[i][j] = adjMatrix[j][i] = new Edge(this.rootObject, this.nodeMeshes[i], this.nodeMeshes[j], weightMatrix[i][j])); // assume symmetric matrix
                 } else {
                     adjMatrix[i][j] = adjMatrix[j][i] = null;
                 }
@@ -933,6 +943,20 @@ class Graph {
         for (var i = 0; i < this.nodeMeshes.length; ++i) {
             this.nodeMeshes[i].material.color.setHex(colorArray[i]);
         }
+        /*
+        // also set edge color:
+        for (var i = 0; i < this.edgeList.length; ++i) {
+            var edge = this.edgeList[i];
+            if (edge) {
+                var sourceColor = edge.sourceNode.material.color.getHex();
+                var targetColor = edge.targetNode.material.color.getHex();
+
+                if (sourceColor == targetColor) {
+                    edge.setColor(edge.sourceNode.material.color.getHex());
+                }
+            }
+        }
+        */
     }
 
     selectNode(id: number) {
@@ -964,7 +988,7 @@ class Graph {
             var edge = this.edgeMatrix[nodeID][j];
             if (edge) {
                 if (edge.visible == true) {
-                    edge.setColor(this.nodeMeshes[nodeID].material.color.getHex());
+                    //edge.setColor(this.nodeMeshes[nodeID].material.color.getHex());
                     edge.multiplyScale(2);
                 }
             }
@@ -976,7 +1000,7 @@ class Graph {
             var edge = this.edgeMatrix[nodeID][j];
             if (edge) {
                 if (edge.visible == true) {
-                    edge.setColor(0xcfcfcf); // default edge color
+                    //edge.setColor(0xcfcfcf); // default edge color
                     edge.multiplyScale(0.5); 
                 }
             }
@@ -985,8 +1009,9 @@ class Graph {
 
     update() {
         var weightedEdges = this.edgeThicknessByWeighted;
+        var coloredEdges = this.edgeColored;
         this.edgeList.forEach(function (edge) {
-            edge.update(weightedEdges);
+            edge.update(weightedEdges, coloredEdges);
         });
     }
 
@@ -1004,7 +1029,7 @@ class Edge {
     scaleWeighted = 0.5;
     scaleNoWeighted = 1;
 
-    constructor(public parentObject, private sourcePoint, private targetPoint, private weight) {
+    constructor(public parentObject, public sourceNode, public targetNode, private weight) {
         this.shape = this.makeCylinder();
         parentObject.add(this.shape);
 
@@ -1057,7 +1082,7 @@ class Edge {
         }
     }
 
-    update(weightedEdges: boolean) {
+    update(weightedEdges: boolean, coloredEdges: boolean) {
         this.geometry.verticesNeedUpdate = true;
 
         var scale = 1;
@@ -1069,7 +1094,22 @@ class Edge {
             scale = this.scaleNoWeighted;
         }
 
-        var a = this.sourcePoint, b = this.targetPoint;
+        if (coloredEdges == true) {
+            var sourceColor = this.sourceNode.material.color.getHex();
+            var targetColor = this.targetNode.material.color.getHex();
+
+            if (sourceColor == targetColor) {
+                this.setColor(this.sourceNode.material.color.getHex());
+            }
+            else {
+                this.setColor(0xcfcfcf); // default edge color
+            }
+        }
+        else {
+            this.setColor(0xcfcfcf); // default edge color
+        }
+
+        var a = this.sourceNode.position, b = this.targetNode.position;
         var m = new THREE.Vector3();
         m.addVectors(a, b).divideScalar(2);
         this.shape.position = m;
