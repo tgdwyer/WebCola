@@ -62,7 +62,7 @@
 
             var path = sankey.link();
 
-            d3.json("graphdata/rcgraph.json", function (graph) {
+            d3.json("graphdata/dynamic.json", function (graph) {
                 sankey
                     .nodes(graph.nodes)
                     .links(graph.links)
