@@ -66,6 +66,13 @@ class Brain3DApp implements Application, Loopable {
     fovZoomRatio = 1;
     currentViewWidth: number; 
 
+    autoRotation: boolean = false;
+
+    mouse = {
+        dx: 0,
+        dy: 0
+    }
+
     // Constants
     nearClip = 1;
     farClip = 2000;
@@ -117,12 +124,18 @@ class Brain3DApp implements Application, Loopable {
         this.input.regMouseDragCallback((dx: number, dy: number, mode: number) => {
             // left button: rotation
             if (mode == 1) {
-                var pixelAngleRatio = 50;
-                this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + dx / pixelAngleRatio, this.brainObject.rotation.z);
-                this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + dx / pixelAngleRatio, this.colaObject.rotation.z);
+                if (this.autoRotation == false) {
+                    var pixelAngleRatio = 50;
+                    this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + dx / pixelAngleRatio, this.brainObject.rotation.z);
+                    this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + dx / pixelAngleRatio, this.colaObject.rotation.z);
 
-                this.brainObject.rotation.set(this.brainObject.rotation.x + dy / pixelAngleRatio, this.brainObject.rotation.y, this.brainObject.rotation.z);
-                this.colaObject.rotation.set(this.colaObject.rotation.x + dy / pixelAngleRatio, this.colaObject.rotation.y, this.colaObject.rotation.z);                
+                    this.brainObject.rotation.set(this.brainObject.rotation.x + dy / pixelAngleRatio, this.brainObject.rotation.y, this.brainObject.rotation.z);
+                    this.colaObject.rotation.set(this.colaObject.rotation.x + dy / pixelAngleRatio, this.colaObject.rotation.y, this.colaObject.rotation.z);
+                }
+                else {
+                    this.mouse.dx = dx;
+                    this.mouse.dy = dy;
+                }       
             }
             // right button: pan
             else if (mode == 3) {
@@ -177,6 +190,7 @@ class Brain3DApp implements Application, Loopable {
         var varEdgesThicknessByWeightedOnChange = (b: boolean) => { this.edgesThicknessByWeightedOnChange(b); }
         var varEdgesColoredOnChange = (b: boolean) => { this.edgesColoredOnChange(b); }
         var varAllLabelsOnChange = (b: boolean) => { this.allLabelsOnChange(b); }
+        var varAutoRotationOnChange = (b: boolean) => { this.autoRotationOnChange(b); }
 
         this.input.regKeyDownCallback(' ', varShowNetwork);
 
@@ -189,13 +203,15 @@ class Brain3DApp implements Application, Loopable {
         jDiv.append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
             .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown +
-                '" onchange="sliderChangeForID(' + this.id + ', this.value)" oninput="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/></input>').css({ 'width': '400px' }))
+                '" onchange="sliderChangeForID(' + this.id + ', this.value)" oninput="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/></input>').css({ 'width': '300px' }))
             .append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px' })
                 .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
             .append($('<input type="checkbox" id="checkbox-edge-color-' + this.id + '" disabled="true">Colored Edge</input>').css({ 'width': '12px' })
                 .click(function () { varEdgesColoredOnChange($(this).is(":checked")); }))
             .append($('<input type="checkbox" id="checkbox-all-labels-' + this.id + '" disabled="true">All Labels</input>').css({ 'width': '12px' })
                 .click(function () { varAllLabelsOnChange($(this).is(":checked")); }))
+            .append($('<input type="checkbox" id="checkbox-auto-rotation-' + this.id + '" disabled="true">Auto Rotation</input>').css({ 'width': '12px' })
+                .click(function () { varAutoRotationOnChange($(this).is(":checked")); }))
             .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px' })
                 .click(function () { varShowNetwork(); }));
 
@@ -268,6 +284,13 @@ class Brain3DApp implements Application, Loopable {
     edgesColoredOnChange(b: boolean) {
         this.physioGraph.edgeColored = b;
         this.colaGraph.edgeColored = b;
+    }
+
+    autoRotationOnChange(b: boolean) {
+        this.autoRotation = b;
+
+        this.mouse.dx = 0;
+        this.mouse.dy = 0;
     }
 
     allLabelsOnChange(b: boolean) {
@@ -596,6 +619,7 @@ class Brain3DApp implements Application, Loopable {
         $('#checkbox-edges-thickness-by-weight-' + this.id).prop('disabled', false);
         $('#checkbox-all-labels-' + this.id).prop('disabled', false);
         $('#checkbox-edge-color-' + this.id).prop('disabled', false);
+        $('#checkbox-auto-rotation-' + this.id).prop('disabled', false);
     }
 
     // Create a matrix where a 1 in (i, j) means the edge between node i and node j is selected
@@ -675,6 +699,12 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.update(); 
         this.colaGraph.update(); // Update all the edge positions
+
+        if (this.autoRotation) {
+            this.brainObject.rotation.set(this.brainObject.rotation.x + this.mouse.dy / 100, this.brainObject.rotation.y + this.mouse.dx / 100, this.brainObject.rotation.z);
+            this.colaObject.rotation.set(this.colaObject.rotation.x + this.mouse.dy / 100, this.colaObject.rotation.y + this.mouse.dx / 100, this.colaObject.rotation.z);
+        }
+
         this.draw(); // Draw the graph
     }
 
@@ -900,8 +930,8 @@ class Graph {
     showAllLabels() {
         for (var i = 0; i < this.nodeLabelList.length; ++i) {
             if (this.nodeLabelList[i]) {
-                //this.parentObject.add(this.nodeLabelList[i]);
-                
+                this.parentObject.add(this.nodeLabelList[i]);
+                /*
                 if (this.visibleNodeIDs && !this.nodeHasNeighbors) {
                     if (this.visibleNodeIDs.indexOf(i) != -1) {
                         this.parentObject.add(this.nodeLabelList[i]);
@@ -923,7 +953,7 @@ class Graph {
                 if (!this.visibleNodeIDs && !this.nodeHasNeighbors) {
                     this.parentObject.add(this.nodeLabelList[i]);
                 }
-                
+                */
             }
         }
     }
