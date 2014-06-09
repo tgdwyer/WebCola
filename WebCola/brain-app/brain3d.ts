@@ -191,6 +191,7 @@ class Brain3DApp implements Application, Loopable {
         var varEdgesColoredOnChange = (b: boolean) => { this.edgesColoredOnChange(b); }
         var varAllLabelsOnChange = (b: boolean) => { this.allLabelsOnChange(b); }
         var varAutoRotationOnChange = (b: boolean) => { this.autoRotationOnChange(b); }
+        var varSliderMouseEvent = (e: string) => { this.sliderMouseEvent(e); }
 
         this.input.regKeyDownCallback(' ', varShowNetwork);
 
@@ -203,7 +204,9 @@ class Brain3DApp implements Application, Loopable {
         jDiv.append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
             .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown +
-                '" onchange="sliderChangeForID(' + this.id + ', this.value)" oninput="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/></input>').css({ 'width': '300px' }))
+                '" onchange="sliderChangeForID(' + this.id + ', this.value)" oninput="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/></input>').css({ 'width': '300px' })
+                .mousedown(function () { varSliderMouseEvent("mousedown"); })
+                .mouseup(function () { varSliderMouseEvent("mouseup"); }))
             .append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px' })
                 .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
             .append($('<input type="checkbox" id="checkbox-edge-color-' + this.id + '" disabled="true">Colored Edge</input>').css({ 'width': '12px' })
@@ -274,6 +277,15 @@ class Brain3DApp implements Application, Loopable {
         if (commonData.brainCoords) coords();
         if (commonData.brainLabels) lab();
         //if (commonData.brainSurface) surf(); // this line is redundant and has problem, surf() will be called in THREE.OBJLoader
+    }
+
+    sliderMouseEvent(e: string) {
+        if (e == "mousedown") {
+            this.input.sliderEvent = true;
+        }
+        else if (e == "mouseup"){
+            this.input.sliderEvent = false;
+        }
     }
 
     edgesThicknessByWeightedOnChange(b: boolean) {
@@ -658,6 +670,7 @@ class Brain3DApp implements Application, Loopable {
 
         for (var i = 0; i < intersected.length; ++i) {
             if ((<any>intersected[i].object).isNode) { // Node objects have this special boolean flag
+                this.commonData.nodeIDUnderPointer = intersected[i].object.id;
                 return intersected[i].object;
             }
         }
@@ -675,7 +688,7 @@ class Brain3DApp implements Application, Loopable {
         }
 
         var node = this.getNodeUnderPointer(this.input.localPointerPosition());
-        if (node) {
+        if (node || (this.commonData.nodeIDUnderPointer != -1)) {
             // If we already have a node ID selected, deselect it
             if (this.selectedNodeID >= 0) {
                 this.physioGraph.deselectNode(this.selectedNodeID);
@@ -684,7 +697,14 @@ class Brain3DApp implements Application, Loopable {
                 this.physioGraph.deselectAdjEdges(this.selectedNodeID);
                 this.colaGraph.deselectAdjEdges(this.selectedNodeID);
             }
-            this.selectedNodeID = node.id;
+
+            if (node) {
+                this.selectedNodeID = node.id;
+            }
+            else {
+                this.selectedNodeID = this.commonData.nodeIDUnderPointer;
+            }
+
             // Select the new node ID
             this.physioGraph.selectNode(this.selectedNodeID);
             this.colaGraph.selectNode(this.selectedNodeID);

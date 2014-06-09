@@ -37,6 +37,8 @@ class PointerIndirection {
 // Holds the state of and the callbacks to be made for a particular input target
 class InputTarget {
     active: boolean = false;
+    sliderEvent: boolean = false;
+
     keyDownCallbacks = {};
     keyUpCallbacks = {};
     keyTickCallbacks = {};
@@ -222,6 +224,9 @@ class InputTargetManager {
             var viewID = this.mouseLocationCallback(event.clientX, event.clientY);
 
             if (viewID == this.activeTarget) {
+                var it = this.inputTargets[this.activeTarget];
+                if (it && (it.sliderEvent == true)) return;
+
                 this.isMouseDown = true;
 
                 this.mouse.x = event.clientX;
