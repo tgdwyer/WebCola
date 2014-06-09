@@ -239,10 +239,11 @@
             </div>
         </div>
         <div id="tab-2" class="tab">
-            <select id="brain3d-model-select">
+            <select id="brain3d-model-select" style="background-color: #feeebd;">
                 <option value="icbm">BrainMesh_ICBM152</option>
                 <option value="ch2">BrainMesh_ch2</option>
                 <option value="ch2_inflated">BrainMesh_Ch2_Inflated</option>
+                <option value="ch2_cerebellum">BrainMesh_Ch2withCerebellum</option>
             </select>
             <div id="brain3d-icon-back" class="icon"></div>
         </div>
@@ -254,8 +255,17 @@
             <div id="barChart4" class="chart"></div>
             <div style='clear:both'></div> 	
             <div class="dc-data-count">
-                <button id="button-apply-filter" style="font-size:10px;" disabled="true">Apply</button> <span class="filter-count"></span> selected out of <span class="total-count"></span> | <a href="javascript:dc.filterAll();
+                <button id="button-apply-filter" title="Show only nodes that are selected above" style="font-size:10px;" disabled="true">Apply</button> <span class="filter-count"></span> selected out of <span class="total-count"></span> | <a href="javascript:dc.filterAll();
 				dc.renderAll();">Reset</a>
+                <div id="div-set-node-scale">
+                    <button id="button-set-scale-color" title="Set node size/color based on its attributes"  style="font-size:10px;visibility:hidden;" disabled="true">Set</button>
+                    <select id="node-size-color-select" style="visibility:hidden; background-color: #feeebd;">
+                        <option value="node-size">size</option>
+                        <option value="node-color">color</option>
+                        <option value="node-default">default</option>
+                    </select> by
+                    <select id="attribute-select" style="visibility:hidden; background-color: #feeebd"></select>
+                </div>
             </div>
         </div>
         <!--div id="tab-4" class="tab">

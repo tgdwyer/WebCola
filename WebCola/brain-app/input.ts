@@ -37,6 +37,8 @@ class PointerIndirection {
 // Holds the state of and the callbacks to be made for a particular input target
 class InputTarget {
     active: boolean = false;
+    sliderEvent: boolean = false;
+
     keyDownCallbacks = {};
     keyUpCallbacks = {};
     keyTickCallbacks = {};
@@ -47,6 +49,8 @@ class InputTarget {
 
     mouseDragCallback;
     mouseRightClickCallback;
+    mouseWheelCallback;
+    mouseDoubleClickCallback;
 
     // Accepts the CSS ID of the div that is to represent the input target, and the extra borders
     // which describe where in the div the region of interest is (and where the coordinates should be scaled around)
@@ -76,12 +80,20 @@ class InputTarget {
         this.leapZCallback = callback;
     }
 
-    regMouseDragCallback(callback: (dx:number, dy:number) => void) {
+    regMouseDragCallback(callback: (dx:number, dy:number, mode: number) => void) {
         this.mouseDragCallback = callback;
     }
 
     regMouseRightClickCallback(callback: (x: number, y: number) => void) {
         this.mouseRightClickCallback = callback;
+    }
+
+    regMouseWheelCallback(callback: (delta: number) => void) {
+        this.mouseWheelCallback = callback;
+    }
+
+    regMouseDoubleClickCallback(callback: () => void) {
+        this.mouseDoubleClickCallback = callback;
     }
 
     // Return the pointer coordinates within the input target as a pair (x, y) E [-1, 1]x[-1, 1] as they lie within the target's borders
@@ -126,14 +138,21 @@ class InputTargetManager {
     fingerPositions;
     fpi = 0;
 
+    mouseDownMode: number;
     isMouseDown: boolean = false;
     onMouseDownPosition = new THREE.Vector2();
-    mouseDownCallback;
+    mouseLocationCallback;
+    mouseUpCallback;
 
     rightClickLabel;
     rightClickLabelAppended: boolean = false;
-    regMouseDownCallback(callback: (x:number, y:number) => number) {
-        this.mouseDownCallback = callback;
+
+    regMouseLocationCallback(callback: (x:number, y:number) => number) {
+        this.mouseLocationCallback = callback;
+    }
+
+    regMouseUpCallback(callback: () => void) {
+        this.mouseUpCallback = callback;
     }
 
     // Accepts the CSS IDs of each of the divs that represent an input target, as well as an object that implements the interface for a Leap motion pointer
@@ -200,9 +219,14 @@ class InputTargetManager {
                 this.rightClickLabelAppended = false;
             }
 
-            var viewID = this.mouseDownCallback(event.clientX, event.clientY);
+            this.mouseDownMode = event.which;
+
+            var viewID = this.mouseLocationCallback(event.clientX, event.clientY);
 
             if (viewID == this.activeTarget) {
+                var it = this.inputTargets[this.activeTarget];
+                if (it && (it.sliderEvent == true)) return;
+
                 this.isMouseDown = true;
 
                 this.mouse.x = event.clientX;
@@ -249,6 +273,38 @@ class InputTargetManager {
 
         document.addEventListener('mouseup', (event) => {
             this.isMouseDown = false;
+
+            setTimeout(this.mouseUpCallback, 200);
+        }, false);
+
+        document.addEventListener('dblclick', (event) => {
+            event.preventDefault();
+
+            var viewID = this.mouseLocationCallback(event.clientX, event.clientY);
+
+            if (viewID == this.activeTarget) {
+                var it = this.inputTargets[this.activeTarget];
+                if (it) {
+                    var callback = it.mouseDoubleClickCallback;
+                    if (callback) callback();
+
+                    clearSelection();
+                }
+            }
+        }, false);
+
+        document.addEventListener('mousewheel', (event) => {
+            var viewID = this.mouseLocationCallback(event.clientX, event.clientY);         
+
+            if (viewID == this.activeTarget) {
+                var it = this.inputTargets[this.activeTarget];
+                if (it) {
+                    //console.log(event.wheelDelta);
+                    var callback = it.mouseWheelCallback;
+                    if (callback) callback(-event.wheelDelta/2000);
+                }
+            }
+
         }, false);
 
         document.addEventListener('mousemove', (event) => {
@@ -262,7 +318,7 @@ class InputTargetManager {
                     var dy = event.clientY - this.mouse.y;
 
                     var callback = it.mouseDragCallback;
-                    if (callback) callback(dx, dy);
+                    if (callback) callback(dx, dy, this.mouseDownMode);
                 }
             }
 
@@ -516,4 +572,13 @@ function averageOfVectors(vectors, numVectors) {
         result[i] /= numVectors;
     }
     return result;
+}
+
+function clearSelection() {
+    if (document.selection && document.selection.empty) {
+        document.selection.empty();
+    } else if (window.getSelection) {
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+    }
 }

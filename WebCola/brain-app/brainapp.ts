@@ -16,6 +16,7 @@ class CommonData {
     public brainLabels: string[];
     public brainSurface;
     public nodeCount: number; // Number of coordinates
+    public nodeIDUnderPointer: number = -1; // for yoked display
 
     coordCallbacks: Array<() => void> = new Array();
     labelCallbacks: Array<() => void> = new Array();
@@ -71,6 +72,7 @@ class Attributes {
     numRecords: number;
 
     filteredRecords: Array<number>;
+    filteredRecordsHighlightChanged: boolean = false;
 
     constructor(text: string) {
         var lines = text.split(String.fromCharCode(13)); // Lines delimited by carriage returns...
@@ -156,13 +158,17 @@ class Attributes {
 interface Application {
     setDataSet(dataSet: DataSet);
     resize(width: number, height: number);
-    applyFilter(filteredIDs: Array<number>);
+    applyFilter(filteredIDs: number[]);
+    setNodeSizeOrColor(sizeOrColor: string, attribute: string);
+    highlightSelectedNodes(filteredIDs: number[]);
 }
 
 class DummyApp implements Application {
     setDataSet() { }
     resize() { }
     applyFilter() { }
+    setNodeSizeOrColor() { }
+    highlightSelectedNodes() { }
 }
 
 // The loop class can be used to run applications that aren't event-based
@@ -293,7 +299,10 @@ $('#load-example-data').button().click(function () {
         parseAttributes(text, dataSets[0]);
         $('#d1-att').css({ color: 'green' });
 
-        setupCrossFilter(dataSets[0].attributes);
+        if (dataSets[0].attributes) {
+            for (var i = 0; i < dataSets[0].attributes.columnNames.length; ++i) {
+                var columnName = dataSets[0].attributes.columnNames[i];
+                $('#attribute-select').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#button-set-scale-color').css({ visibility: 'visible' });            $('#button-set-scale-color').button({ disabled: false });            $('#node-size-color-select').css({ visibility: 'visible' });            $('#attribute-select').css({ visibility: 'visible' });            $('#div-set-node-scale').css({ 'margin-top': '10px' });                        setupCrossFilter(dataSets[0].attributes);        }   
     });
 });
 
@@ -305,13 +314,38 @@ $('#button-apply-filter').button().click(function () {
 
     for (var i = 0; i < fRecords.length; ++i) {
         var id = fRecords[i]["index"];
-        if (id) idArray.push(id);
+        idArray.push(id);
     } 
 
     if (apps[0]) apps[0].applyFilter(idArray);
     if (apps[1]) apps[1].applyFilter(idArray);
     if (apps[2]) apps[2].applyFilter(idArray);
     if (apps[3]) apps[3].applyFilter(idArray);
+
+    //setTimeout(highlightSelectedNodes, 5000);
+});
+
+$('#button-set-scale-color').button().click(function () {
+    var sizeOrColor = $('#node-size-color-select').val();
+    var attribute = $('#attribute-select').val();
+
+    if (sizeOrColor && attribute) {
+        if (apps[0]) apps[0].setNodeSizeOrColor(sizeOrColor, attribute);
+        if (apps[1]) apps[1].setNodeSizeOrColor(sizeOrColor, attribute);
+        if (apps[2]) apps[2].setNodeSizeOrColor(sizeOrColor, attribute);
+        if (apps[3]) apps[3].setNodeSizeOrColor(sizeOrColor, attribute);
+    }
+});
+
+$('#node-size-color-select').on('change', function () {
+    var value = $('#node-size-color-select').val();
+
+    if (value == "node-default") {
+        $('#attribute-select').prop("disabled", "disabled");    
+    }
+    else {
+        $('#attribute-select').prop('disabled', false);
+    }
 });
 
 
@@ -359,7 +393,34 @@ function getActiveTargetUnderMouse(x: number, y: number) {
     return id;
 }
 
-input.regMouseDownCallback(getActiveTargetUnderMouse);
+function highlightSelectedNodes() {
+    if (!dataSets[0].attributes) return;
+
+    if (dataSets[0].attributes.filteredRecordsHighlightChanged == true) {
+        dataSets[0].attributes.filteredRecordsHighlightChanged = false;
+
+        if (!dataSets[0].attributes.filteredRecords) return;
+
+        var fRecords = dataSets[0].attributes.filteredRecords;
+        var idArray = new Array();
+
+        // if all the nodes have been selected, cancel the highlight
+        if (fRecords.length < dataSets[0].attributes.numRecords) {
+            for (var i = 0; i < fRecords.length; ++i) {
+                var id = fRecords[i]["index"];
+                idArray.push(id);
+            }
+        }
+
+        if (apps[0]) apps[0].highlightSelectedNodes(idArray);
+        if (apps[1]) apps[1].highlightSelectedNodes(idArray);
+        if (apps[2]) apps[2].highlightSelectedNodes(idArray);
+        if (apps[3]) apps[3].highlightSelectedNodes(idArray);
+    }
+}
+
+input.regMouseLocationCallback(getActiveTargetUnderMouse);
+input.regMouseUpCallback(highlightSelectedNodes);
 
 // Set up selectability
 var selectTLView = function () {
@@ -412,6 +473,9 @@ $('#brain3d-icon-front').draggable(
             }
             else if (model == 'icbm') {
                 file = 'BrainMesh_ICBM152.obj';
+            }
+            else if (model == 'ch2_cerebellum') {
+                file = 'BrainMesh_Ch2withCerebellum.obj';
             }
 
             loadBrainModel(file);
@@ -715,6 +779,7 @@ function parseAttributes(text: string, dataSet: DataSet) {
     dataSet.notifyAttributes();
 }
 
+//var fcount = 0;
 // this function assumes the columns of the attributes are known
 function setupCrossFilter(attrs: Attributes) {
     if (!attrs) return;
@@ -818,9 +883,11 @@ function setupCrossFilter(attrs: Attributes) {
         //console.log("filter event...");
 
         dataSets[0].attributes.filteredRecords = dimArray[0].top(Number.POSITIVE_INFINITY);
+        dataSets[0].attributes.filteredRecordsHighlightChanged = true;
 
         if (dataSets[0].attributes.filteredRecords) {
-            console.log("count: " + dataSets[0].attributes.filteredRecords.length);
+            //console.log(fcount + "). count: " + dataSets[0].attributes.filteredRecords.length);
+            //fcount++;
         }
 
         $('#button-apply-filter').button({ disabled: false });
