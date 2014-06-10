@@ -161,6 +161,7 @@ interface Application {
     applyFilter(filteredIDs: number[]);
     setNodeSizeOrColor(sizeOrColor: string, attribute: string);
     highlightSelectedNodes(filteredIDs: number[]);
+    isDeleted();
 }
 
 class DummyApp implements Application {
@@ -169,6 +170,7 @@ class DummyApp implements Application {
     applyFilter() { }
     setNodeSizeOrColor() { }
     highlightSelectedNodes() { }
+    isDeleted() { }
 }
 
 // The loop class can be used to run applications that aren't event-based
@@ -191,6 +193,10 @@ class Loop {
             var currentTime = new Date().getTime();
             var deltaTime = (currentTime - this.timeOfLastFrame) / 1000;
             this.timeOfLastFrame = currentTime;
+
+            for (var i = 0; i < 4; ++i) {
+                if (apps[i] && (apps[i].isDeleted() == true)) apps[i] = new DummyApp();
+            }
 
             // Limit the maximum time step
             if (deltaTime > this.frameTimeLimit)
@@ -482,16 +488,20 @@ $('#brain3d-icon-front').draggable(
 
             switch (getViewUnderMouse(event.pageX, event.pageY)) {
                 case tl_view:
-                    apps[0] = new Brain3DApp(commonData, $(tl_view), input.newTarget(0));
+                    $(tl_view).empty();
+                    apps[0] = new Brain3DApp(0, commonData, $(tl_view), input.newTarget(0));
                     break;
                 case tr_view:
-                    apps[1] = new Brain3DApp(commonData, $(tr_view), input.newTarget(1));
+                    $(tr_view).empty();
+                    apps[1] = new Brain3DApp(1, commonData, $(tr_view), input.newTarget(1));
                     break;
                 case bl_view:
-                    apps[2] = new Brain3DApp(commonData, $(bl_view), input.newTarget(2));
+                    $(bl_view).empty();
+                    apps[2] = new Brain3DApp(2, commonData, $(bl_view), input.newTarget(2));
                     break;
                 case br_view:
-                    apps[3] = new Brain3DApp(commonData, $(br_view), input.newTarget(3));
+                    $(br_view).empty();
+                    apps[3] = new Brain3DApp(3, commonData, $(br_view), input.newTarget(3));
                     break;
             }
 

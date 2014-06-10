@@ -9,7 +9,7 @@
 declare var d3;
 
 var sliderSpace = 70; // The number of pixels to reserve at the bottom of the div for the slider
-var uniqueID = 0; // Each instance of this application is given a unique ID so that the DOM elements they create can be identified as belonging to them
+//var uniqueID = 0; // Each instance of this application is given a unique ID so that the DOM elements they create can be identified as belonging to them
 var maxEdgesShowable = 500;
 var initialEdgesShown = 20; // The number of edges that are shown when the application starts
 
@@ -18,16 +18,20 @@ var widthInCamera = 520;
 var heightInCamera = 360;
 
 // TODO: Proper reset and destruction of the application (the 'instances' variable will continue to hold a reference - this will cause the application to live indefinitely)
+/*
 var instances = Array<Brain3DApp>(0); // Stores each instance of an application under its id, for lookup by the slider input element
 
 function sliderChangeForID(id: number, v: number) {
     instances[id].sliderChange(v);
 }
+*/
 
 class Brain3DApp implements Application, Loopable {
     id: number;
     loop: Loop;
     input: InputTarget;
+    jDiv;
+    deleted: boolean = false;
 
     // THREE variables
     camera;
@@ -82,12 +86,20 @@ class Brain3DApp implements Application, Loopable {
     colaLinkDistance = 15;
     d3ColorSelector = d3.scale.category20();
 
+    /*
+    closeBrainAppCallback;
 
-    constructor(commonData: CommonData, jDiv, inputTargetCreator: (l: number, r: number, t: number, b: number) => InputTarget) {
-        this.id = uniqueID++;
-        instances[this.id] = this;
+    regCloseBrainAppCallback(callback: (id: number) => void) {
+        this.closeBrainAppCallback = callback;
+    }
+    */
+
+    constructor(id: number, commonData: CommonData, jDiv, inputTargetCreator: (l: number, r: number, t: number, b: number) => InputTarget) {
+        this.id = id;
+        //instances[this.id] = this;
         this.commonData = commonData;
         this.input = inputTargetCreator(0, 0, 0, sliderSpace);
+        this.jDiv = jDiv;
 
         // Register callbacks
         this.input.regKeyTickCallback('a', (deltaTime: number) => {
@@ -193,17 +205,24 @@ class Brain3DApp implements Application, Loopable {
         var varAutoRotationOnChange = (b: boolean) => { this.autoRotationOnChange(b); }
         var varSliderMouseEvent = (e: string) => { this.sliderMouseEvent(e); }
         var varGraphViewSliderOnChange = (v: number) => { this.graphViewSliderOnChange(v); }
+        var varEdgeCountSliderOnChange = (v: number) => { this.edgeCountSliderOnChange(v); }
+        var varCloseBrainAppOnClick = () => { this.closeBrainAppOnClick(); }
 
         this.input.regKeyDownCallback(' ', varShowNetwork);
-
+            
         // Set the background colour
         jDiv.css({ backgroundColor: '#ffffff' });
 
         // Set up renderer, and add the canvas and the slider to the div
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(jDiv.width(), (jDiv.height() - sliderSpace));
-        jDiv.append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input> ')
-                .css({ 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '300px', 'position': 'absolute', 'right': 0, 'top': '100px' })
+        jDiv.append($('<span id="close-brain-app-' + this.id + '" >x</span>')
+                .css({ 'position': 'absolute', 'right': '6px', 'top': '10px', 'font-size': '18px', 'display': 'inline-block', 'line-height': '0px', 'cursor': 'pointer' })
+                .fadeTo(0, 0.2)
+                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                .click(function () { varCloseBrainAppOnClick(); }))
+            .append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input>')
+                .css({ 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '300px', 'position': 'absolute', 'right': 0, 'top': '50px' })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varGraphViewSliderOnChange($(this).val()); })
@@ -211,11 +230,11 @@ class Brain3DApp implements Application, Loopable {
                 .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.3); }))
             .append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
-            .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown +
-                '" onchange="sliderChangeForID(' + this.id + ', this.value)" oninput="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/></input>')
+            .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown + '" disabled="true"/></input>')
                 .css({ 'width': '300px' })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
-                .mouseup(function () { varSliderMouseEvent("mouseup"); }))
+                .mouseup(function () { varSliderMouseEvent("mouseup"); })
+                .on("input change", function () { varEdgeCountSliderOnChange($(this).val()); }))
             .append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px' })
                 .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
             .append($('<input type="checkbox" id="checkbox-edge-color-' + this.id + '" disabled="true">Colored Edge</input>').css({ 'width': '12px' })
@@ -297,8 +316,40 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
+    closeBrainAppOnClick() {
+        this.jDiv.empty();
+
+        if (this.id == 0) {
+            this.jDiv.css({ backgroundColor: '#ffe5e5' });
+        }
+        else if (this.id == 1) {
+            this.jDiv.css({ backgroundColor: '#d7e8ff' });
+        }
+        else if (this.id == 2) {
+            this.jDiv.css({ backgroundColor: '#fcffb2' });
+        }
+        else if (this.id == 3) {
+            this.jDiv.css({ backgroundColor: '#d2ffbd' });
+        }
+
+        this.deleted = true;
+    }
+
     graphViewSliderOnChange(value: number) {
         this.colaGraph.setNodePositionsLerp(this.commonData.brainCoords, this.colaCoords, value/100);
+    }
+
+    edgeCountSliderOnChange(numEdges) {
+        if (numEdges == this.lastSliderValue) return;
+        this.lastSliderValue = numEdges;
+
+        var max = this.commonData.nodeCount * (this.commonData.nodeCount - 1) / 2;
+        if (numEdges > max) numEdges = max;
+        $('#count-' + this.id).get(0).textContent = numEdges;
+        var percentile = numEdges * 100 / max;
+        $('#percentile-' + this.id).get(0).textContent = percentile.toFixed(2);
+        this.filteredAdjMatrix = this.adjMatrixFromEdgeCount(numEdges);
+        this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
     }
 
     edgesThicknessByWeightedOnChange(b: boolean) {
@@ -449,17 +500,8 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
-    sliderChange(numEdges) {
-        if (numEdges == this.lastSliderValue) return;
-        this.lastSliderValue = numEdges;
-
-        var max = this.commonData.nodeCount * (this.commonData.nodeCount - 1) / 2;
-        if (numEdges > max) numEdges = max;
-        $('#count-' + this.id).get(0).textContent = numEdges;
-        var percentile = numEdges * 100 / max;
-        $('#percentile-' + this.id).get(0).textContent = percentile.toFixed(2);
-        this.filteredAdjMatrix = this.adjMatrixFromEdgeCount(numEdges);
-        this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+    isDeleted() {
+        return this.deleted;
     }
 
     applyFilter(filteredIDs: number[]) {
@@ -641,7 +683,7 @@ class Brain3DApp implements Application, Loopable {
         this.filteredAdjMatrix = this.adjMatrixFromEdgeCount(initialEdgesShown);
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
         this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
-        this.sliderChange(initialEdgesShown);
+        this.edgeCountSliderOnChange(initialEdgesShown);
         
         // Enable the slider
         $('#edge-count-slider-' + this.id).prop('disabled', false);
