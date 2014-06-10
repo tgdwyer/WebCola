@@ -192,6 +192,7 @@ class Brain3DApp implements Application, Loopable {
         var varAllLabelsOnChange = (b: boolean) => { this.allLabelsOnChange(b); }
         var varAutoRotationOnChange = (b: boolean) => { this.autoRotationOnChange(b); }
         var varSliderMouseEvent = (e: string) => { this.sliderMouseEvent(e); }
+        var varGraphViewSliderOnChange = (v: number) => { this.graphViewSliderOnChange(v); }
 
         this.input.regKeyDownCallback(' ', varShowNetwork);
 
@@ -201,10 +202,18 @@ class Brain3DApp implements Application, Loopable {
         // Set up renderer, and add the canvas and the slider to the div
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(jDiv.width(), (jDiv.height() - sliderSpace));
-        jDiv.append(this.renderer.domElement)
+        jDiv.append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input> ')
+                .css({ 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '300px', 'position': 'absolute', 'right': 0, 'top': '100px' })
+                .mousedown(function () { varSliderMouseEvent("mousedown"); })
+                .mouseup(function () { varSliderMouseEvent("mouseup"); })
+                .on("input change", function () { varGraphViewSliderOnChange($(this).val()); })
+                .fadeTo(0, 0.3)
+                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.3); }))
+            .append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
             .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown +
-                '" onchange="sliderChangeForID(' + this.id + ', this.value)" oninput="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/></input>').css({ 'width': '300px' })
+                '" onchange="sliderChangeForID(' + this.id + ', this.value)" oninput="sliderChangeForID(' + this.id + ', this.value)" disabled="true"/></input>')
+                .css({ 'width': '300px' })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); }))
             .append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px' })
@@ -286,6 +295,10 @@ class Brain3DApp implements Application, Loopable {
         else if (e == "mouseup"){
             this.input.sliderEvent = false;
         }
+    }
+
+    graphViewSliderOnChange(value: number) {
+        this.colaGraph.setNodePositionsLerp(this.commonData.brainCoords, this.colaCoords, value/100);
     }
 
     edgesThicknessByWeightedOnChange(b: boolean) {
@@ -370,7 +383,6 @@ class Brain3DApp implements Application, Loopable {
 
             //-------------------------------------------------------------------
 
-
             this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
             this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
 
@@ -383,8 +395,9 @@ class Brain3DApp implements Application, Loopable {
                 var getLength = function (e) {
                 return 1;
             }
-                // Create the distance matrix that Cola needs
-                var distanceMatrix = (new cola.shortestpaths.Calculator(this.commonData.nodeCount, edges, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
+            
+            // Create the distance matrix that Cola needs
+            var distanceMatrix = (new cola.shortestpaths.Calculator(this.commonData.nodeCount, edges, getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
 
             var D = cola.Descent.createSquareMatrix(this.commonData.nodeCount, (i, j) => {
                 return distanceMatrix[i][j] * this.colaLinkDistance;
@@ -419,6 +432,11 @@ class Brain3DApp implements Application, Loopable {
                     this.colaObject.position = target;
                     this.colaGraph.setNodePositions(this.colaCoords);
                     this.transitionInProgress = false;
+
+                    // Enable the vertical slider
+                    $('#graph-view-slider-' + this.id).css({ visibility: 'visible' });
+                    $('#graph-view-slider-' + this.id).val('100');
+
                     return true;
                 }
                 else { // Update the animation
@@ -858,6 +876,11 @@ class Graph {
             this.nodeMeshes[i].position.x = colaCoords1[0][i] * (1 - t) + colaCoords2[0][i] * t;
             this.nodeMeshes[i].position.y = colaCoords1[1][i] * (1 - t) + colaCoords2[1][i] * t;
             this.nodeMeshes[i].position.z = colaCoords1[2][i] * (1 - t) + colaCoords2[2][i] * t;
+
+            // set the node label position 
+            this.nodeLabelList[i].position.x = this.nodeMeshes[i].position.x + 7;
+            this.nodeLabelList[i].position.y = this.nodeMeshes[i].position.y + 7;
+            this.nodeLabelList[i].position.z = this.nodeMeshes[i].position.z;
         }
     }
 
