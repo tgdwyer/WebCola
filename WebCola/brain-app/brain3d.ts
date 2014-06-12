@@ -637,6 +637,24 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
+    setNodeColorDiscrete(attribute: string, colorArray2: string[]) {
+        if (!attribute) return;
+        if (!this.dataSet || !this.dataSet.attributes) return;
+
+        if (attribute == "module_id") {
+            var colorArray = this.dataSet.attributes.get('module_id').map((group: number) => {
+                var str = this.d3ColorSelector(group).replace("#", "0x");
+                return parseInt(str);
+            });
+        }
+
+        if (!colorArray) return;
+
+        this.physioGraph.setNodesColor(colorArray);
+        this.colaGraph.setNodesColor(colorArray);
+
+    }
+
     resize(width: number, height: number) {
         // Resize the renderer
         this.renderer.setSize(width, height - sliderSpace);

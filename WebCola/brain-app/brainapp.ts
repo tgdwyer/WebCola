@@ -288,6 +288,9 @@ $('#upload-attr-2 ').button().click(function () {
     }
 });
 
+var divNodeColorPickers;
+var divNodeColorPickersDiscrete;
+
 $('#load-example-data').button().click(function () {
     $.get('data/coords.txt', function (text) {
         parseCoordinates(text);
@@ -308,7 +311,7 @@ $('#load-example-data').button().click(function () {
         if (dataSets[0].attributes) {
             for (var i = 0; i < dataSets[0].attributes.columnNames.length; ++i) {
                 var columnName = dataSets[0].attributes.columnNames[i];
-                $('#attribute-select').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#div-set-node-scale').css({ visibility: 'visible' });            //$('#div-set-node-scale').css({ 'margin-top': '10px' });            $('#div-node-color-pickers').css({ visibility: 'visible' });            //$('#div-node-color-pickers').css({ 'margin-top': '10px' });            $('#button-set-scale-color').button({ disabled: false });                                    setupCrossFilter(dataSets[0].attributes);        }   
+                $('#attribute-select').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#div-set-node-scale').css({ visibility: 'visible' });            $('#div-node-color-pickers-discrete').css({ visibility: 'visible' });            $('#div-node-color-pickers').css({ visibility: 'visible' });                     if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();              if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();             setupCrossFilter(dataSets[0].attributes);        }   
     });
 });
 
@@ -364,10 +367,44 @@ $('#node-size-color-select').on('change', function () {
     var value = $('#node-size-color-select').val();
 
     if (value == "node-default") {
-        $('#attribute-select').prop("disabled", "disabled");    
+        $('#attribute-select').prop("disabled", "disabled");   
+        
+        if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();        if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();  
     }
-    else {
+    else if (value == "node-size") {
         $('#attribute-select').prop('disabled', false);
+
+        if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();        if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach(); 
+    }
+    else if (value == "node-color") {
+        $('#attribute-select').prop('disabled', false);
+
+        var attribute = $('#attribute-select').val();
+
+        if (attribute == "module_id") {
+            if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();
+            $(divNodeColorPickersDiscrete).appendTo('#tab-3');
+        }
+        else {
+        if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();  
+            $(divNodeColorPickers).appendTo('#tab-3');
+        }
+    }
+});
+
+$('#attribute-select').on('change', function () {
+    var sizeOrColor = $('#node-size-color-select').val();
+    var attribute = $('#attribute-select').val();
+
+    if (sizeOrColor == "node-color") {
+        if (attribute == "module_id") {
+            if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();
+            $(divNodeColorPickersDiscrete).appendTo('#tab-3');
+        }
+        else {
+            if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();
+            $(divNodeColorPickers).appendTo('#tab-3');
+        }
     }
 });
 
