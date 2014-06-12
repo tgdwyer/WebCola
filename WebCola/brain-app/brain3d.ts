@@ -207,6 +207,7 @@ class Brain3DApp implements Application, Loopable {
         var varGraphViewSliderOnChange = (v: number) => { this.graphViewSliderOnChange(v); }
         var varEdgeCountSliderOnChange = (v: number) => { this.edgeCountSliderOnChange(v); }
         var varCloseBrainAppOnClick = () => { this.closeBrainAppOnClick(); }
+        var varDefaultOrientationsOnClick = (s: string) => { this.defaultOrientationsOnClick(s); }
 
         this.input.regKeyDownCallback(' ', varShowNetwork);
             
@@ -216,13 +217,33 @@ class Brain3DApp implements Application, Loopable {
         // Set up renderer, and add the canvas and the slider to the div
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(jDiv.width(), (jDiv.height() - sliderSpace));
-        jDiv.append($('<span id="close-brain-app-' + this.id + '" >x</span>')
-                .css({ 'position': 'absolute', 'right': '6px', 'top': '10px', 'font-size': '18px', 'display': 'inline-block', 'line-height': '0px', 'cursor': 'pointer' })
+        jDiv.append($('<span id="close-brain-app-' + this.id + '" class="view-panel-span">x</span>')
+                .css({ 'right': '6px', 'top': '10px', 'font-size': '12px' })
                 .fadeTo(0, 0.2)
                 .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varCloseBrainAppOnClick(); }))
+            .append($('<span id="top-view-' + this.id + '" class="view-panel-span">T</span>')
+                .css({ 'right': '6px', 'top': '30px' })
+                .fadeTo(0, 0.2)
+                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                .click(function () { varDefaultOrientationsOnClick("top"); }))
+            .append($('<span id="bottom-view-' + this.id + '" class="view-panel-span">B</span>')
+                .css({ 'right': '6px', 'top': '50px' })
+                .fadeTo(0, 0.2)
+                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                .click(function () { varDefaultOrientationsOnClick("bottom"); }))
+            .append($('<span id="left-view-' + this.id + '" class="view-panel-span">L</span>')
+                .css({ 'right': '6px', 'top': '70px' })
+                .fadeTo(0, 0.2)
+                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                .click(function () { varDefaultOrientationsOnClick("left"); }))
+            .append($('<span id="right-view-' + this.id + '" class="view-panel-span">R</span>')
+                .css({ 'right': '6px', 'top': '90px' })
+                .fadeTo(0, 0.2)
+                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                .click(function () { varDefaultOrientationsOnClick("right"); }))
             .append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input>')
-                .css({ 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '300px', 'position': 'absolute', 'right': 0, 'top': '50px' })
+                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '300px', 'right': 0, 'top': '110px' })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varGraphViewSliderOnChange($(this).val()); })
@@ -333,6 +354,29 @@ class Brain3DApp implements Application, Loopable {
         }
 
         this.deleted = true;
+    }
+
+    defaultOrientationsOnClick(orientation: string) {
+        if (!orientation) return;
+
+        switch (orientation) {
+            case "top":
+                this.brainObject.rotation.set(90,0,0);
+                this.colaObject.rotation.set(90,0,0);                
+                break;
+            case "bottom":
+                this.brainObject.rotation.set(-90, 0, 0);
+                this.colaObject.rotation.set(-90, 0, 0);                  
+                break;
+            case "left":
+                this.brainObject.rotation.set(0, 90, 0);
+                this.colaObject.rotation.set(0, 90, 0);             
+                break;
+            case "right":
+                this.brainObject.rotation.set(0, -90, 0);
+                this.colaObject.rotation.set(0, -90, 0);  
+                break;
+        }
     }
 
     graphViewSliderOnChange(value: number) {
