@@ -566,8 +566,8 @@ class Brain3DApp implements Application, Loopable {
         this.physioGraph.highlightSelectedNodes(filteredIDs);
     }
 
-    setNodeSizeOrColor(sizeOrColor: string, attribute: string) {
-        if (!sizeOrColor || !attribute) return;
+    setNodeColor(attribute: string, minColor: string, maxColor: string) {
+        if (!attribute || !minColor || !maxColor) return;
         if (!this.dataSet || !this.dataSet.attributes) return;
 
         var attrArray = this.dataSet.attributes.get(attribute);
@@ -578,6 +578,8 @@ class Brain3DApp implements Application, Loopable {
         // assume all positive numbers in the array
         var min = this.dataSet.attributes.getMin(columnIndex);
         var max = this.dataSet.attributes.getMax(columnIndex); 
+
+        var sizeOrColor = "node-color";
 
         if (sizeOrColor == "node-size") {
             var scaleArray: number[];
@@ -596,9 +598,6 @@ class Brain3DApp implements Application, Loopable {
         }
         else if (sizeOrColor == "node-color") {
             var colorArray: number[];
-
-            var minColor = "yellow";
-            var maxColor = "red";
 
             if (attribute == "module_id") {
                 colorArray = this.dataSet.attributes.get('module_id').map((group: number) => {
