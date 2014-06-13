@@ -311,7 +311,7 @@ $('#load-example-data').button().click(function () {
         if (dataSets[0].attributes) {
             for (var i = 0; i < dataSets[0].attributes.columnNames.length; ++i) {
                 var columnName = dataSets[0].attributes.columnNames[i];
-                $('#attribute-select').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#div-set-node-scale').css({ visibility: 'visible' });            $('#div-node-color-pickers-discrete').css({ visibility: 'visible' });            $('#div-node-color-pickers').css({ visibility: 'visible' });                     if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();              if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();             setupCrossFilter(dataSets[0].attributes);        }   
+                $('#select-attribute').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#div-set-node-scale').css({ visibility: 'visible' });            $('#div-node-color-pickers-discrete').css({ visibility: 'visible' });            $('#div-node-color-pickers').css({ visibility: 'visible' });                     if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();              if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();             setupCrossFilter(dataSets[0].attributes);        }   
     });
 });
 
@@ -334,24 +334,26 @@ $('#button-apply-filter').button().click(function () {
     //setTimeout(highlightSelectedNodes, 5000);
 });
 
-$('#button-set-scale-color').button().click(function () {
-    var sizeOrColor = $('#node-size-color-select').val();
-    var attribute = $('#attribute-select').val();
-    var minColor = $('#input-min-color').val();
-    var maxColor = $('#input-max-color').val();
+$('#button-set-node-size-color').button().click(function () {
+    var sizeOrColor = $('#select-node-size-color').val();
+    var attribute = $('#select-attribute').val();
 
-    if (!sizeOrColor || !attribute || !minColor || !maxColor) return;
-
-    minColor = '#' + minColor;
-    maxColor = '#' + maxColor;
+    if (!sizeOrColor || !attribute) return;
 
     if (sizeOrColor == "node-size") {
 
     }
     else if (sizeOrColor == "node-color") {
         if (attribute == "module_id") {
+
         }
         else {
+            var minColor = $('#input-min-color').val();
+            var maxColor = $('#input-max-color').val();
+
+            minColor = '#' + minColor;
+            maxColor = '#' + maxColor;
+
             if (apps[0]) apps[0].setNodeColor(attribute, minColor, maxColor);
             if (apps[1]) apps[1].setNodeColor(attribute, minColor, maxColor);
             if (apps[2]) apps[2].setNodeColor(attribute, minColor, maxColor);
@@ -363,51 +365,84 @@ $('#button-set-scale-color').button().click(function () {
     }
 });
 
-$('#node-size-color-select').on('change', function () {
-    var value = $('#node-size-color-select').val();
+function unique(sourceArray: any[]) {
+    var arr = [];
+    for (var i = 0; i < sourceArray.length; i++) {
+        if (arr.indexOf(sourceArray[i]) == -1) {
+            arr.push(sourceArray[i]);
+        }
+    }
+    return arr;
+}
+
+$('#select-node-size-color').on('change', function () {
+    var value = $('#select-node-size-color').val();
 
     if (value == "node-default") {
-        $('#attribute-select').prop("disabled", "disabled");   
+        $('#select-attribute').prop("disabled", "disabled");   
         
         if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();        if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();  
     }
     else if (value == "node-size") {
-        $('#attribute-select').prop('disabled', false);
+        $('#select-attribute').prop('disabled', false);
 
         if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();        if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach(); 
     }
     else if (value == "node-color") {
-        $('#attribute-select').prop('disabled', false);
+        $('#select-attribute').prop('disabled', false);
 
-        var attribute = $('#attribute-select').val();
+        var attribute = $('#select-attribute').val();
 
         if (attribute == "module_id") {
-            if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();
-            $(divNodeColorPickersDiscrete).appendTo('#tab-3');
+            setupColorPickerDiscrete(attribute);
         }
         else {
-        if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();  
-            $(divNodeColorPickers).appendTo('#tab-3');
+            setupColorPicker();
         }
     }
 });
 
-$('#attribute-select').on('change', function () {
-    var sizeOrColor = $('#node-size-color-select').val();
-    var attribute = $('#attribute-select').val();
+$('#select-attribute').on('change', function () {
+    var sizeOrColor = $('#select-node-size-color').val();
+    var attribute = $('#select-attribute').val();
 
     if (sizeOrColor == "node-color") {
         if (attribute == "module_id") {
-            if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();
-            $(divNodeColorPickersDiscrete).appendTo('#tab-3');
+            setupColorPickerDiscrete(attribute);
         }
         else {
-            if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();
-            $(divNodeColorPickers).appendTo('#tab-3');
+            setupColorPicker();
         }
     }
 });
 
+function setupColorPicker() {
+    if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();
+    $(divNodeColorPickers).appendTo('#tab-3');
+}
+
+function setupColorPickerDiscrete(attribute: string) {
+    if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();
+    $(divNodeColorPickersDiscrete).appendTo('#tab-3');
+
+    var attrArray = dataSets[0].attributes.get(attribute);
+    var uniqueKeys = unique(attrArray);
+    uniqueKeys.sort(function (a, b) { return a - b; });
+
+    var d3ColorSelector = d3.scale.category20();
+
+    var colorArray = uniqueKeys.map((group: number) => { return d3ColorSelector(group); });
+
+    $('#select-node-key').empty();
+
+    for (var i = 0; i < uniqueKeys.length; i++) {
+        var option = document.createElement('option');
+        option.text = uniqueKeys[i];
+        option.value = uniqueKeys[i];
+        option.style.backgroundColor = colorArray[i];
+        $('#select-node-key').append(option);
+    }
+}
 
 // Shorten the names of the views - they are referenced quite often
 var tl_view = '#view-top-left';

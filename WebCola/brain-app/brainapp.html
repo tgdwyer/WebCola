@@ -268,17 +268,20 @@
             <div class="dc-data-count">
                 <button id="button-apply-filter" title="Show only nodes that are selected above" style="font-size:10px;" disabled="true">Apply</button> 
                 <span class="filter-count"></span> selected out of <span class="total-count"></span> | <a href="javascript:dc.filterAll();dc.renderAll();">Reset</a>
-                <div id="div-set-node-scale" style="visibility:hidden; margin-top: 10px;">
-                    <button id="button-set-scale-color" title="Set node size/color based on its attributes" style="font-size:10px;">Set</button>
-                    <select id="node-size-color-select" style="background-color: #feeebd;">
+                <div id="div-set-node-scale" style="visibility:hidden; margin-top: 10px; margin-bottom: 5px;">
+                    <button id="button-set-node-size-color" title="Set node size/color based on its attributes" style="font-size:10px;">Set</button>
+                    <select id="select-node-size-color" style="background-color: #feeebd;">
                         <option value="node-size">size</option>
                         <option value="node-color">color</option>
                         <option value="node-default">default</option>
                     </select> by
-                    <select id="attribute-select" style="background-color: #feeebd"></select>
+                    <select id="select-attribute" style="background-color: #feeebd"></select>
                 </div>
             </div>
-            <div id="div-node-color-pickers-discrete" style="visibility:hidden; margin-top: 20px; margin-left: 40px;">
+            <div id="div-node-size-slider">
+                
+            </div>
+            <div id="div-node-color-pickers-discrete" style="visibility:hidden; margin-top: 30px; margin-left: 40px;">
                 <p>
                     key:
                     <select id="select-node-key" style="background-color: #feeebd"></select>
@@ -286,7 +289,7 @@
                     <input id="input-node-color-value-style" style="width: 11px; height: 11px; border: 1px solid #000000" readonly>
                 </p>
             </div>
-            <div id="div-node-color-pickers" style="visibility:hidden; margin-top: 20px; margin-left: 40px;">
+            <div id="div-node-color-pickers" style="visibility:hidden; margin-top: 30px; margin-left: 40px;">
                 <p style="margin-bottom: 0;">
                     min:
                     <input id="input-min-color" class="color {pickerFace:3, pickerFaceColor:'#feeebd', styleElement:'input-min-color-style'}" value="FFFF00" style="width: 80px; background-color: #feeebd; border: 1px solid grey">

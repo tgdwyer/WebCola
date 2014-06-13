@@ -84,7 +84,6 @@ class Brain3DApp implements Application, Loopable {
     rotationSpeed: number = 1.2;
     graphOffset: number = 120;
     colaLinkDistance = 15;
-    d3ColorSelector = d3.scale.category20();
 
     /*
     closeBrainAppCallback;
@@ -600,10 +599,12 @@ class Brain3DApp implements Application, Loopable {
             var colorArray: number[];
 
             if (attribute == "module_id") {
+                /*
                 colorArray = this.dataSet.attributes.get('module_id').map((group: number) => {
                     var str = this.d3ColorSelector(group).replace("#", "0x");
                     return parseInt(str);
                 });
+                */
             }
             else {
                 if (max / min > 10) {
@@ -637,10 +638,11 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
-    setNodeColorDiscrete(attribute: string, colorArray2: string[]) {
+    setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]) {
         if (!attribute) return;
         if (!this.dataSet || !this.dataSet.attributes) return;
 
+        /*
         if (attribute == "module_id") {
             var colorArray = this.dataSet.attributes.get('module_id').map((group: number) => {
                 var str = this.d3ColorSelector(group).replace("#", "0x");
@@ -652,7 +654,7 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setNodesColor(colorArray);
         this.colaGraph.setNodesColor(colorArray);
-
+        */
     }
 
     resize(width: number, height: number) {
