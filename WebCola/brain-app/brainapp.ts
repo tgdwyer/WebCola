@@ -309,6 +309,7 @@ $('#load-example-data').button().click(function () {
         $('#d1-att').css({ color: 'green' });
 
         if (dataSets[0].attributes) {
+            $('#select-attribute').empty();
             for (var i = 0; i < dataSets[0].attributes.columnNames.length; ++i) {
                 var columnName = dataSets[0].attributes.columnNames[i];
                 $('#select-attribute').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#div-set-node-scale').css({ visibility: 'visible' });            $('#div-node-color-pickers-discrete').css({ visibility: 'visible' });            $('#div-node-color-pickers').css({ visibility: 'visible' });                     if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();              if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();             setupCrossFilter(dataSets[0].attributes);        }   
@@ -416,6 +417,43 @@ $('#select-attribute').on('change', function () {
     }
 });
 
+$('#select-node-key').on('change', function () {
+    var key = $('#select-node-key').val();
+
+    var keySelection = <any>document.getElementById('select-node-key');
+
+    for (var i = 0; i < keySelection.length; i++) {
+        if (keySelection.options[i].value == key) {
+            var color = keySelection.options[i].style.backgroundColor;
+            var hex = colorToHex(color);
+            (<any>document.getElementById('input-node-color')).color.fromString(hex.substring(1));
+            break;
+        }
+    }
+
+    /*
+    $('#select-node-key > option').each(function () {
+        if (this.value == key) {
+            (<any>document.getElementById('input-node-color')).color.fromString(this.style.backgroundColor.substring(1));
+        }
+    });
+    */
+});
+
+function colorToHex(color) {
+    if (color.substr(0, 1) === '#') {
+        return color;
+    }
+    var digits = /(.*?)rgb\((\d+), (\d+), (\d+)\)/.exec(color);
+
+    var red = parseInt(digits[2]);
+    var green = parseInt(digits[3]);
+    var blue = parseInt(digits[4]);
+
+    var rgb = blue | (green << 8) | (red << 16);
+    return digits[1] + '#' + rgb.toString(16);
+};
+
 function setupColorPicker() {
     if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();
     $(divNodeColorPickers).appendTo('#tab-3');
@@ -431,7 +469,7 @@ function setupColorPickerDiscrete(attribute: string) {
 
     var d3ColorSelector = d3.scale.category20();
 
-    var colorArray = uniqueKeys.map((group: number) => { return d3ColorSelector(group); });
+    var uniqueColors = uniqueKeys.map((group: number) => { return d3ColorSelector(group); });
 
     $('#select-node-key').empty();
 
@@ -439,9 +477,11 @@ function setupColorPickerDiscrete(attribute: string) {
         var option = document.createElement('option');
         option.text = uniqueKeys[i];
         option.value = uniqueKeys[i];
-        option.style.backgroundColor = colorArray[i];
+        option.style.backgroundColor = uniqueColors[i];
         $('#select-node-key').append(option);
     }
+    
+    (<any>document.getElementById('input-node-color')).color.fromString(uniqueColors[0].substring(1));
 }
 
 // Shorten the names of the views - they are referenced quite often
