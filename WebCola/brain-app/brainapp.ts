@@ -160,6 +160,7 @@ interface Application {
     resize(width: number, height: number);
     applyFilter(filteredIDs: number[]);
     setNodeColor(attribute: string, minColor: string, maxColor: string);
+    setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]);
     highlightSelectedNodes(filteredIDs: number[]);
     isDeleted();
 }
@@ -169,6 +170,7 @@ class DummyApp implements Application {
     resize() { }
     applyFilter() { }
     setNodeColor() { }
+    setNodeColorDiscrete() { }
     highlightSelectedNodes() { }
     isDeleted() { }
 }
@@ -331,8 +333,6 @@ $('#button-apply-filter').button().click(function () {
     if (apps[1]) apps[1].applyFilter(idArray);
     if (apps[2]) apps[2].applyFilter(idArray);
     if (apps[3]) apps[3].applyFilter(idArray);
-
-    //setTimeout(highlightSelectedNodes, 5000);
 });
 
 $('#button-set-node-size-color').button().click(function () {
@@ -346,7 +346,23 @@ $('#button-set-node-size-color').button().click(function () {
     }
     else if (sizeOrColor == "node-color") {
         if (attribute == "module_id") {
+            var keyArray: number[] = [];
+            var colorArray: string[] = [];
 
+            var keySelection = <any>document.getElementById('select-node-key');
+
+            for (var i = 0; i < keySelection.length; i++) {
+                var key = keySelection.options[i].value;
+                var color = keySelection.options[i].style.backgroundColor;
+                var hex: string = colorToHex(color);
+                keyArray.push(key);
+                colorArray.push(hex);
+            }
+
+            if (apps[0]) apps[0].setNodeColorDiscrete(attribute, keyArray, colorArray);
+            if (apps[1]) apps[1].setNodeColorDiscrete(attribute, keyArray, colorArray);
+            if (apps[2]) apps[2].setNodeColorDiscrete(attribute, keyArray, colorArray);
+            if (apps[3]) apps[3].setNodeColorDiscrete(attribute, keyArray, colorArray);
         }
         else {
             var minColor = $('#input-min-color').val();
@@ -430,28 +446,27 @@ $('#select-node-key').on('change', function () {
             break;
         }
     }
-
-    /*
-    $('#select-node-key > option').each(function () {
-        if (this.value == key) {
-            (<any>document.getElementById('input-node-color')).color.fromString(this.style.backgroundColor.substring(1));
-        }
-    });
-    */
 });
 
 function colorToHex(color) {
     if (color.substr(0, 1) === '#') {
         return color;
     }
-    var digits = /(.*?)rgb\((\d+), (\d+), (\d+)\)/.exec(color);
+    var digits = /rgb\((\d+), (\d+), (\d+)\)/.exec(color);
 
-    var red = parseInt(digits[2]);
-    var green = parseInt(digits[3]);
-    var blue = parseInt(digits[4]);
+    var red = parseInt(digits[1]);
+    var green = parseInt(digits[2]);
+    var blue = parseInt(digits[3]);
 
-    var rgb = blue | (green << 8) | (red << 16);
-    return digits[1] + '#' + rgb.toString(16);
+    var hexRed = red.toString(16);
+    var hexGreen = green.toString(16);
+    var hexBlue = blue.toString(16);
+
+    if (hexRed.length == 1) hexRed = "0" + hexRed;
+    if (hexGreen.length == 1) hexGreen = "0" + hexGreen;
+    if (hexBlue.length == 1) hexBlue = "0" + hexBlue;
+
+    return '#' + hexRed + hexGreen + hexBlue;
 };
 
 function setupColorPicker() {

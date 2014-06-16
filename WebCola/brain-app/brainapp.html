@@ -285,7 +285,11 @@
                 <p>
                     key:
                     <select id="select-node-key" style="background-color: #feeebd"></select>
-                    <input id="input-node-color" class="color {pickerFace:3, pickerFaceColor:'#feeebd', styleElement:'input-node-color-style'}" value="FFFF00" style="width: 80px; background-color: #feeebd; border: 1px solid grey">
+                    <input id="input-node-color"
+                           class="color {pickerFace:3, pickerFaceColor:'#feeebd', styleElement:'input-node-color-style'}"
+                           value="FFFF00"
+                           style="width: 80px; background-color: #feeebd; border: 1px solid grey"
+                           onchange="document.getElementById('select-node-key').options[document.getElementById('select-node-key').selectedIndex].style.backgroundColor = '#' + this.color">
                     <input id="input-node-color-style" style="width: 11px; height: 11px; border: 1px solid #000000" readonly>
                 </p>
             </div>
