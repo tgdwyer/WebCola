@@ -187,12 +187,22 @@
     <!-- Page structure -->
     <div id="control-panel">
         <ul>
-            <li><a href="#tab-1">Data</a></li>
-            <li><a href="#tab-2">Visualisations</a></li>
+            <li><a href="#tab-1">Surface</a></li>
+            <li><a href="#tab-2">Data</a></li>
             <li><a href="#tab-3">Attribute</a></li>
             <!--<li><a href="#tab-4">Help</a></li>-->
         </ul>
         <div id="tab-1" class="tab">
+            model:
+            <select id="brain3d-model-select" style="background-color: #feeebd; margin-bottom: 10px;">
+                <option value="icbm">ICBM152</option>
+                <option value="ch2">CH2</option>
+                <option value="ch2_inflated">CH2 Inflated</option>
+                <option value="ch2_cerebellum">CH2 Cerebellum</option>
+            </select>
+            <div id="brain3d-icon-back" class="icon"></div>
+        </div>
+        <div id="tab-2" class="tab">
             <div id="accordion">
                 <h2>Shared Data</h2>
                 <div class="fold">
@@ -248,15 +258,6 @@
                 <p id="d2-mat" class="dataset-component">Similarity Matrix</p>
                 <p id="d2-att" class="dataset-component">Attributes</p>
             </div>
-        </div>
-        <div id="tab-2" class="tab">
-            <select id="brain3d-model-select" style="background-color: #feeebd;">
-                <option value="icbm">BrainMesh_ICBM152</option>
-                <option value="ch2">BrainMesh_ch2</option>
-                <option value="ch2_inflated">BrainMesh_Ch2_Inflated</option>
-                <option value="ch2_cerebellum">BrainMesh_Ch2withCerebellum</option>
-            </select>
-            <div id="brain3d-icon-back" class="icon"></div>
         </div>
         <div id="tab-3" class="tab">
             <div id="barChart0" class="chart"></div>

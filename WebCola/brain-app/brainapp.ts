@@ -221,28 +221,32 @@ class Loop {
 $('#control-panel').tabs({
     activate: function (event, ui) {
         if (ui.newPanel[0].id == 'tab-1') {
+            // Reset all (visualisation) icons
+            resetBrain3D();
+            // Show all icons
+            showVisIcons();
+        }
+        else {
+            // Hide all icons
+            hideVisIcons();
+        }
+
+        if (ui.newPanel[0].id == 'tab-2') {
             // Reset data set icon positions
             resetDataSet1();
             resetDataSet2();
             $('#dataset1-icon-front').show();
             $('#dataset2-icon-front').show();
-        } else {
+        }
+        else {
             $('#dataset1-icon-front').hide();
             $('#dataset2-icon-front').hide();
-        }
-        if (ui.newPanel[0].id == 'tab-2') {
-            // Reset all (visualisation) icons
-            resetBrain3D();
-            // Show all icons
-            showVisIcons();
-        } else {
-            // Hide all icons
-            hideVisIcons();
         }
     }
 });
 
-$('#accordion').accordion({ heightStyle: 'fill' });
+//$('#accordion').accordion({ heightStyle: 'fill' });
+$('#accordion').accordion({ heightStyle: 'content' });
 
 // Set up data upload buttons
 $('#select-coords').button();
@@ -784,6 +788,7 @@ function resetIcon(object: string, location: string) {
 var resetBrain3D = resetIcon('#brain3d-icon-front', '#brain3d-icon-back');
 var resetDataSet1 = resetIcon('#dataset1-icon-front', '#dataset1-icon-back');
 var resetDataSet2 = resetIcon('#dataset2-icon-front', '#dataset2-icon-back');
+
 // Data set icons are visible when the page loads - reset them immediately
 resetDataSet1();
 resetDataSet2();
@@ -801,7 +806,13 @@ function hideVisIcons() {
         icon.hide();
     });
 }
-hideVisIcons(); // Hide all the icons immediately
+//hideVisIcons(); // Hide all the icons immediately
+
+// Reset all (surface tab) icons
+resetBrain3D();
+showVisIcons();
+$('#dataset1-icon-front').hide();
+$('#dataset2-icon-front').hide();
 
 var apps = Array<Application>(new DummyApp(), new DummyApp(), new DummyApp(), new DummyApp());
 
