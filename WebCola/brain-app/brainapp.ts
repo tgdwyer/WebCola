@@ -159,6 +159,7 @@ interface Application {
     setDataSet(dataSet: DataSet);
     resize(width: number, height: number);
     applyFilter(filteredIDs: number[]);
+    setNodeDefaultSizeColor();
     setNodeSize(scaleArray: number[]);
     setNodeColor(attribute: string, minColor: string, maxColor: string);
     setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]);
@@ -170,6 +171,7 @@ class DummyApp implements Application {
     setDataSet() { }
     resize() { }
     applyFilter() { }
+    setNodeDefaultSizeColor() { }
     setNodeSize() { }
     setNodeColor() { }
     setNodeColorDiscrete() { }
@@ -397,7 +399,10 @@ $('#button-set-node-size-color').button().click(function () {
         }
     }
     else if (sizeOrColor == "node-default") {
-
+        if (apps[0]) apps[0].setNodeDefaultSizeColor();
+        if (apps[1]) apps[1].setNodeDefaultSizeColor();
+        if (apps[2]) apps[2].setNodeDefaultSizeColor();
+        if (apps[3]) apps[3].setNodeDefaultSizeColor();
     }
 });
 
@@ -418,8 +423,8 @@ $('#select-node-size-color').on('change', function () {
 
     if (value == "node-default") {
         $('#select-attribute').prop("disabled", "disabled");   
-        
-        if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();        if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();  
+   
+        if ($('#div-node-size').length > 0) divNodeSizeRange = $('#div-node-size').detach();        if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();        if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach(); 
     }
     else if (value == "node-size") {
         $('#select-attribute').prop('disabled', false);
@@ -516,25 +521,6 @@ function setupNodeSizeRangeSlider(attribute: string) {
     if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();
     if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();
     $(divNodeSizeRange).appendTo('#tab-3');
-
-    /*
-    var attrArray = dataSets[0].attributes.get(attribute);
-
-    var columnIndex = dataSets[0].attributes.columnNames.indexOf(attribute);
-
-    // assume all positive numbers in the array
-    var min = dataSets[0].attributes.getMin(columnIndex);
-    var max = dataSets[0].attributes.getMax(columnIndex); 
-
-    var scaleArray: number[];
-    var scaleFactor = 0.5;
-    if (max / min > 10) {
-        scaleArray = attrArray.map((value: number) => { return scaleFactor * Math.log(value) / Math.log(min); });
-    }
-    else {
-        scaleArray = attrArray.map((value: number) => { return scaleFactor * value / min; });
-    }
-    */
 
     var scaleArray = getNodeScaleArray(attribute);
     if (!scaleArray) return;

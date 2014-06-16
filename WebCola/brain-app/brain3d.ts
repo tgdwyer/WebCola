@@ -565,6 +565,15 @@ class Brain3DApp implements Application, Loopable {
         this.physioGraph.highlightSelectedNodes(filteredIDs);
     }
 
+    setNodeDefaultSizeColor() {
+        // set default node color and scale
+        this.physioGraph.setDefaultNodeColor();
+        this.colaGraph.setDefaultNodeColor();
+
+        this.physioGraph.setDefaultNodeScale();
+        this.colaGraph.setDefaultNodeScale();
+    }
+
     setNodeSize(scaleArray: number[]) {
         this.physioGraph.setNodesScale(scaleArray);
         this.colaGraph.setNodesScale(scaleArray);
@@ -581,56 +590,30 @@ class Brain3DApp implements Application, Loopable {
 
         // assume all positive numbers in the array
         var min = this.dataSet.attributes.getMin(columnIndex);
-        var max = this.dataSet.attributes.getMax(columnIndex); 
+        var max = this.dataSet.attributes.getMax(columnIndex);
 
-        var sizeOrColor = "node-color";
+        var colorArray: number[];
 
-        if (sizeOrColor == "node-size") {
-            var scaleArray: number[];
-
-            if (max / min > 10) {
-                scaleArray = attrArray.map((value: number) => { return Math.log(value) / Math.log(min); });
-            }
-            else {
-                scaleArray = attrArray.map((value: number) => { return value / min; });
-            }
-
-            if (!scaleArray) return;
-
-            this.physioGraph.setNodesScale(scaleArray);
-            this.colaGraph.setNodesScale(scaleArray);
+        if (max / min > 10) {
+            var colorMap = d3.scale.linear().domain([Math.log(min), Math.log(max)]).range([minColor, maxColor]);
+            colorArray = attrArray.map((value: number) => {
+                var str = colorMap(Math.log(value)).replace("#", "0x");
+                return parseInt(str);
+            });
         }
-        else if (sizeOrColor == "node-color") {
-            var colorArray: number[];
-
-            if (max / min > 10) {
-                var colorMap = d3.scale.linear().domain([Math.log(min), Math.log(max)]).range([minColor, maxColor]);
-                colorArray = attrArray.map((value: number) => {
-                    var str = colorMap(Math.log(value)).replace("#", "0x");
-                    return parseInt(str);
-                });
-            }
-            else {
-                var colorMap = d3.scale.linear().domain([min, max]).range([minColor, maxColor]);
-                colorArray = attrArray.map((value: number) => {
-                    var str = colorMap(value).replace("#", "0x");
-                    return parseInt(str);
-                });
-            }
-
-            if (!colorArray) return;
-
-            this.physioGraph.setNodesColor(colorArray);
-            this.colaGraph.setNodesColor(colorArray);
+        else {
+            var colorMap = d3.scale.linear().domain([min, max]).range([minColor, maxColor]);
+            colorArray = attrArray.map((value: number) => {
+                var str = colorMap(value).replace("#", "0x");
+                return parseInt(str);
+            });
         }
-        else if (sizeOrColor == "node-default") {
-            // set default node color and scale
-            this.physioGraph.setDefaultNodeColor();
-            this.colaGraph.setDefaultNodeColor();
 
-            this.physioGraph.setDefaultNodeScale();
-            this.colaGraph.setDefaultNodeScale();
-        }
+        if (!colorArray) return;
+
+        this.physioGraph.setNodesColor(colorArray);
+        this.colaGraph.setNodesColor(colorArray);
+
     }
 
     setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]) {
@@ -1222,7 +1205,6 @@ class Graph {
     }
 }
 
-
 class Edge {
     shape;
     geometry;
@@ -1296,14 +1278,14 @@ class Edge {
         }
 
         if (coloredEdges == true) {
-            var sourceColor = this.sourceNode.material.color.getHex();
-            var targetColor = this.targetNode.material.color.getHex();
+            var sourceColor = this.sourceNode.material.color;
+            var targetColor = this.targetNode.material.color;
 
-            if (sourceColor == targetColor) {
-                this.setColor(this.sourceNode.material.color.getHex());
+            if (sourceColor.getHex() == targetColor.getHex()) {
+                this.setColor(sourceColor.getHex());
             }
-            else if (((sourceColor / targetColor) > 0.95) && ((sourceColor / targetColor) < 1.05)) { // this line assume the color range is from yellow to red
-                this.setColor(this.sourceNode.material.color.getHex());
+            else if (((sourceColor.getHex() / targetColor.getHex()) > 0.95) && ((sourceColor.getHex() / targetColor.getHex()) < 1.05)) { 
+                this.setColor(sourceColor.getHex());
             }
             else {
                 this.setColor(0xcfcfcf); // default edge color
