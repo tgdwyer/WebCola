@@ -565,6 +565,11 @@ class Brain3DApp implements Application, Loopable {
         this.physioGraph.highlightSelectedNodes(filteredIDs);
     }
 
+    setNodeSize(scaleArray: number[]) {
+        this.physioGraph.setNodesScale(scaleArray);
+        this.colaGraph.setNodesScale(scaleArray);
+    }
+
     setNodeColor(attribute: string, minColor: string, maxColor: string) {
         if (!attribute || !minColor || !maxColor) return;
         if (!this.dataSet || !this.dataSet.attributes) return;
@@ -598,29 +603,19 @@ class Brain3DApp implements Application, Loopable {
         else if (sizeOrColor == "node-color") {
             var colorArray: number[];
 
-            if (attribute == "module_id") {
-                /*
-                colorArray = this.dataSet.attributes.get('module_id').map((group: number) => {
-                    var str = this.d3ColorSelector(group).replace("#", "0x");
+            if (max / min > 10) {
+                var colorMap = d3.scale.linear().domain([Math.log(min), Math.log(max)]).range([minColor, maxColor]);
+                colorArray = attrArray.map((value: number) => {
+                    var str = colorMap(Math.log(value)).replace("#", "0x");
                     return parseInt(str);
                 });
-                */
             }
             else {
-                if (max / min > 10) {
-                    var colorMap = d3.scale.linear().domain([Math.log(min), Math.log(max)]).range([minColor, maxColor]);
-                    colorArray = attrArray.map((value: number) => {
-                        var str = colorMap(Math.log(value)).replace("#", "0x");
-                        return parseInt(str);
-                    });
-                }
-                else {
-                    var colorMap = d3.scale.linear().domain([min, max]).range([minColor, maxColor]);
-                    colorArray = attrArray.map((value: number) => {
-                        var str = colorMap(value).replace("#", "0x");
-                        return parseInt(str);
-                    });
-                }
+                var colorMap = d3.scale.linear().domain([min, max]).range([minColor, maxColor]);
+                colorArray = attrArray.map((value: number) => {
+                    var str = colorMap(value).replace("#", "0x");
+                    return parseInt(str);
+                });
             }
 
             if (!colorArray) return;
@@ -1134,10 +1129,8 @@ class Graph {
         if (!scaleArray) return;
         if (scaleArray.length != this.nodeMeshes.length) return;
 
-        var scaleFactor = 0.5;
-
         for (var i = 0; i < this.nodeMeshes.length; ++i) {
-            var scale = scaleFactor * scaleArray[i];
+            var scale = scaleArray[i];
             this.nodeMeshes[i].scale.set(scale, scale, scale);
         }
     }

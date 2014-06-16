@@ -159,6 +159,7 @@ interface Application {
     setDataSet(dataSet: DataSet);
     resize(width: number, height: number);
     applyFilter(filteredIDs: number[]);
+    setNodeSize(scaleArray: number[]);
     setNodeColor(attribute: string, minColor: string, maxColor: string);
     setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]);
     highlightSelectedNodes(filteredIDs: number[]);
@@ -169,6 +170,7 @@ class DummyApp implements Application {
     setDataSet() { }
     resize() { }
     applyFilter() { }
+    setNodeSize() { }
     setNodeColor() { }
     setNodeColorDiscrete() { }
     highlightSelectedNodes() { }
@@ -290,6 +292,7 @@ $('#upload-attr-2 ').button().click(function () {
     }
 });
 
+var divNodeSizeRange;
 var divNodeColorPickers;
 var divNodeColorPickersDiscrete;
 
@@ -314,7 +317,7 @@ $('#load-example-data').button().click(function () {
             $('#select-attribute').empty();
             for (var i = 0; i < dataSets[0].attributes.columnNames.length; ++i) {
                 var columnName = dataSets[0].attributes.columnNames[i];
-                $('#select-attribute').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#div-set-node-scale').css({ visibility: 'visible' });            $('#div-node-color-pickers-discrete').css({ visibility: 'visible' });            $('#div-node-color-pickers').css({ visibility: 'visible' });                     if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();              if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();             setupCrossFilter(dataSets[0].attributes);        }   
+                $('#select-attribute').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#div-set-node-scale').css({ visibility: 'visible' });            $('#div-node-size').css({ visibility: 'visible' });            $('#div-node-color-pickers').css({ visibility: 'visible' });            $('#div-node-color-pickers-discrete').css({ visibility: 'visible' });                     if ($('#div-node-size').length > 0) divNodeSizeRange = $('#div-node-size').detach();            if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();              if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();             var attribute = $('#select-attribute').val();            setupNodeSizeRangeSlider(attribute); // default option            setupCrossFilter(dataSets[0].attributes);        }   
     });
 });
 
@@ -342,7 +345,23 @@ $('#button-set-node-size-color').button().click(function () {
     if (!sizeOrColor || !attribute) return;
 
     if (sizeOrColor == "node-size") {
+        var scaleArray = getNodeScaleArray(attribute);
+        if (!scaleArray) return;
 
+        var minScale = Math.min.apply(Math, scaleArray);
+        var maxScale = Math.max.apply(Math, scaleArray);
+
+        var minNewScale = $("#div-node-size-slider").slider("values", 0);
+        var maxNewScale = $("#div-node-size-slider").slider("values", 1);
+
+        var scaleMap = d3.scale.linear().domain([minScale, maxScale]).range([minNewScale, maxNewScale]);
+
+        var newScaleArray = scaleArray.map((value: number) => { return scaleMap(value); });
+
+        if (apps[0]) apps[0].setNodeSize(newScaleArray);
+        if (apps[1]) apps[1].setNodeSize(newScaleArray);
+        if (apps[2]) apps[2].setNodeSize(newScaleArray);
+        if (apps[3]) apps[3].setNodeSize(newScaleArray);
     }
     else if (sizeOrColor == "node-color") {
         if (attribute == "module_id") {
@@ -395,6 +414,8 @@ function unique(sourceArray: any[]) {
 $('#select-node-size-color').on('change', function () {
     var value = $('#select-node-size-color').val();
 
+    var attribute = $('#select-attribute').val();
+
     if (value == "node-default") {
         $('#select-attribute').prop("disabled", "disabled");   
         
@@ -403,12 +424,10 @@ $('#select-node-size-color').on('change', function () {
     else if (value == "node-size") {
         $('#select-attribute').prop('disabled', false);
 
-        if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();        if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach(); 
+        setupNodeSizeRangeSlider(attribute);
     }
     else if (value == "node-color") {
         $('#select-attribute').prop('disabled', false);
-
-        var attribute = $('#select-attribute').val();
 
         if (attribute == "module_id") {
             setupColorPickerDiscrete(attribute);
@@ -423,6 +442,9 @@ $('#select-attribute').on('change', function () {
     var sizeOrColor = $('#select-node-size-color').val();
     var attribute = $('#select-attribute').val();
 
+    if (sizeOrColor == "node-size") {
+        setupNodeSizeRangeSlider(attribute);
+    }
     if (sizeOrColor == "node-color") {
         if (attribute == "module_id") {
             setupColorPickerDiscrete(attribute);
@@ -469,12 +491,79 @@ function colorToHex(color) {
     return '#' + hexRed + hexGreen + hexBlue;
 };
 
+function getNodeScaleArray(attribute: string) {
+    var attrArray = dataSets[0].attributes.get(attribute);
+
+    var columnIndex = dataSets[0].attributes.columnNames.indexOf(attribute);
+
+    // assume all positive numbers in the array
+    var min = dataSets[0].attributes.getMin(columnIndex);
+    var max = dataSets[0].attributes.getMax(columnIndex);
+
+    var scaleArray: number[];
+    var scaleFactor = 0.5;
+    if (max / min > 10) {
+        scaleArray = attrArray.map((value: number) => { return scaleFactor * Math.log(value) / Math.log(min); });
+    }
+    else {
+        scaleArray = attrArray.map((value: number) => { return scaleFactor * value / min; });
+    }
+
+    return scaleArray;
+}
+
+function setupNodeSizeRangeSlider(attribute: string) {
+    if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();
+    if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();
+    $(divNodeSizeRange).appendTo('#tab-3');
+
+    /*
+    var attrArray = dataSets[0].attributes.get(attribute);
+
+    var columnIndex = dataSets[0].attributes.columnNames.indexOf(attribute);
+
+    // assume all positive numbers in the array
+    var min = dataSets[0].attributes.getMin(columnIndex);
+    var max = dataSets[0].attributes.getMax(columnIndex); 
+
+    var scaleArray: number[];
+    var scaleFactor = 0.5;
+    if (max / min > 10) {
+        scaleArray = attrArray.map((value: number) => { return scaleFactor * Math.log(value) / Math.log(min); });
+    }
+    else {
+        scaleArray = attrArray.map((value: number) => { return scaleFactor * value / min; });
+    }
+    */
+
+    var scaleArray = getNodeScaleArray(attribute);
+    if (!scaleArray) return;
+
+    var minScale = Math.min.apply(Math, scaleArray);
+    var maxScale = Math.max.apply(Math, scaleArray);
+
+    $("#div-node-size-slider").slider({
+        range: true,
+        min: 0.1,
+        max: 10,
+        step: 0.1,
+        values: [minScale, maxScale],
+        slide: function (event, ui) {
+            $("#label_node_size_range").text(ui.values[0] + " - " + ui.values[1]);
+        }
+    });
+
+    $("#label_node_size_range").text($("#div-node-size-slider").slider("values", 0) + " - " + $("#div-node-size-slider").slider("values", 1));
+}
+
 function setupColorPicker() {
+    if ($('#div-node-size').length > 0) divNodeSizeRange = $('#div-node-size').detach();
     if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();
     $(divNodeColorPickers).appendTo('#tab-3');
 }
 
 function setupColorPickerDiscrete(attribute: string) {
+    if ($('#div-node-size').length > 0) divNodeSizeRange = $('#div-node-size').detach();
     if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();
     $(divNodeColorPickersDiscrete).appendTo('#tab-3');
 
