@@ -212,7 +212,6 @@ class InputTargetManager {
             }
         });*/
 
-
         document.addEventListener('mousedown', (event) => {
             if (this.rightClickLabel && this.rightClickLabelAppended) {
                 document.body.removeChild(this.rightClickLabel);

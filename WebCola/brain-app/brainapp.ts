@@ -159,16 +159,24 @@ interface Application {
     setDataSet(dataSet: DataSet);
     resize(width: number, height: number);
     applyFilter(filteredIDs: number[]);
-    setNodeSizeOrColor(sizeOrColor: string, attribute: string);
+    setNodeDefaultSizeColor();
+    setNodeSize(scaleArray: number[]);
+    setNodeColor(attribute: string, minColor: string, maxColor: string);
+    setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]);
     highlightSelectedNodes(filteredIDs: number[]);
+    isDeleted();
 }
 
 class DummyApp implements Application {
     setDataSet() { }
     resize() { }
     applyFilter() { }
-    setNodeSizeOrColor() { }
+    setNodeDefaultSizeColor() { }
+    setNodeSize() { }
+    setNodeColor() { }
+    setNodeColorDiscrete() { }
     highlightSelectedNodes() { }
+    isDeleted() { }
 }
 
 // The loop class can be used to run applications that aren't event-based
@@ -192,6 +200,10 @@ class Loop {
             var deltaTime = (currentTime - this.timeOfLastFrame) / 1000;
             this.timeOfLastFrame = currentTime;
 
+            for (var i = 0; i < 4; ++i) {
+                if (apps[i] && (apps[i].isDeleted() == true)) apps[i] = new DummyApp();
+            }
+
             // Limit the maximum time step
             if (deltaTime > this.frameTimeLimit)
                 this.loopable.update(this.frameTimeLimit);
@@ -209,28 +221,32 @@ class Loop {
 $('#control-panel').tabs({
     activate: function (event, ui) {
         if (ui.newPanel[0].id == 'tab-1') {
+            // Reset all (visualisation) icons
+            resetBrain3D();
+            // Show all icons
+            showVisIcons();
+        }
+        else {
+            // Hide all icons
+            hideVisIcons();
+        }
+
+        if (ui.newPanel[0].id == 'tab-2') {
             // Reset data set icon positions
             resetDataSet1();
             resetDataSet2();
             $('#dataset1-icon-front').show();
             $('#dataset2-icon-front').show();
-        } else {
+        }
+        else {
             $('#dataset1-icon-front').hide();
             $('#dataset2-icon-front').hide();
-        }
-        if (ui.newPanel[0].id == 'tab-2') {
-            // Reset all (visualisation) icons
-            resetBrain3D();
-            // Show all icons
-            showVisIcons();
-        } else {
-            // Hide all icons
-            hideVisIcons();
         }
     }
 });
 
-$('#accordion').accordion({ heightStyle: 'fill' });
+//$('#accordion').accordion({ heightStyle: 'fill' });
+$('#accordion').accordion({ heightStyle: 'content' });
 
 // Set up data upload buttons
 $('#select-coords').button();
@@ -282,6 +298,10 @@ $('#upload-attr-2 ').button().click(function () {
     }
 });
 
+var divNodeSizeRange;
+var divNodeColorPickers;
+var divNodeColorPickersDiscrete;
+
 $('#load-example-data').button().click(function () {
     $.get('data/coords.txt', function (text) {
         parseCoordinates(text);
@@ -300,9 +320,10 @@ $('#load-example-data').button().click(function () {
         $('#d1-att').css({ color: 'green' });
 
         if (dataSets[0].attributes) {
+            $('#select-attribute').empty();
             for (var i = 0; i < dataSets[0].attributes.columnNames.length; ++i) {
                 var columnName = dataSets[0].attributes.columnNames[i];
-                $('#attribute-select').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#button-set-scale-color').css({ visibility: 'visible' });            $('#button-set-scale-color').button({ disabled: false });            $('#node-size-color-select').css({ visibility: 'visible' });            $('#attribute-select').css({ visibility: 'visible' });            $('#div-set-node-scale').css({ 'margin-top': '10px' });                        setupCrossFilter(dataSets[0].attributes);        }   
+                $('#select-attribute').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#div-set-node-scale').css({ visibility: 'visible' });            $('#div-node-size').css({ visibility: 'visible' });            $('#div-node-color-pickers').css({ visibility: 'visible' });            $('#div-node-color-pickers-discrete').css({ visibility: 'visible' });                     if ($('#div-node-size').length > 0) divNodeSizeRange = $('#div-node-size').detach();            if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();              if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();             //var attribute = $('#select-attribute').val();            //setupNodeSizeRangeSlider(attribute); // default option            $('#select-node-size-color').val('node-default');            $('#select-attribute').prop("disabled", "disabled");             setupCrossFilter(dataSets[0].attributes);        }   
     });
 });
 
@@ -321,33 +342,256 @@ $('#button-apply-filter').button().click(function () {
     if (apps[1]) apps[1].applyFilter(idArray);
     if (apps[2]) apps[2].applyFilter(idArray);
     if (apps[3]) apps[3].applyFilter(idArray);
-
-    //setTimeout(highlightSelectedNodes, 5000);
 });
 
-$('#button-set-scale-color').button().click(function () {
-    var sizeOrColor = $('#node-size-color-select').val();
-    var attribute = $('#attribute-select').val();
+$('#button-set-node-size-color').button().click(function () {
+    setNodeSizeOrColor();
+});
 
-    if (sizeOrColor && attribute) {
-        if (apps[0]) apps[0].setNodeSizeOrColor(sizeOrColor, attribute);
-        if (apps[1]) apps[1].setNodeSizeOrColor(sizeOrColor, attribute);
-        if (apps[2]) apps[2].setNodeSizeOrColor(sizeOrColor, attribute);
-        if (apps[3]) apps[3].setNodeSizeOrColor(sizeOrColor, attribute);
+function setSelectNodeKeyBackgroundColor(color: string) {
+    var keySelection = <any>document.getElementById('select-node-key');
+    keySelection.options[keySelection.selectedIndex].style.backgroundColor = '#' + color;
+}
+
+function setNodeSizeOrColor() {
+    var sizeOrColor = $('#select-node-size-color').val();
+    var attribute = $('#select-attribute').val();
+
+    if (!sizeOrColor || !attribute) return;
+
+    if (sizeOrColor == "node-size") {
+        var scaleArray = getNodeScaleArray(attribute);
+        if (!scaleArray) return;
+
+        var minScale = Math.min.apply(Math, scaleArray);
+        var maxScale = Math.max.apply(Math, scaleArray);
+
+        var minNewScale = $("#div-node-size-slider").slider("values", 0);
+        var maxNewScale = $("#div-node-size-slider").slider("values", 1);
+
+        var scaleMap = d3.scale.linear().domain([minScale, maxScale]).range([minNewScale, maxNewScale]);
+
+        var newScaleArray = scaleArray.map((value: number) => { return scaleMap(value); });
+
+        if (apps[0]) apps[0].setNodeSize(newScaleArray);
+        if (apps[1]) apps[1].setNodeSize(newScaleArray);
+        if (apps[2]) apps[2].setNodeSize(newScaleArray);
+        if (apps[3]) apps[3].setNodeSize(newScaleArray);
     }
-});
+    else if (sizeOrColor == "node-color") {
+        if (attribute == "module_id") {
+            var keyArray: number[] = [];
+            var colorArray: string[] = [];
 
-$('#node-size-color-select').on('change', function () {
-    var value = $('#node-size-color-select').val();
+            var keySelection = <any>document.getElementById('select-node-key');
+
+            for (var i = 0; i < keySelection.length; i++) {
+                var key = keySelection.options[i].value;
+                var color = keySelection.options[i].style.backgroundColor;
+                var hex: string = colorToHex(color);
+                keyArray.push(key);
+                colorArray.push(hex);
+            }
+
+            if (apps[0]) apps[0].setNodeColorDiscrete(attribute, keyArray, colorArray);
+            if (apps[1]) apps[1].setNodeColorDiscrete(attribute, keyArray, colorArray);
+            if (apps[2]) apps[2].setNodeColorDiscrete(attribute, keyArray, colorArray);
+            if (apps[3]) apps[3].setNodeColorDiscrete(attribute, keyArray, colorArray);
+        }
+        else {
+            var minColor = $('#input-min-color').val();
+            var maxColor = $('#input-max-color').val();
+
+            minColor = '#' + minColor;
+            maxColor = '#' + maxColor;
+
+            if (apps[0]) apps[0].setNodeColor(attribute, minColor, maxColor);
+            if (apps[1]) apps[1].setNodeColor(attribute, minColor, maxColor);
+            if (apps[2]) apps[2].setNodeColor(attribute, minColor, maxColor);
+            if (apps[3]) apps[3].setNodeColor(attribute, minColor, maxColor);
+        }
+    }
+    else if (sizeOrColor == "node-default") {
+        if (apps[0]) apps[0].setNodeDefaultSizeColor();
+        if (apps[1]) apps[1].setNodeDefaultSizeColor();
+        if (apps[2]) apps[2].setNodeDefaultSizeColor();
+        if (apps[3]) apps[3].setNodeDefaultSizeColor();
+    }
+}
+
+function unique(sourceArray: any[]) {
+    var arr = [];
+    for (var i = 0; i < sourceArray.length; i++) {
+        if (arr.indexOf(sourceArray[i]) == -1) {
+            arr.push(sourceArray[i]);
+        }
+    }
+    return arr;
+}
+
+$('#select-node-size-color').on('change', function () {
+    var value = $('#select-node-size-color').val();
+
+    var attribute = $('#select-attribute').val();
 
     if (value == "node-default") {
-        $('#attribute-select').prop("disabled", "disabled");    
+        $('#select-attribute').prop("disabled", "disabled");   
+   
+        if ($('#div-node-size').length > 0) divNodeSizeRange = $('#div-node-size').detach();        if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();        if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach(); 
     }
-    else {
-        $('#attribute-select').prop('disabled', false);
+    else if (value == "node-size") {
+        $('#select-attribute').prop('disabled', false);
+
+        setupNodeSizeRangeSlider(attribute);
+    }
+    else if (value == "node-color") {
+        $('#select-attribute').prop('disabled', false);
+
+        if (attribute == "module_id") {
+            setupColorPickerDiscrete(attribute);
+        }
+        else {
+            setupColorPicker();
+        }
+    }
+
+    setNodeSizeOrColor();
+});
+
+$('#select-attribute').on('change', function () {
+    var sizeOrColor = $('#select-node-size-color').val();
+    var attribute = $('#select-attribute').val();
+
+    if (sizeOrColor == "node-size") {
+        setupNodeSizeRangeSlider(attribute);
+    }
+    if (sizeOrColor == "node-color") {
+        if (attribute == "module_id") {
+            setupColorPickerDiscrete(attribute);
+        }
+        else {
+            setupColorPicker();
+        }
+    }
+
+    setNodeSizeOrColor();
+});
+
+$('#select-node-key').on('change', function () {
+    var key = $('#select-node-key').val();
+
+    var keySelection = <any>document.getElementById('select-node-key');
+
+    for (var i = 0; i < keySelection.length; i++) {
+        if (keySelection.options[i].value == key) {
+            var color = keySelection.options[i].style.backgroundColor;
+            var hex = colorToHex(color);
+            (<any>document.getElementById('input-node-color')).color.fromString(hex.substring(1));
+            break;
+        }
     }
 });
 
+function colorToHex(color) {
+    if (color.substr(0, 1) === '#') {
+        return color;
+    }
+    var digits = /rgb\((\d+), (\d+), (\d+)\)/.exec(color);
+
+    var red = parseInt(digits[1]);
+    var green = parseInt(digits[2]);
+    var blue = parseInt(digits[3]);
+
+    var hexRed = red.toString(16);
+    var hexGreen = green.toString(16);
+    var hexBlue = blue.toString(16);
+
+    if (hexRed.length == 1) hexRed = "0" + hexRed;
+    if (hexGreen.length == 1) hexGreen = "0" + hexGreen;
+    if (hexBlue.length == 1) hexBlue = "0" + hexBlue;
+
+    return '#' + hexRed + hexGreen + hexBlue;
+};
+
+function getNodeScaleArray(attribute: string) {
+    var attrArray = dataSets[0].attributes.get(attribute);
+
+    var columnIndex = dataSets[0].attributes.columnNames.indexOf(attribute);
+
+    // assume all positive numbers in the array
+    var min = dataSets[0].attributes.getMin(columnIndex);
+    var max = dataSets[0].attributes.getMax(columnIndex);
+
+    var scaleArray: number[];
+    var scaleFactor = 0.5;
+    if (max / min > 10) {
+        scaleArray = attrArray.map((value: number) => { return scaleFactor * Math.log(value) / Math.log(min); });
+    }
+    else {
+        scaleArray = attrArray.map((value: number) => { return scaleFactor * value / min; });
+    }
+
+    return scaleArray;
+}
+
+function setupNodeSizeRangeSlider(attribute: string) {
+    if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();
+    if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();
+    $(divNodeSizeRange).appendTo('#tab-3');
+
+    var scaleArray = getNodeScaleArray(attribute);
+    if (!scaleArray) return;
+
+    var minScale = Math.min.apply(Math, scaleArray);
+    var maxScale = Math.max.apply(Math, scaleArray);
+
+    $("#div-node-size-slider").slider({
+        range: true,
+        min: 0.1,
+        max: 10,
+        step: 0.1,
+        values: [minScale, maxScale],
+        change: setNodeSizeOrColor,
+        slide: function (event, ui) {
+            $("#label_node_size_range").text(ui.values[0] + " - " + ui.values[1]);
+            setNodeSizeOrColor();
+        }
+    });
+
+    $("#label_node_size_range").text($("#div-node-size-slider").slider("values", 0) + " - " + $("#div-node-size-slider").slider("values", 1));
+}
+
+function setupColorPicker() {
+    if ($('#div-node-size').length > 0) divNodeSizeRange = $('#div-node-size').detach();
+    if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();
+    $(divNodeColorPickers).appendTo('#tab-3');
+}
+
+function setupColorPickerDiscrete(attribute: string) {
+    if ($('#div-node-size').length > 0) divNodeSizeRange = $('#div-node-size').detach();
+    if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();
+    $(divNodeColorPickersDiscrete).appendTo('#tab-3');
+
+    var attrArray = dataSets[0].attributes.get(attribute);
+    var uniqueKeys = unique(attrArray);
+    uniqueKeys.sort(function (a, b) { return a - b; });
+
+    var d3ColorSelector = d3.scale.category20();
+
+    var uniqueColors = uniqueKeys.map((group: number) => { return d3ColorSelector(group); });
+
+    $('#select-node-key').empty();
+
+    for (var i = 0; i < uniqueKeys.length; i++) {
+        var option = document.createElement('option');
+        option.text = uniqueKeys[i];
+        option.value = uniqueKeys[i];
+        option.style.backgroundColor = uniqueColors[i];
+        $('#select-node-key').append(option);
+    }
+    
+    (<any>document.getElementById('input-node-color')).color.fromString(uniqueColors[0].substring(1));
+}
 
 // Shorten the names of the views - they are referenced quite often
 var tl_view = '#view-top-left';
@@ -482,16 +726,20 @@ $('#brain3d-icon-front').draggable(
 
             switch (getViewUnderMouse(event.pageX, event.pageY)) {
                 case tl_view:
-                    apps[0] = new Brain3DApp(commonData, $(tl_view), input.newTarget(0));
+                    $(tl_view).empty();
+                    apps[0] = new Brain3DApp(0, commonData, $(tl_view), input.newTarget(0));
                     break;
                 case tr_view:
-                    apps[1] = new Brain3DApp(commonData, $(tr_view), input.newTarget(1));
+                    $(tr_view).empty();
+                    apps[1] = new Brain3DApp(1, commonData, $(tr_view), input.newTarget(1));
                     break;
                 case bl_view:
-                    apps[2] = new Brain3DApp(commonData, $(bl_view), input.newTarget(2));
+                    $(bl_view).empty();
+                    apps[2] = new Brain3DApp(2, commonData, $(bl_view), input.newTarget(2));
                     break;
                 case br_view:
-                    apps[3] = new Brain3DApp(commonData, $(br_view), input.newTarget(3));
+                    $(br_view).empty();
+                    apps[3] = new Brain3DApp(3, commonData, $(br_view), input.newTarget(3));
                     break;
             }
 
@@ -555,6 +803,7 @@ function resetIcon(object: string, location: string) {
 var resetBrain3D = resetIcon('#brain3d-icon-front', '#brain3d-icon-back');
 var resetDataSet1 = resetIcon('#dataset1-icon-front', '#dataset1-icon-back');
 var resetDataSet2 = resetIcon('#dataset2-icon-front', '#dataset2-icon-back');
+
 // Data set icons are visible when the page loads - reset them immediately
 resetDataSet1();
 resetDataSet2();
@@ -572,7 +821,13 @@ function hideVisIcons() {
         icon.hide();
     });
 }
-hideVisIcons(); // Hide all the icons immediately
+//hideVisIcons(); // Hide all the icons immediately
+
+// Reset all (surface tab) icons
+resetBrain3D();
+showVisIcons();
+$('#dataset1-icon-front').hide();
+$('#dataset2-icon-front').hide();
 
 var apps = Array<Application>(new DummyApp(), new DummyApp(), new DummyApp(), new DummyApp());
 
