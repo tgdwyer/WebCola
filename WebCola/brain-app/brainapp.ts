@@ -345,6 +345,15 @@ $('#button-apply-filter').button().click(function () {
 });
 
 $('#button-set-node-size-color').button().click(function () {
+    setNodeSizeOrColor();
+});
+
+function setSelectNodeKeyBackgroundColor(color: string) {
+    var keySelection = <any>document.getElementById('select-node-key');
+    keySelection.options[keySelection.selectedIndex].style.backgroundColor = '#' + color;
+}
+
+function setNodeSizeOrColor() {
     var sizeOrColor = $('#select-node-size-color').val();
     var attribute = $('#select-attribute').val();
 
@@ -408,7 +417,7 @@ $('#button-set-node-size-color').button().click(function () {
         if (apps[2]) apps[2].setNodeDefaultSizeColor();
         if (apps[3]) apps[3].setNodeDefaultSizeColor();
     }
-});
+}
 
 function unique(sourceArray: any[]) {
     var arr = [];
@@ -538,8 +547,10 @@ function setupNodeSizeRangeSlider(attribute: string) {
         max: 10,
         step: 0.1,
         values: [minScale, maxScale],
+        change: setNodeSizeOrColor,
         slide: function (event, ui) {
             $("#label_node_size_range").text(ui.values[0] + " - " + ui.values[1]);
+            setNodeSizeOrColor();
         }
     });
 

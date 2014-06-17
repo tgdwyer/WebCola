@@ -291,22 +291,39 @@
                     key:
                     <select id="select-node-key" style="background-color: #feeebd"></select>
                     <input id="input-node-color"
-                           class="color {pickerFace:3, pickerFaceColor:'#feeebd', styleElement:'input-node-color-style'}"
+                           class="color {pickerFace: 3,
+                                         pickerFaceColor: '#feeebd',
+                                         styleElement: 'input-node-color-style',
+                                         onImmediateChange: 'setSelectNodeKeyBackgroundColor(this); setNodeSizeOrColor();'}"
                            value="FFFF00"
                            style="width: 80px; background-color: #feeebd; border: 1px solid grey"
-                           onchange="document.getElementById('select-node-key').options[document.getElementById('select-node-key').selectedIndex].style.backgroundColor = '#' + this.color">
+                           onchange="setSelectNodeKeyBackgroundColor(this.color); setNodeSizeOrColor();">
                     <input id="input-node-color-style" style="width: 11px; height: 11px; border: 1px solid #000000" readonly>
                 </p>
             </div>
             <div id="div-node-color-pickers" style="visibility:hidden; margin-top: 30px; margin-left: 40px;">
                 <p style="margin-bottom: 0;">
                     min:
-                    <input id="input-min-color" class="color {pickerFace:3, pickerFaceColor:'#feeebd', styleElement:'input-min-color-style'}" value="FFFF00" style="width: 80px; background-color: #feeebd; border: 1px solid grey">
+                    <input id="input-min-color"
+                           class="color {pickerFace:3,
+                                         pickerFaceColor:'#feeebd',
+                                         styleElement:'input-min-color-style',
+                                         onImmediateChange: 'setNodeSizeOrColor();'}"
+                           value="FFFF00"
+                           style="width: 80px; background-color: #feeebd; border: 1px solid grey"
+                           onchange="setNodeSizeOrColor();">
                     <input id="input-min-color-style" style="width: 11px; height: 11px; border: 1px solid #000000" readonly>
                 </p>
                 <p style="margin-top: 0;">
                     max:
-                    <input id="input-max-color" class="color {pickerFace:3, pickerFaceColor:'#feeebd', styleElement:'input-max-color-style'}" value="FF0000" style="width: 80px; background-color: #feeebd; border: 1px solid grey">
+                    <input id="input-max-color"
+                           class="color {pickerFace:3,
+                                         pickerFaceColor:'#feeebd',
+                                         styleElement:'input-max-color-style',
+                                         onImmediateChange: 'setNodeSizeOrColor();'}"
+                           value="FF0000"
+                           style="width: 80px; background-color: #feeebd; border: 1px solid grey"
+                           onchange="setNodeSizeOrColor();">
                     <input id="input-max-color-style" style="width: 11px; height: 11px; border: 1px solid #000000" readonly>
                 </p>
             </div>
