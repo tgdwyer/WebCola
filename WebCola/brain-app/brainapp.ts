@@ -323,7 +323,7 @@ $('#load-example-data').button().click(function () {
             $('#select-attribute').empty();
             for (var i = 0; i < dataSets[0].attributes.columnNames.length; ++i) {
                 var columnName = dataSets[0].attributes.columnNames[i];
-                $('#select-attribute').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#div-set-node-scale').css({ visibility: 'visible' });            $('#div-node-size').css({ visibility: 'visible' });            $('#div-node-color-pickers').css({ visibility: 'visible' });            $('#div-node-color-pickers-discrete').css({ visibility: 'visible' });                     if ($('#div-node-size').length > 0) divNodeSizeRange = $('#div-node-size').detach();            if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();              if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();             var attribute = $('#select-attribute').val();            setupNodeSizeRangeSlider(attribute); // default option            setupCrossFilter(dataSets[0].attributes);        }   
+                $('#select-attribute').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#div-set-node-scale').css({ visibility: 'visible' });            $('#div-node-size').css({ visibility: 'visible' });            $('#div-node-color-pickers').css({ visibility: 'visible' });            $('#div-node-color-pickers-discrete').css({ visibility: 'visible' });                     if ($('#div-node-size').length > 0) divNodeSizeRange = $('#div-node-size').detach();            if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();              if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();             //var attribute = $('#select-attribute').val();            //setupNodeSizeRangeSlider(attribute); // default option            $('#select-node-size-color').val('node-default');            $('#select-attribute').prop("disabled", "disabled");             setupCrossFilter(dataSets[0].attributes);        }   
     });
 });
 
@@ -454,6 +454,8 @@ $('#select-node-size-color').on('change', function () {
             setupColorPicker();
         }
     }
+
+    setNodeSizeOrColor();
 });
 
 $('#select-attribute').on('change', function () {
@@ -471,6 +473,8 @@ $('#select-attribute').on('change', function () {
             setupColorPicker();
         }
     }
+
+    setNodeSizeOrColor();
 });
 
 $('#select-node-key').on('change', function () {
