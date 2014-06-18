@@ -964,7 +964,7 @@ manager.onProgress = function (item, loaded, total) {
     console.log(item, loaded, total);
 };
 var loader = new (<any>THREE).OBJLoader(manager);
-var brainSurfaceColor: string = "0xcfcfcf";
+var brainSurfaceColor: string = "0xe3e3e3";
 
 // Load the brain surface (hardcoded - it is not simple to load geometry from the local machine, but this has not been deeply explored yet).
 // NOTE: The loaded model cannot be used in more than one WebGL context (scene) at a time - the geometry and materials must be .cloned() into

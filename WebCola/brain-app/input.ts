@@ -194,6 +194,8 @@ class InputTargetManager {
         for (var i = 0; i < this.fingerSmoothingLevel; ++i)
             this.fingerPositions[i] = [1, 1, 1];
 
+        var varYokingViewAcrossPanels = () => { this.yokingViewAcrossPanels(); }
+
         // Mouse input handling
         /*
         document.addEventListener('mousedown', function (event) {
@@ -300,6 +302,8 @@ class InputTargetManager {
                     var callback = it.mouseDoubleClickCallback;
                     if (callback) callback();
 
+                    if (this.yokingView) varYokingViewAcrossPanels();
+
                     clearSelection();
                 }
             }
@@ -332,6 +336,8 @@ class InputTargetManager {
                     var callback = it.mouseDragCallback;
                     if (callback) callback(dx, dy, this.mouseDownMode);
 
+                    if (this.yokingView) varYokingViewAcrossPanels();
+                    /*
                     if (this.yokingView) {
                         var rotation = null;
                         callback = it.getRotationCallback;
@@ -341,13 +347,14 @@ class InputTargetManager {
                                 if (i != this.activeTarget) {
                                     var input = this.inputTargets[i];
                                     if (input) {
-                                        callback = it.setRotationCallback;
+                                        callback = input.setRotationCallback;
                                         if (callback) callback(rotation);
                                     }
                                 }
                             } 
                         }
                     }
+                    */
                 }
             }
 
@@ -373,6 +380,8 @@ class InputTargetManager {
                 if (it) {
                     var callback = it.keyDownCallbacks[k];
                     if (callback) callback();
+
+                    if (this.yokingView) varYokingViewAcrossPanels();
                 }
             }
         }, false);
@@ -388,6 +397,29 @@ class InputTargetManager {
                 if (callback) callback();
             }
         }, false);
+    }
+
+    yokingViewAcrossPanels() {
+        if (!this.yokingView) return;
+
+        var activeInput = this.inputTargets[this.activeTarget];
+        if (activeInput) {
+            var rotation = null;
+            var callback = activeInput.getRotationCallback;
+            if (callback) rotation = callback();
+            if (rotation) {
+                for (var i = 0; i < this.inputTargets.length; i++) {
+                    if (i != this.activeTarget) {
+                        var input = this.inputTargets[i];
+                        if (input) {
+                            callback = input.setRotationCallback;
+                            if (callback) callback(rotation);
+                        }
+                    }
+                }
+            }
+
+        }
     }
 
     translateKeycode(code) {
@@ -424,6 +456,8 @@ class InputTargetManager {
                 if (it) {
                     var callback = it.keyTickCallbacks[key];
                     if (callback) callback(deltaTime);
+
+                    if (this.yokingView) this.yokingViewAcrossPanels();
                 }
             }
         });
