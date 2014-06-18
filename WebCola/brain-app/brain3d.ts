@@ -256,8 +256,18 @@ class Brain3DApp implements Application, Loopable {
                 .fadeTo(0, 0.2)
                 .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("right"); }))
+            .append($('<span id="front-view-' + this.id + '" class="view-panel-span">F</span>')
+                .css({ 'right': '6px', 'top': '110px' })
+                .fadeTo(0, 0.2)
+                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                .click(function () { varDefaultOrientationsOnClick("front"); }))
+            .append($('<span id="back-view-' + this.id + '" class="view-panel-span">B</span>')
+                .css({ 'right': '6px', 'top': '130px' })
+                .fadeTo(0, 0.2)
+                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                .click(function () { varDefaultOrientationsOnClick("back"); }))
             .append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input>')
-                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '300px', 'right': 0, 'top': '110px' })
+                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '250px', 'right': 0, 'top': '150px' })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varGraphViewSliderOnChange($(this).val()); })
@@ -375,20 +385,28 @@ class Brain3DApp implements Application, Loopable {
 
         switch (orientation) {
             case "top":
-                this.brainObject.rotation.set(90,0,0);
-                this.colaObject.rotation.set(90,0,0);                
+                this.brainObject.rotation.set(0,0,0);
+                this.colaObject.rotation.set(0,0,0);                
                 break;
             case "bottom":
-                this.brainObject.rotation.set(-90, 0, 0);
-                this.colaObject.rotation.set(-90, 0, 0);                  
+                this.brainObject.rotation.set(0, Math.PI, 0);
+                this.colaObject.rotation.set(0, Math.PI, 0);                  
                 break;
             case "left":
-                this.brainObject.rotation.set(0, 90, 0);
-                this.colaObject.rotation.set(0, 90, 0);             
+                this.brainObject.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
+                this.colaObject.rotation.set(-Math.PI / 2, 0, Math.PI / 2);          
                 break;
             case "right":
-                this.brainObject.rotation.set(0, -90, 0);
-                this.colaObject.rotation.set(0, -90, 0);  
+                this.brainObject.rotation.set(-Math.PI / 2, 0, -Math.PI / 2);
+                this.colaObject.rotation.set(-Math.PI / 2, 0, -Math.PI / 2);  
+                break;
+            case "front":
+                this.brainObject.rotation.set(-Math.PI / 2, 0, Math.PI);
+                this.colaObject.rotation.set(-Math.PI / 2, 0, Math.PI);    
+                break;
+            case "back":
+                this.brainObject.rotation.set(-Math.PI / 2, 0, 0);
+                this.colaObject.rotation.set(-Math.PI / 2, 0, 0);    
                 break;
         }
     }
