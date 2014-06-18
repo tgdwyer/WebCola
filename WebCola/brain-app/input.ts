@@ -52,6 +52,9 @@ class InputTarget {
     mouseWheelCallback;
     mouseDoubleClickCallback;
 
+    getRotationCallback;
+    setRotationCallback;
+
     // Accepts the CSS ID of the div that is to represent the input target, and the extra borders
     // which describe where in the div the region of interest is (and where the coordinates should be scaled around)
     constructor(public targetCssId: string, public currentPointer: PointerIndirection, public leftBorder = 0, public rightBorder = 0, public topBorder = 0, public bottomBorder = 0) { }
@@ -96,6 +99,14 @@ class InputTarget {
         this.mouseDoubleClickCallback = callback;
     }
 
+    regGetRotationCallback(callback: () => number[]) {
+        this.getRotationCallback = callback;
+    }
+
+    regSetRotationCallback(callback: (rotation: number[]) => void) {
+        this.setRotationCallback = callback;
+    }
+
     // Return the pointer coordinates within the input target as a pair (x, y) E [-1, 1]x[-1, 1] as they lie within the target's borders
     localPointerPosition() {
         var target = $(this.targetCssId);
@@ -137,6 +148,8 @@ class InputTargetManager {
     fingerSmoothingLevel = 3; // Finger smoothing when pointing
     fingerPositions;
     fpi = 0;
+
+    yokingView: boolean = false;
 
     mouseDownMode: number;
     isMouseDown: boolean = false;
@@ -318,6 +331,23 @@ class InputTargetManager {
 
                     var callback = it.mouseDragCallback;
                     if (callback) callback(dx, dy, this.mouseDownMode);
+
+                    if (this.yokingView) {
+                        var rotation = null;
+                        callback = it.getRotationCallback;
+                        if (callback) rotation = callback();
+                        if (rotation) {
+                            for (var i = 0; i < this.inputTargets.length; i++) {
+                                if (i != this.activeTarget) {
+                                    var input = this.inputTargets[i];
+                                    if (input) {
+                                        callback = it.setRotationCallback;
+                                        if (callback) callback(rotation);
+                                    }
+                                }
+                            } 
+                        }
+                    }
                 }
             }
 

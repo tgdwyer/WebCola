@@ -792,6 +792,15 @@ $('#dataset2-icon-front').draggable(
     }
 );
 
+$('#checkbox_yoking_view').on('change', function () {
+    if ($('#checkbox_yoking_view').is(":checked")) {
+        input.yokingView = true;
+    }
+    else {
+        input.yokingView = false;
+    }
+});
+
 // Move an icon back to its origin
 function resetIcon(object: string, location: string) {
     return function () {
@@ -955,6 +964,8 @@ manager.onProgress = function (item, loaded, total) {
     console.log(item, loaded, total);
 };
 var loader = new (<any>THREE).OBJLoader(manager);
+var brainSurfaceColor: string = "0xcfcfcf";
+
 // Load the brain surface (hardcoded - it is not simple to load geometry from the local machine, but this has not been deeply explored yet).
 // NOTE: The loaded model cannot be used in more than one WebGL context (scene) at a time - the geometry and materials must be .cloned() into
 // new THREE.Mesh() objects by the application wishing to use the model.
@@ -964,13 +975,17 @@ function loadBrainModel(fileName: string) {
             console.log("Failed to load brain surface.");
             return;
         }
+
+        var surfaceColor = parseInt(brainSurfaceColor);
+
         // Set brain mesh material
         object.traverse(function (child) {
             if (child instanceof THREE.Mesh) {
                 child.material =
                 new THREE.MeshLambertMaterial(
                     {
-                        color: 0xffaaaa,
+                        //color: 0xffaaaa,
+                        color: surfaceColor,
                         transparent: true,
                         opacity: 0.3
                     });
@@ -997,6 +1012,10 @@ function loadBrainModel(fileName: string) {
     });
 }
 loadBrainModel('BrainMesh_ICBM152.obj'); // Load the model right away
+
+function setBrainSurfaceColor(color: string) {
+    brainSurfaceColor = '0x' + color;
+}
 
 // Load the similarity matrix for the specified dataSet
 function loadSimilarityMatrix(file, dataSet: DataSet) {

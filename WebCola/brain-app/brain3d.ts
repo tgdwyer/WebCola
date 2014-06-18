@@ -197,6 +197,21 @@ class Brain3DApp implements Application, Loopable {
             //console.log("this.camera.fov: " + this.camera.fov);
         });
 
+        this.input.regGetRotationCallback(() => {
+            var rotation: number[] = [];
+            rotation.push(this.brainObject.rotation.x);
+            rotation.push(this.brainObject.rotation.y);
+            rotation.push(this.brainObject.rotation.z);
+            return rotation;
+        });
+
+        this.input.regSetRotationCallback((rotation: number[]) => {
+            if ((rotation) && (rotation.length == 3)) {
+                this.brainObject.rotation.set(rotation[0], rotation[1], rotation[2]);
+                this.colaObject.rotation.set(rotation[0], rotation[1], rotation[2]);
+            }
+        });
+
         var varShowNetwork = () => { this.showNetwork(); }
         var varEdgesThicknessByWeightedOnChange = (b: boolean) => { this.edgesThicknessByWeightedOnChange(b); }
         var varEdgesColoredOnChange = (b: boolean) => { this.edgesColoredOnChange(b); }
@@ -410,6 +425,12 @@ class Brain3DApp implements Application, Loopable {
 
         this.mouse.dx = 0;
         this.mouse.dy = 0;
+
+        // set default rotation
+        if (this.autoRotation == true) {
+            this.mouse.dx = 1;
+            this.mouse.dy = 0;
+        }
     }
 
     allLabelsOnChange(b: boolean) {
@@ -487,7 +508,7 @@ class Brain3DApp implements Application, Loopable {
                 return e.target;
             }
                 var getLength = function (e) {
-                return 1;
+                return 1; // <- change here: 1 -> weight, to get a cola graph with different edge length
             }
             
             // Create the distance matrix that Cola needs
@@ -563,6 +584,7 @@ class Brain3DApp implements Application, Loopable {
         console.log("app id: " + this.id + "; count: " + filteredIDs.length);
 
         this.physioGraph.highlightSelectedNodes(filteredIDs);
+        this.colaGraph.highlightSelectedNodes(filteredIDs);
     }
 
     setNodeDefaultSizeColor() {
