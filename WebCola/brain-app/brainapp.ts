@@ -103,9 +103,12 @@ class Attributes {
         var record = '';
         var columns = this.columnNames.length;
 
+        var line = "id: " + index + "; ";
+        record += line;
+
         for (var j = 0; j < columns; ++j) {
             var v = this.attrValues[j][index];
-            var line = this.columnNames[j] + ": " + v + "; ";
+            line = this.columnNames[j] + ": " + v + ";";
             record += line;
         }
 
@@ -163,6 +166,7 @@ interface Application {
     setNodeSize(scaleArray: number[]);
     setNodeColor(attribute: string, minColor: string, maxColor: string);
     setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]);
+    setANodeColor(nodeID: number, color: string);
     highlightSelectedNodes(filteredIDs: number[]);
     isDeleted();
 }
@@ -175,6 +179,7 @@ class DummyApp implements Application {
     setNodeSize() { }
     setNodeColor() { }
     setNodeColorDiscrete() { }
+    setANodeColor() { }
     highlightSelectedNodes() { }
     isDeleted() { }
 }
@@ -635,6 +640,14 @@ function getActiveTargetUnderMouse(x: number, y: number) {
             break;
     }
     return id;
+}
+
+function setNodeColorInContextMenu(color: string) {
+    if (apps[input.activeTarget]) {
+        if ((input.rightClickLabelAppended) && (input.selectedNodeID >= 0)) {
+            apps[input.activeTarget].setANodeColor(input.selectedNodeID, '#' + color);
+        }
+    }
 }
 
 function highlightSelectedNodes() {

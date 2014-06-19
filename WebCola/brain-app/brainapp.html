@@ -395,6 +395,19 @@
     <div id="dataset2-icon-front" class="icon icon-front">Data Set 2</div>
     <div id="brain3d-icon-front" class="icon icon-front">3D Brain</div>
 
+    <div id="div-context-menu-color-picker" style="visibility:hidden;">
+        color:
+        <input id="input-context-menu-node-color"
+               class="color {pickerFace:3,
+                             pickerFaceColor:'#feeebd',
+                             styleElement:'input-context-menu-node-color-style',
+                             onImmediateChange: 'setNodeColorInContextMenu(this);'}"
+               value="FFFF00"
+               style="width: 80px; background-color: #feeebd; border: 1px solid grey"
+               onchange="setNodeColorInContextMenu(this.color);">
+        <input id="input-context-menu-node-color-style" style="width: 11px; height: 11px; border: 1px solid #000000" readonly>
+    </div>
+
     <!-- Required scripts -->
 
     <script src="../extern/jquery-1.10.2.min.js"></script>

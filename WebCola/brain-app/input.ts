@@ -159,6 +159,8 @@ class InputTargetManager {
 
     rightClickLabel;
     rightClickLabelAppended: boolean = false;
+    selectedNodeID: number = -1;
+    divContextMenuColorPicker;
 
     regMouseLocationCallback(callback: (x:number, y:number) => number) {
         this.mouseLocationCallback = callback;
@@ -196,6 +198,9 @@ class InputTargetManager {
 
         var varYokingViewAcrossPanels = () => { this.yokingViewAcrossPanels(); }
 
+        this.rightClickLabel = document.createElement('div');
+        this.rightClickLabel.id = 'right-click-label';
+
         // Mouse input handling
         /*
         document.addEventListener('mousedown', function (event) {
@@ -229,8 +234,8 @@ class InputTargetManager {
 
         document.addEventListener('mousedown', (event) => {
             if (this.rightClickLabel && this.rightClickLabelAppended) {
-                document.body.removeChild(this.rightClickLabel);
-                this.rightClickLabelAppended = false;
+                //document.body.removeChild(this.rightClickLabel);
+                //this.rightClickLabelAppended = false;
             }
 
             this.mouseDownMode = event.which;
@@ -267,18 +272,41 @@ class InputTargetManager {
             }
 
             if (record) {
-                this.rightClickLabel = document.createElement('div');
+                $('#div-context-menu-color-picker').css({ visibility: 'visible' });
+                if ($('#div-context-menu-color-picker').length > 0) this.divContextMenuColorPicker = $('#div-context-menu-color-picker').detach();
+
+                document.body.appendChild(this.rightClickLabel);
+                $('#right-click-label').empty(); // empty this.rightClickLabel
+
                 this.rightClickLabel.style.position = 'absolute';
-                this.rightClickLabel.style.zIndex = '1';    
-                this.rightClickLabel.style.backgroundColor = '#feeebd'; // the color of the control panel
-                var s = record.replace(/;/g, '<br />');
-                this.rightClickLabel.innerHTML = s;
                 this.rightClickLabel.style.left = x + 'px';
                 this.rightClickLabel.style.top = y + 'px';
                 this.rightClickLabel.style.padding = '5px';
                 this.rightClickLabel.style.borderRadius = '5px';
+                this.rightClickLabel.style.zIndex = '1';    
+                this.rightClickLabel.style.backgroundColor = '#feeebd'; // the color of the control panel
 
-                document.body.appendChild(this.rightClickLabel);
+                var attributes = record.split(';');
+
+                // the first attribute is node id
+                var idStrings = attributes[0].split(':');
+                var nodeID = parseInt(idStrings[1].trim());
+                this.selectedNodeID = nodeID;
+
+                for (var i = 0; i < attributes.length-1; i++) {
+                    var attr = attributes[i].trim();
+                    var text = document.createElement('div');
+                    text.innerHTML = attr;
+                    this.rightClickLabel.appendChild(text);
+                }
+
+                $(this.divContextMenuColorPicker).appendTo('#right-click-label');
+
+                // the last attribute is color
+                var color = parseInt(attributes[attributes.length - 1].trim());
+                var hex = color.toString(16);
+                (<any>document.getElementById('input-context-menu-node-color')).color.fromString(hex);   
+
                 this.rightClickLabelAppended = true;
             }
 

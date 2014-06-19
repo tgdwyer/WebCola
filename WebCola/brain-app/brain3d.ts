@@ -169,6 +169,8 @@ class Brain3DApp implements Application, Loopable {
             var node = this.getNodeUnderPointer(this.input.localPointerPosition());
             if (node) {
                 record = this.dataSet.attributes.getRecord(node.id);
+                var color = (<any>node).material.color.getHex();
+                record += color;
             }
             return record;
         });
@@ -617,6 +619,13 @@ class Brain3DApp implements Application, Loopable {
     setNodeSize(scaleArray: number[]) {
         this.physioGraph.setNodesScale(scaleArray);
         this.colaGraph.setNodesScale(scaleArray);
+    }
+
+    setANodeColor(nodeID: number, color: string) {
+        var value = parseInt(color.replace("#", "0x"));
+
+        this.physioGraph.setNodeColor(nodeID, value);
+        this.colaGraph.setNodeColor(nodeID, value);
     }
 
     setNodeColor(attribute: string, minColor: string, maxColor: string) {
@@ -1181,6 +1190,14 @@ class Graph {
             }
         }
         */
+    }
+
+    getNodeColor(id: number) {
+        return this.nodeMeshes[id].material.color.getHex();
+    }
+
+    setNodeColor(id: number, color: number) {
+        this.nodeMeshes[id].material.color.setHex(color);
     }
 
     selectNode(id: number) {
