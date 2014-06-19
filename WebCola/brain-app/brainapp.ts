@@ -646,6 +646,7 @@ function setNodeColorInContextMenu(color: string) {
     if (apps[input.activeTarget]) {
         if ((input.rightClickLabelAppended) && (input.selectedNodeID >= 0)) {
             apps[input.activeTarget].setANodeColor(input.selectedNodeID, '#' + color);
+            input.contextMenuColorChanged = true;
         }
     }
 }

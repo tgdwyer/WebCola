@@ -161,6 +161,7 @@ class InputTargetManager {
     rightClickLabelAppended: boolean = false;
     selectedNodeID: number = -1;
     divContextMenuColorPicker;
+    contextMenuColorChanged: boolean = false;
 
     regMouseLocationCallback(callback: (x:number, y:number) => number) {
         this.mouseLocationCallback = callback;
@@ -233,11 +234,16 @@ class InputTargetManager {
         });*/
 
         document.addEventListener('mousedown', (event) => {
-            if (this.rightClickLabel && this.rightClickLabelAppended) {
-                //document.body.removeChild(this.rightClickLabel);
-                //this.rightClickLabelAppended = false;
+            if (this.rightClickLabelAppended) {
+                if (((<any>(event.target)).id != "input-context-menu-node-color") && (this.contextMenuColorChanged == false)) {
+                    //if ($('#div-context-menu-color-picker').length > 0) this.divContextMenuColorPicker = $('#div-context-menu-color-picker').detach();
+                    document.body.removeChild(this.rightClickLabel);
+                    this.selectedNodeID = -1;
+                    this.rightClickLabelAppended = false;
+                }
             }
 
+            this.contextMenuColorChanged = false;
             this.mouseDownMode = event.which;
 
             var viewID = this.mouseLocationCallback(event.clientX, event.clientY);
