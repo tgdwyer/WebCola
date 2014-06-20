@@ -72,6 +72,8 @@ class Brain3DApp implements Application, Loopable {
 
     autoRotation: boolean = false;
 
+    networkType: string;
+
     mouse = {
         dx: 0,
         dy: 0
@@ -224,6 +226,7 @@ class Brain3DApp implements Application, Loopable {
         var varEdgeCountSliderOnChange = (v: number) => { this.edgeCountSliderOnChange(v); }
         var varCloseBrainAppOnClick = () => { this.closeBrainAppOnClick(); }
         var varDefaultOrientationsOnClick = (s: string) => { this.defaultOrientationsOnClick(s); }
+        var varNetworkTypeOnChange = (s: string) => { this.networkTypeOnChange(s); }
 
         this.input.regKeyDownCallback(' ', varShowNetwork);
             
@@ -278,7 +281,7 @@ class Brain3DApp implements Application, Loopable {
             .append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
             .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown + '" disabled="true"/></input>')
-                .css({ 'width': '300px' })
+                .css({ 'width': '200px' })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varEdgeCountSliderOnChange($(this).val()); }))
@@ -291,7 +294,21 @@ class Brain3DApp implements Application, Loopable {
             .append($('<input type="checkbox" id="checkbox-auto-rotation-' + this.id + '" disabled="true">Auto Rotation</input>').css({ 'width': '12px' })
                 .click(function () { varAutoRotationOnChange($(this).is(":checked")); }))
             .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px' })
-                .click(function () { varShowNetwork(); }));
+                .click(function () { varShowNetwork(); }))
+            .append($('<select id="select-network-type-' + this.id + '"></select>').css({ 'margin-left': '5px', 'font-size': '12px', 'width': '90px' })
+                .on("change", function () { varNetworkTypeOnChange($(this).val()); }));
+
+        var networkTypeSelect = "#select-network-type-" + this.id;
+        var option = document.createElement('option');
+        option.text = 'default';
+        option.value = 'default';
+        $(networkTypeSelect).append(option);
+        this.networkType = 'default';
+
+        var option = document.createElement('option');
+        option.text = 'edge length depends on weight';
+        option.value = 'edge-length-depends-on-weight';
+        $(networkTypeSelect).append(option);
 
         // Set up camera
         this.camera = new THREE.PerspectiveCamera(45, 1, this.nearClip, this.farClip);
@@ -380,6 +397,10 @@ class Brain3DApp implements Application, Loopable {
         }
 
         this.deleted = true;
+    }
+
+    networkTypeOnChange(type: string) {
+        this.networkType = type;
     }
 
     defaultOrientationsOnClick(orientation: string) {
@@ -503,12 +524,14 @@ class Brain3DApp implements Application, Loopable {
                     if (this.filteredAdjMatrix[i][j] === 1) {
                         if (this.physioGraph.visibleNodeIDs) {
                             if ((this.physioGraph.visibleNodeIDs.indexOf(i) != -1) && (this.physioGraph.visibleNodeIDs.indexOf(j) != -1)) {
-                                edges.push({ source: i, target: j });
+                                var len = this.dissimilarityMatrix[i][j];
+                                edges.push({ source: i, target: j, length: len });
                                 hasNeighbours[i] = true;
                                 hasNeighbours[j] = true;
                             }
                         } else {
-                            edges.push({ source: i, target: j });
+                            var len = this.dissimilarityMatrix[i][j];
+                            edges.push({ source: i, target: j, length: len });
                             hasNeighbours[i] = true;
                             hasNeighbours[j] = true;
                         }
@@ -524,11 +547,19 @@ class Brain3DApp implements Application, Loopable {
             var getSourceIndex = function (e) {
                 return e.source;
             }
-                var getTargetIndex = function (e) {
+
+            var getTargetIndex = function (e) {
                 return e.target;
             }
-                var getLength = function (e) {
-                return 1; // <- change here: 1 -> weight, to get a cola graph with different edge length
+
+            var varType = this.networkType;
+            var getLength = function (e) {
+                if (varType == 'default') {
+                    return 1;
+                }
+                else if (varType == 'edge-length-depends-on-weight') {
+                    return e.length;
+                }
             }
             
             // Create the distance matrix that Cola needs
@@ -745,7 +776,8 @@ class Brain3DApp implements Application, Loopable {
         // Create the dissimilarity matrix from the similarity matrix (we need dissimilarity for Cola)
         for (var i = 0; i < this.dataSet.simMatrix.length; ++i) {
             this.dissimilarityMatrix.push(this.dataSet.simMatrix[i].map((sim) => {
-                return 15 / (sim + 1); // Convert similarities to distances
+                //return 15 / (sim + 1); // Convert similarities to distances
+                return 0.5 / (sim * sim); 
             }));
         }
 

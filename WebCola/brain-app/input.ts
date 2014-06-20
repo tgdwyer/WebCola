@@ -279,7 +279,9 @@ class InputTargetManager {
 
             if (record) {
                 $('#div-context-menu-color-picker').css({ visibility: 'visible' });
-                if ($('#div-context-menu-color-picker').length > 0) this.divContextMenuColorPicker = $('#div-context-menu-color-picker').detach();
+                if ($('#div-context-menu-color-picker').length > 0) {
+                    this.divContextMenuColorPicker = $('#div-context-menu-color-picker').detach();
+                }
 
                 document.body.appendChild(this.rightClickLabel);
                 $('#right-click-label').empty(); // empty this.rightClickLabel
@@ -303,6 +305,7 @@ class InputTargetManager {
                     var attr = attributes[i].trim();
                     var text = document.createElement('div');
                     text.innerHTML = attr;
+                    text.style.marginBottom = '5px';
                     this.rightClickLabel.appendChild(text);
                 }
 
