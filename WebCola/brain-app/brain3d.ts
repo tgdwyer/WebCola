@@ -216,7 +216,7 @@ class Brain3DApp implements Application, Loopable {
             }
         });
 
-        var varShowNetwork = () => { this.showNetwork(); }
+        var varShowNetwork = (b: boolean) => { this.showNetwork(b); }
         var varEdgesThicknessByWeightedOnChange = (b: boolean) => { this.edgesThicknessByWeightedOnChange(b); }
         var varEdgesColoredOnChange = (b: boolean) => { this.edgesColoredOnChange(b); }
         var varAllLabelsOnChange = (b: boolean) => { this.allLabelsOnChange(b); }
@@ -294,8 +294,8 @@ class Brain3DApp implements Application, Loopable {
             .append($('<input type="checkbox" id="checkbox-auto-rotation-' + this.id + '" disabled="true">Auto Rotation</input>').css({ 'width': '12px' })
                 .click(function () { varAutoRotationOnChange($(this).is(":checked")); }))
             .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px' })
-                .click(function () { varShowNetwork(); }))
-            .append($('<select id="select-network-type-' + this.id + '"></select>').css({ 'margin-left': '5px', 'font-size': '12px', 'width': '90px' })
+                .click(function () { varShowNetwork(false); }))
+            .append($('<select id="select-network-type-' + this.id + '" disabled="true"></select>').css({ 'margin-left': '5px', 'font-size': '12px', 'width': '90px' })
                 .on("change", function () { varNetworkTypeOnChange($(this).val()); }));
 
         var networkTypeSelect = "#select-network-type-" + this.id;
@@ -401,6 +401,13 @@ class Brain3DApp implements Application, Loopable {
 
     networkTypeOnChange(type: string) {
         this.networkType = type;
+
+        if (this.showingCola == true) {
+            this.showNetwork(true);
+        }
+        else {
+            this.showNetwork(false);
+        }
     }
 
     defaultOrientationsOnClick(orientation: string) {
@@ -488,7 +495,7 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
-    showNetwork() {
+    showNetwork(switchNetworkType: boolean) {
         if (!this.brainObject || !this.colaObject) return;
 
         if (!this.transitionInProgress) {
@@ -575,6 +582,16 @@ class Brain3DApp implements Application, Loopable {
                 });
             });
             this.descent = new cola.Descent(clonedPhysioCoords, D); // Create the solver
+
+            var oldColaCoords: number[][];
+            if (switchNetworkType == true) {
+                if (this.colaCoords) {
+                    oldColaCoords = this.colaCoords.map(function (array) {
+                        return array.slice(0);
+                    });
+                }
+            }
+
             this.colaCoords = this.descent.x; // Hold a reference to the solver's coordinates
             // Relieve some of the initial stress
             for (var i = 0; i < 10; ++i) {
@@ -586,7 +603,14 @@ class Brain3DApp implements Application, Loopable {
             //var target = new THREE.Vector3(this.graphOffset, 0, 0);
             var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
             var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
-            this.colaObject.position = origin;
+
+            if (switchNetworkType == true) {
+                this.colaObject.position = target;
+            }
+            else {
+                this.colaObject.position = origin;
+            }
+
             this.colaGraph.setNodePositions(this.commonData.brainCoords); // Move the Cola graph nodes to their starting position
             this.colaGraph.setVisible(true);
             this.transitionInProgress = true;
@@ -607,8 +631,15 @@ class Brain3DApp implements Application, Loopable {
                 }
                 else { // Update the animation
                     var percentDone = o.currentTime / o.endTime;
-                    this.colaObject.position = origin.clone().add(target.clone().sub(origin).multiplyScalar(percentDone));
-                    this.colaGraph.setNodePositionsLerp(this.commonData.brainCoords, this.colaCoords, percentDone);
+
+                    if (switchNetworkType == true) {
+                        this.colaGraph.setNodePositionsLerp(oldColaCoords, this.colaCoords, percentDone);
+                    }
+                    else {
+                        this.colaObject.position = origin.clone().add(target.clone().sub(origin).multiplyScalar(percentDone));
+                        this.colaGraph.setNodePositionsLerp(this.commonData.brainCoords, this.colaCoords, percentDone);
+                    }
+
                     return false;
                 }
             });
@@ -816,6 +847,7 @@ class Brain3DApp implements Application, Loopable {
         $('#checkbox-all-labels-' + this.id).prop('disabled', false);
         $('#checkbox-edge-color-' + this.id).prop('disabled', false);
         $('#checkbox-auto-rotation-' + this.id).prop('disabled', false);
+        $('#select-network-type-' + this.id).prop('disabled', false);        
     }
 
     // Create a matrix where a 1 in (i, j) means the edge between node i and node j is selected

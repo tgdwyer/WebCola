@@ -59,7 +59,7 @@ class InputTarget {
     // which describe where in the div the region of interest is (and where the coordinates should be scaled around)
     constructor(public targetCssId: string, public currentPointer: PointerIndirection, public leftBorder = 0, public rightBorder = 0, public topBorder = 0, public bottomBorder = 0) { }
 
-    regKeyDownCallback(key: string, callback: () => void) {
+    regKeyDownCallback(key: string, callback: (b: boolean) => void) {
         this.keyDownCallbacks[key] = callback;
     }
 
@@ -279,9 +279,7 @@ class InputTargetManager {
 
             if (record) {
                 $('#div-context-menu-color-picker').css({ visibility: 'visible' });
-                if ($('#div-context-menu-color-picker').length > 0) {
-                    this.divContextMenuColorPicker = $('#div-context-menu-color-picker').detach();
-                }
+                if ($('#div-context-menu-color-picker').length > 0) this.divContextMenuColorPicker = $('#div-context-menu-color-picker').detach();
 
                 document.body.appendChild(this.rightClickLabel);
                 $('#right-click-label').empty(); // empty this.rightClickLabel
@@ -364,6 +362,8 @@ class InputTargetManager {
             this.currentPointer.ptr = this.mouse;
             this.pointerImage.hide();
 
+            if (this.contextMenuColorChanged) return;
+
             if (this.isMouseDown === true) {
                 var it = this.inputTargets[this.activeTarget];
                 if (it) {
@@ -416,7 +416,7 @@ class InputTargetManager {
                 var it = this.inputTargets[this.activeTarget];
                 if (it) {
                     var callback = it.keyDownCallbacks[k];
-                    if (callback) callback();
+                    if (callback) callback(false);
 
                     if (this.yokingView) varYokingViewAcrossPanels();
                 }
