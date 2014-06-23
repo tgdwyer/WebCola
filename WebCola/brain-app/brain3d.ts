@@ -7,6 +7,7 @@
 
 // GLOBAL VARIABLES
 declare var d3;
+declare var numeric;
 
 var sliderSpace = 70; // The number of pixels to reserve at the bottom of the div for the slider
 //var uniqueID = 0; // Each instance of this application is given a unique ID so that the DOM elements they create can be identified as belonging to them
@@ -310,6 +311,11 @@ class Brain3DApp implements Application, Loopable {
         option.value = 'edge-length-depends-on-weight';
         $(networkTypeSelect).append(option);
 
+        var option = document.createElement('option');
+        option.text = 'flatten to 2D';
+        option.value = 'flatten-to-2d';
+        $(networkTypeSelect).append(option);
+
         // Set up camera
         this.camera = new THREE.PerspectiveCamera(45, 1, this.nearClip, this.farClip);
         this.resize(jDiv.width(), jDiv.height());
@@ -546,7 +552,8 @@ class Brain3DApp implements Application, Loopable {
                 }
             }
 
-            //-------------------------------------------------------------------
+            //-------------------------------------------------------------------------------------------------------------
+            // 3d cola graph
 
             this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
             this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
@@ -566,6 +573,9 @@ class Brain3DApp implements Application, Loopable {
                 }
                 else if (varType == 'edge-length-depends-on-weight') {
                     return e.length;
+                }
+                else {
+                    return 1;
                 }
             }
             
@@ -597,6 +607,38 @@ class Brain3DApp implements Application, Loopable {
             for (var i = 0; i < 10; ++i) {
                 this.descent.reduceStress();
             }
+
+            //-------------------------------------------------------------------------------------------------------------
+            // flatten to 2d
+
+            if (this.networkType == 'flatten-to-2d') {
+                var colaCoordsMatrix3D: number[][]; // 2d array is row first
+
+                colaCoordsMatrix3D = this.colaCoords.map(function (array) {
+                    return array.slice(0);
+                });
+
+                colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more row than column
+                var V = numeric.svd(colaCoordsMatrix3D).V;
+
+                V = numeric.transpose(V);
+                var A: number[][] = [];
+                A.push(V[0]);
+                A.push(V[1]);
+                A = numeric.transpose(A); // columns are axes
+                var At = numeric.transpose(A)
+                var At_A = numeric.dot(At, A);
+                var At_A_inv = numeric.inv(At_A);
+                var P = numeric.dot(numeric.dot(A, At_A_inv), At);
+
+                colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more column than row
+                var colaCoordsMatrix2DProjection = numeric.dot(P, colaCoordsMatrix3D);
+
+                this.colaCoords = colaCoordsMatrix2DProjection;
+            }
+
+            //-------------------------------------------------------------------------------------------------------------
+            // animation
 
             // Set up a coroutine to do the animation
             //var origin = new THREE.Vector3(-this.graphOffset, 0, 0);
