@@ -591,6 +591,7 @@ class Brain3DApp implements Application, Loopable {
                     return element;
                 });
             });
+
             this.descent = new cola.Descent(clonedPhysioCoords, D); // Create the solver
 
             var originColaCoords: number[][];
@@ -636,39 +637,57 @@ class Brain3DApp implements Application, Loopable {
                 var At_A_inv = numeric.inv(At_A);
                 var P = numeric.dot(numeric.dot(A, At_A_inv), At);
 
+                // step 1: projection
                 colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more column than row
-                var colaCoordsMatrix2DProjection = numeric.dot(P, colaCoordsMatrix3D); // colaCoordsMatrix2DProjection is still in 3d
+                var colaCoordsMatrix2DProjection = numeric.dot(P, colaCoordsMatrix3D); 
 
+                var newX = Vt[0]; // 2d array is row first
+                var newY = Vt[1];
+
+                // step 2: transform 3d array to 2d array (rotation only)
+                var newXCoords = numeric.dot(newX, colaCoordsMatrix2DProjection);
+                var newYCoords = numeric.dot(newY, colaCoordsMatrix2DProjection);
+                var newZCoords: number[] = [];
+                for (var i = 0; i < newXCoords.length; i++) newZCoords[i] = 0;
+
+                var cola2DCoords: number[][] = [];
+                cola2DCoords.push(newXCoords);
+                cola2DCoords.push(newYCoords);
+
+                var cloneCola2DCoords = cola2DCoords.map(function (array) {
+                    return array.slice(0);
+                });
+
+                // step 3: apply cola to 2d graph
+                this.descent = new cola.Descent(cloneCola2DCoords, D); // Create the solver
+
+                // Relieve some of the initial stress
+                for (var i = 0; i < 10; ++i) {
+                    this.descent.reduceStress();
+                }
+
+                this.colaCoords = this.descent.x.map(function (array) {
+                    return array.slice(0);
+                });
+
+                this.colaCoords.push(newZCoords);
+                cola2DCoords.push(newZCoords);
+
+                // setup animation
                 var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
                 var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
 
                 // animation: flatten to 2d
                 this.showNetworkAnimation(origin, target, originColaCoords, colaCoordsMatrix2DProjection, switchNetworkType, false);
 
-                var newX = Vt[0]; // 2d array is row first
-                var newY = Vt[1];
-
-                var newXCoords = numeric.dot(newX, colaCoordsMatrix2DProjection);
-                var newYCoords = numeric.dot(newY, colaCoordsMatrix2DProjection);
-                var newZCoords: number[] = [];
-
-                for (var i = 0; i < newXCoords.length; i++) newZCoords[i] = 0;
-
-                var cola2DCoords: number[][] = [];
-                cola2DCoords.push(newXCoords);
-                cola2DCoords.push(newYCoords);
-                cola2DCoords.push(newZCoords);
-
                 // animation: rotate to the new coordinates
-                this.showNetworkAnimation(target, target, colaCoordsMatrix2DProjection, cola2DCoords, true, true);
-                //this.showNetworkAnimation(origin, target, originColaCoords, cola2DCoords, switchNetworkType, true);
-                this.colaCoords = cola2DCoords;
-
+                this.showNetworkAnimation(target, target, colaCoordsMatrix2DProjection, cola2DCoords, true, false);
+                
+                // animation: cola graph in 2d coordinate
+                this.showNetworkAnimation(target, target, cola2DCoords, this.colaCoords, true, true);
             }
             else {
                 // Set up a coroutine to do the animation
-                //var origin = new THREE.Vector3(-this.graphOffset, 0, 0);
-                //var target = new THREE.Vector3(this.graphOffset, 0, 0);
                 var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
                 var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
 
@@ -977,11 +996,19 @@ class Brain3DApp implements Application, Loopable {
 
     update(deltaTime: number) {
         // Execute coroutines
+        /*
         for (var i = 0; i < coroutines.length;) {
             if (coroutines[i].func(coroutines[i], deltaTime))
                 coroutines.splice(i, 1);
             else
                 ++i;
+        }
+        */
+
+        // execute animation sequently
+        if (coroutines.length > 0) {
+            if (coroutines[0].func(coroutines[0], deltaTime))
+                coroutines.splice(0, 1);
         }
 
         var node = this.getNodeUnderPointer(this.input.localPointerPosition());
