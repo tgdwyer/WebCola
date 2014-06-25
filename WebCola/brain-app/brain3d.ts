@@ -643,6 +643,7 @@ class Brain3DApp implements Application, Loopable {
 
                 var newX = Vt[0]; // 2d array is row first
                 var newY = Vt[1];
+                var newZ = this.cross(newX, newY);
 
                 // step 2: transform 3d array to 2d array
                 // rotation
@@ -691,14 +692,22 @@ class Brain3DApp implements Application, Loopable {
                 var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
                 var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
 
+                var vAngle = this.angle(newZ, [newZ[0], newZ[1], 0]);
+                var hAngle = this.angle([newZ[0], newZ[1], 0], [0, 0, 1]);
+
+                //var rotationOrigin = new THREE.Vector3(0, 0, 0);
+                //var rotationTarget = new THREE.Vector3(vAngle, hAngle, 0);
+
+                //this.colaObjectRotation(origin, target, rotationOrigin, rotationTarget, switchNetworkType, false);
+
                 // animation: flatten to 2d
-                this.showNetworkAnimation(origin, target, originColaCoords, colaCoordsMatrix2DProjection, switchNetworkType, false);
+                this.colaObjectAnimation(origin, target, originColaCoords, colaCoordsMatrix2DProjection, switchNetworkType, false);
 
                 // animation: rotate to the new coordinates
-                this.showNetworkAnimation(target, target, colaCoordsMatrix2DProjection, cola2DCoords, true, false);
+                this.colaObjectAnimation(target, target, colaCoordsMatrix2DProjection, cola2DCoords, true, false);
                 
                 // animation: cola graph in 2d coordinate
-                this.showNetworkAnimation(target, target, cola2DCoords, this.colaCoords, true, true);
+                this.colaObjectAnimation(target, target, cola2DCoords, this.colaCoords, true, true);
             }
             */
             if (this.networkType == 'flatten-to-2d') {
@@ -710,64 +719,42 @@ class Brain3DApp implements Application, Loopable {
 
                 colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more row than column
                 var V = numeric.svd(colaCoordsMatrix3D).V; // V is orthogonal
-
                 var Vt = numeric.transpose(V);
-
-
-
-                /*
-                var A: number[][] = [];
-                A.push(Vt[0]); // 2d array is row first
-                A.push(Vt[1]);
-                A = numeric.transpose(A); // columns are axes
-                var At = numeric.transpose(A)
-                var At_A = numeric.dot(At, A);
-                var At_A_inv = numeric.inv(At_A);
-                var P = numeric.dot(numeric.dot(A, At_A_inv), At);                
-
-                // step 1: projection
-                colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more column than row
-                var colaCoordsMatrix2DProjection = numeric.dot(P, colaCoordsMatrix3D);
-                */
-
                 var newX = Vt[0]; // 2d array is row first
                 var newY = Vt[1];
-                var newZ = Vt[2];
+                var newZ = this.cross(newX, newY);
 
-                // step 2: transform 3d array to 2d array
-                // rotation
-                colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more column than row
-                var newXCoords = numeric.dot(newX, colaCoordsMatrix3D);
-                var newYCoords = numeric.dot(newY, colaCoordsMatrix3D);
-                var newZCoords = numeric.dot(newZ, colaCoordsMatrix3D);
+                var vAngle = this.angle(newZ, [newZ[0], newZ[1], 0]);
+                var hAngle = this.angle([newZ[0], newZ[1], 0], [0, 0, 1]);
 
-                var colaCoordsRotated3D: number[][] = [];
-                colaCoordsRotated3D.push(newXCoords);
-                colaCoordsRotated3D.push(newYCoords);
-                colaCoordsRotated3D.push(newZCoords);
+                var colaCoordsMatrixRotated3D: number[][] = [];
+                var colaCoordsMatrixRotatedProjected3D: number[][] = [];
+                var cloneColaCoords2D: number[][] = [];
 
-                // offset
-                var sumX = 0;
-                var sumY = 0;
-                for (var i = 0; i < newXCoords.length; i++) {
-                    sumX += newXCoords[i];
-                    sumY += newYCoords[i];
+                for (var i = 0; i < colaCoordsMatrix3D.length; i++) {
+                    var row = colaCoordsMatrix3D[i];
+                    var v = new THREE.Vector3(row[0], row[1], row[2]);
+
+                    var axisX = new THREE.Vector3(1, 0, 0);
+                    var axisY = new THREE.Vector3(0, 1, 0);
+
+                    var hRotateMatrix = new THREE.Matrix4().makeRotationAxis(axisY, hAngle);
+                    var vRotateMatrix = new THREE.Matrix4().makeRotationAxis(axisX, vAngle);
+
+                    v.applyMatrix4(hRotateMatrix);
+                    v.applyMatrix4(vRotateMatrix);
+
+                    colaCoordsMatrixRotated3D.push([v.x, v.y, v.z]);
+                    colaCoordsMatrixRotatedProjected3D.push([v.x, v.y, 0]);
+                    cloneColaCoords2D.push([v.x, v.y]);
                 }
-                var midX = sumX / newXCoords.length;
-                var midY = sumY / newXCoords.length;
-                newXCoords = newXCoords.map((value: number) => { return value - midX; });
-                newYCoords = newYCoords.map((value: number) => { return value - midY; });
 
-                var colaCoordsRotated2D: number[][] = [];
-                colaCoordsRotated2D.push(newXCoords);
-                colaCoordsRotated2D.push(newYCoords);
-
-                var cloneColaCoordsRotated2D = colaCoordsRotated2D.map(function (array) {
-                    return array.slice(0);
-                });
+                colaCoordsMatrixRotated3D = numeric.transpose(colaCoordsMatrixRotated3D); // more column than row
+                colaCoordsMatrixRotatedProjected3D = numeric.transpose(colaCoordsMatrixRotatedProjected3D); // more column than row
+                cloneColaCoords2D = numeric.transpose(cloneColaCoords2D); // more column than row
 
                 // step 3: apply cola to 2d graph
-                this.descent = new cola.Descent(cloneColaCoordsRotated2D, D); // Create the solver
+                this.descent = new cola.Descent(cloneColaCoords2D, D); // Create the solver
 
                 // Relieve some of the initial stress
                 for (var i = 0; i < 10; ++i) {
@@ -779,23 +766,21 @@ class Brain3DApp implements Application, Loopable {
                 });
 
                 var zeroZCoords: number[] = [];
-                for (var i = 0; i < newXCoords.length; i++) zeroZCoords[i] = 0;
-
+                for (var i = 0; i < this.colaCoords[0].length; i++) zeroZCoords[i] = 0;
                 this.colaCoords.push(zeroZCoords);
-                colaCoordsRotated2D.push(zeroZCoords);
 
                 // setup animation
                 var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
                 var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
 
-                // animation: rotate to the new coordinates 
-                this.showNetworkAnimation(origin, target, originColaCoords, colaCoordsRotated3D, switchNetworkType, false);
+                // animation: rotate 
+                this.colaObjectAnimation(origin, target, originColaCoords, colaCoordsMatrixRotated3D, switchNetworkType, false);
 
                 // animation: flatten to 2d
-                //this.showNetworkAnimation(target, target, colaCoordsRotated3D, colaCoordsRotated2D, true, false);
+                this.colaObjectAnimation(target, target, colaCoordsMatrixRotated3D, colaCoordsMatrixRotatedProjected3D, true, false);
 
                 // animation: cola graph in 2d coordinate
-                //this.showNetworkAnimation(target, target, colaCoordsRotated2D, this.colaCoords, true, true);
+                this.colaObjectAnimation(target, target, colaCoordsMatrixRotatedProjected3D, this.colaCoords, true, true);
             }
             else {
                 // Set up a coroutine to do the animation
@@ -803,12 +788,33 @@ class Brain3DApp implements Application, Loopable {
                 var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
 
                 //this.colaGraph.setNodePositions(this.commonData.brainCoords); // Move the Cola graph nodes to their starting position
-                this.showNetworkAnimation(origin, target, originColaCoords, this.colaCoords, switchNetworkType, true);
+                this.colaObjectAnimation(origin, target, originColaCoords, this.colaCoords, switchNetworkType, true);
             }
         }
     }
 
-    showNetworkAnimation(colaObjectOrigin, colaObjectTarget, nodeCoordOrigin: number[][], nodeCoordTarget: number[][], switchNetworkType: boolean, transitionFinish: boolean) {
+    cross(u: number[], v: number[]) {
+        if (!u || !v) return;
+
+        var u1 = u[0];
+        var u2 = u[1];
+        var u3 = u[2];
+        var v1 = v[0];
+        var v2 = v[1];
+        var v3 = v[2];
+
+        var cross = [u2 * v3 - u3 * v2, u3 * v1 - u1 * v3, u1 * v2 - u2 * v1];
+        return cross;
+    }
+
+    angle(u: number[], v: number[]) {
+        if (!u || !v) return;
+        var costheta = numeric.dot(u, v) / (numeric.norm2(u) * numeric.norm2(v));
+        var theta = Math.acos(costheta);
+        return theta;
+    }
+
+    colaObjectAnimation(colaObjectOrigin, colaObjectTarget, nodeCoordOrigin: number[][], nodeCoordTarget: number[][], switchNetworkType: boolean, transitionFinish: boolean) {
         this.colaGraph.setVisible(true);
         this.transitionInProgress = true;
         $('#button-show-network-' + this.id).prop('disabled', true);
@@ -847,6 +853,56 @@ class Brain3DApp implements Application, Loopable {
                 var percentDone = o.currentTime / o.endTime;
 
                 this.colaGraph.setNodePositionsLerp(nodeCoordOrigin, nodeCoordTarget, percentDone);
+
+                if (switchNetworkType == false) {
+                    this.colaObject.position = colaObjectOrigin.clone().add(colaObjectTarget.clone().sub(colaObjectOrigin).multiplyScalar(percentDone));
+                }
+
+                return false;
+            }
+        });
+    }
+
+    colaObjectRotation(colaObjectOrigin, colaObjectTarget, rotationOrigin, rotationTarget, switchNetworkType: boolean, transitionFinish: boolean) {
+        this.colaGraph.setVisible(true);
+        this.transitionInProgress = true;
+        $('#button-show-network-' + this.id).prop('disabled', true);
+        $('#select-network-type-' + this.id).prop('disabled', true);
+        $('#graph-view-slider-' + this.id).prop('disabled', true);
+
+        if (switchNetworkType == true) {
+            this.colaObject.position = colaObjectTarget;
+        }
+        else {
+            this.colaObject.position = colaObjectOrigin;
+        }
+
+        setCoroutine({ currentTime: 0, endTime: this.modeLerpLength }, (o, deltaTime) => {
+            o.currentTime += deltaTime;
+
+            if (o.currentTime >= o.endTime) { // The animation has finished
+                this.colaObject.position = colaObjectTarget;
+                this.colaObject.rotation = rotationTarget;
+
+                if (transitionFinish) {
+                    this.transitionInProgress = false;
+
+                    // Enable the vertical slider
+                    $('#graph-view-slider-' + this.id).css({ visibility: 'visible' });
+                    $('#graph-view-slider-' + this.id).val('100');
+
+                    $('#button-show-network-' + this.id).prop('disabled', false);
+                    $('#select-network-type-' + this.id).prop('disabled', false);
+                    $('#graph-view-slider-' + this.id).prop('disabled', false);
+                }
+
+                return true;
+            }
+            else { // Update the animation
+                var percentDone = o.currentTime / o.endTime;
+
+                var rotation = rotationOrigin.clone().add(rotationTarget.clone().sub(rotationOrigin).multiplyScalar(percentDone));
+                this.colaObject.rotation.set(rotation.x, rotation.y, rotation.z);
 
                 if (switchNetworkType == false) {
                     this.colaObject.position = colaObjectOrigin.clone().add(colaObjectTarget.clone().sub(colaObjectOrigin).multiplyScalar(percentDone));
