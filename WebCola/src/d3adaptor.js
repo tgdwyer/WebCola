@@ -275,13 +275,13 @@ var cola;
         var linkAccessor = { getSourceIndex: getSourceIndex, getTargetIndex: getTargetIndex, setLength: setLinkLength };
 
         d3adaptor.symmetricDiffLinkLengths = function (idealLength, w) {
-            cola.symmetricDiffLinkLengths(this.nodes().length, links, linkAccessor, w);
+            cola.symmetricDiffLinkLengths(links, linkAccessor, w);
             this.linkDistance(function (l) { return idealLength * l.length });
             return d3adaptor;
         }
 
         d3adaptor.jaccardLinkLengths = function (idealLength, w) {
-            cola.jaccardLinkLengths(this.nodes().length, links, linkAccessor, w);
+            cola.jaccardLinkLengths(links, linkAccessor, w);
             this.linkDistance(function (l) { return idealLength * l.length });
             return d3adaptor;
         }

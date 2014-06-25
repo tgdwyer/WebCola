@@ -13,7 +13,7 @@ module cola {
     }
 
     // compute the size of the union of two sets a and b
-    function unionCount(a: number[], b: number[]): number {
+    function unionCount(a: any, b: any): number {
         var u = {};
         for (var i in a) u[i] = {};
         for (var i in b) u[i] = {};
@@ -27,22 +27,24 @@ module cola {
         return n;
     }
 
-    function getNeighbours<Link>(n: number, links: Link[], la: LinkAccessor<Link>): any[] {
-        var neighbours = new Array(n);
-        for (var i = 0; i < n; ++i) {
-            neighbours[i] = {};
-        }
+    function getNeighbours<Link>(links: Link[], la: LinkAccessor<Link>): any {
+        var neighbours = {};
+        var addNeighbours = (u, v) => {
+            if (typeof neighbours[u] === 'undefined')
+                neighbours[u] = {};
+            neighbours[u][v] = {};
+        };
         links.forEach(e => {
             var u = la.getSourceIndex(e), v = la.getTargetIndex(e);
-            neighbours[u][v] = {};
-            neighbours[v][u] = {};
+            addNeighbours(u, v);
+            addNeighbours(v, u);
         });
         return neighbours;
     }
 
     // modify the lengths of the specified links by the result of function f weighted by w
-    function computeLinkLengths<Link>(n: number, links: Link[], w: number, f: (a: number[], b: number[]) => number, la: LinkLengthAccessor<Link>) {
-        var neighbours = getNeighbours(n, links, la);
+    function computeLinkLengths<Link>(links: Link[], w: number, f: (a: any, b: any) => number, la: LinkLengthAccessor<Link>) {
+        var neighbours = getNeighbours(links, la);
         links.forEach(l => {
             var a = neighbours[la.getSourceIndex(l)];
             var b = neighbours[la.getTargetIndex(l)];
@@ -53,15 +55,15 @@ module cola {
     /** modify the specified link lengths based on the symmetric difference of their neighbours
      * @class symmetricDiffLinkLengths
      */
-    export function symmetricDiffLinkLengths<Link>(n: number, links: Link[], la: LinkLengthAccessor<Link>, w: number = 1) {
-        computeLinkLengths(n, links, w, (a, b) => Math.sqrt(unionCount(a, b) - intersectionCount(a, b)), la);
+    export function symmetricDiffLinkLengths<Link>(links: Link[], la: LinkLengthAccessor<Link>, w: number = 1) {
+        computeLinkLengths(links, w, (a, b) => Math.sqrt(unionCount(a, b) - intersectionCount(a, b)), la);
     }
 
     /** modify the specified links lengths based on the jaccard difference between their neighbours
      * @class jaccardLinkLengths
      */
-    export function jaccardLinkLengths<Link>(n: number, links: Link[], la: LinkLengthAccessor<Link>, w: number = 1) {
-        computeLinkLengths(n, links, w, (a, b) =>
+    export function jaccardLinkLengths<Link>(links: Link[], la: LinkLengthAccessor<Link>, w: number = 1) {
+        computeLinkLengths(links, w, (a, b) =>
             Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1 ? 0 : intersectionCount(a, b) / unionCount(a, b)
             , la);
     }
