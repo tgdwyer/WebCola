@@ -616,7 +616,7 @@ class Brain3DApp implements Application, Loopable {
 
             //-------------------------------------------------------------------------------------------------------------
             // animation
-
+            /*
             if (this.networkType == 'flatten-to-2d') {
                 var colaCoordsMatrix3D: number[][]; 
 
@@ -644,9 +644,23 @@ class Brain3DApp implements Application, Loopable {
                 var newX = Vt[0]; // 2d array is row first
                 var newY = Vt[1];
 
-                // step 2: transform 3d array to 2d array (rotation only)
+                // step 2: transform 3d array to 2d array
+                // rotation
                 var newXCoords = numeric.dot(newX, colaCoordsMatrix2DProjection);
                 var newYCoords = numeric.dot(newY, colaCoordsMatrix2DProjection);
+
+                // offset
+                var sumX = 0;
+                var sumY = 0;
+                for (var i = 0; i < newXCoords.length; i++) {
+                    sumX += newXCoords[i];
+                    sumY += newYCoords[i];
+                }
+                var midX = sumX / newXCoords.length;
+                var midY = sumY / newXCoords.length;
+                newXCoords = newXCoords.map((value: number) => { return value - midX; });
+                newYCoords = newYCoords.map((value: number) => { return value - midY; });
+
                 var newZCoords: number[] = [];
                 for (var i = 0; i < newXCoords.length; i++) newZCoords[i] = 0;
 
@@ -685,6 +699,103 @@ class Brain3DApp implements Application, Loopable {
                 
                 // animation: cola graph in 2d coordinate
                 this.showNetworkAnimation(target, target, cola2DCoords, this.colaCoords, true, true);
+            }
+            */
+            if (this.networkType == 'flatten-to-2d') {
+                var colaCoordsMatrix3D: number[][];
+
+                colaCoordsMatrix3D = this.colaCoords.map(function (array) {
+                    return array.slice(0);
+                });
+
+                colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more row than column
+                var V = numeric.svd(colaCoordsMatrix3D).V; // V is orthogonal
+
+                var Vt = numeric.transpose(V);
+
+
+
+                /*
+                var A: number[][] = [];
+                A.push(Vt[0]); // 2d array is row first
+                A.push(Vt[1]);
+                A = numeric.transpose(A); // columns are axes
+                var At = numeric.transpose(A)
+                var At_A = numeric.dot(At, A);
+                var At_A_inv = numeric.inv(At_A);
+                var P = numeric.dot(numeric.dot(A, At_A_inv), At);                
+
+                // step 1: projection
+                colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more column than row
+                var colaCoordsMatrix2DProjection = numeric.dot(P, colaCoordsMatrix3D);
+                */
+
+                var newX = Vt[0]; // 2d array is row first
+                var newY = Vt[1];
+                var newZ = Vt[2];
+
+                // step 2: transform 3d array to 2d array
+                // rotation
+                colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more column than row
+                var newXCoords = numeric.dot(newX, colaCoordsMatrix3D);
+                var newYCoords = numeric.dot(newY, colaCoordsMatrix3D);
+                var newZCoords = numeric.dot(newZ, colaCoordsMatrix3D);
+
+                var colaCoordsRotated3D: number[][] = [];
+                colaCoordsRotated3D.push(newXCoords);
+                colaCoordsRotated3D.push(newYCoords);
+                colaCoordsRotated3D.push(newZCoords);
+
+                // offset
+                var sumX = 0;
+                var sumY = 0;
+                for (var i = 0; i < newXCoords.length; i++) {
+                    sumX += newXCoords[i];
+                    sumY += newYCoords[i];
+                }
+                var midX = sumX / newXCoords.length;
+                var midY = sumY / newXCoords.length;
+                newXCoords = newXCoords.map((value: number) => { return value - midX; });
+                newYCoords = newYCoords.map((value: number) => { return value - midY; });
+
+                var colaCoordsRotated2D: number[][] = [];
+                colaCoordsRotated2D.push(newXCoords);
+                colaCoordsRotated2D.push(newYCoords);
+
+                var cloneColaCoordsRotated2D = colaCoordsRotated2D.map(function (array) {
+                    return array.slice(0);
+                });
+
+                // step 3: apply cola to 2d graph
+                this.descent = new cola.Descent(cloneColaCoordsRotated2D, D); // Create the solver
+
+                // Relieve some of the initial stress
+                for (var i = 0; i < 10; ++i) {
+                    this.descent.reduceStress();
+                }
+
+                this.colaCoords = this.descent.x.map(function (array) {
+                    return array.slice(0);
+                });
+
+                var zeroZCoords: number[] = [];
+                for (var i = 0; i < newXCoords.length; i++) zeroZCoords[i] = 0;
+
+                this.colaCoords.push(zeroZCoords);
+                colaCoordsRotated2D.push(zeroZCoords);
+
+                // setup animation
+                var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
+                var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
+
+                // animation: rotate to the new coordinates 
+                this.showNetworkAnimation(origin, target, originColaCoords, colaCoordsRotated3D, switchNetworkType, false);
+
+                // animation: flatten to 2d
+                //this.showNetworkAnimation(target, target, colaCoordsRotated3D, colaCoordsRotated2D, true, false);
+
+                // animation: cola graph in 2d coordinate
+                //this.showNetworkAnimation(target, target, colaCoordsRotated2D, this.colaCoords, true, true);
             }
             else {
                 // Set up a coroutine to do the animation
