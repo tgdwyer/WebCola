@@ -724,8 +724,13 @@ class Brain3DApp implements Application, Loopable {
                 var newY = Vt[1];
                 var newZ = this.cross(newX, newY);
 
-                var vAngle = this.angle(newZ, [newZ[0], newZ[1], 0]);
-                var hAngle = this.angle([newZ[0], newZ[1], 0], [0, 0, 1]);
+                var rotationAngle = this.angle(newZ, [0, 0, 1]);
+                var ax = this.cross(newZ, [0, 0, 1]);
+                var rotationAxis = new THREE.Vector3(ax[0], ax[1], ax[2]);
+                var rotationMatrix = new THREE.Matrix4().makeRotationAxis(rotationAxis, rotationAngle);
+
+                //var test = new THREE.Vector3(newZ[0], newZ[1], newZ[2]);
+                //test.applyMatrix4(rotationMatrix);
 
                 var colaCoordsMatrixRotated3D: number[][] = [];
                 var colaCoordsMatrixRotatedProjected3D: number[][] = [];
@@ -735,14 +740,7 @@ class Brain3DApp implements Application, Loopable {
                     var row = colaCoordsMatrix3D[i];
                     var v = new THREE.Vector3(row[0], row[1], row[2]);
 
-                    var axisX = new THREE.Vector3(1, 0, 0);
-                    var axisY = new THREE.Vector3(0, 1, 0);
-
-                    var hRotateMatrix = new THREE.Matrix4().makeRotationAxis(axisY, hAngle);
-                    var vRotateMatrix = new THREE.Matrix4().makeRotationAxis(axisX, vAngle);
-
-                    v.applyMatrix4(hRotateMatrix);
-                    v.applyMatrix4(vRotateMatrix);
+                    v.applyMatrix4(rotationMatrix);
 
                     colaCoordsMatrixRotated3D.push([v.x, v.y, v.z]);
                     colaCoordsMatrixRotatedProjected3D.push([v.x, v.y, 0]);
