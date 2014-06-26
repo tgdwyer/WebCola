@@ -1104,7 +1104,7 @@ function setupCrossFilter(attrs: Attributes) {
 
     // convert the object array to json format
     var json = JSON.parse(JSON.stringify(objectArray));
-    //console.log(json);
+    console.log(json);
 
     // create crossfilter
     var cfilter = crossfilter(json);

@@ -178,6 +178,19 @@
             /*border: 2px solid black;*/
             display: inline-block;
             line-height: 0px;
+            z-index: 1000;
+        }
+
+        .node {
+          stroke: #fff;
+          stroke-width: 1.5px;
+          /*stroke-opacity: .5;*/
+          /*opacity: 0.5;*/
+        }
+
+        .link {
+          stroke: #999;
+          stroke-opacity: .8;
         }
 
     </style>
@@ -428,7 +441,7 @@
 
     <script src="../cola.v3.min.js"></script>
     <script src="../src/descent.js"></script>
-
+    <script src="../src/d3adaptor.js"></script>
 
     <script src="brain3d.js"></script>
     

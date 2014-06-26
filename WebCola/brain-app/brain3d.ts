@@ -8,6 +8,8 @@
 // GLOBAL VARIABLES
 declare var d3;
 declare var numeric;
+declare function d3adaptor(): string;
+var colans = <any>cola;
 
 var sliderSpace = 70; // The number of pixels to reserve at the bottom of the div for the slider
 //var uniqueID = 0; // Each instance of this application is given a unique ID so that the DOM elements they create can be identified as belonging to them
@@ -41,7 +43,7 @@ class Brain3DApp implements Application, Loopable {
     projector = new THREE.Projector();
 
     descent: cola.Descent; // The handle to the constraint solver
-
+    
     // Data/objects
     commonData: CommonData;
     dataSet: DataSet;
@@ -53,6 +55,9 @@ class Brain3DApp implements Application, Loopable {
     sortedSimilarities: number[];
     physioGraph: Graph;
     colaGraph: Graph;
+
+    cola2D;
+    svg;
 
     nodeColourings: number[]; // Stores the colourings associated with the groups
     dissimilarityMatrix: number[][] = []; // An inversion of the similarity matrix, used for Cola graph distances
@@ -273,30 +278,32 @@ class Brain3DApp implements Application, Loopable {
                 .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("back"); }))
             .append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input>')
-                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '250px', 'right': 0, 'top': '150px' })
+                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '250px', 'right': 0, 'top': '150px', 'z-index': 1000 })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varGraphViewSliderOnChange($(this).val()); })
                 .fadeTo(0, 0.3)
                 .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.3); }))
+            .append($('<div id="div-svg-' + this.id + '"></div>')
+                .css({ 'position': 'absolute', 'width': '100%', 'height': '100%', 'top': 0, 'left': 0, 'z-index': 10 }))
             .append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
             .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown + '" disabled="true"/></input>')
-                .css({ 'width': '200px' })
+                .css({ 'width': '200px', 'position': 'relative', 'z-index': 1000 })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varEdgeCountSliderOnChange($(this).val()); }))
-            .append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px' })
+            .append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
                 .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
-            .append($('<input type="checkbox" id="checkbox-edge-color-' + this.id + '" disabled="true">Colored Edge</input>').css({ 'width': '12px' })
+            .append($('<input type="checkbox" id="checkbox-edge-color-' + this.id + '" disabled="true">Colored Edge</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
                 .click(function () { varEdgesColoredOnChange($(this).is(":checked")); }))
-            .append($('<input type="checkbox" id="checkbox-all-labels-' + this.id + '" disabled="true">All Labels</input>').css({ 'width': '12px' })
+            .append($('<input type="checkbox" id="checkbox-all-labels-' + this.id + '" disabled="true">All Labels</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
                 .click(function () { varAllLabelsOnChange($(this).is(":checked")); }))
-            .append($('<input type="checkbox" id="checkbox-auto-rotation-' + this.id + '" disabled="true">Auto Rotation</input>').css({ 'width': '12px' })
+            .append($('<input type="checkbox" id="checkbox-auto-rotation-' + this.id + '" disabled="true">Auto Rotation</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
                 .click(function () { varAutoRotationOnChange($(this).is(":checked")); }))
-            .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px' })
+            .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px', 'position': 'relative', 'z-index': 1000 })
                 .click(function () { varShowNetwork(false); }))
-            .append($('<select id="select-network-type-' + this.id + '" disabled="true"></select>').css({ 'margin-left': '5px', 'font-size': '12px', 'width': '90px' })
+            .append($('<select id="select-network-type-' + this.id + '" disabled="true"></select>').css({ 'margin-left': '5px', 'font-size': '12px', 'width': '90px', 'position': 'relative', 'z-index': 1000 })
                 .on("change", function () { varNetworkTypeOnChange($(this).val()); }));
 
         var networkTypeSelect = "#select-network-type-" + this.id;
@@ -501,6 +508,95 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
+    addSVGGraph() {
+        var width = this.jDiv.width();
+        var height = this.jDiv.height() - sliderSpace;
+        var widthHalf = width / 2;
+        var heightHalf = height / 2;
+
+        var projector = new THREE.Projector();
+        var screenCoords = new THREE.Vector3();
+
+        var nodeObjectArray = new Array();
+        var children = this.colaGraph.rootObject.children;
+        for (var i = 0; i < children.length; i++) {
+            var obj = children[i];
+            if ((<any>obj).isNode) {
+                // create an object for each record:
+                var nodeObject = new Object();
+                nodeObject["id"] = obj.id;
+
+                var v = new THREE.Vector3(obj.position.x, obj.position.y, obj.position.z);
+                var matrixWorld = obj.matrixWorld;
+                //screenCoords.setFromMatrixPosition(matrixWorld); // not sure why this method is undefined; maybe we have an old version of three.js
+                (<any>screenCoords).getPositionFromMatrix(matrixWorld);
+                projector.projectVector(screenCoords, this.camera);
+
+                screenCoords.x = (screenCoords.x * widthHalf) + widthHalf;
+                screenCoords.y = - (screenCoords.y * heightHalf) + heightHalf;
+
+                nodeObject["x"] = screenCoords.x;
+                nodeObject["y"] = screenCoords.y;
+            }
+        }
+
+        //p2D = projector.projectVector(p3D, this.camera);
+
+        var color = d3.scale.category20();
+
+
+
+        var cola = colans.d3adaptor()
+            .size([width, height]);
+
+        var svg = d3.select('#div-svg-' + this.id).append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        $.getJSON("../examples/graphdata/miserables.json", function (json) {
+            console.log(json);
+        });
+
+        d3.json("../examples/graphdata/miserables.json", function (error, graph) {
+            console.log(graph);
+            cola
+                .nodes(graph.nodes)
+                .links(graph.links)
+                .jaccardLinkLengths(40, 0.7)
+                .start(30);
+
+            var link = svg.selectAll(".link")
+                .data(graph.links)
+                .enter().append("line")
+                .attr("class", "link")
+                .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+
+            var node = svg.selectAll(".node")
+                .data(graph.nodes)
+                .enter().append("circle")
+                .attr("class", "node")
+                .attr("r", 5)
+                .style("fill", function (d) { return color(d.group); })
+                .call(cola.drag);
+
+            node.append("title")
+                .text(function (d) { return d.name; });
+
+            cola.on("tick", function () {
+                link.attr("x1", function (d) { return d.source.x; })
+                    .attr("y1", function (d) { return d.source.y; })
+                    .attr("x2", function (d) { return d.target.x; })
+                    .attr("y2", function (d) { return d.target.y; });
+
+                node.attr("cx", function (d) { return d.x; })
+                    .attr("cy", function (d) { return d.y; });
+            });
+        });
+
+        this.cola2D = cola;
+        this.svg = svg;
+    }
+
     showNetwork(switchNetworkType: boolean) {
         if (!this.brainObject || !this.colaObject) return;
 
@@ -508,7 +604,7 @@ class Brain3DApp implements Application, Loopable {
             // Leave *showingCola* on permanently after first turn-on
             this.showingCola = true;
 
-            this.colaGraph.visibleNodeIDs = this.physioGraph.visibleNodeIDs;
+            this.colaGraph.filteredNodeIDs = this.physioGraph.filteredNodeIDs;
 
             //-------------------------------------------------------------------
             // Find the edges that have been selected after thresholding, and all the
@@ -535,8 +631,8 @@ class Brain3DApp implements Application, Loopable {
             for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
                 for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
                     if (this.filteredAdjMatrix[i][j] === 1) {
-                        if (this.physioGraph.visibleNodeIDs) {
-                            if ((this.physioGraph.visibleNodeIDs.indexOf(i) != -1) && (this.physioGraph.visibleNodeIDs.indexOf(j) != -1)) {
+                        if (this.physioGraph.filteredNodeIDs) {
+                            if ((this.physioGraph.filteredNodeIDs.indexOf(i) != -1) && (this.physioGraph.filteredNodeIDs.indexOf(j) != -1)) {
                                 var len = this.dissimilarityMatrix[i][j];
                                 edges.push({ source: i, target: j, length: len });
                                 hasNeighbours[i] = true;
@@ -616,100 +712,6 @@ class Brain3DApp implements Application, Loopable {
 
             //-------------------------------------------------------------------------------------------------------------
             // animation
-            /*
-            if (this.networkType == 'flatten-to-2d') {
-                var colaCoordsMatrix3D: number[][]; 
-
-                colaCoordsMatrix3D = this.colaCoords.map(function (array) {
-                    return array.slice(0);
-                });
-
-                colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more row than column
-                var V = numeric.svd(colaCoordsMatrix3D).V; // V is orthogonal
-
-                var Vt = numeric.transpose(V);
-                var A: number[][] = [];
-                A.push(Vt[0]); // 2d array is row first
-                A.push(Vt[1]);
-                A = numeric.transpose(A); // columns are axes
-                var At = numeric.transpose(A)
-                var At_A = numeric.dot(At, A);
-                var At_A_inv = numeric.inv(At_A);
-                var P = numeric.dot(numeric.dot(A, At_A_inv), At);
-
-                // step 1: projection
-                colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more column than row
-                var colaCoordsMatrix2DProjection = numeric.dot(P, colaCoordsMatrix3D); 
-
-                var newX = Vt[0]; // 2d array is row first
-                var newY = Vt[1];
-                var newZ = this.cross(newX, newY);
-
-                // step 2: transform 3d array to 2d array
-                // rotation
-                var newXCoords = numeric.dot(newX, colaCoordsMatrix2DProjection);
-                var newYCoords = numeric.dot(newY, colaCoordsMatrix2DProjection);
-
-                // offset
-                var sumX = 0;
-                var sumY = 0;
-                for (var i = 0; i < newXCoords.length; i++) {
-                    sumX += newXCoords[i];
-                    sumY += newYCoords[i];
-                }
-                var midX = sumX / newXCoords.length;
-                var midY = sumY / newXCoords.length;
-                newXCoords = newXCoords.map((value: number) => { return value - midX; });
-                newYCoords = newYCoords.map((value: number) => { return value - midY; });
-
-                var newZCoords: number[] = [];
-                for (var i = 0; i < newXCoords.length; i++) newZCoords[i] = 0;
-
-                var cola2DCoords: number[][] = [];
-                cola2DCoords.push(newXCoords);
-                cola2DCoords.push(newYCoords);
-
-                var cloneCola2DCoords = cola2DCoords.map(function (array) {
-                    return array.slice(0);
-                });
-
-                // step 3: apply cola to 2d graph
-                this.descent = new cola.Descent(cloneCola2DCoords, D); // Create the solver
-
-                // Relieve some of the initial stress
-                for (var i = 0; i < 10; ++i) {
-                    this.descent.reduceStress();
-                }
-
-                this.colaCoords = this.descent.x.map(function (array) {
-                    return array.slice(0);
-                });
-
-                this.colaCoords.push(newZCoords);
-                cola2DCoords.push(newZCoords);
-
-                // setup animation
-                var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
-                var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
-
-                var vAngle = this.angle(newZ, [newZ[0], newZ[1], 0]);
-                var hAngle = this.angle([newZ[0], newZ[1], 0], [0, 0, 1]);
-
-                //var rotationOrigin = new THREE.Vector3(0, 0, 0);
-                //var rotationTarget = new THREE.Vector3(vAngle, hAngle, 0);
-
-                //this.colaObjectRotation(origin, target, rotationOrigin, rotationTarget, switchNetworkType, false);
-
-                // animation: flatten to 2d
-                this.colaObjectAnimation(origin, target, originColaCoords, colaCoordsMatrix2DProjection, switchNetworkType, false);
-
-                // animation: rotate to the new coordinates
-                this.colaObjectAnimation(target, target, colaCoordsMatrix2DProjection, cola2DCoords, true, false);
-                
-                // animation: cola graph in 2d coordinate
-                this.colaObjectAnimation(target, target, cola2DCoords, this.colaCoords, true, true);
-            }
-            */
             if (this.networkType == 'flatten-to-2d') {
                 var colaCoordsMatrix3D: number[][];
 
@@ -779,6 +781,8 @@ class Brain3DApp implements Application, Loopable {
 
                 // animation: cola graph in 2d coordinate
                 this.colaObjectAnimation(target, target, colaCoordsMatrixRotatedProjected3D, this.colaCoords, true, true);
+
+                this.addSVGGraph();
             }
             else {
                 // Set up a coroutine to do the animation
@@ -920,7 +924,7 @@ class Brain3DApp implements Application, Loopable {
 
         console.log("app id: " + this.id + "; count: " + filteredIDs.length);   
 
-        this.physioGraph.visibleNodeIDs = filteredIDs;
+        this.physioGraph.filteredNodeIDs = filteredIDs;
         this.physioGraph.applyNodeFiltering();
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
     }
@@ -1235,7 +1239,7 @@ class Graph {
     edgeList: Edge[] = [];
     visible: boolean = true;
 
-    visibleNodeIDs: number[];
+    filteredNodeIDs: number[];
     nodeHasNeighbors: boolean[]; // used for cola graph only
 
     edgeThicknessByWeighted: boolean = false;
@@ -1375,9 +1379,9 @@ class Graph {
             this.rootObject.remove(this.nodeMeshes[i]);
         }
 
-        if (this.visibleNodeIDs) {
-            for (var j = 0; j < this.visibleNodeIDs.length; ++j) {
-                var nodeID = this.visibleNodeIDs[j];
+        if (this.filteredNodeIDs) {
+            for (var j = 0; j < this.filteredNodeIDs.length; ++j) {
+                var nodeID = this.filteredNodeIDs[j];
 
                 this.rootObject.add(this.nodeMeshes[nodeID]);
             }
@@ -1391,8 +1395,8 @@ class Graph {
 
         for (var i = 0; i < visArray.length; ++i) {
             if (visArray[i]) {
-                if (this.visibleNodeIDs) {
-                    if (this.visibleNodeIDs.indexOf(i) != -1) {
+                if (this.filteredNodeIDs) {
+                    if (this.filteredNodeIDs.indexOf(i) != -1) {
                         this.rootObject.add(this.nodeMeshes[i]);
                     }
                     else {
@@ -1426,8 +1430,8 @@ class Graph {
             for (var j = i + 1; j < len; ++j) {
                 var edge = this.edgeMatrix[i][j];
 
-                if (this.visibleNodeIDs) {
-                    if ((this.visibleNodeIDs.indexOf(i) == -1) || (this.visibleNodeIDs.indexOf(j) == -1)) {
+                if (this.filteredNodeIDs) {
+                    if ((this.filteredNodeIDs.indexOf(i) == -1) || (this.filteredNodeIDs.indexOf(j) == -1)) {
                         if (edge) edge.setVisible(false);
                     }
                     else {
@@ -1445,29 +1449,6 @@ class Graph {
         for (var i = 0; i < this.nodeLabelList.length; ++i) {
             if (this.nodeLabelList[i]) {
                 this.parentObject.add(this.nodeLabelList[i]);
-                /*
-                if (this.visibleNodeIDs && !this.nodeHasNeighbors) {
-                    if (this.visibleNodeIDs.indexOf(i) != -1) {
-                        this.parentObject.add(this.nodeLabelList[i]);
-                    }
-                }
-
-                if (!this.visibleNodeIDs && this.nodeHasNeighbors) {
-                    if (this.nodeHasNeighbors[i] == true) {
-                        this.parentObject.add(this.nodeLabelList[i]);
-                    }
-                }
-
-                if (this.visibleNodeIDs && this.nodeHasNeighbors) {
-                    if ((this.visibleNodeIDs.indexOf(i) != -1) && (this.nodeHasNeighbors[i] == true)) {
-                        this.parentObject.add(this.nodeLabelList[i]);
-                    }
-                }
-
-                if (!this.visibleNodeIDs && !this.nodeHasNeighbors) {
-                    this.parentObject.add(this.nodeLabelList[i]);
-                }
-                */
             }
         }
     }
