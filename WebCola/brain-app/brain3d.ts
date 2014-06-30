@@ -58,6 +58,7 @@ class Brain3DApp implements Application, Loopable {
 
     cola2D;
     svg;
+    svgMode;
 
     nodeColourings: number[]; // Stores the colourings associated with the groups
     dissimilarityMatrix: number[][] = []; // An inversion of the similarity matrix, used for Cola graph distances
@@ -515,113 +516,6 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
-    addSVGGraph() {
-        var width = this.jDiv.width();
-        var height = this.jDiv.height() - sliderSpace;
-        var widthHalf = width / 2;
-        var heightHalf = height / 2;
-
-        var projector = new THREE.Projector();
-        var screenCoords = new THREE.Vector3();
-
-        var nodeObjectArray = [];
-        var children = this.colaGraph.rootObject.children;
-        for (var i = 0; i < children.length; i++) {
-            var obj = children[i];
-            if ((<any>obj).isNode) {
-                var nodeObject = new Object();
-                nodeObject["id"] = obj.id;
-                nodeObject["group"] = 2;
-
-                var v = new THREE.Vector3(obj.position.x, obj.position.y, obj.position.z);
-                var matrixWorld = obj.matrixWorld;
-                //screenCoords.setFromMatrixPosition(matrixWorld); // not sure why this method is undefined; maybe we have an old version of three.js
-                (<any>screenCoords).getPositionFromMatrix(matrixWorld);
-                projector.projectVector(screenCoords, this.camera);
-
-                screenCoords.x = (screenCoords.x * widthHalf) + widthHalf;
-                screenCoords.y = - (screenCoords.y * heightHalf) + heightHalf;
-                nodeObject["x"] = screenCoords.x;
-                nodeObject["y"] = screenCoords.y;
-
-                nodeObjectArray.push(nodeObject);
-            }
-        }
-
-        var linkObjectArray = [];
-        for (var i = 0; i < this.colaGraph.edgeList.length; i++) {
-            var edge = this.colaGraph.edgeList[i];
-            if (edge.visible) {
-                var linkObject = new Object();      
-                linkObject["value"] = 1;
-
-                for (var j = 0; j < nodeObjectArray.length; j++) {
-                    if (nodeObjectArray[j].id == edge.sourceNode.id) {
-                        linkObject["source"] = j;
-                        linkObject["x1"] = nodeObjectArray[j].x;
-                        linkObject["y1"] = nodeObjectArray[j].y;
-                    }
-
-                    if (nodeObjectArray[j].id == edge.targetNode.id) {
-                        linkObject["target"] = j;
-                        linkObject["x2"] = nodeObjectArray[j].x;
-                        linkObject["y2"] = nodeObjectArray[j].y;
-                    }
-                }
-
-                linkObjectArray.push(linkObject);
-            }
-        }
-
-        var nodeJson = JSON.parse(JSON.stringify(nodeObjectArray));
-        //console.log(nodeJson);
-
-        var linkJson = JSON.parse(JSON.stringify(linkObjectArray));
-        //console.log(linkJson);
-
-        var color = d3.scale.category20();
-      
-        var link = this.svg.selectAll(".link")
-            .data(linkJson)
-            .enter().append("line")
-            .attr("class", "link")
-            .attr("x1", function (d) { return d.x1; })
-            .attr("y1", function (d) { return d.y1; })
-            .attr("x2", function (d) { return d.x2; })
-            .attr("y2", function (d) { return d.y2; })
-            .style("stroke-width", function (d) { return Math.sqrt(d.value); });
-
-        var node = this.svg.selectAll(".node")
-            .data(nodeJson)
-            .enter().append("circle")
-            .attr("class", "node")
-            .attr("r", 5)
-            .attr("cx", function (d) { return d.x; })
-            .attr("cy", function (d) { return d.y; })
-            .style("fill", function (d) { return color(d.group); })
-            .call(this.cola2D.drag);
-
-        node.append("title")
-            .text(function (d) { return d.id; });
-        
-        /*
-        this.cola2D
-            .nodes(nodeJson)
-            .links(linkJson)
-            .start();
-               
-        this.cola2D.on("tick", function () {
-            link.attr("x1", function (d) { return d.x1; })
-                .attr("y1", function (d) { return d.y1; })
-                .attr("x2", function (d) { return d.x2; })
-                .attr("y2", function (d) { return d.y2; });
-
-            node.attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; });
-        });
-        */
-    }
-
     showNetwork(switchNetworkType: boolean) {
         if (!this.brainObject || !this.colaObject) return;
 
@@ -841,14 +735,13 @@ class Brain3DApp implements Application, Loopable {
         return theta;
     }
 
-
     threeToSVGAnimation(transitionFinish: boolean) {
         $('#button-show-network-' + this.id).prop('disabled', true);
         $('#select-network-type-' + this.id).prop('disabled', true);
         $('#graph-view-slider-' + this.id).prop('disabled', true); 
 
         setCoroutine({ currentTime: 0, endTime: this.modeLerpLength }, (o, deltaTime) => {
-            if (o.currentTime == 0) this.addSVGGraph();
+            if (o.currentTime == 0) this.updateSVGGraph(true);
 
             o.currentTime += deltaTime;
 
@@ -861,6 +754,8 @@ class Brain3DApp implements Application, Loopable {
 
                 var link = this.svg.selectAll(".link")
                     .style("stroke-opacity", 1);
+
+                this.svgMode = true;
 
                 if (transitionFinish) {
                     this.transitionInProgress = false;
@@ -910,6 +805,8 @@ class Brain3DApp implements Application, Loopable {
 
             node.exit().remove();
             link.exit().remove();
+
+            this.svgMode = false;
         }
 
         this.transitionInProgress = true;
@@ -1009,6 +906,121 @@ class Brain3DApp implements Application, Loopable {
         });
     }
 
+    updateSVGGraph(init: boolean) {
+        var width = this.jDiv.width();
+        var height = this.jDiv.height() - sliderSpace;
+        var widthHalf = width / 2;
+        var heightHalf = height / 2;
+
+        var projector = new THREE.Projector();
+        var screenCoords = new THREE.Vector3();
+
+        var unitRadius = 5;
+
+        var nodeObjectArray = [];
+        var children = this.colaGraph.rootObject.children;
+        for (var i = 0; i < children.length; i++) {
+            var obj = children[i];
+            if ((<any>obj).isNode) {
+                var nodeObject = new Object();
+                nodeObject["id"] = obj.id;
+                nodeObject["color"] = this.colaGraph.nodeMeshes[obj.id].material.color.getHexString();
+                nodeObject["radius"] = this.colaGraph.nodeMeshes[obj.id].scale.x * unitRadius;
+
+                var v = new THREE.Vector3(obj.position.x, obj.position.y, obj.position.z);
+                var matrixWorld = obj.matrixWorld;
+                //screenCoords.setFromMatrixPosition(matrixWorld); // not sure why this method is undefined; maybe we have an old version of three.js
+                (<any>screenCoords).getPositionFromMatrix(matrixWorld);
+                projector.projectVector(screenCoords, this.camera);
+
+                screenCoords.x = (screenCoords.x * widthHalf) + widthHalf;
+                screenCoords.y = - (screenCoords.y * heightHalf) + heightHalf;
+                nodeObject["x"] = screenCoords.x;
+                nodeObject["y"] = screenCoords.y;
+
+                nodeObjectArray.push(nodeObject);
+            }
+        }
+
+        var linkObjectArray = [];
+        for (var i = 0; i < this.colaGraph.edgeList.length; i++) {
+            var edge = this.colaGraph.edgeList[i];
+            if (edge.visible) {
+                var linkObject = new Object();
+                linkObject["value"] = 1;
+
+                for (var j = 0; j < nodeObjectArray.length; j++) {
+                    if (nodeObjectArray[j].id == edge.sourceNode.id) {
+                        linkObject["source"] = j;
+                        linkObject["x1"] = nodeObjectArray[j].x;
+                        linkObject["y1"] = nodeObjectArray[j].y;
+                    }
+
+                    if (nodeObjectArray[j].id == edge.targetNode.id) {
+                        linkObject["target"] = j;
+                        linkObject["x2"] = nodeObjectArray[j].x;
+                        linkObject["y2"] = nodeObjectArray[j].y;
+                    }
+                }
+
+                linkObjectArray.push(linkObject);
+            }
+        }
+
+        var nodeJson = JSON.parse(JSON.stringify(nodeObjectArray));
+        var linkJson = JSON.parse(JSON.stringify(linkObjectArray));
+
+        if (init) {
+            var link = this.svg.selectAll(".link")
+                .data(linkJson)
+                .enter().append("line")
+                .attr("class", "link")
+                .attr("x1", function (d) { return d.x1; })
+                .attr("y1", function (d) { return d.y1; })
+                .attr("x2", function (d) { return d.x2; })
+                .attr("y2", function (d) { return d.y2; })
+                .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+
+            var node = this.svg.selectAll(".node")
+                .data(nodeJson)
+                .enter().append("circle")
+                .attr("class", "node")
+                .attr("r", function (d) { return d.radius; })
+                .attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; })
+                .style("fill", function (d) { return d.color; })
+                .call(this.cola2D.drag);
+
+            node.append("title")
+                .text(function (d) { return d.id; });
+        }
+        else {
+            var node = this.svg.selectAll(".node")
+                .data(nodeJson)
+                .attr("r", function (d) { return d.radius; })
+                .attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; })
+                .style("fill", function (d) { return d.color; })
+        }
+
+        /*
+        this.cola2D
+            .nodes(nodeJson)
+            .links(linkJson)
+            .start();
+               
+        this.cola2D.on("tick", function () {
+            link.attr("x1", function (d) { return d.x1; })
+                .attr("y1", function (d) { return d.y1; })
+                .attr("x2", function (d) { return d.x2; })
+                .attr("y2", function (d) { return d.y2; });
+
+            node.attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; });
+        });
+        */
+    }
+
     isDeleted() {
         return this.deleted;
     }
@@ -1030,6 +1042,7 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.highlightSelectedNodes(filteredIDs);
         this.colaGraph.highlightSelectedNodes(filteredIDs);
+        if (this.svgMode) this.updateSVGGraph(false);
     }
 
     setNodeDefaultSizeColor() {
@@ -1039,11 +1052,13 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setDefaultNodeScale();
         this.colaGraph.setDefaultNodeScale();
+        if (this.svgMode) this.updateSVGGraph(false);
     }
 
     setNodeSize(scaleArray: number[]) {
         this.physioGraph.setNodesScale(scaleArray);
         this.colaGraph.setNodesScale(scaleArray);
+        if (this.svgMode) this.updateSVGGraph(false);
     }
 
     setANodeColor(nodeID: number, color: string) {
@@ -1051,6 +1066,7 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setNodeColor(nodeID, value);
         this.colaGraph.setNodeColor(nodeID, value);
+        if (this.svgMode) this.updateSVGGraph(false);
     }
 
     setNodeColor(attribute: string, minColor: string, maxColor: string) {
@@ -1087,7 +1103,7 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setNodesColor(colorArray);
         this.colaGraph.setNodesColor(colorArray);
-
+        if (this.svgMode) this.updateSVGGraph(false);
     }
 
     setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]) {
@@ -1109,12 +1125,19 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setNodesColor(colorArrayNum);
         this.colaGraph.setNodesColor(colorArrayNum);
+        if (this.svgMode) this.updateSVGGraph(false);
     }
 
     resize(width: number, height: number) {
         // Resize the renderer
         this.renderer.setSize(width, height - sliderSpace);
         this.currentViewWidth = width;
+
+        this.cola2D.size([width, height - sliderSpace]);
+
+        this.svg
+            .attr("width", width)
+            .attr("height", height - sliderSpace);
 
         // Calculate the aspect ratio
         var aspect = width / (height - sliderSpace);
