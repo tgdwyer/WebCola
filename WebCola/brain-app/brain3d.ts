@@ -517,14 +517,14 @@ class Brain3DApp implements Application, Loopable {
         var projector = new THREE.Projector();
         var screenCoords = new THREE.Vector3();
 
-        var nodeObjectArray = new Array();
+        var nodeObjectArray = [];
         var children = this.colaGraph.rootObject.children;
         for (var i = 0; i < children.length; i++) {
             var obj = children[i];
             if ((<any>obj).isNode) {
-                // create an object for each record:
                 var nodeObject = new Object();
                 nodeObject["id"] = obj.id;
+                nodeObject["group"] = 2;
 
                 var v = new THREE.Vector3(obj.position.x, obj.position.y, obj.position.z);
                 var matrixWorld = obj.matrixWorld;
@@ -534,17 +534,50 @@ class Brain3DApp implements Application, Loopable {
 
                 screenCoords.x = (screenCoords.x * widthHalf) + widthHalf;
                 screenCoords.y = - (screenCoords.y * heightHalf) + heightHalf;
-
                 nodeObject["x"] = screenCoords.x;
                 nodeObject["y"] = screenCoords.y;
+
+                nodeObjectArray.push(nodeObject);
+                //var left = screenCoords.x + 'px';
+                //var top = screenCoords.y + 'px';
+                //this.jDiv.append($('<span class="view-panel-span">X</span>')
+                //    .css({ 'left': left, 'top': top, 'font-size': '20px' }))
+
             }
         }
 
-        //p2D = projector.projectVector(p3D, this.camera);
+        var linkObjectArray = [];
+        for (var i = 0; i < this.colaGraph.edgeList.length; i++) {
+            var edge = this.colaGraph.edgeList[i];
+            if (edge.visible) {
+                var linkObject = new Object();      
+                linkObject["value"] = 1;
+
+                for (var j = 0; j < nodeObjectArray.length; j++) {
+                    if (nodeObjectArray[j].id == edge.sourceNode.id) {
+                        linkObject["source"] = j;
+                        linkObject["x1"] = nodeObjectArray[j].x;
+                        linkObject["y1"] = nodeObjectArray[j].y;
+                    }
+
+                    if (nodeObjectArray[j].id == edge.targetNode.id) {
+                        linkObject["target"] = j;
+                        linkObject["x2"] = nodeObjectArray[j].x;
+                        linkObject["y2"] = nodeObjectArray[j].y;
+                    }
+                }
+
+                linkObjectArray.push(linkObject);
+            }
+        }
+
+        var nodeJson = JSON.parse(JSON.stringify(nodeObjectArray));
+        //console.log(nodeJson);
+
+        var linkJson = JSON.parse(JSON.stringify(linkObjectArray));
+        //console.log(linkJson);
 
         var color = d3.scale.category20();
-
-
 
         var cola = colans.d3adaptor()
             .size([width, height]);
@@ -552,11 +585,53 @@ class Brain3DApp implements Application, Loopable {
         var svg = d3.select('#div-svg-' + this.id).append("svg")
             .attr("width", width)
             .attr("height", height);
+        
+        var link = svg.selectAll(".link")
+            .data(linkJson)
+            .enter().append("line")
+            .attr("class", "link")
+            .attr("x1", function (d) { return d.x1; })
+            .attr("y1", function (d) { return d.y1; })
+            .attr("x2", function (d) { return d.x2; })
+            .attr("y2", function (d) { return d.y2; })
+            .style("stroke-width", function (d) { return Math.sqrt(d.value); });
 
+        var node = svg.selectAll(".node")
+            .data(nodeJson)
+            .enter().append("circle")
+            .attr("class", "node")
+            .attr("r", 5)
+            .attr("cx", function (d) { return d.x; })
+            .attr("cy", function (d) { return d.y; })
+            .style("fill", function (d) { return color(d.group); })
+            .call(cola.drag);
+
+        node.append("title")
+            .text(function (d) { return d.id; });
+        
+        cola
+            .nodes(nodeJson)
+            .links(linkJson)
+            .start();
+               
+        cola.on("tick", function () {
+            link.attr("x1", function (d) { return d.x1; })
+                .attr("y1", function (d) { return d.y1; })
+                .attr("x2", function (d) { return d.x2; })
+                .attr("y2", function (d) { return d.y2; });
+
+            node.attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; });
+        });
+        
+
+        /*
         $.getJSON("../examples/graphdata/miserables.json", function (json) {
             console.log(json);
         });
+        */
 
+        /*
         d3.json("../examples/graphdata/miserables.json", function (error, graph) {
             console.log(graph);
             cola
@@ -592,6 +667,7 @@ class Brain3DApp implements Application, Loopable {
                     .attr("cy", function (d) { return d.y; });
             });
         });
+        */
 
         this.cola2D = cola;
         this.svg = svg;

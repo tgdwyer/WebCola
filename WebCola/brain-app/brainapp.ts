@@ -330,6 +330,8 @@ $('#load-example-data').button().click(function () {
                 var columnName = dataSets[0].attributes.columnNames[i];
                 $('#select-attribute').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#div-set-node-scale').css({ visibility: 'visible' });            $('#div-node-size').css({ visibility: 'visible' });            $('#div-node-color-pickers').css({ visibility: 'visible' });            $('#div-node-color-pickers-discrete').css({ visibility: 'visible' });                     if ($('#div-node-size').length > 0) divNodeSizeRange = $('#div-node-size').detach();            if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();              if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();             //var attribute = $('#select-attribute').val();            //setupNodeSizeRangeSlider(attribute); // default option            $('#select-node-size-color').val('node-default');            $('#select-attribute').prop("disabled", "disabled");             setupCrossFilter(dataSets[0].attributes);        }   
     });
+
+    $('#load-example-data').button().prop("disabled", "disabled"); 
 });
 
 $('#button-apply-filter').button().click(function () {
@@ -1104,7 +1106,7 @@ function setupCrossFilter(attrs: Attributes) {
 
     // convert the object array to json format
     var json = JSON.parse(JSON.stringify(objectArray));
-    console.log(json);
+    //console.log(json);
 
     // create crossfilter
     var cfilter = crossfilter(json);
