@@ -323,6 +323,13 @@ class Brain3DApp implements Application, Loopable {
         option.value = 'flatten-to-2d';
         $(networkTypeSelect).append(option);
 
+        this.cola2D = colans.d3adaptor()
+            .size([jDiv.width(), jDiv.height() - sliderSpace]);
+
+        this.svg = d3.select('#div-svg-' + this.id).append("svg")
+            .attr("width", jDiv.width())
+            .attr("height", jDiv.height() - sliderSpace);
+
         // Set up camera
         this.camera = new THREE.PerspectiveCamera(45, 1, this.nearClip, this.farClip);
         this.resize(jDiv.width(), jDiv.height());
@@ -538,11 +545,6 @@ class Brain3DApp implements Application, Loopable {
                 nodeObject["y"] = screenCoords.y;
 
                 nodeObjectArray.push(nodeObject);
-                //var left = screenCoords.x + 'px';
-                //var top = screenCoords.y + 'px';
-                //this.jDiv.append($('<span class="view-panel-span">X</span>')
-                //    .css({ 'left': left, 'top': top, 'font-size': '20px' }))
-
             }
         }
 
@@ -578,15 +580,8 @@ class Brain3DApp implements Application, Loopable {
         //console.log(linkJson);
 
         var color = d3.scale.category20();
-
-        var cola = colans.d3adaptor()
-            .size([width, height]);
-
-        var svg = d3.select('#div-svg-' + this.id).append("svg")
-            .attr("width", width)
-            .attr("height", height);
-        
-        var link = svg.selectAll(".link")
+      
+        var link = this.svg.selectAll(".link")
             .data(linkJson)
             .enter().append("line")
             .attr("class", "link")
@@ -596,7 +591,7 @@ class Brain3DApp implements Application, Loopable {
             .attr("y2", function (d) { return d.y2; })
             .style("stroke-width", function (d) { return Math.sqrt(d.value); });
 
-        var node = svg.selectAll(".node")
+        var node = this.svg.selectAll(".node")
             .data(nodeJson)
             .enter().append("circle")
             .attr("class", "node")
@@ -604,17 +599,18 @@ class Brain3DApp implements Application, Loopable {
             .attr("cx", function (d) { return d.x; })
             .attr("cy", function (d) { return d.y; })
             .style("fill", function (d) { return color(d.group); })
-            .call(cola.drag);
+            .call(this.cola2D.drag);
 
         node.append("title")
             .text(function (d) { return d.id; });
         
-        cola
+        /*
+        this.cola2D
             .nodes(nodeJson)
             .links(linkJson)
             .start();
                
-        cola.on("tick", function () {
+        this.cola2D.on("tick", function () {
             link.attr("x1", function (d) { return d.x1; })
                 .attr("y1", function (d) { return d.y1; })
                 .attr("x2", function (d) { return d.x2; })
@@ -623,54 +619,7 @@ class Brain3DApp implements Application, Loopable {
             node.attr("cx", function (d) { return d.x; })
                 .attr("cy", function (d) { return d.y; });
         });
-        
-
-        /*
-        $.getJSON("../examples/graphdata/miserables.json", function (json) {
-            console.log(json);
-        });
         */
-
-        /*
-        d3.json("../examples/graphdata/miserables.json", function (error, graph) {
-            console.log(graph);
-            cola
-                .nodes(graph.nodes)
-                .links(graph.links)
-                .jaccardLinkLengths(40, 0.7)
-                .start(30);
-
-            var link = svg.selectAll(".link")
-                .data(graph.links)
-                .enter().append("line")
-                .attr("class", "link")
-                .style("stroke-width", function (d) { return Math.sqrt(d.value); });
-
-            var node = svg.selectAll(".node")
-                .data(graph.nodes)
-                .enter().append("circle")
-                .attr("class", "node")
-                .attr("r", 5)
-                .style("fill", function (d) { return color(d.group); })
-                .call(cola.drag);
-
-            node.append("title")
-                .text(function (d) { return d.name; });
-
-            cola.on("tick", function () {
-                link.attr("x1", function (d) { return d.source.x; })
-                    .attr("y1", function (d) { return d.source.y; })
-                    .attr("x2", function (d) { return d.target.x; })
-                    .attr("y2", function (d) { return d.target.y; });
-
-                node.attr("cx", function (d) { return d.x; })
-                    .attr("cy", function (d) { return d.y; });
-            });
-        });
-        */
-
-        this.cola2D = cola;
-        this.svg = svg;
     }
 
     showNetwork(switchNetworkType: boolean) {
@@ -856,9 +805,9 @@ class Brain3DApp implements Application, Loopable {
                 this.colaObjectAnimation(target, target, colaCoordsMatrixRotated3D, colaCoordsMatrixRotatedProjected3D, true, false);
 
                 // animation: cola graph in 2d coordinate
-                this.colaObjectAnimation(target, target, colaCoordsMatrixRotatedProjected3D, this.colaCoords, true, true);
+                this.colaObjectAnimation(target, target, colaCoordsMatrixRotatedProjected3D, this.colaCoords, true, false);
 
-                this.addSVGGraph();
+                this.threeToSVGAnimation(true);
             }
             else {
                 // Set up a coroutine to do the animation
@@ -892,8 +841,77 @@ class Brain3DApp implements Application, Loopable {
         return theta;
     }
 
+
+    threeToSVGAnimation(transitionFinish: boolean) {
+        $('#button-show-network-' + this.id).prop('disabled', true);
+        $('#select-network-type-' + this.id).prop('disabled', true);
+        $('#graph-view-slider-' + this.id).prop('disabled', true); 
+
+        setCoroutine({ currentTime: 0, endTime: this.modeLerpLength }, (o, deltaTime) => {
+            if (o.currentTime == 0) this.addSVGGraph();
+
+            o.currentTime += deltaTime;
+
+            if (o.currentTime >= o.endTime) { // The animation has finished
+                this.colaGraph.setVisible(false);
+
+                var node = this.svg.selectAll(".node")
+                    .style("stroke-opacity", 1)
+                    .style("opacity", 1);
+
+                var link = this.svg.selectAll(".link")
+                    .style("stroke-opacity", 1);
+
+                if (transitionFinish) {
+                    this.transitionInProgress = false;
+
+                    // Enable the vertical slider
+                    $('#graph-view-slider-' + this.id).css({ visibility: 'visible' });
+                    $('#graph-view-slider-' + this.id).val('100');
+
+                    $('#button-show-network-' + this.id).prop('disabled', false);
+                    $('#select-network-type-' + this.id).prop('disabled', false);
+                    $('#graph-view-slider-' + this.id).prop('disabled', false);
+                }
+
+                return true;
+            }
+            else { // Update the animation
+                var percentDone = o.currentTime / o.endTime;
+
+                var children = this.colaGraph.rootObject.children;
+                for (var i = 0; i < children.length; i++) {
+                    children[i].material.opacity = 1 - percentDone;
+                }
+
+                var node = this.svg.selectAll(".node")
+                    .style("stroke-opacity", percentDone)
+                    .style("opacity", percentDone);
+
+                var link = this.svg.selectAll(".link")
+                    .style("stroke-opacity", percentDone);
+
+                return false;
+            }
+        });
+    }
+
     colaObjectAnimation(colaObjectOrigin, colaObjectTarget, nodeCoordOrigin: number[][], nodeCoordTarget: number[][], switchNetworkType: boolean, transitionFinish: boolean) {
         this.colaGraph.setVisible(true);
+
+        var children = this.colaGraph.rootObject.children;
+        for (var i = 0; i < children.length; i++) {
+            children[i].material.opacity = 1;
+        }
+
+        if (this.svg) {
+            var node = this.svg.selectAll(".node").data(new Array());
+            var link = this.svg.selectAll(".link").data(new Array());
+
+            node.exit().remove();
+            link.exit().remove();
+        }
+
         this.transitionInProgress = true;
         $('#button-show-network-' + this.id).prop('disabled', true);
         $('#select-network-type-' + this.id).prop('disabled', true);    
