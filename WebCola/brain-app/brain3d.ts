@@ -195,7 +195,9 @@ class Brain3DApp implements Application, Loopable {
             if (this.showingCola) {
                 this.colaObject.position = new THREE.Vector3(this.graphOffset, 0, 0);
                 this.colaObject.rotation.set(0, 0, 0);
-            }         
+            }   
+            
+            if (this.svgMode) this.updateSVGGraph(false);  
         });
 
         this.input.regMouseWheelCallback((delta: number) => {
@@ -206,6 +208,7 @@ class Brain3DApp implements Application, Loopable {
             this.fovZoomRatio = this.camera.fov / this.defaultFov;
             this.camera.updateProjectionMatrix();
             //console.log("this.camera.fov: " + this.camera.fov);
+            if (this.svgMode) this.updateSVGGraph(false);
         });
 
         this.input.regGetRotationCallback(() => {
@@ -327,9 +330,11 @@ class Brain3DApp implements Application, Loopable {
         this.cola2D = colans.d3adaptor()
             .size([jDiv.width(), jDiv.height() - sliderSpace]);
 
+        var varSVGZoom = () => { this.svgZoom(); }
         this.svg = d3.select('#div-svg-' + this.id).append("svg")
             .attr("width", jDiv.width())
             .attr("height", jDiv.height() - sliderSpace);
+            //.call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", varSVGZoom));
 
         // Set up camera
         this.camera = new THREE.PerspectiveCamera(45, 1, this.nearClip, this.farClip);
@@ -391,6 +396,13 @@ class Brain3DApp implements Application, Loopable {
         if (commonData.brainLabels) lab();
         //if (commonData.brainSurface) surf(); // this line is redundant and has problem, surf() will be called in THREE.OBJLoader
     }
+
+    
+    svgZoom() {
+        //this.svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+        //this.updateSVGGraph(false);
+    }
+    
 
     sliderMouseEvent(e: string) {
         if (e == "mousedown") {
@@ -979,6 +991,7 @@ class Brain3DApp implements Application, Loopable {
                 .attr("y1", function (d) { return d.y1; })
                 .attr("x2", function (d) { return d.x2; })
                 .attr("y2", function (d) { return d.y2; })
+                //.attr("transform", function (d) { return "translate(" + d + ")"; })
                 .style("stroke-width", function (d) { return Math.sqrt(d.value); });
 
             var node = this.svg.selectAll(".node")
@@ -988,6 +1001,7 @@ class Brain3DApp implements Application, Loopable {
                 .attr("r", function (d) { return d.radius; })
                 .attr("cx", function (d) { return d.x; })
                 .attr("cy", function (d) { return d.y; })
+                //.attr("transform", function (d) { return "translate(" + d + ")"; })
                 .style("fill", function (d) { return d.color; })
                 .call(this.cola2D.drag);
 
@@ -995,11 +1009,21 @@ class Brain3DApp implements Application, Loopable {
                 .text(function (d) { return d.id; });
         }
         else {
+            var link = this.svg.selectAll(".link")
+                .data(linkJson)
+                .attr("x1", function (d) { return d.x1; })
+                .attr("y1", function (d) { return d.y1; })
+                .attr("x2", function (d) { return d.x2; })
+                .attr("y2", function (d) { return d.y2; })
+                //.attr("transform", function (d) { return "translate(" + d + ")"; })
+                .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+
             var node = this.svg.selectAll(".node")
                 .data(nodeJson)
                 .attr("r", function (d) { return d.radius; })
                 .attr("cx", function (d) { return d.x; })
                 .attr("cy", function (d) { return d.y; })
+                //.attr("transform", function (d) { return "translate(" + d + ")"; })
                 .style("fill", function (d) { return d.color; })
         }
 
@@ -1272,11 +1296,12 @@ class Brain3DApp implements Application, Loopable {
 
         for (var i = 0; i < intersected.length; ++i) {
             if ((<any>intersected[i].object).isNode) { // Node objects have this special boolean flag
-                this.commonData.nodeIDUnderPointer = intersected[i].object.id;
+                this.commonData.nodeIDUnderPointer[this.id] = intersected[i].object.id;
                 return intersected[i].object;
             }
         }
 
+        this.commonData.nodeIDUnderPointer[this.id] = -1;
         return null;
     }
 
@@ -1298,7 +1323,16 @@ class Brain3DApp implements Application, Loopable {
         }
 
         var node = this.getNodeUnderPointer(this.input.localPointerPosition());
-        if (node || (this.commonData.nodeIDUnderPointer != -1)) {
+
+        var nodeIDUnderPointer = -1;
+        for (var i = 0; i < 4; i++) {
+            if (this.commonData.nodeIDUnderPointer[i] != -1) {
+                nodeIDUnderPointer = this.commonData.nodeIDUnderPointer[i];
+                break;
+            }
+        }
+
+        if (node || (nodeIDUnderPointer != -1)) {
             // If we already have a node ID selected, deselect it
             if (this.selectedNodeID >= 0) {
                 this.physioGraph.deselectNode(this.selectedNodeID);
@@ -1312,17 +1346,29 @@ class Brain3DApp implements Application, Loopable {
                 this.selectedNodeID = node.id;
             }
             else {
-                this.selectedNodeID = this.commonData.nodeIDUnderPointer;
+                this.selectedNodeID = nodeIDUnderPointer;
             }
 
             // Select the new node ID
-            this.physioGraph.selectNode(this.selectedNodeID);
-            this.colaGraph.selectNode(this.selectedNodeID);
+            this.physioGraph.selectNode(this.selectedNodeID, false);
+            this.colaGraph.selectNode(this.selectedNodeID, this.svgMode);
 
             this.physioGraph.selectAdjEdges(this.selectedNodeID);
             this.colaGraph.selectAdjEdges(this.selectedNodeID);
-        }
 
+            if (this.svgMode) this.updateSVGGraph(false);
+        }
+        else {
+            if (this.selectedNodeID >= 0) {
+                this.physioGraph.deselectNode(this.selectedNodeID);
+                this.colaGraph.deselectNode(this.selectedNodeID);
+
+                this.physioGraph.deselectAdjEdges(this.selectedNodeID);
+                this.colaGraph.deselectAdjEdges(this.selectedNodeID);
+                this.selectedNodeID = -1;
+                if (this.svgMode) this.updateSVGGraph(false);
+            }
+        }
 
         if (this.showingCola)
             this.descent.rungeKutta(); // Do an iteration of the solver
@@ -1635,7 +1681,7 @@ class Graph {
         this.nodeMeshes[id].material.color.setHex(color);
     }
 
-    selectNode(id: number) {
+    selectNode(id: number, svgMode: boolean) {
         var x = this.nodeMeshes[id].scale.x;
         var y = this.nodeMeshes[id].scale.y;
         var z = this.nodeMeshes[id].scale.z;
@@ -1643,7 +1689,7 @@ class Graph {
         this.nodeMeshes[id].scale.set(2*x, 2*y, 2*z);
 
         if (this.allLabels == false) {
-            this.parentObject.add(this.nodeLabelList[id]);
+            if (!svgMode) this.parentObject.add(this.nodeLabelList[id]);
         }
     }
 

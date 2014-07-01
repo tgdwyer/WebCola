@@ -16,7 +16,7 @@ class CommonData {
     public brainLabels: string[];
     public brainSurface;
     public nodeCount: number; // Number of coordinates
-    public nodeIDUnderPointer: number = -1; // for yoked display
+    public nodeIDUnderPointer: number[] = [-1,-1,-1,-1]; // for yoked display
 
     coordCallbacks: Array<() => void> = new Array();
     labelCallbacks: Array<() => void> = new Array();
