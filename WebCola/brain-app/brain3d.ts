@@ -59,8 +59,10 @@ class Brain3DApp implements Application, Loopable {
     cola2D;
     svg;
     svgMode;
+    svgAllElements;
     svgNodeArray: any[];
     svgLinkArray: any[];
+    svgControlMode: boolean = false;
 
     nodeColourings: number[]; // Stores the colourings associated with the groups
     dissimilarityMatrix: number[][] = []; // An inversion of the similarity matrix, used for Cola graph distances
@@ -144,6 +146,8 @@ class Brain3DApp implements Application, Loopable {
         });
 
         this.input.regMouseDragCallback((dx: number, dy: number, mode: number) => {
+            if (this.svgControlMode) return;
+
             // left button: rotation
             if (mode == 1) {
                 if (this.autoRotation == false) {
@@ -174,6 +178,8 @@ class Brain3DApp implements Application, Loopable {
         });
 
         this.input.regMouseRightClickCallback((x: number, y: number) => {
+            if (this.svgControlMode) return;
+
             var record;
             var node = this.getNodeUnderPointer(this.input.localPointerPosition());
             if (node) {
@@ -185,6 +191,8 @@ class Brain3DApp implements Application, Loopable {
         });
 
         this.input.regMouseDoubleClickCallback(() => {
+            if (this.svgControlMode) return;
+
             this.fovZoomRatio = 1;
             this.camera.fov = this.defaultFov;
             this.camera.updateProjectionMatrix();
@@ -199,6 +207,8 @@ class Brain3DApp implements Application, Loopable {
         });
 
         this.input.regMouseWheelCallback((delta: number) => {
+            if (this.svgControlMode) return;
+
             var z = 1.0;
             z += delta;
 
@@ -228,13 +238,14 @@ class Brain3DApp implements Application, Loopable {
         var varEdgesColoredOnChange = (b: boolean) => { this.edgesColoredOnChange(b); }
         var varAllLabelsOnChange = (b: boolean) => { this.allLabelsOnChange(b); }
         var varAutoRotationOnChange = (b: boolean) => { this.autoRotationOnChange(b); }
+        var varSVGControlOnChange = (b: boolean) => { this.svgControlOnChange(b); }
         var varSliderMouseEvent = (e: string) => { this.sliderMouseEvent(e); }
         var varGraphViewSliderOnChange = (v: number) => { this.graphViewSliderOnChange(v); }
         var varEdgeCountSliderOnChange = (v: number) => { this.edgeCountSliderOnChange(v); }
         var varCloseBrainAppOnClick = () => { this.closeBrainAppOnClick(); }
         var varDefaultOrientationsOnClick = (s: string) => { this.defaultOrientationsOnClick(s); }
         var varNetworkTypeOnChange = (s: string) => { this.networkTypeOnChange(s); }
-
+        
         this.input.regKeyDownCallback(' ', varShowNetwork);
             
         // Set the background colour
@@ -290,7 +301,7 @@ class Brain3DApp implements Application, Loopable {
             .append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
             .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown + '" disabled="true"/></input>')
-                .css({ 'width': '200px', 'position': 'relative', 'z-index': 1000 })
+                .css({ 'width': '180px', 'position': 'relative', 'z-index': 1000 })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varEdgeCountSliderOnChange($(this).val()); }))
@@ -302,9 +313,11 @@ class Brain3DApp implements Application, Loopable {
                 .click(function () { varAllLabelsOnChange($(this).is(":checked")); }))
             .append($('<input type="checkbox" id="checkbox-auto-rotation-' + this.id + '" disabled="true">Auto Rotation</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
                 .click(function () { varAutoRotationOnChange($(this).is(":checked")); }))
+            .append($('<input type="checkbox" id="checkbox-svg-control-' + this.id + '" disabled="true">SVG</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
+                .click(function () { varSVGControlOnChange($(this).is(":checked")); }))
             .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px', 'position': 'relative', 'z-index': 1000 })
                 .click(function () { varShowNetwork(false); }))
-            .append($('<select id="select-network-type-' + this.id + '" disabled="true"></select>').css({ 'margin-left': '5px', 'font-size': '12px', 'width': '90px', 'position': 'relative', 'z-index': 1000 })
+            .append($('<select id="select-network-type-' + this.id + '" disabled="true"></select>').css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px', 'position': 'relative', 'z-index': 1000 })
                 .on("change", function () { varNetworkTypeOnChange($(this).val()); }));
 
         var networkTypeSelect = "#select-network-type-" + this.id;
@@ -327,11 +340,12 @@ class Brain3DApp implements Application, Loopable {
         this.cola2D = colans.d3adaptor()
             .size([jDiv.width(), jDiv.height() - sliderSpace]);
 
-        //var varSVGZoom = () => { this.svgZoom(); }
+        var varSVGZoom = () => { this.svgZoom(); }
         this.svg = d3.select('#div-svg-' + this.id).append("svg")
             .attr("width", jDiv.width())
-            .attr("height", jDiv.height() - sliderSpace);
-            //.call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", varSVGZoom));
+            .attr("height", jDiv.height() - sliderSpace)
+            .call(d3.behavior.zoom().on("zoom", varSVGZoom));
+        this.svgAllElements = this.svg.append("g");
 
         // Set up camera
         this.camera = new THREE.PerspectiveCamera(45, 1, this.nearClip, this.farClip);
@@ -396,7 +410,8 @@ class Brain3DApp implements Application, Loopable {
 
     
     svgZoom() {
-        //this.svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+        if (this.svgControlMode)
+            this.svgAllElements.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
     }
     
 
@@ -508,6 +523,10 @@ class Brain3DApp implements Application, Loopable {
             this.mouse.dx = 1;
             this.mouse.dy = 0;
         }
+    }
+
+    svgControlOnChange(b: boolean) {
+        this.svgControlMode = b;
     }
 
     allLabelsOnChange(b: boolean) {
@@ -756,11 +775,11 @@ class Brain3DApp implements Application, Loopable {
             if (o.currentTime >= o.endTime) { // The animation has finished
                 this.colaGraph.setVisible(false);
 
-                var node = this.svg.selectAll(".node")
+                var node = this.svgAllElements.selectAll(".node")
                     .style("stroke-opacity", 1)
                     .style("opacity", 1);
 
-                var link = this.svg.selectAll(".link")
+                var link = this.svgAllElements.selectAll(".link")
                     .style("stroke-opacity", 1);
 
                 this.svgMode = true;
@@ -787,11 +806,11 @@ class Brain3DApp implements Application, Loopable {
                     children[i].material.opacity = 1 - percentDone;
                 }
 
-                var node = this.svg.selectAll(".node")
+                var node = this.svgAllElements.selectAll(".node")
                     .style("stroke-opacity", percentDone)
                     .style("opacity", percentDone);
 
-                var link = this.svg.selectAll(".link")
+                var link = this.svgAllElements.selectAll(".link")
                     .style("stroke-opacity", percentDone);
 
                 return false;
@@ -807,9 +826,9 @@ class Brain3DApp implements Application, Loopable {
             children[i].material.opacity = 1;
         }
 
-        if (this.svg) {
-            var node = this.svg.selectAll(".node").data(new Array());
-            var link = this.svg.selectAll(".link").data(new Array());
+        if (this.svgAllElements) {
+            var node = this.svgAllElements.selectAll(".node").data(new Array());
+            var link = this.svgAllElements.selectAll(".link").data(new Array());
 
             node.exit().remove();
             link.exit().remove();
@@ -1064,7 +1083,7 @@ class Brain3DApp implements Application, Loopable {
         var nodeJson = JSON.parse(JSON.stringify(this.svgNodeArray));
         var linkJson = JSON.parse(JSON.stringify(this.svgLinkArray));
 
-        var link = this.svg.selectAll(".link")
+        var link = this.svgAllElements.selectAll(".link")
             .data(linkJson)
             .attr("x1", function (d) { return d.x1; })
             .attr("y1", function (d) { return d.y1; })
@@ -1073,7 +1092,7 @@ class Brain3DApp implements Application, Loopable {
             .style("stroke-width", function (d) { return d.width; })
             .style("stroke", function (d) { return d.color; });
 
-        var node = this.svg.selectAll(".node")
+        var node = this.svgAllElements.selectAll(".node")
             .data(nodeJson)
             .attr("r", function (d) { return d.radius; })
             .attr("cx", function (d) { return d.x; })
@@ -1147,7 +1166,7 @@ class Brain3DApp implements Application, Loopable {
         var nodeJson = JSON.parse(JSON.stringify(this.svgNodeArray));
         var linkJson = JSON.parse(JSON.stringify(this.svgLinkArray));
 
-        var link = this.svg.selectAll(".link")
+        var link = this.svgAllElements.selectAll(".link")
             .data(linkJson)
             .enter().append("line")
             .attr("class", "link")
@@ -1158,18 +1177,22 @@ class Brain3DApp implements Application, Loopable {
             .style("stroke-width", function (d) { return d.width; })
             .style("stroke", function (d) { return d.color; });
 
-        var node = this.svg.selectAll(".node")
+        var node = this.svgAllElements.selectAll(".node")
             .data(nodeJson)
             .enter().append("circle")
             .attr("class", "node")
             .attr("r", function (d) { return d.radius; })
             .attr("cx", function (d) { return d.x; })
             .attr("cy", function (d) { return d.y; })
-            .style("fill", function (d) { return d.color; })
-            .call(this.cola2D.drag);
+            .style("fill", function (d) { return d.color; });
+            //.call(this.cola2D.drag);
 
         node.append("title")
             .text(function (d) { return d.id; });
+
+        //d3.behavior.zoom().scale(1);
+        //d3.behavior.zoom().translate([0, 0]);
+        this.svgAllElements.attr("transform", "translate(0,0)scale(1)");
 
         /*
         this.cola2D
@@ -1395,7 +1418,8 @@ class Brain3DApp implements Application, Loopable {
         $('#checkbox-all-labels-' + this.id).prop('disabled', false);
         $('#checkbox-edge-color-' + this.id).prop('disabled', false);
         $('#checkbox-auto-rotation-' + this.id).prop('disabled', false);
-        $('#select-network-type-' + this.id).prop('disabled', false);        
+        $('#checkbox-svg-control-' + this.id).prop('disabled', false);
+        $('#select-network-type-' + this.id).prop('disabled', false);
     }
 
     // Create a matrix where a 1 in (i, j) means the edge between node i and node j is selected
