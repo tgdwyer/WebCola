@@ -16,7 +16,7 @@ class CommonData {
     public brainLabels: string[];
     public brainSurface;
     public nodeCount: number; // Number of coordinates
-    public nodeIDUnderPointer: number = -1; // for yoked display
+    public nodeIDUnderPointer: number[] = [-1,-1,-1,-1]; // for yoked display
 
     coordCallbacks: Array<() => void> = new Array();
     labelCallbacks: Array<() => void> = new Array();
@@ -103,9 +103,12 @@ class Attributes {
         var record = '';
         var columns = this.columnNames.length;
 
+        var line = "id: " + index + "; ";
+        record += line;
+
         for (var j = 0; j < columns; ++j) {
             var v = this.attrValues[j][index];
-            var line = this.columnNames[j] + ": " + v + "; ";
+            line = this.columnNames[j] + ": " + v + ";";
             record += line;
         }
 
@@ -163,6 +166,7 @@ interface Application {
     setNodeSize(scaleArray: number[]);
     setNodeColor(attribute: string, minColor: string, maxColor: string);
     setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]);
+    setANodeColor(nodeID: number, color: string);
     highlightSelectedNodes(filteredIDs: number[]);
     isDeleted();
 }
@@ -175,6 +179,7 @@ class DummyApp implements Application {
     setNodeSize() { }
     setNodeColor() { }
     setNodeColorDiscrete() { }
+    setANodeColor() { }
     highlightSelectedNodes() { }
     isDeleted() { }
 }
@@ -325,6 +330,8 @@ $('#load-example-data').button().click(function () {
                 var columnName = dataSets[0].attributes.columnNames[i];
                 $('#select-attribute').append('<option value = "' + columnName + '">' + columnName + '</option>');            }            $('#div-set-node-scale').css({ visibility: 'visible' });            $('#div-node-size').css({ visibility: 'visible' });            $('#div-node-color-pickers').css({ visibility: 'visible' });            $('#div-node-color-pickers-discrete').css({ visibility: 'visible' });                     if ($('#div-node-size').length > 0) divNodeSizeRange = $('#div-node-size').detach();            if ($('#div-node-color-pickers').length > 0) divNodeColorPickers = $('#div-node-color-pickers').detach();              if ($('#div-node-color-pickers-discrete').length > 0) divNodeColorPickersDiscrete = $('#div-node-color-pickers-discrete').detach();             //var attribute = $('#select-attribute').val();            //setupNodeSizeRangeSlider(attribute); // default option            $('#select-node-size-color').val('node-default');            $('#select-attribute').prop("disabled", "disabled");             setupCrossFilter(dataSets[0].attributes);        }   
     });
+
+    $('#load-example-data').button().prop("disabled", "disabled"); 
 });
 
 $('#button-apply-filter').button().click(function () {
@@ -637,6 +644,15 @@ function getActiveTargetUnderMouse(x: number, y: number) {
     return id;
 }
 
+function setNodeColorInContextMenu(color: string) {
+    if (apps[input.activeTarget]) {
+        if ((input.rightClickLabelAppended) && (input.selectedNodeID >= 0)) {
+            apps[input.activeTarget].setANodeColor(input.selectedNodeID, '#' + color);
+            input.contextMenuColorChanged = true;
+        }
+    }
+}
+
 function highlightSelectedNodes() {
     if (!dataSets[0].attributes) return;
 
@@ -791,6 +807,15 @@ $('#dataset2-icon-front').draggable(
         }
     }
 );
+
+$('#checkbox_yoking_view').on('change', function () {
+    if ($('#checkbox_yoking_view').is(":checked")) {
+        input.yokingView = true;
+    }
+    else {
+        input.yokingView = false;
+    }
+});
 
 // Move an icon back to its origin
 function resetIcon(object: string, location: string) {
@@ -955,6 +980,8 @@ manager.onProgress = function (item, loaded, total) {
     console.log(item, loaded, total);
 };
 var loader = new (<any>THREE).OBJLoader(manager);
+var brainSurfaceColor: string = "0xe3e3e3";
+
 // Load the brain surface (hardcoded - it is not simple to load geometry from the local machine, but this has not been deeply explored yet).
 // NOTE: The loaded model cannot be used in more than one WebGL context (scene) at a time - the geometry and materials must be .cloned() into
 // new THREE.Mesh() objects by the application wishing to use the model.
@@ -964,13 +991,17 @@ function loadBrainModel(fileName: string) {
             console.log("Failed to load brain surface.");
             return;
         }
+
+        var surfaceColor = parseInt(brainSurfaceColor);
+
         // Set brain mesh material
         object.traverse(function (child) {
             if (child instanceof THREE.Mesh) {
                 child.material =
                 new THREE.MeshLambertMaterial(
                     {
-                        color: 0xffaaaa,
+                        //color: 0xffaaaa,
+                        color: surfaceColor,
                         transparent: true,
                         opacity: 0.3
                     });
@@ -997,6 +1028,10 @@ function loadBrainModel(fileName: string) {
     });
 }
 loadBrainModel('BrainMesh_ICBM152.obj'); // Load the model right away
+
+function setBrainSurfaceColor(color: string) {
+    brainSurfaceColor = '0x' + color;
+}
 
 // Load the similarity matrix for the specified dataSet
 function loadSimilarityMatrix(file, dataSet: DataSet) {
