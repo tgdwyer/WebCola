@@ -729,10 +729,10 @@ class Brain3DApp implements Application, Loopable {
 
                 if ((this.colaObject.rotation.x != 0) || (this.colaObject.rotation.y != 0) || (this.colaObject.rotation.z != 0)) {
                     // animation: cola object rotation
-                    this.colaObjectRotation(origin, target, rotationOrigin, rotationTarget, switchNetworkType, false);
+                    this.colaObjectRotation(origin, target, rotationOrigin, rotationTarget, originColaCoords, colaCoordsMatrixRotated3D, switchNetworkType, false);
 
                     // animation: rotate by changing coordinates
-                    this.colaObjectAnimation(target, target, originColaCoords, colaCoordsMatrixRotated3D, true, false);
+                    //this.colaObjectAnimation(target, target, originColaCoords, colaCoordsMatrixRotated3D, true, false);
                 }
                 else {
                     // animation: rotate by changing coordinates
@@ -899,7 +899,7 @@ class Brain3DApp implements Application, Loopable {
         });
     }
 
-    colaObjectRotation(colaObjectOrigin, colaObjectTarget, rotationOrigin, rotationTarget, switchNetworkType: boolean, transitionFinish: boolean) {
+    colaObjectRotation(colaObjectOrigin, colaObjectTarget, rotationOrigin, rotationTarget, nodeCoordOrigin: number[][], nodeCoordTarget: number[][], switchNetworkType: boolean, transitionFinish: boolean) {
         this.colaGraph.setVisible(true);
         this.transitionInProgress = true;
         $('#button-show-network-' + this.id).prop('disabled', true);
@@ -918,6 +918,7 @@ class Brain3DApp implements Application, Loopable {
 
             if (o.currentTime >= o.endTime) { // The animation has finished
                 this.colaObject.position = colaObjectTarget;
+                this.colaGraph.setNodePositions(nodeCoordTarget);
                 //this.colaObject.rotation = rotationTarget;
                 //this.colaObject.rotation.set(rotationTarget[0], rotationTarget[1], rotationTarget[2]);
 
@@ -937,6 +938,8 @@ class Brain3DApp implements Application, Loopable {
             }
             else { // Update the animation
                 var percentDone = o.currentTime / o.endTime;
+
+                this.colaGraph.setNodePositionsLerp(nodeCoordOrigin, nodeCoordTarget, percentDone);
 
                 var rotation = rotationOrigin.clone().add(rotationTarget.clone().sub(rotationOrigin).multiplyScalar(percentDone));
                 this.colaObject.rotation.set(rotation.x, rotation.y, rotation.z);
