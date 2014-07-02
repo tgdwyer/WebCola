@@ -63,6 +63,7 @@ class Brain3DApp implements Application, Loopable {
     svgNodeArray: any[];
     svgLinkArray: any[];
     svgControlMode: boolean = false;
+    d3Zoom = d3.behavior.zoom();
 
     nodeColourings: number[]; // Stores the colourings associated with the groups
     dissimilarityMatrix: number[][] = []; // An inversion of the similarity matrix, used for Cola graph distances
@@ -344,7 +345,7 @@ class Brain3DApp implements Application, Loopable {
         this.svg = d3.select('#div-svg-' + this.id).append("svg")
             .attr("width", jDiv.width())
             .attr("height", jDiv.height() - sliderSpace)
-            .call(d3.behavior.zoom().on("zoom", varSVGZoom));
+            .call(this.d3Zoom.on("zoom", varSVGZoom));
         this.svgAllElements = this.svg.append("g");
 
         // Set up camera
@@ -406,14 +407,7 @@ class Brain3DApp implements Application, Loopable {
         if (commonData.brainCoords) coords();
         if (commonData.brainLabels) lab();
         //if (commonData.brainSurface) surf(); // this line is redundant and has problem, surf() will be called in THREE.OBJLoader
-    }
-
-    
-    svgZoom() {
-        if (this.svgControlMode)
-            this.svgAllElements.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-    }
-    
+    }   
 
     sliderMouseEvent(e: string) {
         if (e == "mousedown") {
@@ -445,6 +439,11 @@ class Brain3DApp implements Application, Loopable {
 
     networkTypeOnChange(type: string) {
         this.networkType = type;
+
+        if (this.networkType != 'flatten-to-2d') {
+            $('#checkbox-svg-control-' + this.id).prop('checked', false);
+            this.svgControlMode = false;
+        }
 
         if (this.showingCola == true) {
             this.showNetwork(true);
@@ -527,6 +526,12 @@ class Brain3DApp implements Application, Loopable {
 
     svgControlOnChange(b: boolean) {
         this.svgControlMode = b;
+
+        if (this.svgControlMode) {
+            //this.svgAllElements.attr("transform", "translate(0,0)");
+            this.d3Zoom.scale(1);
+            this.d3Zoom.translate([0, 0]);
+        }
     }
 
     allLabelsOnChange(b: boolean) {
@@ -719,9 +724,20 @@ class Brain3DApp implements Application, Loopable {
                 var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
                 var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
 
-                // animation: rotate 
-                this.colaObjectAnimation(origin, target, originColaCoords, colaCoordsMatrixRotated3D, switchNetworkType, false);
+                var rotationOrigin = new THREE.Vector3(this.colaObject.rotation.x, this.colaObject.rotation.y, this.colaObject.rotation.z);
+                var rotationTarget = new THREE.Vector3(0, 0, 0);
 
+                if ((this.colaObject.rotation.x != 0) || (this.colaObject.rotation.y != 0) || (this.colaObject.rotation.z != 0)) {
+                    // animation: cola object rotation
+                    this.colaObjectRotation(origin, target, rotationOrigin, rotationTarget, switchNetworkType, false);
+
+                    // animation: rotate by changing coordinates
+                    this.colaObjectAnimation(target, target, originColaCoords, colaCoordsMatrixRotated3D, true, false);
+                }
+                else {
+                    // animation: rotate by changing coordinates
+                    this.colaObjectAnimation(origin, target, originColaCoords, colaCoordsMatrixRotated3D, switchNetworkType, false);
+                }
                 // animation: flatten to 2d
                 this.colaObjectAnimation(target, target, colaCoordsMatrixRotated3D, colaCoordsMatrixRotatedProjected3D, true, false);
 
@@ -826,7 +842,7 @@ class Brain3DApp implements Application, Loopable {
             children[i].material.opacity = 1;
         }
 
-        if (this.svgAllElements) {
+        if (this.svgMode) {
             var node = this.svgAllElements.selectAll(".node").data(new Array());
             var link = this.svgAllElements.selectAll(".link").data(new Array());
 
@@ -902,7 +918,8 @@ class Brain3DApp implements Application, Loopable {
 
             if (o.currentTime >= o.endTime) { // The animation has finished
                 this.colaObject.position = colaObjectTarget;
-                this.colaObject.rotation = rotationTarget;
+                //this.colaObject.rotation = rotationTarget;
+                //this.colaObject.rotation.set(rotationTarget[0], rotationTarget[1], rotationTarget[2]);
 
                 if (transitionFinish) {
                     this.transitionInProgress = false;
@@ -1062,6 +1079,11 @@ class Brain3DApp implements Application, Loopable {
     }
     */
 
+    svgZoom() {
+        if (this.svgControlMode)
+            this.svgAllElements.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+    }
+
     updateSVGGraph() {
         if ((!this.svgNodeArray) || (!this.svgLinkArray)) return;
 
@@ -1190,9 +1212,10 @@ class Brain3DApp implements Application, Loopable {
         node.append("title")
             .text(function (d) { return d.id; });
 
-        //d3.behavior.zoom().scale(1);
-        //d3.behavior.zoom().translate([0, 0]);
-        this.svgAllElements.attr("transform", "translate(0,0)scale(1)");
+        //this.svgAllElements.attr("transform", "translate(0,0)scale(1)");
+        this.svgAllElements.attr("transform", "translate(0,0)");
+        this.d3Zoom.scale(1);
+        this.d3Zoom.translate([0, 0]);
 
         /*
         this.cola2D
@@ -1318,7 +1341,7 @@ class Brain3DApp implements Application, Loopable {
         this.renderer.setSize(width, height - sliderSpace);
         this.currentViewWidth = width;
 
-        this.cola2D.size([width, height - sliderSpace]);
+        //this.cola2D.size([width, height - sliderSpace]);
 
         this.svg
             .attr("width", width)
@@ -1334,7 +1357,7 @@ class Brain3DApp implements Application, Loopable {
 
         this.defaultFov = verticalFov * 180 / Math.PI;
 
-        this.camera.fov = this.defaultFov * this.fovZoomRatio;       
+        this.camera.fov = this.defaultFov * this.fovZoomRatio;
         this.camera.updateProjectionMatrix();
         //console.log("this.camera.fov: " + this.camera.fov);
 
