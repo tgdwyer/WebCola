@@ -48,6 +48,7 @@ class Brain3DApp implements Application, Loopable {
     commonData: CommonData;
     dataSet: DataSet;
     brainSurface;
+    brainSurfaceBoundingSphere;
     brainObject; // Base object for the brain graph
     colaObject; // Base object for the cola graph
     brainGeometry;
@@ -386,18 +387,29 @@ class Brain3DApp implements Application, Loopable {
             this.brainObject.remove(this.brainSurface);
             // Clone the mesh - we can't share it between different canvases without cloning it
             var clonedObject = new THREE.Object3D();
+            var boundingSphereObject = new THREE.Object3D();
             this.commonData.brainSurface.traverse(function (child) {
                 if (child instanceof THREE.Mesh) {
                     clonedObject.add(new THREE.Mesh(child.geometry.clone(), child.material.clone()));
+
+                    var boundingSphere = child.geometry.boundingSphere;
+                    var material = child.material;
+                    var sphereGeometry = new THREE.SphereGeometry(boundingSphere.radius + 10, 10, 10);
+                    var sphereObject = new THREE.Mesh(sphereGeometry.clone(), material.clone());
+                    sphereObject.position.x = boundingSphere.center.x;
+                    sphereObject.position.y = boundingSphere.center.y;
+                    sphereObject.position.z = boundingSphere.center.z;
+                    sphereObject.visible = false;
+                    (<any>sphereObject).isBoundingSphere = true;
+                    boundingSphereObject.add(sphereObject);
                 }
             });
 
-            // Setting scale to some arbitrarily larger value, because the mesh isn't the right size
-            //var scale = 1.5;
-            //clonedObject.scale = new THREE.Vector3(scale, scale, scale);
-
             this.brainSurface = clonedObject;
+            boundingSphereObject.visible = false;
+            this.brainSurfaceBoundingSphere = boundingSphereObject;
             this.brainObject.add(this.brainSurface);
+            this.brainObject.add(this.brainSurfaceBoundingSphere);
 
             this.surfaceLoaded = true;
         };
@@ -526,6 +538,8 @@ class Brain3DApp implements Application, Loopable {
 
     svgControlOnChange(b: boolean) {
         this.svgControlMode = b;
+        //var scale = d3.event.scale;
+        //var tran = d3.event.translate;
 
         if (this.svgControlMode) {
             //this.svgAllElements.attr("transform", "translate(0,0)");
@@ -1110,18 +1124,18 @@ class Brain3DApp implements Application, Loopable {
 
         var link = this.svgAllElements.selectAll(".link")
             .data(linkJson)
-            .attr("x1", function (d) { return d.x1; })
-            .attr("y1", function (d) { return d.y1; })
-            .attr("x2", function (d) { return d.x2; })
-            .attr("y2", function (d) { return d.y2; })
+            //.attr("x1", function (d) { return d.x1; })
+            //.attr("y1", function (d) { return d.y1; })
+            //.attr("x2", function (d) { return d.x2; })
+            //.attr("y2", function (d) { return d.y2; })
             .style("stroke-width", function (d) { return d.width; })
             .style("stroke", function (d) { return d.color; });
 
         var node = this.svgAllElements.selectAll(".node")
             .data(nodeJson)
+            //.attr("cx", function (d) { return d.x; })
+            //.attr("cy", function (d) { return d.y; })
             .attr("r", function (d) { return d.radius; })
-            .attr("cx", function (d) { return d.x; })
-            .attr("cy", function (d) { return d.y; })
             .style("fill", function (d) { return d.color; });
     }
 
@@ -1209,32 +1223,66 @@ class Brain3DApp implements Application, Loopable {
             .attr("r", function (d) { return d.radius; })
             .attr("cx", function (d) { return d.x; })
             .attr("cy", function (d) { return d.y; })
-            .style("fill", function (d) { return d.color; });
-            //.call(this.cola2D.drag);
+            .style("fill", function (d) { return d.color; })
+            .call(this.cola2D.drag);
 
         node.append("title")
             .text(function (d) { return d.id; });
+
+        node.each(d=> d.width = d.height = d.radius * 2);
 
         //this.svgAllElements.attr("transform", "translate(0,0)scale(1)");
         this.svgAllElements.attr("transform", "translate(0,0)");
         this.d3Zoom.scale(1);
         this.d3Zoom.translate([0, 0]);
-
+       
         /*
         this.cola2D
+            .handleDisconnected(true)
+            .avoidOverlaps(true)
             .nodes(nodeJson)
             .links(linkJson)
-            .start();
+            .start(30, 20, 20);
 
-        this.cola2D.on("tick", function () {
-            link.attr("x1", function (d) { return d.x1; })
-                .attr("y1", function (d) { return d.y1; })
-                .attr("x2", function (d) { return d.x2; })
-                .attr("y2", function (d) { return d.y2; });
-
-            node.attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; });
+        var offsetx = 1;
+        var offsety = 1;
+        node.each(d=> {
+            d.x += offsetx;
+            d.y += offsety;
         });
+
+        var ctr = 0;
+        var endTransition = (transition) => {
+            transition
+                .each(() => ++ctr)
+                .each("end", () => {
+                    if (!--ctr) {
+                        this.cola2D.on("tick", function () {
+                            link.attr("x1", function (d) { return d.source.x; })
+                                .attr("y1", function (d) { return d.source.y; })
+                                .attr("x2", function (d) { return d.target.x; })
+                                .attr("y2", function (d) { return d.target.y; })
+                                .style("stroke-width", function (d) { return d.width; })
+                                .style("stroke", function (d) { return d.color; });
+                            node.attr("cx", function (d) { return d.x; })
+                                .attr("cy", function (d) { return d.y; })
+                                .attr("r", function (d) { return d.radius; })
+                                .style("fill", function (d) { return d.color; });
+                        });
+                    }
+                });
+        };
+
+        link.transition().duration(1000)
+            .attr("x1", function (d) { return d.source.x; })
+            .attr("y1", function (d) { return d.source.y; })
+            .attr("x2", function (d) { return d.target.x; })
+            .attr("y2", function (d) { return d.target.y; })
+            .call(endTransition);
+        node.transition().duration(1000)
+            .attr("cx", function (d) { return d.x; })
+            .attr("cy", function (d) { return d.y; })
+            .call(endTransition);
         */
     }
 
@@ -1344,7 +1392,7 @@ class Brain3DApp implements Application, Loopable {
         this.renderer.setSize(width, height - sliderSpace);
         this.currentViewWidth = width;
 
-        //this.cola2D.size([width, height - sliderSpace]);
+        this.cola2D.size([width, height - sliderSpace]);
 
         this.svg
             .attr("width", width)
