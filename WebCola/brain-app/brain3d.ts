@@ -866,6 +866,10 @@ class Brain3DApp implements Application, Loopable {
             node.exit().remove();
             link.exit().remove();
 
+            this.cola2D = null;
+            this.cola2D = colans.d3adaptor()
+                .size([this.jDiv.width(), this.jDiv.height() - sliderSpace]);
+
             this.svgMode = false;
         }
 
@@ -1106,7 +1110,7 @@ class Brain3DApp implements Application, Loopable {
             .attr("cx", function (d) { return d.x; })
             .attr("cy", function (d) { return d.y; })
             .style("fill", function (d) { return d.color; })
-            .call(this.cola2D.drag);
+            //.call(this.cola2D.drag);
 
         node.append("title")
             .text(function (d) { return d.id; });
@@ -1117,8 +1121,8 @@ class Brain3DApp implements Application, Loopable {
         this.svgAllElements.attr("transform", "translate(0,0)");
         this.d3Zoom.scale(1);
         this.d3Zoom.translate([0, 0]);
-       
-        /*
+        
+        
         this.cola2D
             .handleDisconnected(true)
             .avoidOverlaps(true)
@@ -1126,13 +1130,14 @@ class Brain3DApp implements Application, Loopable {
             .links(linkJson)
             .start(30, 20, 20);
 
-        var offsetx = 1;
-        var offsety = 1;
+        var offsetx = 250;
+        var offsety = 0;
         node.each(d=> {
             d.x += offsetx;
             d.y += offsety;
         });
 
+        /*
         var ctr = 0;
         var endTransition = (transition) => {
             transition
@@ -1150,22 +1155,22 @@ class Brain3DApp implements Application, Loopable {
                                 .attr("cy", function (d) { return d.y; })
                                 .attr("r", function (d) { return d.radius; })
                                 .style("fill", function (d) { return d.color; });
-                        });
+                        });                        
                     }
                 });
         };
+        */
 
         link.transition().duration(1000)
             .attr("x1", function (d) { return d.source.x; })
             .attr("y1", function (d) { return d.source.y; })
             .attr("x2", function (d) { return d.target.x; })
-            .attr("y2", function (d) { return d.target.y; })
-            .call(endTransition);
+            .attr("y2", function (d) { return d.target.y; });
+            //.call(endTransition);
         node.transition().duration(1000)
             .attr("cx", function (d) { return d.x; })
-            .attr("cy", function (d) { return d.y; })
-            .call(endTransition);
-       */ 
+            .attr("cy", function (d) { return d.y; });
+            //.call(endTransition);       
     }
 
     isDeleted() {
