@@ -240,7 +240,7 @@ class Brain3DApp implements Application, Loopable {
         var varEdgesColoredOnChange = (b: boolean) => { this.edgesColoredOnChange(b); }
         var varAllLabelsOnChange = (b: boolean) => { this.allLabelsOnChange(b); }
         var varAutoRotationOnChange = (b: boolean) => { this.autoRotationOnChange(b); }
-        var varSVGControlOnChange = (b: boolean) => { this.svgControlOnChange(b); }
+        //var varSVGControlOnChange = (b: boolean) => { this.svgControlOnChange(b); }
         var varSliderMouseEvent = (e: string) => { this.sliderMouseEvent(e); }
         var varGraphViewSliderOnChange = (v: number) => { this.graphViewSliderOnChange(v); }
         var varEdgeCountSliderOnChange = (v: number) => { this.edgeCountSliderOnChange(v); }
@@ -303,7 +303,7 @@ class Brain3DApp implements Application, Loopable {
             .append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
             .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown + '" disabled="true"/></input>')
-                .css({ 'width': '180px', 'position': 'relative', 'z-index': 1000 })
+                .css({ 'width': '200px', 'position': 'relative', 'z-index': 1000 })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varEdgeCountSliderOnChange($(this).val()); }))
@@ -315,8 +315,8 @@ class Brain3DApp implements Application, Loopable {
                 .click(function () { varAllLabelsOnChange($(this).is(":checked")); }))
             .append($('<input type="checkbox" id="checkbox-auto-rotation-' + this.id + '" disabled="true">Auto Rotation</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
                 .click(function () { varAutoRotationOnChange($(this).is(":checked")); }))
-            .append($('<input type="checkbox" id="checkbox-svg-control-' + this.id + '" disabled="true">SVG</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
-                .click(function () { varSVGControlOnChange($(this).is(":checked")); }))
+            //.append($('<input type="checkbox" id="checkbox-svg-control-' + this.id + '" disabled="true">SVG</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
+            //    .click(function () { varSVGControlOnChange($(this).is(":checked")); }))
             .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px', 'position': 'relative', 'z-index': 1000 })
                 .click(function () { varShowNetwork(false); }))
             .append($('<select id="select-network-type-' + this.id + '" disabled="true"></select>').css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px', 'position': 'relative', 'z-index': 1000 })
@@ -452,8 +452,11 @@ class Brain3DApp implements Application, Loopable {
     networkTypeOnChange(type: string) {
         this.networkType = type;
 
-        if (this.networkType != 'flatten-to-2d') {
-            $('#checkbox-svg-control-' + this.id).prop('checked', false);
+        if (this.networkType == 'flatten-to-2d') {
+            this.svgControlMode = true;
+        }
+        else {
+            //$('#checkbox-svg-control-' + this.id).prop('checked', false);
             this.svgControlMode = false;
         }
 
@@ -536,10 +539,9 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
+    /*
     svgControlOnChange(b: boolean) {
         this.svgControlMode = b;
-        //var scale = d3.event.scale;
-        //var tran = d3.event.translate;
 
         if (this.svgControlMode) {
             //this.svgAllElements.attr("transform", "translate(0,0)");
@@ -547,6 +549,7 @@ class Brain3DApp implements Application, Loopable {
             this.d3Zoom.translate([0, 0]);
         }
     }
+    */
 
     allLabelsOnChange(b: boolean) {
         this.physioGraph.allLabels = b;
@@ -967,135 +970,6 @@ class Brain3DApp implements Application, Loopable {
         });
     }
 
-    /*
-    updateSVGGraph(init: boolean) {
-        var width = this.jDiv.width();
-        var height = this.jDiv.height() - sliderSpace;
-        var widthHalf = width / 2;
-        var heightHalf = height / 2;
-
-        var projector = new THREE.Projector();
-        var screenCoords = new THREE.Vector3();
-
-        var unitRadius = 5;
-
-        var svgNodeArray = [];
-        var children = this.colaGraph.rootObject.children;
-        for (var i = 0; i < children.length; i++) {
-            var obj = children[i];
-            if ((<any>obj).isNode) {
-                var nodeObject = new Object();
-                nodeObject["id"] = obj.id;
-                nodeObject["color"] = this.colaGraph.nodeMeshes[obj.id].material.color.getHexString();
-                nodeObject["radius"] = this.colaGraph.nodeMeshes[obj.id].scale.x * unitRadius;
-
-                var v = new THREE.Vector3(obj.position.x, obj.position.y, obj.position.z);
-                var matrixWorld = obj.matrixWorld;
-                //screenCoords.setFromMatrixPosition(matrixWorld); // not sure why this method is undefined; maybe we have an old version of three.js
-                (<any>screenCoords).getPositionFromMatrix(matrixWorld);
-                projector.projectVector(screenCoords, this.camera);
-
-                screenCoords.x = (screenCoords.x * widthHalf) + widthHalf;
-                screenCoords.y = - (screenCoords.y * heightHalf) + heightHalf;
-                nodeObject["x"] = screenCoords.x;
-                nodeObject["y"] = screenCoords.y;
-
-                svgNodeArray.push(nodeObject);
-            }
-        }
-
-        var svgLinkArray = [];
-        for (var i = 0; i < this.colaGraph.edgeList.length; i++) {
-            var edge = this.colaGraph.edgeList[i];
-            if (edge.visible) {
-                var linkObject = new Object();
-                linkObject["value"] = 1;
-                linkObject["color"] = edge.shape.material.color.getHexString();
-                linkObject["width"] = edge.shape.scale.x;
-
-                for (var j = 0; j < svgNodeArray.length; j++) {
-                    if (svgNodeArray[j].id == edge.sourceNode.id) {
-                        linkObject["source"] = j;
-                        linkObject["x1"] = svgNodeArray[j].x;
-                        linkObject["y1"] = svgNodeArray[j].y;
-                    }
-
-                    if (svgNodeArray[j].id == edge.targetNode.id) {
-                        linkObject["target"] = j;
-                        linkObject["x2"] = svgNodeArray[j].x;
-                        linkObject["y2"] = svgNodeArray[j].y;
-                    }
-                }
-
-                svgLinkArray.push(linkObject);
-            }
-        }
-
-        var nodeJson = JSON.parse(JSON.stringify(svgNodeArray));
-        var linkJson = JSON.parse(JSON.stringify(svgLinkArray));
-
-        if (init) {
-            var link = this.svg.selectAll(".link")
-                .data(linkJson)
-                .enter().append("line")
-                .attr("class", "link")
-                .attr("x1", function (d) { return d.x1; })
-                .attr("y1", function (d) { return d.y1; })
-                .attr("x2", function (d) { return d.x2; })
-                .attr("y2", function (d) { return d.y2; })
-                .style("stroke-width", function (d) { return d.width; })
-                .style("stroke", function (d) { return d.color; });
-
-            var node = this.svg.selectAll(".node")
-                .data(nodeJson)
-                .enter().append("circle")
-                .attr("class", "node")
-                .attr("r", function (d) { return d.radius; })
-                .attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; })
-                .style("fill", function (d) { return d.color; })
-                .call(this.cola2D.drag);
-
-            node.append("title")
-                .text(function (d) { return d.id; });
-        }
-        else {
-            var link = this.svg.selectAll(".link")
-                .data(linkJson)
-                .attr("x1", function (d) { return d.x1; })
-                .attr("y1", function (d) { return d.y1; })
-                .attr("x2", function (d) { return d.x2; })
-                .attr("y2", function (d) { return d.y2; })
-                .style("stroke-width", function (d) { return d.width; })
-                .style("stroke", function (d) { return d.color; });
-
-            var node = this.svg.selectAll(".node")
-                .data(nodeJson)
-                .attr("r", function (d) { return d.radius; })
-                .attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; })
-                .style("fill", function (d) { return d.color; })
-        }
-
-
-        this.cola2D
-            .nodes(nodeJson)
-            .links(linkJson)
-            .start();
-               
-        this.cola2D.on("tick", function () {
-            link.attr("x1", function (d) { return d.x1; })
-                .attr("y1", function (d) { return d.y1; })
-                .attr("x2", function (d) { return d.x2; })
-                .attr("y2", function (d) { return d.y2; });
-
-            node.attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; });
-        });
-
-    }
-    */
-
     svgZoom() {
         if (this.svgControlMode)
             this.svgAllElements.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
@@ -1110,6 +984,9 @@ class Brain3DApp implements Application, Loopable {
             var id = this.svgNodeArray[i].id;
             this.svgNodeArray[i].color = this.colaGraph.nodeMeshes[id].material.color.getHexString();
             this.svgNodeArray[i].radius = this.colaGraph.nodeMeshes[id].scale.x * unitRadius;
+
+            if (this.svgNodeArray[i].hasOwnProperty("x")) delete this.svgNodeArray[i].x;
+            if (this.svgNodeArray[i].hasOwnProperty("y")) delete this.svgNodeArray[i].y;
         }
 
         for (var i = 0; i < this.svgLinkArray.length; i++) {
@@ -1117,6 +994,11 @@ class Brain3DApp implements Application, Loopable {
             var edge = this.colaGraph.edgeList[index];
             this.svgLinkArray[i].color = edge.shape.material.color.getHexString();
             this.svgLinkArray[i].width = edge.shape.scale.x;
+
+            if (this.svgLinkArray[i].hasOwnProperty("x1")) delete this.svgLinkArray[i].x1;
+            if (this.svgLinkArray[i].hasOwnProperty("y1")) delete this.svgLinkArray[i].y1;
+            if (this.svgLinkArray[i].hasOwnProperty("x2")) delete this.svgLinkArray[i].x2;
+            if (this.svgLinkArray[i].hasOwnProperty("y2")) delete this.svgLinkArray[i].y2;
         }
 
         var nodeJson = JSON.parse(JSON.stringify(this.svgNodeArray));
@@ -1283,7 +1165,7 @@ class Brain3DApp implements Application, Loopable {
             .attr("cx", function (d) { return d.x; })
             .attr("cy", function (d) { return d.y; })
             .call(endTransition);
-        */
+       */ 
     }
 
     isDeleted() {
@@ -1492,7 +1374,7 @@ class Brain3DApp implements Application, Loopable {
         $('#checkbox-all-labels-' + this.id).prop('disabled', false);
         $('#checkbox-edge-color-' + this.id).prop('disabled', false);
         $('#checkbox-auto-rotation-' + this.id).prop('disabled', false);
-        $('#checkbox-svg-control-' + this.id).prop('disabled', false);
+        //$('#checkbox-svg-control-' + this.id).prop('disabled', false);
         $('#select-network-type-' + this.id).prop('disabled', false);
     }
 
@@ -1534,11 +1416,44 @@ class Brain3DApp implements Application, Loopable {
             if ((<any>intersected[i].object).isNode) { // Node objects have this special boolean flag
                 this.commonData.nodeIDUnderPointer[this.id] = intersected[i].object.id;
                 return intersected[i].object;
-            }
+            }       
         }
 
         this.commonData.nodeIDUnderPointer[this.id] = -1;
         return null;
+    }
+
+    getBoundingSphereUnderPointer(pointer) {
+        var pointerNDC = new THREE.Vector3(pointer.x, pointer.y, 1);
+        this.projector.unprojectVector(pointerNDC, this.camera);
+        var directionVector = pointerNDC.sub(this.camera.position);
+        directionVector.normalize();
+
+        var raycaster = new THREE.Raycaster(this.camera.position, directionVector, this.nearClip, this.farClip);
+        var intersected = raycaster.intersectObjects(this.scene.children, true);
+
+        var inBoundingSphere = false;
+        for (var i = 0; i < intersected.length; ++i) {
+            if ((<any>intersected[i].object).isBoundingSphere) { // Node objects have this special boolean flag
+                inBoundingSphere = true;
+                break;
+            }
+        }
+
+        if (this.networkType == 'flatten-to-2d') {
+            if (inBoundingSphere == true) {
+                this.svgControlMode = false;
+
+                this.d3Zoom.scale(1);
+                this.d3Zoom.translate([0, 0]);
+            }
+            else {
+                this.svgControlMode = true;
+            }
+        }
+        else {
+            this.svgControlMode = false;
+        }
     }
 
     update(deltaTime: number) {
@@ -1559,6 +1474,7 @@ class Brain3DApp implements Application, Loopable {
         }
 
         var node = this.getNodeUnderPointer(this.input.localPointerPosition());
+        this.getBoundingSphereUnderPointer(this.input.localPointerPosition());
 
         var nodeIDUnderPointer = -1;
         for (var i = 0; i < 4; i++) {
