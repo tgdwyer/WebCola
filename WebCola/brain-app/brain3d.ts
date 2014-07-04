@@ -684,6 +684,25 @@ class Brain3DApp implements Application, Loopable {
                 this.descent.reduceStress();
             }
 
+            // clear svg graphs
+            if (this.svgMode) {
+                var node = this.svgAllElements.selectAll(".node").data(new Array());
+                var link = this.svgAllElements.selectAll(".link").data(new Array());
+                var nodeBundle = this.svgAllElements.selectAll(".nodeBundle").data(new Array());
+                var linkBundle = this.svgAllElements.selectAll(".linkBundle").data(new Array());
+
+                node.exit().remove();
+                link.exit().remove();
+                nodeBundle.exit().remove();
+                linkBundle.exit().remove();
+
+                this.cola2D = null;
+                this.cola2D = colans.d3adaptor()
+                    .size([this.jDiv.width(), this.jDiv.height() - sliderSpace]);
+
+                this.svgMode = false;
+            }
+
             //-------------------------------------------------------------------------------------------------------------
             // animation
             if (this.networkType == 'flatten-to-2d') {
@@ -869,20 +888,6 @@ class Brain3DApp implements Application, Loopable {
             children[i].material.opacity = 1;
         }
 
-        if (this.svgMode) {
-            var node = this.svgAllElements.selectAll(".node").data(new Array());
-            var link = this.svgAllElements.selectAll(".link").data(new Array());
-
-            node.exit().remove();
-            link.exit().remove();
-
-            this.cola2D = null;
-            this.cola2D = colans.d3adaptor()
-                .size([this.jDiv.width(), this.jDiv.height() - sliderSpace]);
-
-            this.svgMode = false;
-        }
-
         this.transitionInProgress = true;
         $('#button-show-network-' + this.id).prop('disabled', true);
         $('#select-network-type-' + this.id).prop('disabled', true);    
@@ -984,8 +989,72 @@ class Brain3DApp implements Application, Loopable {
         });
     }
 
+    svgZoom() {
+        if (this.svgControlMode)
+            this.svgAllElements.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+    }
+
     initCircularLayout() {
-        var diameter = 960,
+        var moduleIDs = this.dataSet.attributes.get('module_id');
+        this.svgNodeArray = [];
+        var children = this.colaGraph.rootObject.children;
+        for (var i = 0; i < children.length; i++) {
+            var obj = children[i];
+            if ((<any>obj).isNode) {
+                var nodeObject = new Object();
+                var moduleID = moduleIDs[obj.id];
+                nodeObject["id"] = obj.id;
+                nodeObject["moduleID"] = moduleID;
+                nodeObject["name"] = "root.module" + moduleID + "." + obj.id;
+                nodeObject["imports"] = [];
+                nodeObject["color"] = this.colaGraph.nodeMeshes[obj.id].material.color.getHexString();
+                this.svgNodeArray.push(nodeObject);
+            }
+        }
+
+        for (var i = 0; i < this.colaGraph.edgeList.length; i++) {
+            var edge = this.colaGraph.edgeList[i];
+            if (edge.visible) {
+                for (var j = 0; j < this.svgNodeArray.length; j++) {
+                    if (this.svgNodeArray[j].id == edge.sourceNode.id) {
+                        var moduleID = -1;
+                        for (var k = 0; k < this.svgNodeArray.length; k++) {
+                            if (this.svgNodeArray[k].id == edge.targetNode.id) {
+                                moduleID = this.svgNodeArray[k].moduleID;
+                                break;
+                            }
+                        }
+
+                        if (moduleID >= 0) {
+                            var nodeName = "root.module" + moduleID + "." + edge.targetNode.id;
+                            this.svgNodeArray[j].imports.push(nodeName);
+                        }
+                    }
+
+                    if (this.svgNodeArray[j].id == edge.targetNode.id) {
+                        var moduleID = -1;
+                        for (var k = 0; k < this.svgNodeArray.length; k++) {
+                            if (this.svgNodeArray[k].id == edge.sourceNode.id) {
+                                moduleID = this.svgNodeArray[k].moduleID;
+                                break;
+                            }
+                        }
+
+                        if (moduleID >= 0) {
+                            var nodeName = "root.module" + moduleID + "." + edge.sourceNode.id;
+                            this.svgNodeArray[j].imports.push(nodeName);
+                        }
+                    }
+                }
+            }
+        }
+
+        var nodeJson = JSON.parse(JSON.stringify(this.svgNodeArray));
+
+        var width = 200 + this.jDiv.width() / 2;
+        var height = (this.jDiv.height() - sliderSpace) / 2;
+
+        var diameter = this.jDiv.height() - sliderSpace - 100,
             radius = diameter / 2,
             innerRadius = radius - 120;
 
@@ -998,57 +1067,34 @@ class Brain3DApp implements Application, Loopable {
 
         var line = d3.svg.line.radial()
             .interpolate("bundle")
-            .tension(.85)
+            .tension(.65)
             .radius(function (d) { return d.y; })
             .angle(function (d) { return d.x / 180 * Math.PI; });
 
-        var width = this.jDiv.width() / 2;
-        var height = (this.jDiv.height() - sliderSpace) / 2;
         this.svgAllElements.attr("transform", "translate(" + width + "," + height + ")");
 
-        /*
-        var json = $.getJSON("../examples/graphdata/readme-flare-imports.json", function (json) {
-            console.log(json);
-        });
-        */
+        var nodes = cluster.nodes(packages.root(nodeJson)),
+            links = packages.imports(nodes);
 
-        d3.json("../examples/graphdata/readme-flare-imports.json", function (error, classes) {
-            console.log("none...");
-            console.log(classes);
-        });
+        this.svgAllElements.selectAll(".linkBundle")
+            .data(bundle(links))
+            .enter().append("path")
+            .attr("class", "linkBundle")
+            .attr("d", line);
 
-        var thisSVG = this.svgAllElements;
-        d3.json("../examples/graphdata/readme-flare-imports.json", function (error, classes) {
-            console.log("bundle...");
-            console.log(classes);
-            var nodes = cluster.nodes(packages.root(classes)),
-                links = packages.imports(nodes);
-
-            thisSVG.selectAll(".linkBundle")
-                .data(bundle(links))
-                .enter().append("path")
-                .attr("class", "linkBundle")
-                .attr("d", line);
-
-            thisSVG.selectAll(".nodeBundle")
-                .data(nodes.filter(function (n) { return !n.children; }))
-                .enter().append("g")
-                .attr("class", "nodeBundle")
-                .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
-                .append("text")
-                .attr("dx", function (d) { return d.x < 180 ? 8 : -8; })
-                .attr("dy", ".31em")
-                .attr("text-anchor", function (d) { return d.x < 180 ? "start" : "end"; })
-                .attr("transform", function (d) { return d.x < 180 ? null : "rotate(180)"; })
-                .text(function (d) { return d.key; });
-        });
+        this.svgAllElements.selectAll(".nodeBundle")
+            .data(nodes.filter(function (n) { return !n.children; }))
+            .enter().append("g")
+            .attr("class", "nodeBundle")
+            .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+            .append("text")
+            .attr("dx", function (d) { return d.x < 180 ? 8 : -8; })
+            .attr("dy", ".31em")
+            .attr("text-anchor", function (d) { return d.x < 180 ? "start" : "end"; })
+            .attr("transform", function (d) { return d.x < 180 ? null : "rotate(180)"; })
+            .text(function (d) { return d.key; });
 
         d3.select(window.frameElement).style("height", diameter + "px");
-    }
-
-    svgZoom() {
-        if (this.svgControlMode)
-            this.svgAllElements.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
     }
 
     updateSVGGraph() {
@@ -1080,22 +1126,20 @@ class Brain3DApp implements Application, Loopable {
 
             var nodeJson = JSON.parse(JSON.stringify(this.svgNodeArray));
             var linkJson = JSON.parse(JSON.stringify(this.svgLinkArray));
-            //console.log(nodeJson);
-            //console.log(linkJson);
 
             var link = this.svgAllElements.selectAll(".link")
                 .data(linkJson)
-            //.attr("x1", function (d) { return d.x1; })
-            //.attr("y1", function (d) { return d.y1; })
-            //.attr("x2", function (d) { return d.x2; })
-            //.attr("y2", function (d) { return d.y2; })
+                //.attr("x1", function (d) { return d.x1; })
+                //.attr("y1", function (d) { return d.y1; })
+                //.attr("x2", function (d) { return d.x2; })
+                //.attr("y2", function (d) { return d.y2; })
                 .style("stroke-width", function (d) { return d.width; })
                 .style("stroke", function (d) { return d.color; });
 
             var node = this.svgAllElements.selectAll(".node")
                 .data(nodeJson)
-            //.attr("cx", function (d) { return d.x; })
-            //.attr("cy", function (d) { return d.y; })
+                //.attr("cx", function (d) { return d.x; })
+                //.attr("cy", function (d) { return d.y; })
                 .attr("r", function (d) { return d.radius; })
                 .style("fill", function (d) { return d.color; });
         }
@@ -1355,7 +1399,7 @@ class Brain3DApp implements Application, Loopable {
         this.renderer.setSize(width, height - sliderSpace);
         this.currentViewWidth = width;
 
-        this.cola2D.size([width, height - sliderSpace]);
+        if (this.cola2D) this.cola2D.size([width, height - sliderSpace]);
 
         this.svg
             .attr("width", width)
