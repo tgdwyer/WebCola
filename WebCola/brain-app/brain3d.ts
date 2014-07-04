@@ -352,7 +352,7 @@ class Brain3DApp implements Application, Loopable {
         this.svg = d3.select('#div-svg-' + this.id).append("svg")
             .attr("width", jDiv.width())
             .attr("height", jDiv.height() - sliderSpace)
-            .call(this.d3Zoom.on("zoom", varSVGZoom));
+            .call(this.d3Zoom.on("zoom", varSVGZoom));  
         this.svgAllElements = this.svg.append("g");
 
         // Set up camera
@@ -458,14 +458,6 @@ class Brain3DApp implements Application, Loopable {
     networkTypeOnChange(type: string) {
         this.networkType = type;
 
-        if (this.networkType == 'flatten-to-2d') {
-            this.svgControlMode = true;
-        }
-        else {
-            //$('#checkbox-svg-control-' + this.id).prop('checked', false);
-            this.svgControlMode = false;
-        }
-
         if (this.showingCola == true) {
             this.showNetwork(true);
         }
@@ -544,18 +536,6 @@ class Brain3DApp implements Application, Loopable {
             this.mouse.dy = 0;
         }
     }
-
-    /*
-    svgControlOnChange(b: boolean) {
-        this.svgControlMode = b;
-
-        if (this.svgControlMode) {
-            //this.svgAllElements.attr("transform", "translate(0,0)");
-            this.d3Zoom.scale(1);
-            this.d3Zoom.translate([0, 0]);
-        }
-    }
-    */
 
     allLabelsOnChange(b: boolean) {
         this.physioGraph.allLabels = b;
@@ -789,6 +769,7 @@ class Brain3DApp implements Application, Loopable {
                 this.threeToSVGAnimation(true);
             }
             else if (this.networkType == 'circular-layout') {
+                this.svgMode = true;
                 this.colaGraph.setVisible(false);
                 this.initCircularLayout();
             }
@@ -1067,11 +1048,14 @@ class Brain3DApp implements Application, Loopable {
 
         var line = d3.svg.line.radial()
             .interpolate("bundle")
-            .tension(.65)
+            .tension(.85)
             .radius(function (d) { return d.y; })
             .angle(function (d) { return d.x / 180 * Math.PI; });
 
         this.svgAllElements.attr("transform", "translate(" + width + "," + height + ")");
+
+        this.d3Zoom.scale(1);
+        this.d3Zoom.translate([width, height]);
 
         var nodes = cluster.nodes(packages.root(nodeJson)),
             links = packages.imports(nodes);
@@ -1241,8 +1225,7 @@ class Brain3DApp implements Application, Loopable {
         this.svgAllElements.attr("transform", "translate(0,0)");
         this.d3Zoom.scale(1);
         this.d3Zoom.translate([0, 0]);
-        
-        
+               
         this.cola2D
             .handleDisconnected(true)
             .avoidOverlaps(true)
@@ -1568,16 +1551,17 @@ class Brain3DApp implements Application, Loopable {
         if ((this.networkType == 'flatten-to-2d') || (this.networkType == 'circular-layout')){
             if (inBoundingSphere == true) {
                 this.svgControlMode = false;
-
-                this.d3Zoom.scale(1);
-                this.d3Zoom.translate([0, 0]);
+                this.svg.on(".zoom", null);
             }
             else {
                 this.svgControlMode = true;
+                var varSVGZoom = () => { this.svgZoom(); }
+                this.svg.call(this.d3Zoom.on("zoom", varSVGZoom));
             }
         }
         else {
             this.svgControlMode = false;
+            this.svg.on(".zoom", null);
         }
     }
 
