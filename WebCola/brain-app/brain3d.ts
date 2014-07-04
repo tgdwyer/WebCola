@@ -686,6 +686,7 @@ class Brain3DApp implements Application, Loopable {
             //-------------------------------------------------------------------------------------------------------------
             // animation
             if (this.networkType == 'flatten-to-2d') {
+                /*
                 var colaCoordsMatrix3D: number[][];
 
                 colaCoordsMatrix3D = this.colaCoords.map(function (array) {
@@ -765,6 +766,15 @@ class Brain3DApp implements Application, Loopable {
 
                 // animation: cola graph in 2d coordinate
                 this.colaObjectAnimation(target, target, colaCoordsMatrixRotatedProjected3D, this.colaCoords, true, false);
+                */
+
+                if (!switchNetworkType) {
+                    // Set up a coroutine to do the animation
+                    var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
+                    var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
+
+                    this.colaObjectAnimation(origin, target, originColaCoords, this.colaCoords, switchNetworkType, false);
+                }
 
                 this.threeToSVGAnimation(true);
             }
@@ -806,6 +816,9 @@ class Brain3DApp implements Application, Loopable {
     }
 
     threeToSVGAnimation(transitionFinish: boolean) {
+        this.colaGraph.setVisible(true);
+        this.transitionInProgress = true;
+
         $('#button-show-network-' + this.id).prop('disabled', true);
         $('#select-network-type-' + this.id).prop('disabled', true);
         $('#graph-view-slider-' + this.id).prop('disabled', true); 
@@ -1032,10 +1045,10 @@ class Brain3DApp implements Application, Loopable {
 
         var nodeJson = JSON.parse(JSON.stringify(this.svgNodeArray));
 
-        var width = 200 + this.jDiv.width() / 2;
+        var width = 250 + this.jDiv.width() / 2;
         var height = (this.jDiv.height() - sliderSpace) / 2;
 
-        var diameter = this.jDiv.height() - sliderSpace - 100,
+        var diameter = 800,
             radius = diameter / 2,
             innerRadius = radius - 120;
 
