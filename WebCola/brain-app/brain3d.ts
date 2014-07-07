@@ -64,7 +64,9 @@ class Brain3DApp implements Application, Loopable {
     svgAllElements;
     svgNodeArray: any[];
     svgLinkArray: any[];
+    svgNodeBundleArray: any[];
     svgControlMode: boolean = false;
+    svgNeedsUpdate: boolean = false;
     d3Zoom = d3.behavior.zoom();
 
     nodeColourings: number[]; // Stores the colourings associated with the groups
@@ -517,11 +519,15 @@ class Brain3DApp implements Application, Loopable {
     edgesThicknessByWeightedOnChange(b: boolean) {
         this.physioGraph.edgeThicknessByWeighted = b;
         this.colaGraph.edgeThicknessByWeighted = b;
+
+        this.svgNeedsUpdate = true;
     }
 
     edgesColoredOnChange(b: boolean) {
         this.physioGraph.edgeColored = b;
         this.colaGraph.edgeColored = b;
+
+        this.svgNeedsUpdate = true;
     }
 
     autoRotationOnChange(b: boolean) {
@@ -780,6 +786,7 @@ class Brain3DApp implements Application, Loopable {
             }
             else if (this.networkType == 'circular-layout') {
                 this.svgMode = true;
+                this.svgNeedsUpdate = true;
                 this.colaGraph.setVisible(false);
                 this.initCircularLayout();
             }
@@ -788,7 +795,6 @@ class Brain3DApp implements Application, Loopable {
                 var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
                 var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
 
-                //this.colaGraph.setNodePositions(this.commonData.brainCoords); // Move the Cola graph nodes to their starting position
                 this.colaObjectAnimation(origin, target, originColaCoords, this.colaCoords, switchNetworkType, true);
             }
         }
@@ -839,6 +845,7 @@ class Brain3DApp implements Application, Loopable {
                     .style("stroke-opacity", 1);
 
                 this.svgMode = true;
+                this.svgNeedsUpdate = true;
 
                 if (transitionFinish) {
                     this.transitionInProgress = false;
@@ -990,7 +997,7 @@ class Brain3DApp implements Application, Loopable {
 
     initCircularLayout() {
         var moduleIDs = this.dataSet.attributes.get('module_id');
-        this.svgNodeArray = [];
+        this.svgNodeBundleArray = [];
         var children = this.colaGraph.rootObject.children;
         for (var i = 0; i < children.length; i++) {
             var obj = children[i];
@@ -1002,48 +1009,48 @@ class Brain3DApp implements Application, Loopable {
                 nodeObject["name"] = "root.module" + moduleID + "." + obj.id;
                 nodeObject["imports"] = [];
                 nodeObject["color"] = this.colaGraph.nodeMeshes[obj.id].material.color.getHexString();
-                this.svgNodeArray.push(nodeObject);
+                this.svgNodeBundleArray.push(nodeObject);
             }
         }
 
         for (var i = 0; i < this.colaGraph.edgeList.length; i++) {
             var edge = this.colaGraph.edgeList[i];
             if (edge.visible) {
-                for (var j = 0; j < this.svgNodeArray.length; j++) {
-                    if (this.svgNodeArray[j].id == edge.sourceNode.id) {
+                for (var j = 0; j < this.svgNodeBundleArray.length; j++) {
+                    if (this.svgNodeBundleArray[j].id == edge.sourceNode.id) {
                         var moduleID = -1;
-                        for (var k = 0; k < this.svgNodeArray.length; k++) {
-                            if (this.svgNodeArray[k].id == edge.targetNode.id) {
-                                moduleID = this.svgNodeArray[k].moduleID;
+                        for (var k = 0; k < this.svgNodeBundleArray.length; k++) {
+                            if (this.svgNodeBundleArray[k].id == edge.targetNode.id) {
+                                moduleID = this.svgNodeBundleArray[k].moduleID;
                                 break;
                             }
                         }
 
                         if (moduleID >= 0) {
                             var nodeName = "root.module" + moduleID + "." + edge.targetNode.id;
-                            this.svgNodeArray[j].imports.push(nodeName);
+                            this.svgNodeBundleArray[j].imports.push(nodeName);
                         }
                     }
 
-                    if (this.svgNodeArray[j].id == edge.targetNode.id) {
+                    if (this.svgNodeBundleArray[j].id == edge.targetNode.id) {
                         var moduleID = -1;
-                        for (var k = 0; k < this.svgNodeArray.length; k++) {
-                            if (this.svgNodeArray[k].id == edge.sourceNode.id) {
-                                moduleID = this.svgNodeArray[k].moduleID;
+                        for (var k = 0; k < this.svgNodeBundleArray.length; k++) {
+                            if (this.svgNodeBundleArray[k].id == edge.sourceNode.id) {
+                                moduleID = this.svgNodeBundleArray[k].moduleID;
                                 break;
                             }
                         }
 
                         if (moduleID >= 0) {
                             var nodeName = "root.module" + moduleID + "." + edge.sourceNode.id;
-                            this.svgNodeArray[j].imports.push(nodeName);
+                            this.svgNodeBundleArray[j].imports.push(nodeName);
                         }
                     }
                 }
             }
         }
 
-        var nodeJson = JSON.parse(JSON.stringify(this.svgNodeArray));
+        var nodeJson = JSON.parse(JSON.stringify(this.svgNodeBundleArray));
 
         var width = 250 + this.jDiv.width() / 2;
         var height = (this.jDiv.height() - sliderSpace) / 2;
@@ -1079,6 +1086,7 @@ class Brain3DApp implements Application, Loopable {
             .attr("class", "linkBundle")
             .attr("d", line);
 
+        /*
         this.svgAllElements.selectAll(".nodeBundle")
             .data(nodes.filter(function (n) { return !n.children; }))
             .enter().append("g")
@@ -1090,6 +1098,17 @@ class Brain3DApp implements Application, Loopable {
             .attr("text-anchor", function (d) { return d.x < 180 ? "start" : "end"; })
             .attr("transform", function (d) { return d.x < 180 ? null : "rotate(180)"; })
             .text(function (d) { return d.key; });
+        */
+
+        this.svgAllElements.selectAll(".nodeBundle")
+            .data(nodes.filter(function (n) { return !n.children; }))
+            .enter().append("text")
+            .attr("class", "nodeBundle")
+            .attr("dy", ".31em")
+            .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+            .style("text-anchor", function (d) { return d.x < 180 ? "start" : "end"; })
+            //.style("fill", "#00ff00")
+            .text(function (d) { return d.key; })
 
         d3.select(window.frameElement).style("height", diameter + "px");
     }
@@ -1126,18 +1145,43 @@ class Brain3DApp implements Application, Loopable {
 
             var link = this.svgAllElements.selectAll(".link")
                 .data(linkJson)
-                //.attr("x1", function (d) { return d.x1; })
-                //.attr("y1", function (d) { return d.y1; })
-                //.attr("x2", function (d) { return d.x2; })
-                //.attr("y2", function (d) { return d.y2; })
+            //.attr("x1", function (d) { return d.x1; })
+            //.attr("y1", function (d) { return d.y1; })
+            //.attr("x2", function (d) { return d.x2; })
+            //.attr("y2", function (d) { return d.y2; })
                 .style("stroke-width", function (d) { return d.width; })
                 .style("stroke", function (d) { return d.color; });
 
             var node = this.svgAllElements.selectAll(".node")
                 .data(nodeJson)
-                //.attr("cx", function (d) { return d.x; })
-                //.attr("cy", function (d) { return d.y; })
+            //.attr("cx", function (d) { return d.x; })
+            //.attr("cy", function (d) { return d.y; })
                 .attr("r", function (d) { return d.radius; })
+                .style("fill", function (d) { return d.color; });
+        }
+        else if (this.networkType == 'circular-layout') {
+            if (!this.svgNodeBundleArray) return;
+
+            for (var i = 0; i < this.svgNodeBundleArray.length; i++) {
+                var id = this.svgNodeBundleArray[i].id;
+                this.svgNodeBundleArray[i].color = this.colaGraph.nodeMeshes[id].material.color.getHexString();
+            }
+
+            var nodeJson = JSON.parse(JSON.stringify(this.svgNodeBundleArray));
+
+            var diameter = 800,
+                radius = diameter / 2,
+                innerRadius = radius - 120;
+
+            var cluster = d3.layout.cluster()
+                .size([360, innerRadius])
+                .sort(null)
+                .value(function (d) { return d.size; });
+
+            var nodes = cluster.nodes(packages.root(nodeJson));
+
+            var node = this.svgAllElements.selectAll(".nodeBundle")
+                .data(nodes.filter(function (n) { return !n.children; }))
                 .style("fill", function (d) { return d.color; });
         }
     }
@@ -1310,6 +1354,8 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.highlightSelectedNodes(filteredIDs);
         this.colaGraph.highlightSelectedNodes(filteredIDs);
+
+        this.svgNeedsUpdate = true;
     }
 
     setNodeDefaultSizeColor() {
@@ -1319,11 +1365,15 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setDefaultNodeScale();
         this.colaGraph.setDefaultNodeScale();
+
+        this.svgNeedsUpdate = true;
     }
 
     setNodeSize(scaleArray: number[]) {
         this.physioGraph.setNodesScale(scaleArray);
         this.colaGraph.setNodesScale(scaleArray);
+
+        this.svgNeedsUpdate = true;
     }
 
     setANodeColor(nodeID: number, color: string) {
@@ -1331,6 +1381,8 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setNodeColor(nodeID, value);
         this.colaGraph.setNodeColor(nodeID, value);
+
+        this.svgNeedsUpdate = true;
     }
 
     setNodeColor(attribute: string, minColor: string, maxColor: string) {
@@ -1367,6 +1419,8 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setNodesColor(colorArray);
         this.colaGraph.setNodesColor(colorArray);
+
+        this.svgNeedsUpdate = true;
     }
 
     setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]) {
@@ -1388,6 +1442,8 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setNodesColor(colorArrayNum);
         this.colaGraph.setNodesColor(colorArrayNum);
+
+        this.svgNeedsUpdate = true;
     }
 
     resize(width: number, height: number) {
@@ -1646,7 +1702,10 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.update(); 
         this.colaGraph.update(); // Update all the edge positions
-        if (this.svgMode) this.updateSVGGraph();
+        if (this.svgMode && this.svgNeedsUpdate) {
+            this.updateSVGGraph();
+            this.svgNeedsUpdate = false;
+        }
 
         if (this.autoRotation) {
             this.brainObject.rotation.set(this.brainObject.rotation.x + this.mouse.dy / 100, this.brainObject.rotation.y + this.mouse.dx / 100, this.brainObject.rotation.z);
