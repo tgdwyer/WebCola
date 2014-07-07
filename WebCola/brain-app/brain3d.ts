@@ -548,8 +548,8 @@ class Brain3DApp implements Application, Loopable {
         this.colaGraph.allLabels = b;
 
         if (b == true) {
-            this.physioGraph.showAllLabels();
-            this.colaGraph.showAllLabels();
+            this.physioGraph.showAllLabels(false);
+            this.colaGraph.showAllLabels(this.svgMode);
         }
         else {
             this.physioGraph.hideAllLabels();
@@ -1178,9 +1178,17 @@ class Brain3DApp implements Application, Loopable {
                 .sort(null)
                 .value(function (d) { return d.size; });
 
-            var nodes = cluster.nodes(packages.root(nodeJson));
+            var bundle = d3.layout.bundle();
 
-            var node = this.svgAllElements.selectAll(".nodeBundle")
+            var nodes = cluster.nodes(packages.root(nodeJson));
+            var links = packages.imports(nodes);
+
+            /*
+            this.svgAllElements.selectAll(".linkBundle")
+                .style("visibility", "hidden");
+            */
+
+            this.svgAllElements.selectAll(".nodeBundle")
                 .data(nodes.filter(function (n) { return !n.children; }))
                 .style("fill", function (d) { return d.color; });
         }
@@ -1270,8 +1278,8 @@ class Brain3DApp implements Application, Loopable {
             .attr("r", function (d) { return d.radius; })
             .attr("cx", function (d) { return d.x; })
             .attr("cy", function (d) { return d.y; })
-            .style("fill", function (d) { return d.color; })
-            //.call(this.cola2D.drag);
+            .style("fill", function (d) { return d.color; });
+        //.call(this.cola2D.drag);
 
         node.append("title")
             .text(function (d) { return d.id; });
@@ -1330,7 +1338,27 @@ class Brain3DApp implements Application, Loopable {
         node.transition().duration(1000)
             .attr("cx", function (d) { return d.x; })
             .attr("cy", function (d) { return d.y; });
-            //.call(endTransition);       
+        //.call(endTransition);     
+
+        var svgLabelArray = [];
+        var colaNodeData = this.svgAllElements.selectAll("circle").data();
+        for (var i = 0; i < colaNodeData.length; i++) {
+            var labelObject = new Object();
+            labelObject["x"] = colaNodeData[i].x;
+            labelObject["y"] = colaNodeData[i].y;
+            labelObject["id"] = colaNodeData[i].id;
+            svgLabelArray.push(labelObject);
+        }
+
+        var labelJson = JSON.parse(JSON.stringify(svgLabelArray));
+
+        var nodeLable = this.svgAllElements.selectAll(".nodeLabel")
+            .data(labelJson)
+            .enter().append("text")
+            .attr("x", function (d) { return d.x+4; })
+            .attr("y", function (d) { return d.y-4; })
+            .text(function (d) { return d.id; });
+            //.style("visibility", "hidden");      
     }
 
     isDeleted() {
@@ -1685,6 +1713,8 @@ class Brain3DApp implements Application, Loopable {
 
             this.physioGraph.selectAdjEdges(this.selectedNodeID);
             this.colaGraph.selectAdjEdges(this.selectedNodeID);
+
+            this.svgNeedsUpdate = true;
         }
         else {
             if (this.selectedNodeID >= 0) {
@@ -1694,6 +1724,8 @@ class Brain3DApp implements Application, Loopable {
                 this.physioGraph.deselectAdjEdges(this.selectedNodeID);
                 this.colaGraph.deselectAdjEdges(this.selectedNodeID);
                 this.selectedNodeID = -1;
+
+                this.svgNeedsUpdate = true;
             }
         }
 
@@ -1939,10 +1971,10 @@ class Graph {
         }
     }
 
-    showAllLabels() {
+    showAllLabels(svgMode: boolean) {
         for (var i = 0; i < this.nodeLabelList.length; ++i) {
             if (this.nodeLabelList[i]) {
-                this.parentObject.add(this.nodeLabelList[i]);
+                if (!svgMode) this.parentObject.add(this.nodeLabelList[i]);
             }
         }
     }
