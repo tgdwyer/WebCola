@@ -1114,20 +1114,8 @@ class Brain3DApp implements Application, Loopable {
     }
 
     mouseOvered(d) {
-        var n = this.svgAllElements.selectAll(".nodeBundle");
-        var l = this.svgAllElements.selectAll(".linkBundle");
-
         this.svgAllElements.selectAll(".nodeBundle")
             .each(function (n) { n.target = n.source = false; });
-
-        /*
-        this.svgAllElements.selectAll(".linkBundle")
-            .classed("link--target", function (l) { if (l.target === d) return l.source.source = true; })
-            .classed("link--source", function (l) { if (l.source === d) return l.target.target = true; })
-            .filter(function (l) { return l.target === d || l.source === d; })
-            .each(function () { this.parentNode.appendChild(this); });
-        */
-
         
         this.svgAllElements.selectAll(".linkBundle")
             .style("stroke-width", function (l) {
@@ -1139,21 +1127,15 @@ class Brain3DApp implements Application, Loopable {
                 else {
                     return "1px";
                 }
-            });
-        
-        /*
-        this.svgAllElements.selectAll(".linkBundle")
-            .classed("link-select", function (l) {
-                if (l.target === d) { l.target.source = true; l.source.target = true; }
-                if (l.source === d) { l.source.source = true; l.target.target = true; }
+            })
+            .style("stroke", function (l) {
                 if ((l.target === d) || (l.source === d)) {
-                    return true;
+                    return "#d62728";
                 }
                 else {
-                    return false;
+                    return l.color;
                 }
             });
-        */
 
         this.svgAllElements.selectAll(".nodeBundle")
             .style("font-weight", function (n) {
@@ -1179,8 +1161,8 @@ class Brain3DApp implements Application, Loopable {
 
     mouseOuted(d) {
         this.svgAllElements.selectAll(".linkBundle")
-            .style("stroke-width", "1px");
-            //.classed("link-select", false);
+            .style("stroke-width", "1px")
+            .style("stroke", function (l) { return l.color; });
         this.svgAllElements.selectAll(".nodeBundle")
             .style("font-weight", "normal")
             .style("font-size", "11px");
@@ -1279,22 +1261,6 @@ class Brain3DApp implements Application, Loopable {
                 this.svgNodeBundleArray[i].color = this.colaGraph.nodeMeshes[id].material.color.getHexString();
             }
 
-            var nodeJson = JSON.parse(JSON.stringify(this.svgNodeBundleArray));
-
-            var diameter = 800,
-                radius = diameter / 2,
-                innerRadius = radius - 120;
-
-            var cluster = d3.layout.cluster()
-                .size([360, innerRadius])
-                .sort(null)
-                .value(function (d) { return d.size; });
-
-            var bundle = d3.layout.bundle();
-
-            var nodes = cluster.nodes(packages.root(nodeJson));
-            var links = packages.imports(nodes);
-
             var nodeBundle = this.svgAllElements.selectAll(".nodeBundle");
 
             var varSvgNodeBundleArray = this.svgNodeBundleArray;
@@ -1309,6 +1275,23 @@ class Brain3DApp implements Application, Loopable {
 
             nodeBundle
                 .style("fill", function (d) { return d.color; });
+
+            var linkBundle = this.svgAllElements.selectAll(".linkBundle");
+
+            var varEdgeList = this.colaGraph.edgeList;
+            linkBundle.each(function (l) {
+                for (var i = 0; i < varEdgeList.length; i++) {
+                    var edge = varEdgeList[i];
+                    if (((l.source.id == edge.sourceNode.id) && (l.target.id == edge.targetNode.id)) ||
+                        ((l.source.id == edge.targetNode.id) && (l.target.id == edge.sourceNode.id))) {
+                        l.color = edge.shape.material.color.getHexString();
+                        break;
+                    }
+                }
+            });
+
+            linkBundle
+                .style("stroke", function (l) { return l.color; });
         }
     }
 
