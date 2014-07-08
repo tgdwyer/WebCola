@@ -555,6 +555,8 @@ class Brain3DApp implements Application, Loopable {
             this.physioGraph.hideAllLabels();
             this.colaGraph.hideAllLabels();
         }
+
+        this.svgNeedsUpdate = true;
     }
 
     showNetwork(switchNetworkType: boolean) {
@@ -674,11 +676,15 @@ class Brain3DApp implements Application, Loopable {
             if (this.svgMode) {
                 var node = this.svgAllElements.selectAll(".node").data(new Array());
                 var link = this.svgAllElements.selectAll(".link").data(new Array());
+                var nodeLable = this.svgAllElements.selectAll(".nodeLabel").data(new Array());
+
                 var nodeBundle = this.svgAllElements.selectAll(".nodeBundle").data(new Array());
                 var linkBundle = this.svgAllElements.selectAll(".linkBundle").data(new Array());
 
                 node.exit().remove();
                 link.exit().remove();
+                nodeLable.exit().remove();
+
                 nodeBundle.exit().remove();
                 linkBundle.exit().remove();
 
@@ -991,8 +997,10 @@ class Brain3DApp implements Application, Loopable {
     }
 
     svgZoom() {
-        if (this.svgControlMode)
+        if (this.svgControlMode) {
             this.svgAllElements.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+            this.svgNeedsUpdate = true;
+        }
     }
 
     initCircularLayout() {
@@ -1158,6 +1166,58 @@ class Brain3DApp implements Application, Loopable {
             //.attr("cy", function (d) { return d.y; })
                 .attr("r", function (d) { return d.radius; })
                 .style("fill", function (d) { return d.color; });
+
+            if (this.physioGraph.allLabels) {
+                this.svgAllElements.selectAll(".nodeLabel")
+                    .style("visibility", "visible");
+            }
+            else {
+                this.svgAllElements.selectAll(".nodeLabel")
+                    .style("visibility", "hidden");
+            }
+
+            var svgLabelArray = [];
+            var colaNodeData = this.svgAllElements.selectAll(".node").data();
+            for (var i = 0; i < colaNodeData.length; i++) {
+                var labelObject = new Object();
+                labelObject["x"] = colaNodeData[i].x;
+                labelObject["y"] = colaNodeData[i].y;
+                labelObject["id"] = colaNodeData[i].id;
+                labelObject["node_radius"] = colaNodeData[i].radius;
+                svgLabelArray.push(labelObject);
+            }
+
+            var labelJson = JSON.parse(JSON.stringify(svgLabelArray));
+
+            var scale = this.d3Zoom.scale();
+            var defaultFontSize = 10;
+            var fontSize = defaultFontSize;
+            if (scale >= 1) {
+                fontSize = Math.ceil(defaultFontSize / scale);
+            }
+
+            var nodeLable = this.svgAllElements.selectAll(".nodeLabel")
+                .data(labelJson)
+                .style("font-size", fontSize + 'px');
+
+            nodeLable.each(function (d) {
+                var box = this.getBBox();
+                var width = box.width;
+                var height = box.height;
+
+                if ((box.width <= d.node_radius * 2) && (box.height <= d.node_radius * 2)) {
+                    d.x -= box.width / 2;
+                    d.y += (box.height / 2 -2);
+                }
+                else {
+                    d.x += 3.5;
+                    d.y -= 3.5;
+                }
+            });
+
+            nodeLable
+                .attr("x", function (d) { return d.x; })
+                .attr("y", function (d) { return d.y; });
         }
         else if (this.networkType == 'circular-layout') {
             if (!this.svgNodeBundleArray) return;
@@ -1340,13 +1400,22 @@ class Brain3DApp implements Application, Loopable {
             .attr("cy", function (d) { return d.y; });
         //.call(endTransition);     
 
+        // update the this.svgNodeArray
+        var colaNodeData = this.svgAllElements.selectAll(".node").data();
+        for (var i = 0; i < colaNodeData.length; i++) {
+            this.svgNodeArray[i].x = colaNodeData[i].x;
+            this.svgNodeArray[i].y = colaNodeData[i].y;
+        }
+
+        // node label
         var svgLabelArray = [];
-        var colaNodeData = this.svgAllElements.selectAll("circle").data();
+        var colaNodeData = this.svgAllElements.selectAll(".node").data();
         for (var i = 0; i < colaNodeData.length; i++) {
             var labelObject = new Object();
             labelObject["x"] = colaNodeData[i].x;
             labelObject["y"] = colaNodeData[i].y;
             labelObject["id"] = colaNodeData[i].id;
+            labelObject["node_radius"] = colaNodeData[i].radius;
             svgLabelArray.push(labelObject);
         }
 
@@ -1355,10 +1424,11 @@ class Brain3DApp implements Application, Loopable {
         var nodeLable = this.svgAllElements.selectAll(".nodeLabel")
             .data(labelJson)
             .enter().append("text")
-            .attr("x", function (d) { return d.x+4; })
-            .attr("y", function (d) { return d.y-4; })
-            .text(function (d) { return d.id; });
-            //.style("visibility", "hidden");      
+            .attr("class", "nodeLabel")
+            .attr("x", function (d) { return d.x + 3.5; })
+            .attr("y", function (d) { return d.y - 3.5; })
+            .text(function (d) { return d.id; })
+            .style("visibility", "hidden");
     }
 
     isDeleted() {
@@ -1368,7 +1438,7 @@ class Brain3DApp implements Application, Loopable {
     applyFilter(filteredIDs: number[]) {
         if (!this.dataSet || !this.dataSet.attributes) return;
 
-        console.log("app id: " + this.id + "; count: " + filteredIDs.length);   
+        //console.log("app id: " + this.id + "; count: " + filteredIDs.length);   
 
         this.physioGraph.filteredNodeIDs = filteredIDs;
         this.physioGraph.applyNodeFiltering();
@@ -1378,7 +1448,7 @@ class Brain3DApp implements Application, Loopable {
     highlightSelectedNodes(filteredIDs: number[]) {
         if (!this.dataSet || !this.dataSet.attributes) return;
 
-        console.log("app id: " + this.id + "; count: " + filteredIDs.length);
+        //console.log("app id: " + this.id + "; count: " + filteredIDs.length);
 
         this.physioGraph.highlightSelectedNodes(filteredIDs);
         this.colaGraph.highlightSelectedNodes(filteredIDs);
