@@ -197,6 +197,30 @@
           /*stroke-opacity: .8;*/
         }
 
+        .node:hover {
+          fill: #ffff00;
+        }
+
+        .node:hover,
+        .node--source,
+        .node--target {
+          font-weight: bold;
+        }
+
+        .node--source {
+          fill: #2ca02c;
+        }
+
+        .node--target {
+          fill: #d62728;
+        }
+
+        .link-select {
+          stroke: #d62728;
+          stroke-opacity: 1;
+          stroke-width: 5px;
+        }
+
         .nodeBundle {
             font: 11px "Helvetica Neue", Helvetica, Arial, sans-serif;
         }

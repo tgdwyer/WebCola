@@ -999,7 +999,7 @@ class Brain3DApp implements Application, Loopable {
     svgZoom() {
         if (this.svgControlMode) {
             this.svgAllElements.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-            this.svgNeedsUpdate = true;
+            if (this.networkType == "flatten-to-2d") this.svgNeedsUpdate = true;
         }
     }
 
@@ -1091,22 +1091,12 @@ class Brain3DApp implements Application, Loopable {
         this.svgAllElements.selectAll(".linkBundle")
             .data(bundle(links))
             .enter().append("path")
+            .each(function (d) { d.source = d[0], d.target = d[d.length - 1]; })
             .attr("class", "linkBundle")
             .attr("d", line);
 
-        /*
-        this.svgAllElements.selectAll(".nodeBundle")
-            .data(nodes.filter(function (n) { return !n.children; }))
-            .enter().append("g")
-            .attr("class", "nodeBundle")
-            .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
-            .append("text")
-            .attr("dx", function (d) { return d.x < 180 ? 8 : -8; })
-            .attr("dy", ".31em")
-            .attr("text-anchor", function (d) { return d.x < 180 ? "start" : "end"; })
-            .attr("transform", function (d) { return d.x < 180 ? null : "rotate(180)"; })
-            .text(function (d) { return d.key; });
-        */
+        var varMouseOvered = (d) => { this.mouseOvered(d); }
+        var varMouseOuted = (d) => { this.mouseOuted(d); }
 
         this.svgAllElements.selectAll(".nodeBundle")
             .data(nodes.filter(function (n) { return !n.children; }))
@@ -1117,8 +1107,83 @@ class Brain3DApp implements Application, Loopable {
             .style("text-anchor", function (d) { return d.x < 180 ? "start" : "end"; })
             //.style("fill", "#00ff00")
             .text(function (d) { return d.key; })
+            .on("mouseover", varMouseOvered)
+            .on("mouseout", varMouseOuted);
 
         d3.select(window.frameElement).style("height", diameter + "px");
+    }
+
+    mouseOvered(d) {
+        var n = this.svgAllElements.selectAll(".nodeBundle");
+        var l = this.svgAllElements.selectAll(".linkBundle");
+
+        this.svgAllElements.selectAll(".nodeBundle")
+            .each(function (n) { n.target = n.source = false; });
+
+        /*
+        this.svgAllElements.selectAll(".linkBundle")
+            .classed("link--target", function (l) { if (l.target === d) return l.source.source = true; })
+            .classed("link--source", function (l) { if (l.source === d) return l.target.target = true; })
+            .filter(function (l) { return l.target === d || l.source === d; })
+            .each(function () { this.parentNode.appendChild(this); });
+        */
+
+        
+        this.svgAllElements.selectAll(".linkBundle")
+            .style("stroke-width", function (l) {
+                if (l.target === d) { l.target.source = true; l.source.target = true; }
+                if (l.source === d) { l.source.source = true; l.target.target = true; }
+                if ((l.target === d) || (l.source === d)) {
+                    return "3px";
+                }
+                else {
+                    return "1px";
+                }
+            });
+        
+        /*
+        this.svgAllElements.selectAll(".linkBundle")
+            .classed("link-select", function (l) {
+                if (l.target === d) { l.target.source = true; l.source.target = true; }
+                if (l.source === d) { l.source.source = true; l.target.target = true; }
+                if ((l.target === d) || (l.source === d)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            });
+        */
+
+        this.svgAllElements.selectAll(".nodeBundle")
+            .style("font-weight", function (n) {
+                if ((n.target || n.source)) {
+                    return "bolder";
+                }
+                else {
+                    return "normal";
+                }
+            })
+            .style("font-size", function (n) {
+                if (n.source) {
+                    return "17px";
+                }
+                else if (n.target) {
+                    return "13px";
+                }
+                else {
+                    return "11px";
+                }
+            });
+    }
+
+    mouseOuted(d) {
+        this.svgAllElements.selectAll(".linkBundle")
+            .style("stroke-width", "1px");
+            //.classed("link-select", false);
+        this.svgAllElements.selectAll(".nodeBundle")
+            .style("font-weight", "normal")
+            .style("font-size", "11px");
     }
 
     updateSVGGraph() {
@@ -1131,9 +1196,6 @@ class Brain3DApp implements Application, Loopable {
                 var id = this.svgNodeArray[i].id;
                 this.svgNodeArray[i].color = this.colaGraph.nodeMeshes[id].material.color.getHexString();
                 this.svgNodeArray[i].radius = this.colaGraph.nodeMeshes[id].scale.x * unitRadius;
-
-                //if (this.svgNodeArray[i].hasOwnProperty("x")) delete this.svgNodeArray[i].x;
-                //if (this.svgNodeArray[i].hasOwnProperty("y")) delete this.svgNodeArray[i].y;
             }
 
             for (var i = 0; i < this.svgLinkArray.length; i++) {
@@ -1141,11 +1203,6 @@ class Brain3DApp implements Application, Loopable {
                 var edge = this.colaGraph.edgeList[index];
                 this.svgLinkArray[i].color = edge.shape.material.color.getHexString();
                 this.svgLinkArray[i].width = edge.shape.scale.x;
-
-                //if (this.svgLinkArray[i].hasOwnProperty("x1")) delete this.svgLinkArray[i].x1;
-                //if (this.svgLinkArray[i].hasOwnProperty("y1")) delete this.svgLinkArray[i].y1;
-                //if (this.svgLinkArray[i].hasOwnProperty("x2")) delete this.svgLinkArray[i].x2;
-                //if (this.svgLinkArray[i].hasOwnProperty("y2")) delete this.svgLinkArray[i].y2;
             }
 
             var nodeJson = JSON.parse(JSON.stringify(this.svgNodeArray));
@@ -1153,20 +1210,15 @@ class Brain3DApp implements Application, Loopable {
 
             var link = this.svgAllElements.selectAll(".link")
                 .data(linkJson)
-            //.attr("x1", function (d) { return d.x1; })
-            //.attr("y1", function (d) { return d.y1; })
-            //.attr("x2", function (d) { return d.x2; })
-            //.attr("y2", function (d) { return d.y2; })
                 .style("stroke-width", function (d) { return d.width; })
                 .style("stroke", function (d) { return d.color; });
 
             var node = this.svgAllElements.selectAll(".node")
                 .data(nodeJson)
-            //.attr("cx", function (d) { return d.x; })
-            //.attr("cy", function (d) { return d.y; })
                 .attr("r", function (d) { return d.radius; })
                 .style("fill", function (d) { return d.color; });
 
+            // node labels
             if (this.physioGraph.allLabels) {
                 this.svgAllElements.selectAll(".nodeLabel")
                     .style("visibility", "visible");
@@ -1219,7 +1271,7 @@ class Brain3DApp implements Application, Loopable {
                 .attr("x", function (d) { return d.x; })
                 .attr("y", function (d) { return d.y; });
         }
-        else if (this.networkType == 'circular-layout') {
+        else if (this.networkType == 'circular-layout') {           
             if (!this.svgNodeBundleArray) return;
 
             for (var i = 0; i < this.svgNodeBundleArray.length; i++) {
@@ -1243,13 +1295,19 @@ class Brain3DApp implements Application, Loopable {
             var nodes = cluster.nodes(packages.root(nodeJson));
             var links = packages.imports(nodes);
 
-            /*
-            this.svgAllElements.selectAll(".linkBundle")
-                .style("visibility", "hidden");
-            */
+            var nodeBundle = this.svgAllElements.selectAll(".nodeBundle");
 
-            this.svgAllElements.selectAll(".nodeBundle")
-                .data(nodes.filter(function (n) { return !n.children; }))
+            var varSvgNodeBundleArray = this.svgNodeBundleArray;
+            nodeBundle.each(function (d) {
+                for (var i = 0; i < varSvgNodeBundleArray.length; i++) {
+                    if (d.id == varSvgNodeBundleArray[i].id) {
+                        d.color = varSvgNodeBundleArray[i].color;
+                        break;
+                    }
+                }
+            });
+
+            nodeBundle
                 .style("fill", function (d) { return d.color; });
         }
     }
