@@ -120,23 +120,47 @@ class Brain3DApp implements Application, Loopable {
 
         // Register callbacks
         this.input.regKeyTickCallback('a', (deltaTime: number) => {
-            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y - this.rotationSpeed * deltaTime, this.brainObject.rotation.z);
-            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y - this.rotationSpeed * deltaTime, this.colaObject.rotation.z);
+            //this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y - this.rotationSpeed * deltaTime, this.brainObject.rotation.z);
+            //this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y - this.rotationSpeed * deltaTime, this.colaObject.rotation.z);
+
+            var quat = new THREE.Quaternion();
+            var axis = new THREE.Vector3(0, -1, 0);
+            quat.setFromAxisAngle(axis, this.rotationSpeed * deltaTime); // axis must be normalized, angle in radians
+            this.brainObject.quaternion.multiplyQuaternions(quat, this.brainObject.quaternion);
+            this.colaObject.quaternion.multiplyQuaternions(quat, this.colaObject.quaternion);
         });
 
         this.input.regKeyTickCallback('d', (deltaTime: number) => {
-            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + this.rotationSpeed * deltaTime, this.brainObject.rotation.z);
-            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + this.rotationSpeed * deltaTime, this.colaObject.rotation.z);
+            //this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + this.rotationSpeed * deltaTime, this.brainObject.rotation.z);
+            //this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + this.rotationSpeed * deltaTime, this.colaObject.rotation.z);
+
+            var quat = new THREE.Quaternion();
+            var axis = new THREE.Vector3(0, 1, 0);
+            quat.setFromAxisAngle(axis, this.rotationSpeed * deltaTime); // axis must be normalized, angle in radians
+            this.brainObject.quaternion.multiplyQuaternions(quat, this.brainObject.quaternion);
+            this.colaObject.quaternion.multiplyQuaternions(quat, this.colaObject.quaternion);
         });
 
         this.input.regKeyTickCallback('w', (deltaTime: number) => {
-            this.brainObject.rotation.set(this.brainObject.rotation.x - this.rotationSpeed * deltaTime, this.brainObject.rotation.y, this.brainObject.rotation.z);
-            this.colaObject.rotation.set(this.colaObject.rotation.x - this.rotationSpeed * deltaTime, this.colaObject.rotation.y, this.colaObject.rotation.z);
+            //this.brainObject.rotation.set(this.brainObject.rotation.x - this.rotationSpeed * deltaTime, this.brainObject.rotation.y, this.brainObject.rotation.z);
+            //this.colaObject.rotation.set(this.colaObject.rotation.x - this.rotationSpeed * deltaTime, this.colaObject.rotation.y, this.colaObject.rotation.z);
+
+            var quat = new THREE.Quaternion();
+            var axis = new THREE.Vector3(-1, 0, 0);
+            quat.setFromAxisAngle(axis, this.rotationSpeed * deltaTime); // axis must be normalized, angle in radians
+            this.brainObject.quaternion.multiplyQuaternions(quat, this.brainObject.quaternion);
+            this.colaObject.quaternion.multiplyQuaternions(quat, this.colaObject.quaternion);
         });
 
         this.input.regKeyTickCallback('s', (deltaTime: number) => {
-            this.brainObject.rotation.set(this.brainObject.rotation.x + this.rotationSpeed * deltaTime, this.brainObject.rotation.y, this.brainObject.rotation.z);
-            this.colaObject.rotation.set(this.colaObject.rotation.x + this.rotationSpeed * deltaTime, this.colaObject.rotation.y, this.colaObject.rotation.z);
+            //this.brainObject.rotation.set(this.brainObject.rotation.x + this.rotationSpeed * deltaTime, this.brainObject.rotation.y, this.brainObject.rotation.z);
+            //this.colaObject.rotation.set(this.colaObject.rotation.x + this.rotationSpeed * deltaTime, this.colaObject.rotation.y, this.colaObject.rotation.z);
+
+            var quat = new THREE.Quaternion();
+            var axis = new THREE.Vector3(1, 0, 0);
+            quat.setFromAxisAngle(axis, this.rotationSpeed * deltaTime); // axis must be normalized, angle in radians
+            this.brainObject.quaternion.multiplyQuaternions(quat, this.brainObject.quaternion);
+            this.colaObject.quaternion.multiplyQuaternions(quat, this.colaObject.quaternion);
         });
 
         var leapRotationSpeed = 0.03; // radians per mm
@@ -157,11 +181,23 @@ class Brain3DApp implements Application, Loopable {
             if (mode == 1) {
                 if (this.autoRotation == false) {
                     var pixelAngleRatio = 50;
-                    this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + dx / pixelAngleRatio, this.brainObject.rotation.z);
-                    this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + dx / pixelAngleRatio, this.colaObject.rotation.z);
+                    //this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + dx / pixelAngleRatio, this.brainObject.rotation.z);
+                    //this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + dx / pixelAngleRatio, this.colaObject.rotation.z);
 
-                    this.brainObject.rotation.set(this.brainObject.rotation.x + dy / pixelAngleRatio, this.brainObject.rotation.y, this.brainObject.rotation.z);
-                    this.colaObject.rotation.set(this.colaObject.rotation.x + dy / pixelAngleRatio, this.colaObject.rotation.y, this.colaObject.rotation.z);
+                    var quatX = new THREE.Quaternion();
+                    var axisX = new THREE.Vector3(0, 1, 0);
+                    quatX.setFromAxisAngle(axisX, dx / pixelAngleRatio); // axis must be normalized, angle in radians
+                    this.brainObject.quaternion.multiplyQuaternions(quatX, this.brainObject.quaternion);
+                    this.colaObject.quaternion.multiplyQuaternions(quatX, this.colaObject.quaternion);
+
+                    //this.brainObject.rotation.set(this.brainObject.rotation.x + dy / pixelAngleRatio, this.brainObject.rotation.y, this.brainObject.rotation.z);
+                    //this.colaObject.rotation.set(this.colaObject.rotation.x + dy / pixelAngleRatio, this.colaObject.rotation.y, this.colaObject.rotation.z);
+
+                    var quatY = new THREE.Quaternion();
+                    var axisY = new THREE.Vector3(1, 0, 0);
+                    quatY.setFromAxisAngle(axisY, dy / pixelAngleRatio); // axis must be normalized, angle in radians
+                    this.brainObject.quaternion.multiplyQuaternions(quatY, this.brainObject.quaternion);
+                    this.colaObject.quaternion.multiplyQuaternions(quatY, this.colaObject.quaternion);
                 }
                 else {
                     this.mouse.dx = dx;
@@ -363,7 +399,7 @@ class Brain3DApp implements Application, Loopable {
 
         // Set up scene
         this.scene = new THREE.Scene();
-        //this.scene.add(new THREE.AxisHelper(300));
+        this.scene.add(new THREE.AxisHelper(300));
 
         var ambient = new THREE.AmbientLight(0x1f1f1f);
         this.scene.add(ambient);
