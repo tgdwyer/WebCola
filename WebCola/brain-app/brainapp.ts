@@ -17,7 +17,7 @@ class CommonData {
     public brainSurface;
     public noBrainSurface: boolean = false;
     public nodeCount: number; // Number of coordinates
-    public nodeIDUnderPointer: number[] = [-1,-1,-1,-1]; // for yoked display
+    public nodeIDUnderPointer: number[] = [-1, -1, -1, -1, -1]; // for yoked display; the last one is for svg graphs
 
     coordCallbacks: Array<() => void> = new Array();
     labelCallbacks: Array<() => void> = new Array();
@@ -1134,10 +1134,8 @@ function setupCrossFilter(attrs: Attributes) {
 
     // create the charts 
     for (var j = 0; j < attrs.columnNames.length; ++j) {
-        //$('#barCharts').append('<div id="barChart' + j + '" style="height:150px; border: 1px solid red"></div>');
+        //$('#barCharts').append('<div id="barChart' + j + '" style="border: 1px solid red;"></div>');
         $('#barCharts').append('<div id="barChart' + j + '"></div>');
-        //$('#barCharts').append($('<div id="barChart' + j + '"></div>')
-            //.css({ 'width': '300px', 'height': '150px' }));
         var chart = dc.barChart("#barChart" + j);
 
         var columnName = attrs.columnNames[j];
@@ -1150,7 +1148,7 @@ function setupCrossFilter(attrs: Attributes) {
 
         if (j == 1) {           
             chart
-                .width(300)
+                .width(290)
                 .height(150)
                 .dimension(dim)
                 .group(group)
@@ -1162,7 +1160,7 @@ function setupCrossFilter(attrs: Attributes) {
         else {
             chart
                 .gap(5)
-                .width(300)
+                .width(290)
                 .height(150)
                 .dimension(dim)
                 .group(group)

@@ -1105,8 +1105,11 @@ class Brain3DApp implements Application, Loopable {
             .attr("class", "linkBundle")
             .attr("d", line);
 
-        var varMouseOvered = (d) => { this.mouseOvered(d); }
-        var varMouseOuted = (d) => { this.mouseOuted(d); }
+        var varMouseOveredSetNodeID = (id) => { this.mouseOveredSetNodeID(id); }
+        var varMouseOutedSetNodeID = () => { this.mouseOutedSetNodeID(); }
+
+        var varMouseOveredCircularLayout = (d) => { this.mouseOveredCircularLayout(d); }
+        var varMouseOutedCircularLayout = (d) => { this.mouseOutedCircularLayout(d); }
 
         this.svgAllElements.selectAll(".nodeBundle")
             .data(nodes.filter(function (n) { return !n.children; }))
@@ -1115,15 +1118,24 @@ class Brain3DApp implements Application, Loopable {
             .attr("dy", ".31em")
             .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
             .style("text-anchor", function (d) { return d.x < 180 ? "start" : "end"; })
-            //.style("fill", "#00ff00")
+        //.style("fill", "#00ff00")
             .text(function (d) { return d.key; })
-            .on("mouseover", varMouseOvered)
-            .on("mouseout", varMouseOuted);
+            .on("mouseover", function (d) { varMouseOveredCircularLayout(d); varMouseOveredSetNodeID(d.id); })
+            .on("mouseout", function (d) { varMouseOutedCircularLayout(d); varMouseOutedSetNodeID(); });
 
         d3.select(window.frameElement).style("height", diameter + "px");
     }
 
-    mouseOvered(d) {
+    mouseOveredSetNodeID(id) {
+        this.commonData.nodeIDUnderPointer[4] = id;
+    }
+
+    mouseOutedSetNodeID() {
+        this.commonData.nodeIDUnderPointer[4] = -1;
+    }
+
+    mouseOveredCircularLayout(d) {
+        //this.commonData.nodeIDUnderPointer[4] = d.id;
         this.svgAllElements.selectAll(".nodeBundle")
             .each(function (n) { n.target = n.source = false; });
         
@@ -1169,7 +1181,9 @@ class Brain3DApp implements Application, Loopable {
             });
     }
 
-    mouseOuted(d) {
+    mouseOutedCircularLayout(d) {
+        //this.commonData.nodeIDUnderPointer[4] = -1;
+
         this.svgAllElements.selectAll(".linkBundle")
             .style("stroke-width", "1px")
             .style("stroke", function (l) { return l.color; });
@@ -1382,6 +1396,9 @@ class Brain3DApp implements Application, Loopable {
             .style("stroke-width", function (d) { return d.width; })
             .style("stroke", function (d) { return d.color; });
 
+        var varMouseOveredSetNodeID = (id) => { this.mouseOveredSetNodeID(id); }
+        var varMouseOutedSetNodeID = () => { this.mouseOutedSetNodeID(); }
+
         var node = this.svgAllElements.selectAll(".node")
             .data(nodeJson)
             .enter().append("circle")
@@ -1389,7 +1406,9 @@ class Brain3DApp implements Application, Loopable {
             .attr("r", function (d) { return d.radius; })
             .attr("cx", function (d) { return d.x; })
             .attr("cy", function (d) { return d.y; })
-            .style("fill", function (d) { return d.color; });
+            .style("fill", function (d) { return d.color; })
+            .on("mouseover", function (d) { varMouseOveredSetNodeID(d.id); })
+            .on("mouseout", function () { varMouseOutedSetNodeID(); });
         //.call(this.cola2D.drag);
 
         node.append("title")
@@ -1804,7 +1823,7 @@ class Brain3DApp implements Application, Loopable {
         this.getBoundingSphereUnderPointer(this.input.localPointerPosition());
 
         var nodeIDUnderPointer = -1;
-        for (var i = 0; i < 4; i++) {
+        for (var i = 0; i < this.commonData.nodeIDUnderPointer.length; i++) {
             if (this.commonData.nodeIDUnderPointer[i] != -1) {
                 nodeIDUnderPointer = this.commonData.nodeIDUnderPointer[i];
                 break;
@@ -1835,7 +1854,17 @@ class Brain3DApp implements Application, Loopable {
             this.physioGraph.selectAdjEdges(this.selectedNodeID);
             this.colaGraph.selectAdjEdges(this.selectedNodeID);
 
-            this.svgNeedsUpdate = true;
+            var varNodeID = this.selectedNodeID;
+            if (this.networkType == "circular-layout") {
+                var varMouseOveredCircularLayout = (d) => { this.mouseOveredCircularLayout(d); }
+                this.svgAllElements.selectAll(".nodeBundle")
+                    .each(function (d) {
+                        if (varNodeID == d.id) varMouseOveredCircularLayout(d);
+                    });
+            }
+            else if (this.networkType == "flatten-to-2d") {
+                this.svgNeedsUpdate = true;
+            }
         }
         else {
             if (this.selectedNodeID >= 0) {
@@ -1844,9 +1873,20 @@ class Brain3DApp implements Application, Loopable {
 
                 this.physioGraph.deselectAdjEdges(this.selectedNodeID);
                 this.colaGraph.deselectAdjEdges(this.selectedNodeID);
-                this.selectedNodeID = -1;
 
-                this.svgNeedsUpdate = true;
+                var varNodeID = this.selectedNodeID;
+                if (this.networkType == "circular-layout") {
+                    var varMouseOutedCircularLayout = (d) => { this.mouseOutedCircularLayout(d); };
+                    this.svgAllElements.selectAll(".nodeBundle")
+                        .each(function (d) {
+                            if (varNodeID == d.id) varMouseOutedCircularLayout(d);
+                        });
+                }
+                else if (this.networkType == "flatten-to-2d") {
+                    this.svgNeedsUpdate = true;
+                }
+
+                this.selectedNodeID = -1;
             }
         }
 
