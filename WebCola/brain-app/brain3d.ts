@@ -388,6 +388,9 @@ class Brain3DApp implements Application, Loopable {
         var lab = () => {
             // We don't use labels in this visualisation yet
         };
+
+        //if (this.commonData.noBranSurface == true) this.surfaceLoaded = true;
+
         var surf = () => {
             if (this.surfaceLoaded == true) return;
 
@@ -413,10 +416,17 @@ class Brain3DApp implements Application, Loopable {
                 }
             });
 
-            this.brainSurface = clonedObject;
+            if (this.commonData.noBranSurface == true) {
+                this.brainSurface = null;
+                clonedObject = null;
+            }
+            else {
+                this.brainSurface = clonedObject;
+                this.brainObject.add(this.brainSurface);
+            }
+
             boundingSphereObject.visible = false;
-            this.brainSurfaceBoundingSphere = boundingSphereObject;
-            this.brainObject.add(this.brainSurface);
+            this.brainSurfaceBoundingSphere = boundingSphereObject;           
             this.brainObject.add(this.brainSurfaceBoundingSphere);
 
             this.surfaceLoaded = true;
@@ -1241,7 +1251,7 @@ class Brain3DApp implements Application, Loopable {
 
                 if ((box.width <= d.node_radius * 2) && (box.height <= d.node_radius * 2)) {
                     d.x -= box.width / 2;
-                    d.y += (box.height / 2 -2);
+                    d.y += (box.height / 2 - 1);
                 }
                 else {
                     d.x += 3.5;
@@ -2085,7 +2095,7 @@ class Graph {
     showAllLabels(svgMode: boolean) {
         for (var i = 0; i < this.nodeLabelList.length; ++i) {
             if (this.nodeLabelList[i]) {
-                if (!svgMode) this.parentObject.add(this.nodeLabelList[i]);
+                if (!svgMode) this.rootObject.add(this.nodeLabelList[i]);
             }
         }
     }
@@ -2093,7 +2103,7 @@ class Graph {
     hideAllLabels() {
         for (var i = 0; i < this.nodeLabelList.length; ++i) {
             if (this.nodeLabelList[i]) {
-                this.parentObject.remove(this.nodeLabelList[i]);
+                this.rootObject.remove(this.nodeLabelList[i]);
             }
         }
     }
@@ -2163,7 +2173,7 @@ class Graph {
         this.nodeMeshes[id].scale.set(2*x, 2*y, 2*z);
 
         if (this.allLabels == false) {
-            if (!svgMode) this.parentObject.add(this.nodeLabelList[id]);
+            if (!svgMode) this.rootObject.add(this.nodeLabelList[id]);
         }
     }
 
@@ -2175,7 +2185,7 @@ class Graph {
         this.nodeMeshes[id].scale.set(0.5*x, 0.5*y, 0.5*z);
 
         if (this.allLabels == false) {
-            this.parentObject.remove(this.nodeLabelList[id]);
+            this.rootObject.remove(this.nodeLabelList[id]);
         }
     }
 
