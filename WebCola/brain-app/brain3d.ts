@@ -416,7 +416,7 @@ class Brain3DApp implements Application, Loopable {
                 }
             });
 
-            if (this.commonData.noBranSurface == true) {
+            if (this.commonData.noBrainSurface == true) {
                 this.brainSurface = null;
                 clonedObject = null;
             }

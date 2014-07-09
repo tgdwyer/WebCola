@@ -15,6 +15,7 @@ class CommonData {
     public brainCoords: number[][];
     public brainLabels: string[];
     public brainSurface;
+    public noBrainSurface: boolean = false;
     public nodeCount: number; // Number of coordinates
     public nodeIDUnderPointer: number[] = [-1,-1,-1,-1]; // for yoked display
 
@@ -725,6 +726,8 @@ $('#brain3d-icon-front').draggable(
             var model = $('#brain3d-model-select').val();
             var file = 'BrainMesh_ICBM152.obj';
 
+            commonData.noBrainSurface = false;
+
             if (model == 'ch2') {
                 file = 'BrainMesh_ch2.obj';
             }
@@ -736,6 +739,10 @@ $('#brain3d-icon-front').draggable(
             }
             else if (model == 'ch2_cerebellum') {
                 file = 'BrainMesh_Ch2withCerebellum.obj';
+            }
+            else if (model == 'none') {
+                commonData.noBrainSurface = true;
+                //file = null; // use the default brain surface to calculate the bounding sphere
             }
 
             loadBrainModel(file);
@@ -1127,7 +1134,10 @@ function setupCrossFilter(attrs: Attributes) {
 
     // create the charts 
     for (var j = 0; j < attrs.columnNames.length; ++j) {
-
+        //$('#barCharts').append('<div id="barChart' + j + '" style="height:150px; border: 1px solid red"></div>');
+        $('#barCharts').append('<div id="barChart' + j + '"></div>');
+        //$('#barCharts').append($('<div id="barChart' + j + '"></div>')
+            //.css({ 'width': '300px', 'height': '150px' }));
         var chart = dc.barChart("#barChart" + j);
 
         var columnName = attrs.columnNames[j];
