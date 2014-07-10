@@ -399,7 +399,7 @@ class Brain3DApp implements Application, Loopable {
 
         // Set up scene
         this.scene = new THREE.Scene();
-        this.scene.add(new THREE.AxisHelper(300));
+        //this.scene.add(new THREE.AxisHelper(300));
 
         var ambient = new THREE.AmbientLight(0x1f1f1f);
         this.scene.add(ambient);
@@ -1937,8 +1937,22 @@ class Brain3DApp implements Application, Loopable {
         }
 
         if (this.autoRotation) {
-            this.brainObject.rotation.set(this.brainObject.rotation.x + this.mouse.dy / 100, this.brainObject.rotation.y + this.mouse.dx / 100, this.brainObject.rotation.z);
-            this.colaObject.rotation.set(this.colaObject.rotation.x + this.mouse.dy / 100, this.colaObject.rotation.y + this.mouse.dx / 100, this.colaObject.rotation.z);
+            //this.brainObject.rotation.set(this.brainObject.rotation.x + this.mouse.dy / 100, this.brainObject.rotation.y + this.mouse.dx / 100, this.brainObject.rotation.z);
+            //this.colaObject.rotation.set(this.colaObject.rotation.x + this.mouse.dy / 100, this.colaObject.rotation.y + this.mouse.dx / 100, this.colaObject.rotation.z);
+
+            var pixelAngleRatio = 50;
+
+            var quatX = new THREE.Quaternion();
+            var axisX = new THREE.Vector3(0, 1, 0);
+            quatX.setFromAxisAngle(axisX, this.mouse.dx / pixelAngleRatio); // axis must be normalized, angle in radians
+            this.brainObject.quaternion.multiplyQuaternions(quatX, this.brainObject.quaternion);
+            this.colaObject.quaternion.multiplyQuaternions(quatX, this.colaObject.quaternion);
+
+            var quatY = new THREE.Quaternion();
+            var axisY = new THREE.Vector3(1, 0, 0);
+            quatY.setFromAxisAngle(axisY, this.mouse.dy / pixelAngleRatio); // axis must be normalized, angle in radians
+            this.brainObject.quaternion.multiplyQuaternions(quatY, this.brainObject.quaternion);
+            this.colaObject.quaternion.multiplyQuaternions(quatY, this.colaObject.quaternion);
         }
 
         this.draw(); // Draw the graph

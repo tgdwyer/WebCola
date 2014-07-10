@@ -866,8 +866,12 @@ var apps = Array<Application>(new DummyApp(), new DummyApp(), new DummyApp(), ne
 // Initialize the view sizes and pin location
 var viewWidth = $('#outer-view-panel').width();
 var viewHeight = $('#outer-view-panel').height();
-$('#pin').css({ left: viewWidth / 2, top: viewHeight / 2 });
-setViewCrossroads(viewWidth / 2, viewHeight / 2);
+//$('#pin').css({ left: viewWidth / 2, top: viewHeight / 2 });
+//setViewCrossroads(viewWidth / 2, viewHeight / 2);
+var pinWidth = $('#pin').width();
+var pinHeight = $('#pin').height();
+$('#pin').css({ left: viewWidth - pinWidth, top: viewHeight - pinHeight });
+setViewCrossroads(viewWidth - pinWidth, viewHeight - pinHeight);
 
 // Set up the pin behaviour
 $('#pin').draggable({ containment: '#outer-view-panel' }).on('drag', function (event: JQueryEventObject, ...args: any[]) {
