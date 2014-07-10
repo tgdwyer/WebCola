@@ -88,6 +88,8 @@ class Brain3DApp implements Application, Loopable {
 
     allLables: boolean = false;
     autoRotation: boolean = false;
+    weightedEdges: boolean = false;
+    coloredEdges: boolean = false;
 
     networkType: string;
 
@@ -276,8 +278,8 @@ class Brain3DApp implements Application, Loopable {
         });
 
         var varShowNetwork = (b: boolean) => { this.showNetwork(b); }
-        var varEdgesThicknessByWeightedOnChange = (b: boolean) => { this.edgesThicknessByWeightedOnChange(b); }
-        var varEdgesColoredOnChange = (b: boolean) => { this.edgesColoredOnChange(b); }
+        var varEdgesThicknessByWeightedOnChange = () => { this.edgesThicknessByWeightedOnChange(); }
+        var varEdgesColoredOnChange = () => { this.edgesColoredOnChange(); }
         var varAllLabelsOnChange = () => { this.allLabelsOnChange(); }
         var varAutoRotationOnChange = (s) => { this.autoRotationOnChange(s); }
         //var varSVGControlOnChange = (b: boolean) => { this.svgControlOnChange(b); }
@@ -298,51 +300,39 @@ class Brain3DApp implements Application, Loopable {
         this.renderer.setSize(jDiv.width(), (jDiv.height() - sliderSpace));
         jDiv.append($('<span id="close-brain-app-' + this.id + '" title="Close" class="view-panel-span">x</span>')
                 .css({ 'right': '6px', 'top': '10px', 'font-size': '12px' })
-                //.fadeTo(0, 0.2)
-                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varCloseBrainAppOnClick(); }))
             .append($('<span id="top-view-' + this.id + '" title="Top View" class="view-panel-span">T</span>')
                 .css({ 'right': '6px', 'top': '30px' })
-                //.fadeTo(0, 0.2)
-                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("top"); }))
             .append($('<span id="bottom-view-' + this.id + '" title="Bottom View" class="view-panel-span">B</span>')
                 .css({ 'right': '6px', 'top': '50px' })
-                //.fadeTo(0, 0.2)
-                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("bottom"); }))
             .append($('<span id="left-view-' + this.id + '" title="Left View" class="view-panel-span">L</span>')
                 .css({ 'right': '6px', 'top': '70px' })
-                //.fadeTo(0, 0.2)
-                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("left"); }))
             .append($('<span id="right-view-' + this.id + '" title="Right View" class="view-panel-span">R</span>')
                 .css({ 'right': '6px', 'top': '90px' })
-                //.fadeTo(0, 0.2)
-                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("right"); }))
             .append($('<span id="front-view-' + this.id + '" title="Front View" class="view-panel-span">F</span>')
                 .css({ 'right': '6px', 'top': '110px' })
-                //.fadeTo(0, 0.2)
-                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("front"); }))
             .append($('<span id="back-view-' + this.id + '" title="Back View" class="view-panel-span">B</span>')
                 .css({ 'right': '6px', 'top': '130px' })
-                //.fadeTo(0, 0.2)
-                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("back"); }))
             .append($('<span id="all-labels-' + this.id + '" title="All Labels" class="view-panel-span">&#8704</span>')
                 .css({ 'right': '6px', 'top': '150px' })
-                //.fadeTo(0, 0.2)
-                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varAllLabelsOnChange(); }))
             .append($('<span id="anti-auto-rotation-' + this.id + '" title="Anticlockwise Auto Rotation" class="view-panel-span">&#8634</span>')
                 .css({ 'right': '6px', 'top': '170px' })
-                //.fadeTo(0, 0.2)
-                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varAutoRotationOnChange("anticlockwise"); }))
+            .append($('<span id="colored-edges-' + this.id + '" title="Colored Edges" class="view-panel-span">C</span>')
+                .css({ 'right': '7px', 'top': '190px' })
+                .click(function () { varEdgesColoredOnChange(); }))
+            .append($('<span id="weighted-edges-' + this.id + '" title="Weighted Edges" class="view-panel-span">W</span>')
+                .css({ 'right': '6px', 'top': '210px' })
+                .click(function () { varEdgesThicknessByWeightedOnChange(); }))
             .append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input>')
-                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '220px', 'right': 0, 'top': '190px', 'z-index': 1000 })
+                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '200px', 'right': 0, 'top': '230px', 'z-index': 1000 })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varGraphViewSliderOnChange($(this).val()); })
@@ -353,14 +343,14 @@ class Brain3DApp implements Application, Loopable {
             .append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
             .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown + '" disabled="true"/></input>')
-                .css({ 'width': '200px', 'position': 'relative', 'z-index': 1000 })
+                .css({ 'width': '300px', 'position': 'relative', 'z-index': 1000 })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varEdgeCountSliderOnChange($(this).val()); }))
-            .append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
-                .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
-            .append($('<input type="checkbox" id="checkbox-edge-color-' + this.id + '" disabled="true">Colored Edge</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
-                .click(function () { varEdgesColoredOnChange($(this).is(":checked")); }))
+            //.append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
+            //    .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
+            //.append($('<input type="checkbox" id="checkbox-edge-color-' + this.id + '" disabled="true">Colored Edge</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
+            //    .click(function () { varEdgesColoredOnChange($(this).is(":checked")); }))
             //.append($('<input type="checkbox" id="checkbox-all-labels-' + this.id + '" disabled="true">All Labels</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
             //    .click(function () { varAllLabelsOnChange($(this).is(":checked")); }))
             //.append($('<input type="checkbox" id="checkbox-auto-rotation-' + this.id + '" disabled="true">Auto Rotation</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
@@ -371,8 +361,6 @@ class Brain3DApp implements Application, Loopable {
                 .click(function () { varShowNetwork(false); }))
             .append($('<select id="select-network-type-' + this.id + '" disabled="true"></select>').css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px', 'position': 'relative', 'z-index': 1000 })
                 .on("change", function () { varNetworkTypeOnChange($(this).val()); }));
-
-        $('.view-panel-span').prop('disabled', true);
 
         var networkTypeSelect = "#select-network-type-" + this.id;
         var option = document.createElement('option');
@@ -575,16 +563,38 @@ class Brain3DApp implements Application, Loopable {
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
     }
 
-    edgesThicknessByWeightedOnChange(b: boolean) {
-        this.physioGraph.edgeThicknessByWeighted = b;
-        this.colaGraph.edgeThicknessByWeighted = b;
+    edgesThicknessByWeightedOnChange() {
+        if ((!this.physioGraph) || (!this.colaGraph)) return;
+
+        this.weightedEdges = !this.weightedEdges;
+
+        this.physioGraph.edgeThicknessByWeighted = this.weightedEdges;
+        this.colaGraph.edgeThicknessByWeighted = this.weightedEdges;
+
+        if (this.weightedEdges == true) {
+            $('#weighted-edges-' + this.id).css('opacity', 1);
+        }
+        else {
+            $('#weighted-edges-' + this.id).css('opacity', 0.2);
+        }
 
         this.svgNeedsUpdate = true;
     }
 
-    edgesColoredOnChange(b: boolean) {
-        this.physioGraph.edgeColored = b;
-        this.colaGraph.edgeColored = b;
+    edgesColoredOnChange() {
+        if ((!this.physioGraph) || (!this.colaGraph)) return;
+
+        this.coloredEdges = !this.coloredEdges;
+
+        this.physioGraph.edgeColored = this.coloredEdges;
+        this.colaGraph.edgeColored = this.coloredEdges;
+
+        if (this.coloredEdges == true) {
+            $('#colored-edges-' + this.id).css('opacity', 1);
+        }
+        else {
+            $('#colored-edges-' + this.id).css('opacity', 0.2);
+        }
 
         this.svgNeedsUpdate = true;
     }
@@ -609,6 +619,8 @@ class Brain3DApp implements Application, Loopable {
     }
 
     allLabelsOnChange() {
+        if ((!this.physioGraph) || (!this.colaGraph)) return;
+
         this.allLables = !this.allLables;
 
         this.physioGraph.allLabels = this.allLables;
@@ -1821,13 +1833,12 @@ class Brain3DApp implements Application, Loopable {
         // Enable the slider
         $('#edge-count-slider-' + this.id).prop('disabled', false);
         $('#button-show-network-' + this.id).prop('disabled', false);
-        $('#checkbox-edges-thickness-by-weight-' + this.id).prop('disabled', false);
+        $('#select-network-type-' + this.id).prop('disabled', false);
+        //$('#checkbox-edges-thickness-by-weight-' + this.id).prop('disabled', false);
         //$('#checkbox-all-labels-' + this.id).prop('disabled', false);
-        $('#checkbox-edge-color-' + this.id).prop('disabled', false);
+        //$('#checkbox-edge-color-' + this.id).prop('disabled', false);
         //$('#checkbox-auto-rotation-' + this.id).prop('disabled', false);
         //$('#checkbox-svg-control-' + this.id).prop('disabled', false);
-        $('#select-network-type-' + this.id).prop('disabled', false);
-        $('.view-panel-span').prop('disabled', false);
     }
 
     // Create a matrix where a 1 in (i, j) means the edge between node i and node j is selected
