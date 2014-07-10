@@ -86,6 +86,7 @@ class Brain3DApp implements Application, Loopable {
     fovZoomRatio = 1;
     currentViewWidth: number; 
 
+    allLables: boolean = false;
     autoRotation: boolean = false;
 
     networkType: string;
@@ -277,8 +278,8 @@ class Brain3DApp implements Application, Loopable {
         var varShowNetwork = (b: boolean) => { this.showNetwork(b); }
         var varEdgesThicknessByWeightedOnChange = (b: boolean) => { this.edgesThicknessByWeightedOnChange(b); }
         var varEdgesColoredOnChange = (b: boolean) => { this.edgesColoredOnChange(b); }
-        var varAllLabelsOnChange = (b: boolean) => { this.allLabelsOnChange(b); }
-        var varAutoRotationOnChange = (b: boolean) => { this.autoRotationOnChange(b); }
+        var varAllLabelsOnChange = () => { this.allLabelsOnChange(); }
+        var varAutoRotationOnChange = (s) => { this.autoRotationOnChange(s); }
         //var varSVGControlOnChange = (b: boolean) => { this.svgControlOnChange(b); }
         var varSliderMouseEvent = (e: string) => { this.sliderMouseEvent(e); }
         var varGraphViewSliderOnChange = (v: number) => { this.graphViewSliderOnChange(v); }
@@ -295,43 +296,53 @@ class Brain3DApp implements Application, Loopable {
         // Set up renderer, and add the canvas and the slider to the div
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(jDiv.width(), (jDiv.height() - sliderSpace));
-        jDiv.append($('<span id="close-brain-app-' + this.id + '" class="view-panel-span">x</span>')
+        jDiv.append($('<span id="close-brain-app-' + this.id + '" title="Close" class="view-panel-span">x</span>')
                 .css({ 'right': '6px', 'top': '10px', 'font-size': '12px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                //.fadeTo(0, 0.2)
+                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varCloseBrainAppOnClick(); }))
-            .append($('<span id="top-view-' + this.id + '" class="view-panel-span">T</span>')
+            .append($('<span id="top-view-' + this.id + '" title="Top View" class="view-panel-span">T</span>')
                 .css({ 'right': '6px', 'top': '30px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                //.fadeTo(0, 0.2)
+                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("top"); }))
-            .append($('<span id="bottom-view-' + this.id + '" class="view-panel-span">B</span>')
+            .append($('<span id="bottom-view-' + this.id + '" title="Bottom View" class="view-panel-span">B</span>')
                 .css({ 'right': '6px', 'top': '50px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                //.fadeTo(0, 0.2)
+                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("bottom"); }))
-            .append($('<span id="left-view-' + this.id + '" class="view-panel-span">L</span>')
+            .append($('<span id="left-view-' + this.id + '" title="Left View" class="view-panel-span">L</span>')
                 .css({ 'right': '6px', 'top': '70px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                //.fadeTo(0, 0.2)
+                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("left"); }))
-            .append($('<span id="right-view-' + this.id + '" class="view-panel-span">R</span>')
+            .append($('<span id="right-view-' + this.id + '" title="Right View" class="view-panel-span">R</span>')
                 .css({ 'right': '6px', 'top': '90px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                //.fadeTo(0, 0.2)
+                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("right"); }))
-            .append($('<span id="front-view-' + this.id + '" class="view-panel-span">F</span>')
+            .append($('<span id="front-view-' + this.id + '" title="Front View" class="view-panel-span">F</span>')
                 .css({ 'right': '6px', 'top': '110px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                //.fadeTo(0, 0.2)
+                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("front"); }))
-            .append($('<span id="back-view-' + this.id + '" class="view-panel-span">B</span>')
+            .append($('<span id="back-view-' + this.id + '" title="Back View" class="view-panel-span">B</span>')
                 .css({ 'right': '6px', 'top': '130px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                //.fadeTo(0, 0.2)
+                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("back"); }))
+            .append($('<span id="all-labels-' + this.id + '" title="All Labels" class="view-panel-span">&#8704</span>')
+                .css({ 'right': '6px', 'top': '150px' })
+                //.fadeTo(0, 0.2)
+                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                .click(function () { varAllLabelsOnChange(); }))
+            .append($('<span id="anti-auto-rotation-' + this.id + '" title="Anticlockwise Auto Rotation" class="view-panel-span">&#8634</span>')
+                .css({ 'right': '6px', 'top': '170px' })
+                //.fadeTo(0, 0.2)
+                //.hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
+                .click(function () { varAutoRotationOnChange("anticlockwise"); }))
             .append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input>')
-                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '250px', 'right': 0, 'top': '150px', 'z-index': 1000 })
+                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '220px', 'right': 0, 'top': '190px', 'z-index': 1000 })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varGraphViewSliderOnChange($(this).val()); })
@@ -350,16 +361,18 @@ class Brain3DApp implements Application, Loopable {
                 .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
             .append($('<input type="checkbox" id="checkbox-edge-color-' + this.id + '" disabled="true">Colored Edge</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
                 .click(function () { varEdgesColoredOnChange($(this).is(":checked")); }))
-            .append($('<input type="checkbox" id="checkbox-all-labels-' + this.id + '" disabled="true">All Labels</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
-                .click(function () { varAllLabelsOnChange($(this).is(":checked")); }))
-            .append($('<input type="checkbox" id="checkbox-auto-rotation-' + this.id + '" disabled="true">Auto Rotation</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
-                .click(function () { varAutoRotationOnChange($(this).is(":checked")); }))
+            //.append($('<input type="checkbox" id="checkbox-all-labels-' + this.id + '" disabled="true">All Labels</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
+            //    .click(function () { varAllLabelsOnChange($(this).is(":checked")); }))
+            //.append($('<input type="checkbox" id="checkbox-auto-rotation-' + this.id + '" disabled="true">Auto Rotation</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
+            //    .click(function () { varAutoRotationOnChange($(this).is(":checked")); }))
             //.append($('<input type="checkbox" id="checkbox-svg-control-' + this.id + '" disabled="true">SVG</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
             //    .click(function () { varSVGControlOnChange($(this).is(":checked")); }))
             .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px', 'position': 'relative', 'z-index': 1000 })
                 .click(function () { varShowNetwork(false); }))
             .append($('<select id="select-network-type-' + this.id + '" disabled="true"></select>').css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px', 'position': 'relative', 'z-index': 1000 })
                 .on("change", function () { varNetworkTypeOnChange($(this).val()); }));
+
+        $('.view-panel-span').prop('disabled', true);
 
         var networkTypeSelect = "#select-network-type-" + this.id;
         var option = document.createElement('option');
@@ -576,28 +589,38 @@ class Brain3DApp implements Application, Loopable {
         this.svgNeedsUpdate = true;
     }
 
-    autoRotationOnChange(b: boolean) {
-        this.autoRotation = b;
+    autoRotationOnChange(s: string) {
+        this.autoRotation = !this.autoRotation;
 
         this.mouse.dx = 0;
         this.mouse.dy = 0;
 
         // set default rotation
         if (this.autoRotation == true) {
-            this.mouse.dx = 1;
-            this.mouse.dy = 0;
+            $('#anti-auto-rotation-' + this.id).css('opacity', 1);
+            if (s == "anticlockwise") {
+                this.mouse.dx = 1;
+                this.mouse.dy = 0;
+            }
+        }
+        else {
+            $('#anti-auto-rotation-' + this.id).css('opacity', 0.2);
         }
     }
 
-    allLabelsOnChange(b: boolean) {
-        this.physioGraph.allLabels = b;
-        this.colaGraph.allLabels = b;
+    allLabelsOnChange() {
+        this.allLables = !this.allLables;
 
-        if (b == true) {
+        this.physioGraph.allLabels = this.allLables;
+        this.colaGraph.allLabels = this.allLables;
+
+        if (this.allLables == true) {
+            $('#all-labels-' + this.id).css('opacity', 1);
             this.physioGraph.showAllLabels(false);
             this.colaGraph.showAllLabels(this.svgMode);
         }
         else {
+            $('#all-labels-' + this.id).css('opacity', 0.2);
             this.physioGraph.hideAllLabels();
             this.colaGraph.hideAllLabels();
         }
@@ -1536,7 +1559,54 @@ class Brain3DApp implements Application, Loopable {
             .text(function (d) { return d.id; })
             .style("visibility", "hidden");
     }
+    /*
+    powerGraph() {
+        var d3cola = colans.d3adaptor()
+            .linkDistance(80)
+            .handleDisconnected(false)
+            .avoidOverlaps(true)
+            .size([this.jDiv.width(), this.jDiv.height() - sliderSpace]);
 
+        d3.json("graphdata/miserables.json", function (error, graph) {
+
+            var powerGraph;
+
+            d3cola
+                .nodes(graph.nodes)
+                .links(graph.links)
+                .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 20))
+                .start(50, 10, 10);
+
+            var group = svg.selectAll(".group")
+                .data(powerGraph.groups)
+                .enter().append("rect")
+                .attr("rx", 8).attr("ry", 8)
+                .attr("class", "group")
+                .style("fill", (d, i) => color(i));
+
+            var link = svg.selectAll(".link")
+                .data(powerGraph.powerEdges)
+                .enter().append("line")
+                .attr("class", "link");
+
+            var margin = 10;
+            var node = svg.selectAll(".node")
+                .data(graph.nodes)
+                .enter().append("rect")
+                .attr("class", "node")
+                .attr("width", d => d.width + 2 * margin)
+                .attr("height", d => d.height + 2 * margin)
+                .attr("rx", 4).attr("ry", 4)
+                .call(d3cola.drag);
+            var label = svg.selectAll(".label")
+                .data(graph.nodes)
+                .enter().append("text")
+                .attr("class", "label")
+                .text(d => d.name)
+                .call(d3cola.drag);
+        });
+    }
+    */
     isDeleted() {
         return this.deleted;
     }
@@ -1752,11 +1822,12 @@ class Brain3DApp implements Application, Loopable {
         $('#edge-count-slider-' + this.id).prop('disabled', false);
         $('#button-show-network-' + this.id).prop('disabled', false);
         $('#checkbox-edges-thickness-by-weight-' + this.id).prop('disabled', false);
-        $('#checkbox-all-labels-' + this.id).prop('disabled', false);
+        //$('#checkbox-all-labels-' + this.id).prop('disabled', false);
         $('#checkbox-edge-color-' + this.id).prop('disabled', false);
-        $('#checkbox-auto-rotation-' + this.id).prop('disabled', false);
+        //$('#checkbox-auto-rotation-' + this.id).prop('disabled', false);
         //$('#checkbox-svg-control-' + this.id).prop('disabled', false);
         $('#select-network-type-' + this.id).prop('disabled', false);
+        $('.view-panel-span').prop('disabled', false);
     }
 
     // Create a matrix where a 1 in (i, j) means the edge between node i and node j is selected
