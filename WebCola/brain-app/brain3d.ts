@@ -14,7 +14,7 @@ var colans = <any>cola;
 
 var sliderSpace = 70; // The number of pixels to reserve at the bottom of the div for the slider
 //var uniqueID = 0; // Each instance of this application is given a unique ID so that the DOM elements they create can be identified as belonging to them
-var maxEdgesShowable = 500;
+var maxEdgesShowable = 1000;
 var initialEdgesShown = 20; // The number of edges that are shown when the application starts
 
 // The width and the height of the box in the xy-plane that we must keep inside the camera (by modifying the distance of the camera from the scene)
@@ -661,7 +661,7 @@ class Brain3DApp implements Application, Loopable {
         this.svgNeedsUpdate = true;
     }
 
-    setColarGraphNodeLinkVisibilities(edges: any[]) {
+    setColaGraphNodeLinkVisibilities(edges: any[]) {
         this.colaGraph.filteredNodeIDs = this.physioGraph.filteredNodeIDs;
 
         //-------------------------------------------------------------------
@@ -718,7 +718,7 @@ class Brain3DApp implements Application, Loopable {
             this.showingCola = true;
 
             var edges = [];
-            this.setColarGraphNodeLinkVisibilities(edges);
+            this.setColaGraphNodeLinkVisibilities(edges);
 
             //-------------------------------------------------------------------------------------------------------------
             // 3d cola graph
@@ -1028,10 +1028,9 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
-    initPowerGraph() {
+    initPowerGraph(targetGraph) {
         if (!this.showingCola) {
-            this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
-            this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
+            this.setColaGraphNodeLinkVisibilities(null);
         }
 
         this.powerGraphNodeArray = [];
@@ -1040,7 +1039,6 @@ class Brain3DApp implements Application, Loopable {
             var obj = children[i];
             if ((<any>obj).isNode) {
                 var nodeObject = new Object();
-                nodeObject["id"] = obj.id;
                 nodeObject["name"] = obj.id;
                 this.powerGraphNodeArray.push(nodeObject);
             }
@@ -1050,19 +1048,23 @@ class Brain3DApp implements Application, Loopable {
         for (var i = 0; i < this.colaGraph.edgeList.length; i++) {
             var edge = this.colaGraph.edgeList[i];
             if (edge.visible) {
-                var linkObject = new Object();
+                var linkObject1 = new Object();
+                var linkObject2 = new Object();
 
                 for (var j = 0; j < this.powerGraphNodeArray.length; j++) {
-                    if (this.powerGraphNodeArray[j].id == edge.sourceNode.id) {
-                        linkObject["source"] = j;
+                    if (this.powerGraphNodeArray[j].name == edge.sourceNode.id) {
+                        linkObject1["source"] = j;
+                        linkObject2["target"] = j;
                     }
 
-                    if (this.powerGraphNodeArray[j].id == edge.targetNode.id) {
-                        linkObject["target"] = j;
+                    if (this.powerGraphNodeArray[j].name == edge.targetNode.id) {
+                        linkObject1["target"] = j;
+                        linkObject2["source"] = j;
                     }
                 }
 
-                this.powerGraphLinkArray.push(linkObject);
+                this.powerGraphLinkArray.push(linkObject1);
+                this.powerGraphLinkArray.push(linkObject2);
             }
         }
 
@@ -1076,7 +1078,7 @@ class Brain3DApp implements Application, Loopable {
             .size([this.jDiv.width(), this.jDiv.height() - sliderSpace]);
 
         var powerGraph;
-
+                
         d3cola
             .nodes(nodeJson)
             .links(linkJson)
@@ -1085,6 +1087,83 @@ class Brain3DApp implements Application, Loopable {
         console.log(powerGraph.groups);
         console.log(powerGraph.powerEdges);
 
+        for (var i = 0; i < powerGraph.powerEdges.length; i++) {
+            var source = powerGraph.powerEdges[i].source;
+            var target = powerGraph.powerEdges[i].target;
+
+            //console.log("source " + i + " leaves: ");
+            var allSourceLeaves = this.getAllLeavesInATree(source);
+            var allTargetLeaves = this.getAllLeavesInATree(target);
+
+            if ((allSourceLeaves.length == 1) && (allTargetLeaves.length == 1)) {
+                
+
+            }
+            else {
+                var totalX = 0;
+                var totalY = 0;
+                var totalZ = 0;
+
+                for (var j = 0; j < allSourceLeaves.length; j++) {
+                    var nodeID = allSourceLeaves[j].name;
+                    totalX += targetGraph.nodeMeshes[nodeID].position.x;
+                    totalY += targetGraph.nodeMeshes[nodeID].position.y;
+                    totalZ += targetGraph.nodeMeshes[nodeID].position.z;
+                }
+
+                //var sourceMidPoint = new THREE.Vector3(totalX / allSourceLeaves.length, totalY / allSourceLeaves.length, totalZ / allSourceLeaves.length);
+
+                //totalX = 0;
+                //totalY = 0;
+                //totalZ = 0;
+
+                for (var j = 0; j < allTargetLeaves.length; j++) {
+                    var nodeID = allTargetLeaves[j].name;
+                    totalX += targetGraph.nodeMeshes[nodeID].position.x;
+                    totalY += targetGraph.nodeMeshes[nodeID].position.y;
+                    totalZ += targetGraph.nodeMeshes[nodeID].position.z;
+                }
+
+                //var targetMidPoint = new THREE.Vector3(totalX / allTargetLeaves.length, totalY / allTargetLeaves.length, totalZ / allTargetLeaves.length);
+
+                var count = allSourceLeaves.length + allTargetLeaves.length;
+                var midPoint = new THREE.Vector3(totalX / count, totalY / count, totalZ / count);
+
+                for (var u = 0; u < allSourceLeaves.length; u++) {
+                    for (var v = 0; v < allTargetLeaves.length; v++) {
+                        var sourceID = allSourceLeaves[u].name;
+                        var targetID = allTargetLeaves[v].name;
+
+                        var sourcePoint = new THREE.Vector3(targetGraph.nodeMeshes[sourceID].position.x, targetGraph.nodeMeshes[sourceID].position.y, targetGraph.nodeMeshes[sourceID].position.z);
+                        var targetPoint = new THREE.Vector3(targetGraph.nodeMeshes[targetID].position.x, targetGraph.nodeMeshes[targetID].position.y, targetGraph.nodeMeshes[targetID].position.z);
+                        var additionalPoint1 = new THREE.Vector3((sourcePoint.x + midPoint.x) / 2, (sourcePoint.y + midPoint.y) / 2, (sourcePoint.z + midPoint.z) / 2);
+                        var additionalPoint2 = new THREE.Vector3((targetPoint.x + midPoint.x) / 2, (targetPoint.y + midPoint.y) / 2, (targetPoint.z + midPoint.z) / 2);
+                        var spline = new THREE.SplineCurve3([sourcePoint, additionalPoint1, midPoint, additionalPoint2, targetPoint]);
+
+                        var material = new THREE.LineBasicMaterial({
+                            color: 0x000000,
+                        });
+
+                        var geometry = new THREE.Geometry();
+                        var splinePoints = spline.getPoints(20);
+
+                        for (var w = 0; w < splinePoints.length; w++) {
+                            geometry.vertices.push(<any>splinePoints[w]);
+                        }
+
+                        var line = new THREE.Line(geometry, material);
+                        targetGraph.rootObject.add(line);
+                    }
+                }                                                                           
+            }
+        }
+        
+        for (var i = 0; i < targetGraph.edgeList.length; i++) {
+            var e = targetGraph.edgeList[i];
+            if (e.visible) {
+                e.setVisible(false);
+            }
+        }
         /*
         d3.json("../examples/graphdata/n7e23.json", function (error, graph) {
             var powerGraph;
@@ -1098,6 +1177,33 @@ class Brain3DApp implements Application, Loopable {
             console.log(powerGraph.powerEdges);
         });
         */
+    }
+
+    getAllLeavesInATree(node) {
+        var allLeaves = [];
+
+        if (typeof (node.leaves) != "undefined") {
+            for (var i = 0; i < node.leaves.length; i++) {
+                var leaves = this.getAllLeavesInATree(node.leaves[i]);
+                //allLeaves.push(leaves);
+                leaves.forEach(l => { allLeaves.push(l); });
+            }
+        }
+
+        if (typeof (node.groups) != "undefined") {
+            for (var i = 0; i < node.groups.length; i++) {
+                var leaves = this.getAllLeavesInATree(node.groups[i]);
+                //allLeaves.push(leaves);
+                leaves.forEach(l => { allLeaves.push(l); });
+            }
+        }
+             
+        if ((typeof (node.leaves) == "undefined") && (typeof (node.groups) == "undefined")){
+            // this is the leaf
+            allLeaves.push(node);
+        }
+
+        return allLeaves;
     }
 
     initCircularLayout() {
@@ -2377,6 +2483,7 @@ class Edge {
 
     constructor(public parentObject, public sourceNode, public targetNode, private weight) {
         this.shape = this.makeCylinder();
+        (<any>this.shape).isEdge = true; // A flag to identify the edge
         parentObject.add(this.shape);
 
         var w = (Math.ceil(weight * 10) - 6) * 0.5; // the edge scale is not proportional to edge weight
