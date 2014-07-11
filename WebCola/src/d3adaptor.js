@@ -127,7 +127,7 @@ var cola;
         };
 
         d3adaptor.powerGraphGroups = function (f) {
-            var g = powergraph.getGroups(nodes, links, linkAccessor);
+            var g = cola.powergraph.getGroups(nodes, links, linkAccessor);
             this.groups(g.groups);
             f(g);
             return d3adaptor;

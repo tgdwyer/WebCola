@@ -69,6 +69,9 @@ class Brain3DApp implements Application, Loopable {
     svgNeedsUpdate: boolean = false;
     d3Zoom = d3.behavior.zoom();
 
+    powerGraphNodeArray: any[];
+    powerGraphLinkArray: any[];
+
     nodeColourings: number[]; // Stores the colourings associated with the groups
     dissimilarityMatrix: number[][] = []; // An inversion of the similarity matrix, used for Cola graph distances
 
@@ -90,6 +93,7 @@ class Brain3DApp implements Application, Loopable {
     autoRotation: boolean = false;
     weightedEdges: boolean = false;
     coloredEdges: boolean = false;
+    bundlingEdges: boolean = false;
 
     networkType: string;
 
@@ -277,18 +281,18 @@ class Brain3DApp implements Application, Loopable {
             }
         });
 
-        var varShowNetwork = (b: boolean) => { this.showNetwork(b); }
-        var varEdgesThicknessByWeightedOnChange = () => { this.edgesThicknessByWeightedOnChange(); }
-        var varEdgesColoredOnChange = () => { this.edgesColoredOnChange(); }
-        var varAllLabelsOnChange = () => { this.allLabelsOnChange(); }
-        var varAutoRotationOnChange = (s) => { this.autoRotationOnChange(s); }
-        //var varSVGControlOnChange = (b: boolean) => { this.svgControlOnChange(b); }
-        var varSliderMouseEvent = (e: string) => { this.sliderMouseEvent(e); }
-        var varGraphViewSliderOnChange = (v: number) => { this.graphViewSliderOnChange(v); }
-        var varEdgeCountSliderOnChange = (v: number) => { this.edgeCountSliderOnChange(v); }
-        var varCloseBrainAppOnClick = () => { this.closeBrainAppOnClick(); }
-        var varDefaultOrientationsOnClick = (s: string) => { this.defaultOrientationsOnClick(s); }
-        var varNetworkTypeOnChange = (s: string) => { this.networkTypeOnChange(s); }
+        var varShowNetwork = (b: boolean) => { this.showNetwork(b); };
+        var varEdgesThicknessByWeightedOnChange = () => { this.edgesThicknessByWeightedOnChange(); };
+        var varEdgesColoredOnChange = () => { this.edgesColoredOnChange(); };
+        var varEdgesBundlingOnChange = () => { this.edgesBundlingOnChange(); };
+        var varAllLabelsOnChange = () => { this.allLabelsOnChange(); };
+        var varAutoRotationOnChange = (s) => { this.autoRotationOnChange(s); };
+        var varSliderMouseEvent = (e: string) => { this.sliderMouseEvent(e); };
+        var varGraphViewSliderOnChange = (v: number) => { this.graphViewSliderOnChange(v); };
+        var varEdgeCountSliderOnChange = (v: number) => { this.edgeCountSliderOnChange(v); };
+        var varCloseBrainAppOnClick = () => { this.closeBrainAppOnClick(); };
+        var varDefaultOrientationsOnClick = (s: string) => { this.defaultOrientationsOnClick(s); };
+        var varNetworkTypeOnChange = (s: string) => { this.networkTypeOnChange(s); };
         
         this.input.regKeyDownCallback(' ', varShowNetwork);
             
@@ -331,8 +335,11 @@ class Brain3DApp implements Application, Loopable {
             .append($('<span id="weighted-edges-' + this.id + '" title="Weighted Edges" class="view-panel-span">W</span>')
                 .css({ 'right': '6px', 'top': '210px' })
                 .click(function () { varEdgesThicknessByWeightedOnChange(); }))
+            .append($('<span id="bundling-edges-' + this.id + '" title="Edge Bundling" class="view-panel-span">&#8712</span>')
+                .css({ 'right': '6px', 'top': '230px', 'font-size': '20px' })
+                .click(function () { varEdgesBundlingOnChange(); }))
             .append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input>')
-                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '200px', 'right': 0, 'top': '230px', 'z-index': 1000 })
+                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '180px', 'right': 0, 'top': '250px', 'z-index': 1000 })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varGraphViewSliderOnChange($(this).val()); })
@@ -599,6 +606,20 @@ class Brain3DApp implements Application, Loopable {
         this.svgNeedsUpdate = true;
     }
 
+    edgesBundlingOnChange() {
+        if ((!this.physioGraph) || (!this.colaGraph)) return;
+
+        this.bundlingEdges = !this.bundlingEdges;
+
+        if (this.bundlingEdges == true) {
+            $('#bundling-edges-' + this.id).css('opacity', 1);
+            this.initPowerGraph();
+        }
+        else {
+            $('#bundling-edges-' + this.id).css('opacity', 0.2);
+        }
+    }
+
     autoRotationOnChange(s: string) {
         this.autoRotation = !this.autoRotation;
 
@@ -640,62 +661,67 @@ class Brain3DApp implements Application, Loopable {
         this.svgNeedsUpdate = true;
     }
 
-    showNetwork(switchNetworkType: boolean) {
-        if (!this.brainObject || !this.colaObject) return;
+    setColarGraphNodeLinkVisibilities(edges: any[]) {
+        this.colaGraph.filteredNodeIDs = this.physioGraph.filteredNodeIDs;
 
-        if (!this.transitionInProgress) {
-            // Leave *showingCola* on permanently after first turn-on
-            this.showingCola = true;
+        //-------------------------------------------------------------------
+        // Find the edges that have been selected after thresholding, and all the
+        // nodes that have neighbours after the thresholding of the edges takes place.
 
-            this.colaGraph.filteredNodeIDs = this.physioGraph.filteredNodeIDs;
+        // original:
+        /*
+        var edges = [];
+        var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
+        for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
+            for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
+                if (this.filteredAdjMatrix[i][j] === 1) {
+                    edges.push({ source: i, target: j });
+                    hasNeighbours[i] = true;
+                    hasNeighbours[j] = true;
+                }
+            }
+        }
+        */
 
-            //-------------------------------------------------------------------
-            // Find the edges that have been selected after thresholding, and all the
-            // nodes that have neighbours after the thresholding of the edges takes place.
-
-            // original:
-            /*
-            var edges = [];
-            var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
-            for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
-                for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
-                    if (this.filteredAdjMatrix[i][j] === 1) {
-                        edges.push({ source: i, target: j });
+        // new:
+        //var edges = [];
+        var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
+        for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
+            for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
+                if (this.filteredAdjMatrix[i][j] === 1) {
+                    if (this.physioGraph.filteredNodeIDs) {
+                        if ((this.physioGraph.filteredNodeIDs.indexOf(i) != -1) && (this.physioGraph.filteredNodeIDs.indexOf(j) != -1)) {
+                            var len = this.dissimilarityMatrix[i][j];
+                            if (edges) edges.push({ source: i, target: j, length: len });
+                            hasNeighbours[i] = true;
+                            hasNeighbours[j] = true;
+                        }
+                    } else {
+                        var len = this.dissimilarityMatrix[i][j];
+                        if (edges) edges.push({ source: i, target: j, length: len });
                         hasNeighbours[i] = true;
                         hasNeighbours[j] = true;
                     }
                 }
             }
-            */
+        }
 
-            // new:
+        this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
+        this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
+    }
+
+    showNetwork(switchNetworkType: boolean) {
+        if (!this.brainObject || !this.colaObject || !this.physioGraph || !this.colaGraph) return;
+
+        if (!this.transitionInProgress) {
+            // Leave *showingCola* on permanently after first turn-on
+            this.showingCola = true;
+
             var edges = [];
-            var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
-            for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
-                for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
-                    if (this.filteredAdjMatrix[i][j] === 1) {
-                        if (this.physioGraph.filteredNodeIDs) {
-                            if ((this.physioGraph.filteredNodeIDs.indexOf(i) != -1) && (this.physioGraph.filteredNodeIDs.indexOf(j) != -1)) {
-                                var len = this.dissimilarityMatrix[i][j];
-                                edges.push({ source: i, target: j, length: len });
-                                hasNeighbours[i] = true;
-                                hasNeighbours[j] = true;
-                            }
-                        } else {
-                            var len = this.dissimilarityMatrix[i][j];
-                            edges.push({ source: i, target: j, length: len });
-                            hasNeighbours[i] = true;
-                            hasNeighbours[j] = true;
-                        }
-                    }
-                }
-            }
+            this.setColarGraphNodeLinkVisibilities(edges);
 
             //-------------------------------------------------------------------------------------------------------------
             // 3d cola graph
-
-            this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
-            this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
 
             var getSourceIndex = function (e) {
                 return e.source;
@@ -779,88 +805,6 @@ class Brain3DApp implements Application, Loopable {
             //-------------------------------------------------------------------------------------------------------------
             // animation
             if (this.networkType == 'flatten-to-2d') {
-                /*
-                var colaCoordsMatrix3D: number[][];
-
-                colaCoordsMatrix3D = this.colaCoords.map(function (array) {
-                    return array.slice(0);
-                });
-
-                colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more row than column
-                var V = numeric.svd(colaCoordsMatrix3D).V; // V is orthogonal
-                var Vt = numeric.transpose(V);
-                var newX = Vt[0]; // 2d array is row first
-                var newY = Vt[1];
-                var newZ = this.cross(newX, newY);
-
-                var rotationAngle = this.angle(newZ, [0, 0, 1]);
-                var ax = this.cross(newZ, [0, 0, 1]);
-                var rotationAxis = new THREE.Vector3(ax[0], ax[1], ax[2]);
-                var rotationMatrix = new THREE.Matrix4().makeRotationAxis(rotationAxis, rotationAngle);
-
-                //var test = new THREE.Vector3(newZ[0], newZ[1], newZ[2]);
-                //test.applyMatrix4(rotationMatrix);
-
-                var colaCoordsMatrixRotated3D: number[][] = [];
-                var colaCoordsMatrixRotatedProjected3D: number[][] = [];
-                var cloneColaCoords2D: number[][] = [];
-
-                for (var i = 0; i < colaCoordsMatrix3D.length; i++) {
-                    var row = colaCoordsMatrix3D[i];
-                    var v = new THREE.Vector3(row[0], row[1], row[2]);
-
-                    v.applyMatrix4(rotationMatrix);
-
-                    colaCoordsMatrixRotated3D.push([v.x, v.y, v.z]);
-                    colaCoordsMatrixRotatedProjected3D.push([v.x, v.y, 0]);
-                    cloneColaCoords2D.push([v.x, v.y]);
-                }
-
-                colaCoordsMatrixRotated3D = numeric.transpose(colaCoordsMatrixRotated3D); // more column than row
-                colaCoordsMatrixRotatedProjected3D = numeric.transpose(colaCoordsMatrixRotatedProjected3D); // more column than row
-                cloneColaCoords2D = numeric.transpose(cloneColaCoords2D); // more column than row
-
-                // step 3: apply cola to 2d graph
-                this.descent = new cola.Descent(cloneColaCoords2D, D); // Create the solver
-
-                // Relieve some of the initial stress
-                for (var i = 0; i < 10; ++i) {
-                    this.descent.reduceStress();
-                }
-
-                this.colaCoords = this.descent.x.map(function (array) {
-                    return array.slice(0);
-                });
-
-                var zeroZCoords: number[] = [];
-                for (var i = 0; i < this.colaCoords[0].length; i++) zeroZCoords[i] = 0;
-                this.colaCoords.push(zeroZCoords);
-
-                // setup animation
-                var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
-                var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
-
-                var rotationOrigin = new THREE.Vector3(this.colaObject.rotation.x % Math.PI, this.colaObject.rotation.y % Math.PI, this.colaObject.rotation.z % Math.PI);
-                var rotationTarget = new THREE.Vector3(0, 0, 0);
-
-                if ((this.colaObject.rotation.x != 0) || (this.colaObject.rotation.y != 0) || (this.colaObject.rotation.z != 0)) {
-                    // animation: cola object rotation
-                    this.colaObjectRotation(origin, target, rotationOrigin, rotationTarget, originColaCoords, colaCoordsMatrixRotated3D, switchNetworkType, false);
-
-                    // animation: rotate by changing coordinates
-                    //this.colaObjectAnimation(target, target, originColaCoords, colaCoordsMatrixRotated3D, true, false);
-                }
-                else {
-                    // animation: rotate by changing coordinates
-                    this.colaObjectAnimation(origin, target, originColaCoords, colaCoordsMatrixRotated3D, switchNetworkType, false);
-                }
-                // animation: flatten to 2d
-                this.colaObjectAnimation(target, target, colaCoordsMatrixRotated3D, colaCoordsMatrixRotatedProjected3D, true, false);
-
-                // animation: cola graph in 2d coordinate
-                this.colaObjectAnimation(target, target, colaCoordsMatrixRotatedProjected3D, this.colaCoords, true, false);
-                */
-
                 if (!switchNetworkType) {
                     // Set up a coroutine to do the animation
                     var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
@@ -1082,6 +1026,78 @@ class Brain3DApp implements Application, Loopable {
             this.svgAllElements.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
             if (this.networkType == "flatten-to-2d") this.svgNeedsUpdate = true;
         }
+    }
+
+    initPowerGraph() {
+        if (!this.showingCola) {
+            this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
+            this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
+        }
+
+        this.powerGraphNodeArray = [];
+        var children = this.colaGraph.rootObject.children;
+        for (var i = 0; i < children.length; i++) {
+            var obj = children[i];
+            if ((<any>obj).isNode) {
+                var nodeObject = new Object();
+                nodeObject["id"] = obj.id;
+                nodeObject["name"] = obj.id;
+                this.powerGraphNodeArray.push(nodeObject);
+            }
+        }
+
+        this.powerGraphLinkArray = [];
+        for (var i = 0; i < this.colaGraph.edgeList.length; i++) {
+            var edge = this.colaGraph.edgeList[i];
+            if (edge.visible) {
+                var linkObject = new Object();
+
+                for (var j = 0; j < this.powerGraphNodeArray.length; j++) {
+                    if (this.powerGraphNodeArray[j].id == edge.sourceNode.id) {
+                        linkObject["source"] = j;
+                    }
+
+                    if (this.powerGraphNodeArray[j].id == edge.targetNode.id) {
+                        linkObject["target"] = j;
+                    }
+                }
+
+                this.powerGraphLinkArray.push(linkObject);
+            }
+        }
+
+        var nodeJson = JSON.parse(JSON.stringify(this.powerGraphNodeArray));
+        var linkJson = JSON.parse(JSON.stringify(this.powerGraphLinkArray));
+
+        var d3cola = colans.d3adaptor()
+            .linkDistance(80)
+            .handleDisconnected(true)
+            .avoidOverlaps(true)
+            .size([this.jDiv.width(), this.jDiv.height() - sliderSpace]);
+
+        var powerGraph;
+
+        d3cola
+            .nodes(nodeJson)
+            .links(linkJson)
+            .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 20));
+
+        console.log(powerGraph.groups);
+        console.log(powerGraph.powerEdges);
+
+        /*
+        d3.json("../examples/graphdata/n7e23.json", function (error, graph) {
+            var powerGraph;
+
+            d3cola
+                .nodes(graph.nodes)
+                .links(graph.links)
+                .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 20));
+
+            console.log(powerGraph.groups);
+            console.log(powerGraph.powerEdges);
+        });
+        */
     }
 
     initCircularLayout() {
@@ -1571,54 +1587,7 @@ class Brain3DApp implements Application, Loopable {
             .text(function (d) { return d.id; })
             .style("visibility", "hidden");
     }
-    /*
-    powerGraph() {
-        var d3cola = colans.d3adaptor()
-            .linkDistance(80)
-            .handleDisconnected(false)
-            .avoidOverlaps(true)
-            .size([this.jDiv.width(), this.jDiv.height() - sliderSpace]);
-
-        d3.json("graphdata/miserables.json", function (error, graph) {
-
-            var powerGraph;
-
-            d3cola
-                .nodes(graph.nodes)
-                .links(graph.links)
-                .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 20))
-                .start(50, 10, 10);
-
-            var group = svg.selectAll(".group")
-                .data(powerGraph.groups)
-                .enter().append("rect")
-                .attr("rx", 8).attr("ry", 8)
-                .attr("class", "group")
-                .style("fill", (d, i) => color(i));
-
-            var link = svg.selectAll(".link")
-                .data(powerGraph.powerEdges)
-                .enter().append("line")
-                .attr("class", "link");
-
-            var margin = 10;
-            var node = svg.selectAll(".node")
-                .data(graph.nodes)
-                .enter().append("rect")
-                .attr("class", "node")
-                .attr("width", d => d.width + 2 * margin)
-                .attr("height", d => d.height + 2 * margin)
-                .attr("rx", 4).attr("ry", 4)
-                .call(d3cola.drag);
-            var label = svg.selectAll(".label")
-                .data(graph.nodes)
-                .enter().append("text")
-                .attr("class", "label")
-                .text(d => d.name)
-                .call(d3cola.drag);
-        });
-    }
-    */
+    
     isDeleted() {
         return this.deleted;
     }
