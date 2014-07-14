@@ -35,6 +35,7 @@ class Brain3DApp implements Application, Loopable {
     loop: Loop;
     input: InputTarget;
     jDiv;
+    jDivProcessingNotification;
     deleted: boolean = false;
 
     // THREE variables
@@ -340,7 +341,7 @@ class Brain3DApp implements Application, Loopable {
                 .click(function () { varEdgesThicknessByWeightedOnChange(); }))
             .append($('<span id="bundling-edges-' + this.id + '" title="Edge Bundling" class="view-panel-span">&#8712</span>')
                 .css({ 'right': '6px', 'top': '230px', 'font-size': '20px' })
-                //.on("mousedown", function () { console.log("bundling mouse down"); varCursorWait(); })
+                .on("mousedown", function () { console.log("bundling mouse down"); varCursorWait(); })
                 .on("mouseup", function () { varEdgesBundlingOnChange(); }))
             .append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input>')
                 .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '180px', 'right': 0, 'top': '250px', 'z-index': 1000 })
@@ -404,6 +405,9 @@ class Brain3DApp implements Application, Loopable {
             .attr("height", jDiv.height() - sliderSpace)
             .call(this.d3Zoom.on("zoom", varSVGZoom));  
         this.svgAllElements = this.svg.append("g");
+
+        this.jDivProcessingNotification = document.createElement('div');
+        this.jDivProcessingNotification.id = 'div-processing-notification';
 
         // Set up camera
         this.camera = new THREE.PerspectiveCamera(45, 1, this.nearClip, this.farClip);
@@ -636,12 +640,28 @@ class Brain3DApp implements Application, Loopable {
             this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
         }
 
+        document.body.removeChild(this.jDivProcessingNotification);
         //$('body').css({ cursor: 'default' });
     }
 
     cursorWait() {
-        console.log("function: cursorWait()");
-        $('body').css({ cursor: 'wait' });
+        //console.log("function: cursorWait()");
+        //$('body').css({ cursor: 'wait' });
+
+        document.body.appendChild(this.jDivProcessingNotification);
+        $('#div-processing-notification').empty(); // empty this.rightClickLabel
+
+        this.jDivProcessingNotification.style.position = 'absolute';
+        this.jDivProcessingNotification.style.left = '50%';
+        this.jDivProcessingNotification.style.top = '50%';
+        this.jDivProcessingNotification.style.padding = '5px';
+        this.jDivProcessingNotification.style.borderRadius = '2px';
+        this.jDivProcessingNotification.style.zIndex = '1';
+        this.jDivProcessingNotification.style.backgroundColor = '#feeebd'; // the color of the control panel
+
+        var text = document.createElement('div');
+        text.innerHTML = "Processing...";
+        this.jDivProcessingNotification.appendChild(text);
     }
 
     autoRotationOnChange(s: string) {
@@ -2105,7 +2125,7 @@ class Brain3DApp implements Application, Loopable {
             }
 
             var node = this.getNodeUnderPointer(this.input.localPointerPosition());
-            if (this.svgMode) this.getBoundingSphereUnderPointer(this.input.localPointerPosition());
+            this.getBoundingSphereUnderPointer(this.input.localPointerPosition());
 
             var nodeIDUnderPointer = -1;
             for (var i = 0; i < this.commonData.nodeIDUnderPointer.length; i++) {
