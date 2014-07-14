@@ -294,6 +294,9 @@ class Brain3DApp implements Application, Loopable {
         var varDefaultOrientationsOnClick = (s: string) => { this.defaultOrientationsOnClick(s); };
         var varNetworkTypeOnChange = (s: string) => { this.networkTypeOnChange(s); };
         
+        var varCursorWait = () => { this.cursorWait(); };
+        
+
         this.input.regKeyDownCallback(' ', varShowNetwork);
             
         // Set the background colour
@@ -337,7 +340,8 @@ class Brain3DApp implements Application, Loopable {
                 .click(function () { varEdgesThicknessByWeightedOnChange(); }))
             .append($('<span id="bundling-edges-' + this.id + '" title="Edge Bundling" class="view-panel-span">&#8712</span>')
                 .css({ 'right': '6px', 'top': '230px', 'font-size': '20px' })
-                .click(function () { varEdgesBundlingOnChange(); }))
+                //.on("mousedown", function () { console.log("bundling mouse down"); varCursorWait(); })
+                .on("mouseup", function () { varEdgesBundlingOnChange(); }))
             .append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input>')
                 .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '180px', 'right': 0, 'top': '250px', 'z-index': 1000 })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
@@ -430,7 +434,7 @@ class Brain3DApp implements Application, Loopable {
             this.restart();
         };
         var lab = () => {
-            // We don't use labels in this visualisation yet
+            // We don't use labels in this visualisation yet           
         };
 
         //if (this.commonData.noBranSurface == true) this.surfaceLoaded = true;
@@ -609,15 +613,31 @@ class Brain3DApp implements Application, Loopable {
     edgesBundlingOnChange() {
         if ((!this.physioGraph) || (!this.colaGraph)) return;
 
+        //$('body').css({ cursor: 'wait' });
+        //this.jDiv.css({ cursor: 'wait' });
         this.bundlingEdges = !this.bundlingEdges;
 
         if (this.bundlingEdges == true) {
             $('#bundling-edges-' + this.id).css('opacity', 1);
-            this.initPowerGraph();
+            this.initPowerGraph(this.physioGraph);
+            this.initPowerGraph(this.colaGraph);
         }
         else {
             $('#bundling-edges-' + this.id).css('opacity', 0.2);
+
+            this.physioGraph.removeAllBundlingEdges();
+            this.colaGraph.removeAllBundlingEdges();
+
+            this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+            this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
         }
+
+        //$('body').css({ cursor: 'default' });
+    }
+
+    cursorWait() {
+        console.log("function: cursorWait()");
+        $('body').css({ cursor: 'wait' });
     }
 
     autoRotationOnChange(s: string) {
@@ -1096,7 +1116,20 @@ class Brain3DApp implements Application, Loopable {
             var allTargetLeaves = this.getAllLeavesInATree(target);
 
             if ((allSourceLeaves.length == 1) && (allTargetLeaves.length == 1)) {
-                
+                var sourceID = allSourceLeaves[0].name;
+                var targetID = allTargetLeaves[0].name;                
+
+                var sourcePoint = new THREE.Vector3(targetGraph.nodeMeshes[sourceID].position.x, targetGraph.nodeMeshes[sourceID].position.y, targetGraph.nodeMeshes[sourceID].position.z);
+                var targetPoint = new THREE.Vector3(targetGraph.nodeMeshes[targetID].position.x, targetGraph.nodeMeshes[targetID].position.y, targetGraph.nodeMeshes[targetID].position.z);
+
+                geometry = new THREE.Geometry();
+                geometry.vertices.push(sourcePoint);
+                geometry.vertices.push(targetPoint);
+
+                var line = new THREE.Line(geometry, material);
+                targetGraph.addBundlingEdge(line);
+                //(<any>line).isBundlingEdge = true;
+                //targetGraph.rootObject.add(line);
 
             }
             else {
@@ -1138,7 +1171,8 @@ class Brain3DApp implements Application, Loopable {
                         var targetPoint = new THREE.Vector3(targetGraph.nodeMeshes[targetID].position.x, targetGraph.nodeMeshes[targetID].position.y, targetGraph.nodeMeshes[targetID].position.z);
                         var additionalPoint1 = new THREE.Vector3((sourcePoint.x + midPoint.x) / 2, (sourcePoint.y + midPoint.y) / 2, (sourcePoint.z + midPoint.z) / 2);
                         var additionalPoint2 = new THREE.Vector3((targetPoint.x + midPoint.x) / 2, (targetPoint.y + midPoint.y) / 2, (targetPoint.z + midPoint.z) / 2);
-                        var spline = new THREE.SplineCurve3([sourcePoint, additionalPoint1, midPoint, additionalPoint2, targetPoint]);
+                        //var spline = new THREE.SplineCurve3([sourcePoint, additionalPoint1, midPoint, additionalPoint2, targetPoint]);
+                        var spline = new THREE.SplineCurve3([sourcePoint, midPoint, targetPoint]);
 
                         var material = new THREE.LineBasicMaterial({
                             color: 0x000000,
@@ -1152,7 +1186,9 @@ class Brain3DApp implements Application, Loopable {
                         }
 
                         var line = new THREE.Line(geometry, material);
-                        targetGraph.rootObject.add(line);
+                        targetGraph.addBundlingEdge(line);
+                        //(<any>line).isBundlingEdge = true;
+                        //targetGraph.rootObject.add(line);
                     }
                 }                                                                           
             }
@@ -2013,7 +2049,7 @@ class Brain3DApp implements Application, Loopable {
         }
 
         var node = this.getNodeUnderPointer(this.input.localPointerPosition());
-        this.getBoundingSphereUnderPointer(this.input.localPointerPosition());
+        if (this.svgMode) this.getBoundingSphereUnderPointer(this.input.localPointerPosition());
 
         var nodeIDUnderPointer = -1;
         for (var i = 0; i < this.commonData.nodeIDUnderPointer.length; i++) {
@@ -2132,6 +2168,8 @@ class Graph {
     edgeMatrix: any[][];
     edgeList: Edge[] = [];
     visible: boolean = true;
+
+    bundlingEdgeList: any[] = [];
 
     filteredNodeIDs: number[];
     nodeHasNeighbors: boolean[]; // used for cola graph only
@@ -2339,6 +2377,21 @@ class Graph {
         }
     }
 
+    addBundlingEdge(line) {
+        (<any>line).isBundlingEdge = true;
+        this.bundlingEdgeList.push(line);
+        this.rootObject.add(line);
+    }
+
+    removeAllBundlingEdges() {
+        for (var i = 0; i < this.bundlingEdgeList.length; ++i) {
+            this.rootObject.remove(this.bundlingEdgeList[i]);
+        }
+
+        // remove all elements in the list
+        this.bundlingEdgeList.splice(0, this.bundlingEdgeList.length); 
+    }
+
     showAllLabels(svgMode: boolean) {
         for (var i = 0; i < this.nodeLabelList.length; ++i) {
             if (this.nodeLabelList[i]) {
@@ -2363,7 +2416,7 @@ class Graph {
 
     setDefaultNodeColor() {
         this.nodeCurrentColor = this.nodeDefaultColor.slice(0);
-
+        
         for (var i = 0; i < this.nodeMeshes.length; ++i) {
             this.nodeMeshes[i].material.color.setHex(this.nodeDefaultColor[i]);
         }
