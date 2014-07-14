@@ -1038,7 +1038,6 @@ function loadBrainModel(fileName: string) {
         commonData.notifySurface();
     });
 }
-loadBrainModel('BrainMesh_ICBM152.obj'); // Load the model right away
 
 function setBrainSurfaceColor(color: string) {
     brainSurfaceColor = '0x' + color;

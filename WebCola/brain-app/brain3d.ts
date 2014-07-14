@@ -485,6 +485,10 @@ class Brain3DApp implements Application, Loopable {
         if (commonData.brainCoords) coords();
         if (commonData.brainLabels) lab();
         //if (commonData.brainSurface) surf(); // this line is redundant and has problem, surf() will be called in THREE.OBJLoader
+
+        // Set up loop
+        if (!this.loop)
+            this.loop = new Loop(this, 0.03);
     }   
 
     sliderMouseEvent(e: string) {
@@ -1122,9 +1126,13 @@ class Brain3DApp implements Application, Loopable {
                 var sourcePoint = new THREE.Vector3(targetGraph.nodeMeshes[sourceID].position.x, targetGraph.nodeMeshes[sourceID].position.y, targetGraph.nodeMeshes[sourceID].position.z);
                 var targetPoint = new THREE.Vector3(targetGraph.nodeMeshes[targetID].position.x, targetGraph.nodeMeshes[targetID].position.y, targetGraph.nodeMeshes[targetID].position.z);
 
-                geometry = new THREE.Geometry();
+                var geometry = new THREE.Geometry();
                 geometry.vertices.push(sourcePoint);
                 geometry.vertices.push(targetPoint);
+
+                var material = new THREE.LineBasicMaterial({
+                    color: 0x000000,
+                });
 
                 var line = new THREE.Line(geometry, material);
                 targetGraph.addBundlingEdge(line);
@@ -1144,11 +1152,11 @@ class Brain3DApp implements Application, Loopable {
                     totalZ += targetGraph.nodeMeshes[nodeID].position.z;
                 }
 
-                //var sourceMidPoint = new THREE.Vector3(totalX / allSourceLeaves.length, totalY / allSourceLeaves.length, totalZ / allSourceLeaves.length);
+                var sourceMidPoint = new THREE.Vector3(totalX / allSourceLeaves.length, totalY / allSourceLeaves.length, totalZ / allSourceLeaves.length);
 
-                //totalX = 0;
-                //totalY = 0;
-                //totalZ = 0;
+                totalX = 0;
+                totalY = 0;
+                totalZ = 0;
 
                 for (var j = 0; j < allTargetLeaves.length; j++) {
                     var nodeID = allTargetLeaves[j].name;
@@ -1157,10 +1165,17 @@ class Brain3DApp implements Application, Loopable {
                     totalZ += targetGraph.nodeMeshes[nodeID].position.z;
                 }
 
-                //var targetMidPoint = new THREE.Vector3(totalX / allTargetLeaves.length, totalY / allTargetLeaves.length, totalZ / allTargetLeaves.length);
+                var targetMidPoint = new THREE.Vector3(totalX / allTargetLeaves.length, totalY / allTargetLeaves.length, totalZ / allTargetLeaves.length);
 
-                var count = allSourceLeaves.length + allTargetLeaves.length;
-                var midPoint = new THREE.Vector3(totalX / count, totalY / count, totalZ / count);
+                var dx = targetMidPoint.x - sourceMidPoint.x;
+                var dy = targetMidPoint.y - sourceMidPoint.y;
+                var dz = targetMidPoint.z - sourceMidPoint.z;
+
+                var sourceRootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (1 / 3), sourceMidPoint.y + dy * (1 / 3), sourceMidPoint.z + dz * (1 / 3));
+                var targetRootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (2 / 3), sourceMidPoint.y + dy * (2 / 3), sourceMidPoint.z + dz * (2 / 3));
+
+                //var count = allSourceLeaves.length + allTargetLeaves.length;
+                //var midPoint = new THREE.Vector3(totalX / count, totalY / count, totalZ / count);
 
                 for (var u = 0; u < allSourceLeaves.length; u++) {
                     for (var v = 0; v < allTargetLeaves.length; v++) {
@@ -1169,26 +1184,66 @@ class Brain3DApp implements Application, Loopable {
 
                         var sourcePoint = new THREE.Vector3(targetGraph.nodeMeshes[sourceID].position.x, targetGraph.nodeMeshes[sourceID].position.y, targetGraph.nodeMeshes[sourceID].position.z);
                         var targetPoint = new THREE.Vector3(targetGraph.nodeMeshes[targetID].position.x, targetGraph.nodeMeshes[targetID].position.y, targetGraph.nodeMeshes[targetID].position.z);
-                        var additionalPoint1 = new THREE.Vector3((sourcePoint.x + midPoint.x) / 2, (sourcePoint.y + midPoint.y) / 2, (sourcePoint.z + midPoint.z) / 2);
-                        var additionalPoint2 = new THREE.Vector3((targetPoint.x + midPoint.x) / 2, (targetPoint.y + midPoint.y) / 2, (targetPoint.z + midPoint.z) / 2);
-                        //var spline = new THREE.SplineCurve3([sourcePoint, additionalPoint1, midPoint, additionalPoint2, targetPoint]);
-                        var spline = new THREE.SplineCurve3([sourcePoint, midPoint, targetPoint]);
+                        var additionalSourcePoint = new THREE.Vector3((sourcePoint.x + sourceMidPoint.x) / 2, (sourcePoint.y + sourceMidPoint.y) / 2, (sourcePoint.z + sourceMidPoint.z) / 2);
+                        var additionalTargetPoint = new THREE.Vector3((targetPoint.x + targetMidPoint.x) / 2, (targetPoint.y + targetMidPoint.y) / 2, (targetPoint.z + targetMidPoint.z) / 2);
 
                         var material = new THREE.LineBasicMaterial({
                             color: 0x000000,
                         });
 
-                        var geometry = new THREE.Geometry();
-                        var splinePoints = spline.getPoints(20);
+                        // segment 1
+                        if (allSourceLeaves.length == 1) {
+                            var geometry = new THREE.Geometry();
+                            geometry.vertices.push(sourcePoint);
+                            geometry.vertices.push(sourceRootPoint);
 
-                        for (var w = 0; w < splinePoints.length; w++) {
-                            geometry.vertices.push(<any>splinePoints[w]);
+                            var line = new THREE.Line(geometry, material);
+                            targetGraph.addBundlingEdge(line);
                         }
+                        else if (allSourceLeaves.length > 1) {
+                            var spline = new THREE.CubicBezierCurve3(sourcePoint, additionalSourcePoint, sourceMidPoint, sourceRootPoint);
+
+                            var geometry = new THREE.Geometry();
+                            var splinePoints = spline.getPoints(20);
+
+                            for (var w = 0; w < splinePoints.length; w++) {
+                                geometry.vertices.push(<any>splinePoints[w]);
+                            }
+
+                            var line = new THREE.Line(geometry, material);
+                            targetGraph.addBundlingEdge(line);
+                        }
+
+                        // segment 2
+                        var geometry = new THREE.Geometry();
+                        geometry.vertices.push(sourceRootPoint);
+                        geometry.vertices.push(targetRootPoint);
 
                         var line = new THREE.Line(geometry, material);
                         targetGraph.addBundlingEdge(line);
-                        //(<any>line).isBundlingEdge = true;
-                        //targetGraph.rootObject.add(line);
+
+                        // segment 3
+                        if (allTargetLeaves.length == 1) {
+                            var geometry = new THREE.Geometry();
+                            geometry.vertices.push(targetPoint);
+                            geometry.vertices.push(targetRootPoint);
+
+                            var line = new THREE.Line(geometry, material);
+                            targetGraph.addBundlingEdge(line);
+                        }
+                        else if (allTargetLeaves.length > 1) {
+                            var spline = new THREE.CubicBezierCurve3(targetPoint, additionalTargetPoint, targetMidPoint, targetRootPoint);
+
+                            var geometry = new THREE.Geometry();
+                            var splinePoints = spline.getPoints(20);
+
+                            for (var w = 0; w < splinePoints.length; w++) {
+                                geometry.vertices.push(<any>splinePoints[w]);
+                            }
+
+                            var line = new THREE.Line(geometry, material);
+                            targetGraph.addBundlingEdge(line);
+                        }
                     }
                 }                                                                           
             }
@@ -1921,8 +1976,8 @@ class Brain3DApp implements Application, Loopable {
         });
 
         // Set up loop
-        if (!this.loop)
-            this.loop = new Loop(this, 0.03);
+        //if (!this.loop)
+        //    this.loop = new Loop(this, 0.03);
 
         // Set up the two graphs
         var edgeMatrix = this.adjMatrixFromEdgeCount(maxEdgesShowable); // Don''t create more edges than we will ever be showing
@@ -2042,91 +2097,93 @@ class Brain3DApp implements Application, Loopable {
         }
         */
 
-        // execute animation sequently
-        if (coroutines.length > 0) {
-            if (coroutines[0].func(coroutines[0], deltaTime))
-                coroutines.splice(0, 1);
-        }
-
-        var node = this.getNodeUnderPointer(this.input.localPointerPosition());
-        if (this.svgMode) this.getBoundingSphereUnderPointer(this.input.localPointerPosition());
-
-        var nodeIDUnderPointer = -1;
-        for (var i = 0; i < this.commonData.nodeIDUnderPointer.length; i++) {
-            if (this.commonData.nodeIDUnderPointer[i] != -1) {
-                nodeIDUnderPointer = this.commonData.nodeIDUnderPointer[i];
-                break;
-            }
-        }
-
-        if (node || (nodeIDUnderPointer != -1)) {
-            // If we already have a node ID selected, deselect it
-            if (this.selectedNodeID >= 0) {
-                this.physioGraph.deselectNode(this.selectedNodeID);
-                this.colaGraph.deselectNode(this.selectedNodeID);
-
-                this.physioGraph.deselectAdjEdges(this.selectedNodeID);
-                this.colaGraph.deselectAdjEdges(this.selectedNodeID);
+        if ((this.physioGraph) && (this.colaGraph)) {
+            // execute animation sequently
+            if (coroutines.length > 0) {
+                if (coroutines[0].func(coroutines[0], deltaTime))
+                    coroutines.splice(0, 1);
             }
 
-            if (node) {
-                this.selectedNodeID = node.id;
-            }
-            else {
-                this.selectedNodeID = nodeIDUnderPointer;
+            var node = this.getNodeUnderPointer(this.input.localPointerPosition());
+            if (this.svgMode) this.getBoundingSphereUnderPointer(this.input.localPointerPosition());
+
+            var nodeIDUnderPointer = -1;
+            for (var i = 0; i < this.commonData.nodeIDUnderPointer.length; i++) {
+                if (this.commonData.nodeIDUnderPointer[i] != -1) {
+                    nodeIDUnderPointer = this.commonData.nodeIDUnderPointer[i];
+                    break;
+                }
             }
 
-            // Select the new node ID
-            this.physioGraph.selectNode(this.selectedNodeID, false);
-            this.colaGraph.selectNode(this.selectedNodeID, this.svgMode);
+            if (node || (nodeIDUnderPointer != -1)) {
+                // If we already have a node ID selected, deselect it
+                if (this.selectedNodeID >= 0) {
+                    this.physioGraph.deselectNode(this.selectedNodeID);
+                    this.colaGraph.deselectNode(this.selectedNodeID);
 
-            this.physioGraph.selectAdjEdges(this.selectedNodeID);
-            this.colaGraph.selectAdjEdges(this.selectedNodeID);
+                    this.physioGraph.deselectAdjEdges(this.selectedNodeID);
+                    this.colaGraph.deselectAdjEdges(this.selectedNodeID);
+                }
 
-            var varNodeID = this.selectedNodeID;
-            if (this.networkType == "circular-layout") {
-                var varMouseOveredCircularLayout = (d) => { this.mouseOveredCircularLayout(d); }
-                this.svgAllElements.selectAll(".nodeBundle")
-                    .each(function (d) {
-                        if (varNodeID == d.id) varMouseOveredCircularLayout(d);
-                    });
-            }
-            else if (this.networkType == "flatten-to-2d") {
-                this.svgNeedsUpdate = true;
-            }
-        }
-        else {
-            if (this.selectedNodeID >= 0) {
-                this.physioGraph.deselectNode(this.selectedNodeID);
-                this.colaGraph.deselectNode(this.selectedNodeID);
+                if (node) {
+                    this.selectedNodeID = node.id;
+                }
+                else {
+                    this.selectedNodeID = nodeIDUnderPointer;
+                }
 
-                this.physioGraph.deselectAdjEdges(this.selectedNodeID);
-                this.colaGraph.deselectAdjEdges(this.selectedNodeID);
+                // Select the new node ID
+                this.physioGraph.selectNode(this.selectedNodeID, false);
+                this.colaGraph.selectNode(this.selectedNodeID, this.svgMode);
+
+                this.physioGraph.selectAdjEdges(this.selectedNodeID);
+                this.colaGraph.selectAdjEdges(this.selectedNodeID);
 
                 var varNodeID = this.selectedNodeID;
                 if (this.networkType == "circular-layout") {
-                    var varMouseOutedCircularLayout = (d) => { this.mouseOutedCircularLayout(d); };
-                    this.svgAllElements.selectAll(".nodeBundle")
+                    var varMouseOveredCircularLayout = (d) => { this.mouseOveredCircularLayout(d); }
+                this.svgAllElements.selectAll(".nodeBundle")
                         .each(function (d) {
-                            if (varNodeID == d.id) varMouseOutedCircularLayout(d);
+                            if (varNodeID == d.id) varMouseOveredCircularLayout(d);
                         });
                 }
                 else if (this.networkType == "flatten-to-2d") {
                     this.svgNeedsUpdate = true;
                 }
-
-                this.selectedNodeID = -1;
             }
-        }
+            else {
+                if (this.selectedNodeID >= 0) {
+                    this.physioGraph.deselectNode(this.selectedNodeID);
+                    this.colaGraph.deselectNode(this.selectedNodeID);
 
-        if (this.showingCola)
-            this.descent.rungeKutta(); // Do an iteration of the solver
+                    this.physioGraph.deselectAdjEdges(this.selectedNodeID);
+                    this.colaGraph.deselectAdjEdges(this.selectedNodeID);
 
-        this.physioGraph.update(); 
-        this.colaGraph.update(); // Update all the edge positions
-        if (this.svgMode && this.svgNeedsUpdate) {
-            this.updateSVGGraph();
-            this.svgNeedsUpdate = false;
+                    var varNodeID = this.selectedNodeID;
+                    if (this.networkType == "circular-layout") {
+                        var varMouseOutedCircularLayout = (d) => { this.mouseOutedCircularLayout(d); };
+                        this.svgAllElements.selectAll(".nodeBundle")
+                            .each(function (d) {
+                                if (varNodeID == d.id) varMouseOutedCircularLayout(d);
+                            });
+                    }
+                    else if (this.networkType == "flatten-to-2d") {
+                        this.svgNeedsUpdate = true;
+                    }
+
+                    this.selectedNodeID = -1;
+                }
+            }
+
+            if (this.showingCola)
+                this.descent.rungeKutta(); // Do an iteration of the solver
+
+            this.physioGraph.update();
+            this.colaGraph.update(); // Update all the edge positions
+            if (this.svgMode && this.svgNeedsUpdate) {
+                this.updateSVGGraph();
+                this.svgNeedsUpdate = false;
+            }
         }
 
         if (this.autoRotation) {
