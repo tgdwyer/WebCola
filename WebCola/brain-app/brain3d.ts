@@ -295,7 +295,7 @@ class Brain3DApp implements Application, Loopable {
         var varDefaultOrientationsOnClick = (s: string) => { this.defaultOrientationsOnClick(s); };
         var varNetworkTypeOnChange = (s: string) => { this.networkTypeOnChange(s); };
         
-        var varCursorWait = () => { this.cursorWait(); };
+        var varShowProcessingNotification = () => { this.showProcessingNotification(); };
         
 
         this.input.regKeyDownCallback(' ', varShowNetwork);
@@ -341,7 +341,7 @@ class Brain3DApp implements Application, Loopable {
                 .click(function () { varEdgesThicknessByWeightedOnChange(); }))
             .append($('<span id="bundling-edges-' + this.id + '" title="Edge Bundling" class="view-panel-span">&#8712</span>')
                 .css({ 'right': '6px', 'top': '230px', 'font-size': '20px' })
-                .on("mousedown", function () { console.log("bundling mouse down"); varCursorWait(); })
+                .on("mousedown", function () { varShowProcessingNotification(); })
                 .on("mouseup", function () { varEdgesBundlingOnChange(); }))
             .append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input>')
                 .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '180px', 'right': 0, 'top': '250px', 'z-index': 1000 })
@@ -621,8 +621,6 @@ class Brain3DApp implements Application, Loopable {
     edgesBundlingOnChange() {
         if ((!this.physioGraph) || (!this.colaGraph)) return;
 
-        //$('body').css({ cursor: 'wait' });
-        //this.jDiv.css({ cursor: 'wait' });
         this.bundlingEdges = !this.bundlingEdges;
 
         if (this.bundlingEdges == true) {
@@ -640,11 +638,10 @@ class Brain3DApp implements Application, Loopable {
             this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
         }
 
-        document.body.removeChild(this.jDivProcessingNotification);
-        //$('body').css({ cursor: 'default' });
+        this.removeProcessingNotification();
     }
 
-    cursorWait() {
+    showProcessingNotification() {
         //console.log("function: cursorWait()");
         //$('body').css({ cursor: 'wait' });
 
@@ -662,6 +659,10 @@ class Brain3DApp implements Application, Loopable {
         var text = document.createElement('div');
         text.innerHTML = "Processing...";
         this.jDivProcessingNotification.appendChild(text);
+    }
+
+    removeProcessingNotification() {
+        document.body.removeChild(this.jDivProcessingNotification);
     }
 
     autoRotationOnChange(s: string) {
@@ -761,6 +762,15 @@ class Brain3DApp implements Application, Loopable {
             // Leave *showingCola* on permanently after first turn-on
             this.showingCola = true;
 
+            // clean bundling edges
+            /*
+            if (this.bundlingEdges) {
+                if ((this.networkType == "default") || (this.networkType == "edge-length-depends-on-weight")) {
+                    this.colaGraph.removeAllBundlingEdges();
+                }
+            }
+            */
+
             var edges = [];
             this.setColaGraphNodeLinkVisibilities(edges);
 
@@ -829,8 +839,8 @@ class Brain3DApp implements Application, Loopable {
                 var link = this.svgAllElements.selectAll(".link").data(new Array());
                 var nodeLable = this.svgAllElements.selectAll(".nodeLabel").data(new Array());
 
-                var nodeBundle = this.svgAllElements.selectAll(".nodeBundle").data(new Array());
-                var linkBundle = this.svgAllElements.selectAll(".linkBundle").data(new Array());
+                var nodeBundle = this.svgAllElements.selectAll(".nodeCircular").data(new Array());
+                var linkBundle = this.svgAllElements.selectAll(".linkCircular").data(new Array());
 
                 node.exit().remove();
                 link.exit().remove();
@@ -871,6 +881,14 @@ class Brain3DApp implements Application, Loopable {
                 var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
 
                 this.colaObjectAnimation(origin, target, originColaCoords, this.colaCoords, switchNetworkType, true);
+
+                /*
+                if (this.bundlingEdges) {
+                    this.showProcessingNotification();
+                    this.initPowerGraph(this.colaGraph);
+                    this.removeProcessingNotification();
+                }
+                */
             }
         }
     }
@@ -1268,26 +1286,8 @@ class Brain3DApp implements Application, Loopable {
                 }                                                                           
             }
         }
-        
-        for (var i = 0; i < targetGraph.edgeList.length; i++) {
-            var e = targetGraph.edgeList[i];
-            if (e.visible) {
-                e.setVisible(false);
-            }
-        }
-        /*
-        d3.json("../examples/graphdata/n7e23.json", function (error, graph) {
-            var powerGraph;
 
-            d3cola
-                .nodes(graph.nodes)
-                .links(graph.links)
-                .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 20));
-
-            console.log(powerGraph.groups);
-            console.log(powerGraph.powerEdges);
-        });
-        */
+        targetGraph.removeAllEdges();
     }
 
     getAllLeavesInATree(node) {
@@ -1402,11 +1402,11 @@ class Brain3DApp implements Application, Loopable {
         var nodes = cluster.nodes(packages.root(nodeJson)),
             links = packages.imports(nodes);
 
-        this.svgAllElements.selectAll(".linkBundle")
+        this.svgAllElements.selectAll(".linkCircular")
             .data(bundle(links))
             .enter().append("path")
             .each(function (d) { d.source = d[0], d.target = d[d.length - 1]; })
-            .attr("class", "linkBundle")
+            .attr("class", "linkCircular")
             .attr("d", line);
 
         var varMouseOveredSetNodeID = (id) => { this.mouseOveredSetNodeID(id); }
@@ -1415,10 +1415,10 @@ class Brain3DApp implements Application, Loopable {
         var varMouseOveredCircularLayout = (d) => { this.mouseOveredCircularLayout(d); }
         var varMouseOutedCircularLayout = (d) => { this.mouseOutedCircularLayout(d); }
 
-        this.svgAllElements.selectAll(".nodeBundle")
+        this.svgAllElements.selectAll(".nodeCircular")
             .data(nodes.filter(function (n) { return !n.children; }))
             .enter().append("text")
-            .attr("class", "nodeBundle")
+            .attr("class", "nodeCircular")
             .attr("dy", ".31em")
             .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
             .style("text-anchor", function (d) { return d.x < 180 ? "start" : "end"; })
@@ -1440,10 +1440,10 @@ class Brain3DApp implements Application, Loopable {
 
     mouseOveredCircularLayout(d) {
         //this.commonData.nodeIDUnderPointer[4] = d.id;
-        this.svgAllElements.selectAll(".nodeBundle")
+        this.svgAllElements.selectAll(".nodeCircular")
             .each(function (n) { n.target = n.source = false; });
         
-        this.svgAllElements.selectAll(".linkBundle")
+        this.svgAllElements.selectAll(".linkCircular")
             .style("stroke-width", function (l) {
                 if (l.target === d) { l.target.source = true; l.source.target = true; }
                 if (l.source === d) { l.source.source = true; l.target.target = true; }
@@ -1463,7 +1463,7 @@ class Brain3DApp implements Application, Loopable {
                 }
             });
 
-        this.svgAllElements.selectAll(".nodeBundle")
+        this.svgAllElements.selectAll(".nodeCircular")
             .style("font-weight", function (n) {
                 if ((n.target || n.source)) {
                     return "bolder";
@@ -1488,10 +1488,10 @@ class Brain3DApp implements Application, Loopable {
     mouseOutedCircularLayout(d) {
         //this.commonData.nodeIDUnderPointer[4] = -1;
 
-        this.svgAllElements.selectAll(".linkBundle")
+        this.svgAllElements.selectAll(".linkCircular")
             .style("stroke-width", "1px")
             .style("stroke", function (l) { return l.color; });
-        this.svgAllElements.selectAll(".nodeBundle")
+        this.svgAllElements.selectAll(".nodeCircular")
             .style("font-weight", "normal")
             .style("font-size", "11px");
     }
@@ -1589,7 +1589,7 @@ class Brain3DApp implements Application, Loopable {
                 this.svgNodeBundleArray[i].color = this.colaGraph.nodeMeshes[id].material.color.getHexString();
             }
 
-            var nodeBundle = this.svgAllElements.selectAll(".nodeBundle");
+            var nodeBundle = this.svgAllElements.selectAll(".nodeCircular");
 
             var varSvgNodeBundleArray = this.svgNodeBundleArray;
             nodeBundle.each(function (d) {
@@ -1604,7 +1604,7 @@ class Brain3DApp implements Application, Loopable {
             nodeBundle
                 .style("fill", function (d) { return d.color; });
 
-            var linkBundle = this.svgAllElements.selectAll(".linkBundle");
+            var linkBundle = this.svgAllElements.selectAll(".linkCircular");
 
             var varEdgeList = this.colaGraph.edgeList;
             linkBundle.each(function (l) {
@@ -2162,7 +2162,7 @@ class Brain3DApp implements Application, Loopable {
                 var varNodeID = this.selectedNodeID;
                 if (this.networkType == "circular-layout") {
                     var varMouseOveredCircularLayout = (d) => { this.mouseOveredCircularLayout(d); }
-                this.svgAllElements.selectAll(".nodeBundle")
+                this.svgAllElements.selectAll(".nodeCircular")
                         .each(function (d) {
                             if (varNodeID == d.id) varMouseOveredCircularLayout(d);
                         });
@@ -2182,7 +2182,7 @@ class Brain3DApp implements Application, Loopable {
                     var varNodeID = this.selectedNodeID;
                     if (this.networkType == "circular-layout") {
                         var varMouseOutedCircularLayout = (d) => { this.mouseOutedCircularLayout(d); };
-                        this.svgAllElements.selectAll(".nodeBundle")
+                        this.svgAllElements.selectAll(".nodeCircular")
                             .each(function (d) {
                                 if (varNodeID == d.id) varMouseOutedCircularLayout(d);
                             });
@@ -2467,6 +2467,15 @@ class Graph {
 
         // remove all elements in the list
         this.bundlingEdgeList.splice(0, this.bundlingEdgeList.length); 
+    }
+
+    removeAllEdges() {
+        for (var i = 0; i < this.edgeList.length; i++) {
+            var e = this.edgeList[i];
+            if (e.visible) {
+                e.setVisible(false);
+            }
+        }
     }
 
     showAllLabels(svgMode: boolean) {
