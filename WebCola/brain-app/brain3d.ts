@@ -1290,6 +1290,100 @@ class Brain3DApp implements Application, Loopable {
         targetGraph.removeAllEdges();
     }
 
+    powerEdgeToTree(powerEdge, graphData) {
+        var edgeList = []; // edge list in the tree
+
+        var source = powerEdge.source;
+        var target = powerEdge.target;
+
+        var sourceMidPoint = this.getMidPointOfAGroup(source, graphData);
+        var targetMidPoint = this.getMidPointOfAGroup(target, graphData);
+
+        var dx = targetMidPoint.x - sourceMidPoint.x;
+        var dy = targetMidPoint.y - sourceMidPoint.y;
+        var dz = targetMidPoint.z - sourceMidPoint.z;
+
+        var rootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (1 / 2), sourceMidPoint.y + dy * (1 / 2), sourceMidPoint.z + dz * (1 / 2));
+
+        this.buildSubTree(rootPoint, source, graphData);
+        this.buildSubTree(rootPoint, target, graphData);
+    }
+
+    buildSubTree(rootPoint, node, graphData) {
+        var edgeList = [];
+
+        var midPoint = this.getMidPointOfAGroup(node, graphData);
+
+        var dx = midPoint.x - rootPoint.x;
+        var dy = midPoint.x - rootPoint.x;
+        var dz = midPoint.x - rootPoint.x;
+
+        var subRootPoint = new THREE.Vector3(rootPoint.x + dx * (1 / 2), rootPoint.y + dy * (1 / 2), rootPoint.z + dz * (1 / 2));
+
+        var edge = []; // the first edge 
+        edge.push(rootPoint);
+        edge.push(subRootPoint);
+        edgeList.push(edge);
+
+        if (typeof (node.leaves) != "undefined") {
+            for (var i = 0; i < node.leaves.length; i++) {              
+                var nodeID = node.leaves[i].name;
+                var leafPoint = new THREE.Vector3(graphData.nodeMeshes[nodeID].position.x, graphData.nodeMeshes[nodeID].position.y, graphData.nodeMeshes[nodeID].position.z);
+                var additionalPoint = new THREE.Vector3((leafPoint.x + midPoint.x) / 2, (leafPoint.y + midPoint.y) / 2, (leafPoint.z + midPoint.z) / 2);
+
+                var edge = [];
+                edge.push(subRootPoint);
+                edge.push(midPoint);
+                edge.push(additionalPoint);
+                edge.push(leafPoint);
+                edgeList.push(edge);
+            }
+        }
+
+        if (typeof (node.groups) != "undefined") {
+            for (var i = 0; i < node.groups.length; i++) {
+                var subgroup = node.groups[i];
+                var subEdgeList = this.buildSubTree(subRootPoint, subgroup, graphData);
+                subEdgeList.forEach(e => { edgeList.push(e); });
+            }
+        }
+
+        if ((typeof (node.leaves) == "undefined") && (typeof (node.groups) == "undefined")) {
+            // this is the leaf
+            var nodeID = node.name;
+            var leafPoint = new THREE.Vector3(graphData.nodeMeshes[nodeID].position.x, graphData.nodeMeshes[nodeID].position.y, graphData.nodeMeshes[nodeID].position.z);
+            var additionalPoint = new THREE.Vector3((leafPoint.x + midPoint.x) / 2, (leafPoint.y + midPoint.y) / 2, (leafPoint.z + midPoint.z) / 2);
+
+            var edge = [];
+            edge.push(subRootPoint);
+            edge.push(midPoint);
+            edge.push(additionalPoint);
+            edge.push(leafPoint);
+            edgeList.push(edge);
+        }
+
+        return edgeList;
+    }
+
+    getMidPointOfAGroup(group, graphData) {
+        var allLeaves = this.getAllLeavesInATree(group);
+
+        var totalX = 0;
+        var totalY = 0;
+        var totalZ = 0;
+
+        for (var j = 0; j < allLeaves.length; j++) {
+            var nodeID = allLeaves[j].name;
+            totalX += graphData.nodeMeshes[nodeID].position.x;
+            totalY += graphData.nodeMeshes[nodeID].position.y;
+            totalZ += graphData.nodeMeshes[nodeID].position.z;
+        }
+
+        var midPoint = new THREE.Vector3(totalX / allLeaves.length, totalY / allLeaves.length, totalZ / allLeaves.length);
+
+        return midPoint;
+    }
+
     getAllLeavesInATree(node) {
         var allLeaves = [];
 
