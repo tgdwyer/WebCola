@@ -1091,6 +1091,9 @@ class Brain3DApp implements Application, Loopable {
     }
 
     initPowerGraph(targetGraph) {
+        var mode = "hierarchy";
+        //var mode = "flat";
+
         if (!this.showingCola) {
             this.setColaGraphNodeLinkVisibilities(null);
         }
@@ -1150,127 +1153,41 @@ class Brain3DApp implements Application, Loopable {
         console.log(powerGraph.powerEdges);
 
         for (var i = 0; i < powerGraph.powerEdges.length; i++) {
-            var source = powerGraph.powerEdges[i].source;
-            var target = powerGraph.powerEdges[i].target;
+            if (mode == "hierarchy") {
+                var edgeList = this.powerEdgeToTree(powerGraph.powerEdges[i], targetGraph);
 
-            //console.log("source " + i + " leaves: ");
-            var allSourceLeaves = this.getAllLeavesInATree(source);
-            var allTargetLeaves = this.getAllLeavesInATree(target);
+                //console.log("hierarchy edge list:");
+                //console.log(edgeList);
 
-            if ((allSourceLeaves.length == 1) && (allTargetLeaves.length == 1)) {
-                var sourceID = allSourceLeaves[0].name;
-                var targetID = allTargetLeaves[0].name;                
-
-                var sourcePoint = new THREE.Vector3(targetGraph.nodeMeshes[sourceID].position.x, targetGraph.nodeMeshes[sourceID].position.y, targetGraph.nodeMeshes[sourceID].position.z);
-                var targetPoint = new THREE.Vector3(targetGraph.nodeMeshes[targetID].position.x, targetGraph.nodeMeshes[targetID].position.y, targetGraph.nodeMeshes[targetID].position.z);
-
-                var geometry = new THREE.Geometry();
-                geometry.vertices.push(sourcePoint);
-                geometry.vertices.push(targetPoint);
-
-                var material = new THREE.LineBasicMaterial({
-                    color: 0x000000,
-                });
-
-                var line = new THREE.Line(geometry, material);
-                targetGraph.addBundlingEdge(line);
-                //(<any>line).isBundlingEdge = true;
-                //targetGraph.rootObject.add(line);
-
-            }
-            else {
-                var totalX = 0;
-                var totalY = 0;
-                var totalZ = 0;
-
-                for (var j = 0; j < allSourceLeaves.length; j++) {
-                    var nodeID = allSourceLeaves[j].name;
-                    totalX += targetGraph.nodeMeshes[nodeID].position.x;
-                    totalY += targetGraph.nodeMeshes[nodeID].position.y;
-                    totalZ += targetGraph.nodeMeshes[nodeID].position.z;
-                }
-
-                var sourceMidPoint = new THREE.Vector3(totalX / allSourceLeaves.length, totalY / allSourceLeaves.length, totalZ / allSourceLeaves.length);
-
-                totalX = 0;
-                totalY = 0;
-                totalZ = 0;
-
-                for (var j = 0; j < allTargetLeaves.length; j++) {
-                    var nodeID = allTargetLeaves[j].name;
-                    totalX += targetGraph.nodeMeshes[nodeID].position.x;
-                    totalY += targetGraph.nodeMeshes[nodeID].position.y;
-                    totalZ += targetGraph.nodeMeshes[nodeID].position.z;
-                }
-
-                var targetMidPoint = new THREE.Vector3(totalX / allTargetLeaves.length, totalY / allTargetLeaves.length, totalZ / allTargetLeaves.length);
-
-                var dx = targetMidPoint.x - sourceMidPoint.x;
-                var dy = targetMidPoint.y - sourceMidPoint.y;
-                var dz = targetMidPoint.z - sourceMidPoint.z;
-
-                var sourceRootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (1 / 3), sourceMidPoint.y + dy * (1 / 3), sourceMidPoint.z + dz * (1 / 3));
-                var targetRootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (2 / 3), sourceMidPoint.y + dy * (2 / 3), sourceMidPoint.z + dz * (2 / 3));
-
-                //var count = allSourceLeaves.length + allTargetLeaves.length;
-                //var midPoint = new THREE.Vector3(totalX / count, totalY / count, totalZ / count);
-
-                for (var u = 0; u < allSourceLeaves.length; u++) {
-                    for (var v = 0; v < allTargetLeaves.length; v++) {
-                        var sourceID = allSourceLeaves[u].name;
-                        var targetID = allTargetLeaves[v].name;
-
-                        var sourcePoint = new THREE.Vector3(targetGraph.nodeMeshes[sourceID].position.x, targetGraph.nodeMeshes[sourceID].position.y, targetGraph.nodeMeshes[sourceID].position.z);
-                        var targetPoint = new THREE.Vector3(targetGraph.nodeMeshes[targetID].position.x, targetGraph.nodeMeshes[targetID].position.y, targetGraph.nodeMeshes[targetID].position.z);
-                        var additionalSourcePoint = new THREE.Vector3((sourcePoint.x + sourceMidPoint.x) / 2, (sourcePoint.y + sourceMidPoint.y) / 2, (sourcePoint.z + sourceMidPoint.z) / 2);
-                        var additionalTargetPoint = new THREE.Vector3((targetPoint.x + targetMidPoint.x) / 2, (targetPoint.y + targetMidPoint.y) / 2, (targetPoint.z + targetMidPoint.z) / 2);
+                for (var j = 0; j < edgeList.length; j++) {
+                    var thisEdge = edgeList[j];
+                    if (thisEdge.length == 2) {
+                        var geometry = new THREE.Geometry();
+                        geometry.vertices.push(thisEdge[0]);
+                        geometry.vertices.push(thisEdge[1]);
 
                         var material = new THREE.LineBasicMaterial({
                             color: 0x000000,
                         });
 
-                        // segment 1
-                        if (allSourceLeaves.length == 1) {
-                            var geometry = new THREE.Geometry();
-                            geometry.vertices.push(sourcePoint);
-                            geometry.vertices.push(sourceRootPoint);
-
-                            var line = new THREE.Line(geometry, material);
-                            targetGraph.addBundlingEdge(line);
-                        }
-                        else if (allSourceLeaves.length > 1) {
-                            var spline = new THREE.CubicBezierCurve3(sourcePoint, additionalSourcePoint, sourceMidPoint, sourceRootPoint);
-
-                            var geometry = new THREE.Geometry();
-                            var splinePoints = spline.getPoints(20);
-
-                            for (var w = 0; w < splinePoints.length; w++) {
-                                geometry.vertices.push(<any>splinePoints[w]);
-                            }
-
-                            var line = new THREE.Line(geometry, material);
-                            targetGraph.addBundlingEdge(line);
-                        }
-
-                        // segment 2
-                        var geometry = new THREE.Geometry();
-                        geometry.vertices.push(sourceRootPoint);
-                        geometry.vertices.push(targetRootPoint);
-
                         var line = new THREE.Line(geometry, material);
                         targetGraph.addBundlingEdge(line);
-
-                        // segment 3
-                        if (allTargetLeaves.length == 1) {
+                    }
+                    else if (thisEdge.length == 4) {
+                        if ((thisEdge[1].x == thisEdge[3].x) && (thisEdge[1].y == thisEdge[3].y) && (thisEdge[1].z == thisEdge[3].z)) {
                             var geometry = new THREE.Geometry();
-                            geometry.vertices.push(targetPoint);
-                            geometry.vertices.push(targetRootPoint);
+                            geometry.vertices.push(thisEdge[0]);
+                            geometry.vertices.push(thisEdge[3]);
+
+                            var material = new THREE.LineBasicMaterial({
+                                color: 0x000000,
+                            });
 
                             var line = new THREE.Line(geometry, material);
                             targetGraph.addBundlingEdge(line);
                         }
-                        else if (allTargetLeaves.length > 1) {
-                            var spline = new THREE.CubicBezierCurve3(targetPoint, additionalTargetPoint, targetMidPoint, targetRootPoint);
+                        else {
+                            var spline = new THREE.CubicBezierCurve3(thisEdge[0], thisEdge[1], thisEdge[2], thisEdge[3]);
 
                             var geometry = new THREE.Geometry();
                             var splinePoints = spline.getPoints(20);
@@ -1283,7 +1200,141 @@ class Brain3DApp implements Application, Loopable {
                             targetGraph.addBundlingEdge(line);
                         }
                     }
-                }                                                                           
+                }
+            }
+            else if (mode == "flat") {
+                var source = powerGraph.powerEdges[i].source;
+                var target = powerGraph.powerEdges[i].target;
+
+                //console.log("source " + i + " leaves: ");
+                var allSourceLeaves = this.getAllLeavesInATree(source);
+                var allTargetLeaves = this.getAllLeavesInATree(target);
+
+                if ((allSourceLeaves.length == 1) && (allTargetLeaves.length == 1)) {
+                    var sourceID = allSourceLeaves[0].name;
+                    var targetID = allTargetLeaves[0].name;
+
+                    var sourcePoint = new THREE.Vector3(targetGraph.nodeMeshes[sourceID].position.x, targetGraph.nodeMeshes[sourceID].position.y, targetGraph.nodeMeshes[sourceID].position.z);
+                    var targetPoint = new THREE.Vector3(targetGraph.nodeMeshes[targetID].position.x, targetGraph.nodeMeshes[targetID].position.y, targetGraph.nodeMeshes[targetID].position.z);
+
+                    var geometry = new THREE.Geometry();
+                    geometry.vertices.push(sourcePoint);
+                    geometry.vertices.push(targetPoint);
+
+                    var material = new THREE.LineBasicMaterial({
+                        color: 0x000000,
+                    });
+
+                    var line = new THREE.Line(geometry, material);
+                    targetGraph.addBundlingEdge(line);
+                }
+                else {
+                    var totalX = 0;
+                    var totalY = 0;
+                    var totalZ = 0;
+
+                    for (var j = 0; j < allSourceLeaves.length; j++) {
+                        var nodeID = allSourceLeaves[j].name;
+                        totalX += targetGraph.nodeMeshes[nodeID].position.x;
+                        totalY += targetGraph.nodeMeshes[nodeID].position.y;
+                        totalZ += targetGraph.nodeMeshes[nodeID].position.z;
+                    }
+
+                    var sourceMidPoint = new THREE.Vector3(totalX / allSourceLeaves.length, totalY / allSourceLeaves.length, totalZ / allSourceLeaves.length);
+
+                    totalX = 0;
+                    totalY = 0;
+                    totalZ = 0;
+
+                    for (var j = 0; j < allTargetLeaves.length; j++) {
+                        var nodeID = allTargetLeaves[j].name;
+                        totalX += targetGraph.nodeMeshes[nodeID].position.x;
+                        totalY += targetGraph.nodeMeshes[nodeID].position.y;
+                        totalZ += targetGraph.nodeMeshes[nodeID].position.z;
+                    }
+
+                    var targetMidPoint = new THREE.Vector3(totalX / allTargetLeaves.length, totalY / allTargetLeaves.length, totalZ / allTargetLeaves.length);
+
+                    var dx = targetMidPoint.x - sourceMidPoint.x;
+                    var dy = targetMidPoint.y - sourceMidPoint.y;
+                    var dz = targetMidPoint.z - sourceMidPoint.z;
+
+                    var sourceRootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (1 / 3), sourceMidPoint.y + dy * (1 / 3), sourceMidPoint.z + dz * (1 / 3));
+                    var targetRootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (2 / 3), sourceMidPoint.y + dy * (2 / 3), sourceMidPoint.z + dz * (2 / 3));
+
+                    //var count = allSourceLeaves.length + allTargetLeaves.length;
+                    //var midPoint = new THREE.Vector3(totalX / count, totalY / count, totalZ / count);
+
+                    for (var u = 0; u < allSourceLeaves.length; u++) {
+                        for (var v = 0; v < allTargetLeaves.length; v++) {
+                            var sourceID = allSourceLeaves[u].name;
+                            var targetID = allTargetLeaves[v].name;
+
+                            var sourcePoint = new THREE.Vector3(targetGraph.nodeMeshes[sourceID].position.x, targetGraph.nodeMeshes[sourceID].position.y, targetGraph.nodeMeshes[sourceID].position.z);
+                            var targetPoint = new THREE.Vector3(targetGraph.nodeMeshes[targetID].position.x, targetGraph.nodeMeshes[targetID].position.y, targetGraph.nodeMeshes[targetID].position.z);
+                            var additionalSourcePoint = new THREE.Vector3((sourcePoint.x + sourceMidPoint.x) / 2, (sourcePoint.y + sourceMidPoint.y) / 2, (sourcePoint.z + sourceMidPoint.z) / 2);
+                            var additionalTargetPoint = new THREE.Vector3((targetPoint.x + targetMidPoint.x) / 2, (targetPoint.y + targetMidPoint.y) / 2, (targetPoint.z + targetMidPoint.z) / 2);
+
+                            var material = new THREE.LineBasicMaterial({
+                                color: 0x000000,
+                            });
+
+                            // segment 1
+                            if (allSourceLeaves.length == 1) {
+                                var geometry = new THREE.Geometry();
+                                geometry.vertices.push(sourcePoint);
+                                geometry.vertices.push(sourceRootPoint);
+
+                                var line = new THREE.Line(geometry, material);
+                                targetGraph.addBundlingEdge(line);
+                            }
+                            else if (allSourceLeaves.length > 1) {
+                                var spline = new THREE.CubicBezierCurve3(sourcePoint, additionalSourcePoint, sourceMidPoint, sourceRootPoint);
+
+                                var geometry = new THREE.Geometry();
+                                var splinePoints = spline.getPoints(20);
+
+                                for (var w = 0; w < splinePoints.length; w++) {
+                                    geometry.vertices.push(<any>splinePoints[w]);
+                                }
+
+                                var line = new THREE.Line(geometry, material);
+                                targetGraph.addBundlingEdge(line);
+                            }
+
+                            // segment 2
+                            var geometry = new THREE.Geometry();
+                            geometry.vertices.push(sourceRootPoint);
+                            geometry.vertices.push(targetRootPoint);
+
+                            var line = new THREE.Line(geometry, material);
+                            targetGraph.addBundlingEdge(line);
+
+                            // segment 3
+                            if (allTargetLeaves.length == 1) {
+                                var geometry = new THREE.Geometry();
+                                geometry.vertices.push(targetPoint);
+                                geometry.vertices.push(targetRootPoint);
+
+                                var line = new THREE.Line(geometry, material);
+                                targetGraph.addBundlingEdge(line);
+                            }
+                            else if (allTargetLeaves.length > 1) {
+                                var spline = new THREE.CubicBezierCurve3(targetPoint, additionalTargetPoint, targetMidPoint, targetRootPoint);
+
+                                var geometry = new THREE.Geometry();
+                                var splinePoints = spline.getPoints(20);
+
+                                for (var w = 0; w < splinePoints.length; w++) {
+                                    geometry.vertices.push(<any>splinePoints[w]);
+                                }
+
+                                var line = new THREE.Line(geometry, material);
+                                targetGraph.addBundlingEdge(line);
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -1305,8 +1356,13 @@ class Brain3DApp implements Application, Loopable {
 
         var rootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (1 / 2), sourceMidPoint.y + dy * (1 / 2), sourceMidPoint.z + dz * (1 / 2));
 
-        this.buildSubTree(rootPoint, source, graphData);
-        this.buildSubTree(rootPoint, target, graphData);
+        var sourceEdgeList = this.buildSubTree(rootPoint, source, graphData);
+        sourceEdgeList.forEach(e => { edgeList.push(e); });
+
+        var targetEdgeList = this.buildSubTree(rootPoint, target, graphData);
+        targetEdgeList.forEach(e => { edgeList.push(e); });
+
+        return edgeList;
     }
 
     buildSubTree(rootPoint, node, graphData) {
@@ -1315,10 +1371,10 @@ class Brain3DApp implements Application, Loopable {
         var midPoint = this.getMidPointOfAGroup(node, graphData);
 
         var dx = midPoint.x - rootPoint.x;
-        var dy = midPoint.x - rootPoint.x;
-        var dz = midPoint.x - rootPoint.x;
+        var dy = midPoint.y - rootPoint.y;
+        var dz = midPoint.z - rootPoint.z;
 
-        var subRootPoint = new THREE.Vector3(rootPoint.x + dx * (1 / 2), rootPoint.y + dy * (1 / 2), rootPoint.z + dz * (1 / 2));
+        var subRootPoint = new THREE.Vector3(rootPoint.x + dx * (1 / 3), rootPoint.y + dy * (1 / 3), rootPoint.z + dz * (1 / 3));
 
         var edge = []; // the first edge 
         edge.push(rootPoint);
