@@ -526,20 +526,24 @@ class Brain3DApp implements Application, Loopable {
     networkTypeOnChange(type: string) {
         this.networkType = type;
 
+        this.setupNetworkTypeAppendedElements();
+
         if (this.showingCola == true) {
             this.showNetwork(true);
         }
         else {
             this.showNetwork(false);
         }
+    }
 
+    setupNetworkTypeAppendedElements() {
         $("label").remove(".network-type-appended-element");
         $("select").remove(".network-type-appended-element");
 
         if (this.networkType == "circular-layout") {
             var varCircularLayoutAttributeOneOnChange = (s: string) => { this.circularLayoutAttributeOneOnChange(s); };
             var varCircularLayoutAttributeTwoOnChange = (s: string) => { this.circularLayoutAttributeTwoOnChange(s); };
-
+            var varCircularLayoutSortOnChange = (s: string) => { this.circularLayoutSortOnChange(s); };
             this.jDiv.append($('<label class="network-type-appended-element"> 1st:</label>'));
             this.jDiv.append($('<select id="select-circular-layout-attribute-one-' + this.id + '" class="network-type-appended-element"></select>')
                 .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
@@ -573,9 +577,25 @@ class Brain3DApp implements Application, Loopable {
                 $('#select-circular-layout-attribute-two-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
 
             $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', true);
+
+            this.jDiv.append($('<label class="network-type-appended-element"> sort:</label>'));
+            this.jDiv.append($('<select id="select-circular-layout-sort-' + this.id + '" class="network-type-appended-element"></select>')
+                .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
+                .on("change", function () { varCircularLayoutSortOnChange($(this).val()); }));
+
+            $('#select-circular-layout-sort-' + this.id).empty();
+
+            var option = document.createElement('option');
+            option.text = 'none';
+            option.value = 'none';
+            $('#select-circular-layout-sort-' + this.id).append(option);
+
+            for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
+                var columnName = this.dataSet.attributes.columnNames[i];
+                $('#select-circular-layout-sort-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
         }
         else {
-            
+
         }
     }
 
@@ -625,6 +645,10 @@ class Brain3DApp implements Application, Loopable {
                 .attr("width", function (d) { return 40 * d["scale_" + attr]; })
                 .attr("height", 4);
         }
+    }
+
+    circularLayoutSortOnChange(attr: string) {
+        this.showNetwork(true);
     }
 
     defaultOrientationsOnClick(orientation: string) {
@@ -981,7 +1005,16 @@ class Brain3DApp implements Application, Loopable {
                 this.svgMode = true;
                 this.svgNeedsUpdate = true;
                 this.colaGraph.setVisible(false);
-                this.initCircularLayout();
+                if ($('#select-circular-layout-attribute-one-' + this.id).length <= 0) return;
+                if ($('#select-circular-layout-attribute-two-' + this.id).length <= 0) return;
+                if ($('#select-circular-layout-sort-' + this.id).length <= 0) return;
+                var attrOne = $('#select-circular-layout-attribute-one-' + this.id).val();
+                var attrTwo = $('#select-circular-layout-attribute-two-' + this.id).val();
+                var attrSort = $('#select-circular-layout-sort-' + this.id).val();
+
+                this.initCircularLayout(attrSort);
+                this.circularLayoutAttributeOneOnChange(attrOne);
+                this.circularLayoutAttributeTwoOnChange(attrTwo);
             }
             else {
                 // Set up a coroutine to do the animation
@@ -1567,7 +1600,7 @@ class Brain3DApp implements Application, Loopable {
         return allLeaves;
     }
 
-    initCircularLayout() {
+    initCircularLayout(sortByAttribute: string) {
         //var moduleIDs = this.dataSet.attributes.get('module_id');
         this.svgNodeBundleArray = [];
         var children = this.colaGraph.rootObject.children;
@@ -1653,11 +1686,19 @@ class Brain3DApp implements Application, Loopable {
             radius = diameter / 2,
             innerRadius = radius - 120;
 
-        var cluster = d3.layout.cluster()
-            .size([360, innerRadius])
-            .sort(null)
-            //.sort(function (d) { return d.strength; })
-            .value(function (d) { return d.size; });
+        var cluster;
+        if (sortByAttribute == "none") {
+            cluster = d3.layout.cluster()
+                .size([360, innerRadius])
+                .sort(null)
+                .value(function (d) { return d.size; });
+        }
+        else {
+            cluster = d3.layout.cluster()
+                .size([360, innerRadius])
+                .sort(function (a, b) { return d3.ascending(a[sortByAttribute], b[sortByAttribute]); })
+                .value(function (d) { return d.size; });
+        }
 
         var bundle = d3.layout.bundle();
 
