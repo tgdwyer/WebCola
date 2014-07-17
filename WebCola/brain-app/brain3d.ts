@@ -700,6 +700,7 @@ class Brain3DApp implements Application, Loopable {
         var percentile = numEdges * 100 / max;
         $('#percentile-' + this.id).get(0).textContent = percentile.toFixed(2);
         this.filteredAdjMatrix = this.adjMatrixFromEdgeCount(numEdges);
+        this.physioGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
     }
 
@@ -750,25 +751,29 @@ class Brain3DApp implements Application, Loopable {
         if (this.bundlingEdges == true) {
             $('#bundling-edges-' + this.id).css('opacity', 1);
 
-            //$('#edge-count-slider-' + this.id).prop('disabled', true);
-            //$('#button-show-network-' + this.id).prop('disabled', true);
-            //$('#select-network-type-' + this.id).prop('disabled', true);
+            this.initPowerGraph(this.physioGraph, "3d");
 
-            this.initPowerGraph(this.physioGraph);
-            if (this.colaGraph.isVisible()) this.initPowerGraph(this.colaGraph);
+            if ((this.networkType == 'default') || (this.networkType == 'edge-length-depends-on-weight')) {
+                this.initPowerGraph(this.colaGraph, "3d");
+            }
+            else if (this.networkType == 'flatten-to-2d') {
+
+            }
         }
         else {
             $('#bundling-edges-' + this.id).css('opacity', 0.2);
 
-            //$('#edge-count-slider-' + this.id).prop('disabled', false);
-            //$('#button-show-network-' + this.id).prop('disabled', false);
-            //$('#select-network-type-' + this.id).prop('disabled', false);
-
             this.physioGraph.removeAllBundlingEdges();
+            this.physioGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
             this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
 
+
+            // ???
             this.colaGraph.removeAllBundlingEdges();
-            this.setColaGraphNodeLinkVisibilities(null);
+            this.colaGraph.filteredNodeIDs = this.physioGraph.filteredNodeIDs;
+            this.colaGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
+            this.colaGraph.setNodeVisibilities(); // Hide the nodes without neighbours
+            this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
         }
 
         this.removeProcessingNotification();
@@ -840,55 +845,6 @@ class Brain3DApp implements Application, Loopable {
         this.svgNeedsUpdate = true;
     }
 
-    setColaGraphNodeLinkVisibilities(edges: any[]) {
-        this.colaGraph.filteredNodeIDs = this.physioGraph.filteredNodeIDs;
-
-        //-------------------------------------------------------------------
-        // Find the edges that have been selected after thresholding, and all the
-        // nodes that have neighbours after the thresholding of the edges takes place.
-
-        // original:
-        /*
-        var edges = [];
-        var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
-        for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
-            for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
-                if (this.filteredAdjMatrix[i][j] === 1) {
-                    edges.push({ source: i, target: j });
-                    hasNeighbours[i] = true;
-                    hasNeighbours[j] = true;
-                }
-            }
-        }
-        */
-
-        // new:
-        //var edges = [];
-        var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
-        for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
-            for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
-                if (this.filteredAdjMatrix[i][j] === 1) {
-                    if (this.physioGraph.filteredNodeIDs) {
-                        if ((this.physioGraph.filteredNodeIDs.indexOf(i) != -1) && (this.physioGraph.filteredNodeIDs.indexOf(j) != -1)) {
-                            var len = this.dissimilarityMatrix[i][j];
-                            if (edges) edges.push({ source: i, target: j, length: len });
-                            hasNeighbours[i] = true;
-                            hasNeighbours[j] = true;
-                        }
-                    } else {
-                        var len = this.dissimilarityMatrix[i][j];
-                        if (edges) edges.push({ source: i, target: j, length: len });
-                        hasNeighbours[i] = true;
-                        hasNeighbours[j] = true;
-                    }
-                }
-            }
-        }
-
-        this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
-        this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
-    }
-
     showNetwork(switchNetworkType: boolean) {
         if (!this.brainObject || !this.colaObject || !this.physioGraph || !this.colaGraph) return;
 
@@ -899,7 +855,10 @@ class Brain3DApp implements Application, Loopable {
             //this.showingCola = true;
 
             var edges = [];
-            this.setColaGraphNodeLinkVisibilities(edges);
+            this.colaGraph.filteredNodeIDs = this.physioGraph.filteredNodeIDs;
+            this.colaGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, edges);
+            this.colaGraph.setNodeVisibilities(); // Hide the nodes without neighbours
+            this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
 
             //-------------------------------------------------------------------------------------------------------------
             // 3d cola graph
@@ -1222,29 +1181,26 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
-    initPowerGraph(targetGraph) {
+    initPowerGraph(targetGraph, dimension) {
         var mode = "hierarchy";
         //var mode = "flat";
 
-        //if (!this.showingCola) {
-        if (!this.colaGraph.isVisible()) {
-            this.setColaGraphNodeLinkVisibilities(null);
-        }
-
         this.powerGraphNodeArray = [];
-        var children = this.colaGraph.rootObject.children;
+        var children = targetGraph.rootObject.children;
         for (var i = 0; i < children.length; i++) {
             var obj = children[i];
             if ((<any>obj).isNode) {
-                var nodeObject = new Object();
-                nodeObject["name"] = obj.id;
-                this.powerGraphNodeArray.push(nodeObject);
+                if (targetGraph.nodeHasNeighbors[obj.id]) {
+                    var nodeObject = new Object();
+                    nodeObject["name"] = obj.id;
+                    this.powerGraphNodeArray.push(nodeObject);
+                }
             }
         }
 
         this.powerGraphLinkArray = [];
-        for (var i = 0; i < this.colaGraph.edgeList.length; i++) {
-            var edge = this.colaGraph.edgeList[i];
+        for (var i = 0; i < targetGraph.edgeList.length; i++) {
+            var edge = targetGraph.edgeList[i];
             if (edge.visible) {
                 var linkObject1 = new Object();
                 var linkObject2 = new Object();
@@ -1284,10 +1240,27 @@ class Brain3DApp implements Application, Loopable {
 
         //console.log(powerGraph.groups);
         //console.log(powerGraph.powerEdges);
+        
+        targetGraph.removeAllEdges();
 
         for (var i = 0; i < powerGraph.powerEdges.length; i++) {
             if (mode == "hierarchy") {
-                var edgeList = this.powerEdgeToTree(powerGraph.powerEdges[i], targetGraph);
+                var coordinates = [];
+                if (dimension == "3d") {
+                    for (var j = 0; j < targetGraph.nodeMeshes.length; ++j) {
+                        var coord = new Object();
+                        coord["id"] = j;
+                        coord["x"] = targetGraph.nodeMeshes[j].position.x;
+                        coord["y"] = targetGraph.nodeMeshes[j].position.y;
+                        coord["z"] = targetGraph.nodeMeshes[j].position.z;
+                        coordinates.push(coord);
+                    }
+                }
+                else if (dimension == "2d") {
+
+                }
+
+                var edgeList = this.powerEdgeToTree(powerGraph.powerEdges[i], coordinates);
 
                 //console.log("hierarchy edge list:");
                 //console.log(edgeList);
@@ -1295,22 +1268,10 @@ class Brain3DApp implements Application, Loopable {
                 for (var j = 0; j < edgeList.length; j++) {
                     var thisEdge = edgeList[j];
                     if (thisEdge.length == 2) {
-                        var geometry = new THREE.Geometry();
-                        geometry.vertices.push(thisEdge[0]);
-                        geometry.vertices.push(thisEdge[1]);
-
-                        var material = new THREE.LineBasicMaterial({
-                            color: 0x000000,
-                        });
-
-                        var line = new THREE.Line(geometry, material);
-                        targetGraph.addBundlingEdge(line);
-                    }
-                    else if (thisEdge.length == 4) {
-                        if ((thisEdge[1].x == thisEdge[3].x) && (thisEdge[1].y == thisEdge[3].y) && (thisEdge[1].z == thisEdge[3].z)) {
+                        if (dimension == "3d") {
                             var geometry = new THREE.Geometry();
                             geometry.vertices.push(thisEdge[0]);
-                            geometry.vertices.push(thisEdge[3]);
+                            geometry.vertices.push(thisEdge[1]);
 
                             var material = new THREE.LineBasicMaterial({
                                 color: 0x000000,
@@ -1319,22 +1280,50 @@ class Brain3DApp implements Application, Loopable {
                             var line = new THREE.Line(geometry, material);
                             targetGraph.addBundlingEdge(line);
                         }
-                        else {
-                            var spline = new THREE.CubicBezierCurve3(thisEdge[0], thisEdge[1], thisEdge[2], thisEdge[3]);
+                        else if (dimension == "2d") {
 
-                            var geometry = new THREE.Geometry();
-                            var splinePoints = spline.getPoints(20);
+                        }
+                    }
+                    else if (thisEdge.length == 4) {
+                        if ((thisEdge[1].x == thisEdge[3].x) && (thisEdge[1].y == thisEdge[3].y) && (thisEdge[1].z == thisEdge[3].z)) {
+                            if (dimension == "3d") {
+                                var geometry = new THREE.Geometry();
+                                geometry.vertices.push(thisEdge[0]);
+                                geometry.vertices.push(thisEdge[3]);
 
-                            for (var w = 0; w < splinePoints.length; w++) {
-                                geometry.vertices.push(<any>splinePoints[w]);
+                                var material = new THREE.LineBasicMaterial({
+                                    color: 0x000000,
+                                });
+
+                                var line = new THREE.Line(geometry, material);
+                                targetGraph.addBundlingEdge(line);
                             }
+                            else if (dimension == "2d") {
 
-                            var line = new THREE.Line(geometry, material);
-                            targetGraph.addBundlingEdge(line);
+                            }
+                        }
+                        else {
+                            if (dimension == "3d") {
+                                var spline = new THREE.CubicBezierCurve3(thisEdge[0], thisEdge[1], thisEdge[2], thisEdge[3]);
+
+                                var geometry = new THREE.Geometry();
+                                var splinePoints = spline.getPoints(20);
+
+                                for (var w = 0; w < splinePoints.length; w++) {
+                                    geometry.vertices.push(<any>splinePoints[w]);
+                                }
+
+                                var line = new THREE.Line(geometry, material);
+                                targetGraph.addBundlingEdge(line);
+                            }
+                            else if (dimension == "2d") {
+
+                            }
                         }
                     }
                 }
             }
+            /*
             else if (mode == "flat") {
                 var source = powerGraph.powerEdges[i].source;
                 var target = powerGraph.powerEdges[i].target;
@@ -1469,19 +1458,18 @@ class Brain3DApp implements Application, Loopable {
                     }
                 }
             }
+            */
         }
-
-        targetGraph.removeAllEdges();
     }
 
-    powerEdgeToTree(powerEdge, graphData) {
+    powerEdgeToTree(powerEdge, coordinates) {
         var edgeList = []; // edge list in the tree
 
         var source = powerEdge.source;
         var target = powerEdge.target;
 
-        var sourceMidPoint = this.getMidPointOfAGroup(source, graphData);
-        var targetMidPoint = this.getMidPointOfAGroup(target, graphData);
+        var sourceMidPoint = this.getMidPointOfAGroup(source, coordinates);
+        var targetMidPoint = this.getMidPointOfAGroup(target, coordinates);
 
         var dx = targetMidPoint.x - sourceMidPoint.x;
         var dy = targetMidPoint.y - sourceMidPoint.y;
@@ -1489,19 +1477,19 @@ class Brain3DApp implements Application, Loopable {
 
         var rootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (1 / 2), sourceMidPoint.y + dy * (1 / 2), sourceMidPoint.z + dz * (1 / 2));
 
-        var sourceEdgeList = this.buildSubTree(rootPoint, source, graphData);
+        var sourceEdgeList = this.buildSubTree(rootPoint, source, coordinates);
         sourceEdgeList.forEach(e => { edgeList.push(e); });
 
-        var targetEdgeList = this.buildSubTree(rootPoint, target, graphData);
+        var targetEdgeList = this.buildSubTree(rootPoint, target, coordinates);
         targetEdgeList.forEach(e => { edgeList.push(e); });
 
         return edgeList;
     }
 
-    buildSubTree(rootPoint, node, graphData) {
+    buildSubTree(rootPoint, node, coordinates) {
         var edgeList = [];
 
-        var midPoint = this.getMidPointOfAGroup(node, graphData);
+        var midPoint = this.getMidPointOfAGroup(node, coordinates);
 
         var dx = midPoint.x - rootPoint.x;
         var dy = midPoint.y - rootPoint.y;
@@ -1517,7 +1505,12 @@ class Brain3DApp implements Application, Loopable {
         if (typeof (node.leaves) != "undefined") {
             for (var i = 0; i < node.leaves.length; i++) {              
                 var nodeID = node.leaves[i].name;
-                var leafPoint = new THREE.Vector3(graphData.nodeMeshes[nodeID].position.x, graphData.nodeMeshes[nodeID].position.y, graphData.nodeMeshes[nodeID].position.z);
+
+                var index = coordinates.map(function (d) {
+                    return d.id;
+                }).indexOf(nodeID);
+
+                var leafPoint = new THREE.Vector3(coordinates[index].x, coordinates[index].y, coordinates[index].z);
                 var additionalPoint = new THREE.Vector3((leafPoint.x + midPoint.x) / 2, (leafPoint.y + midPoint.y) / 2, (leafPoint.z + midPoint.z) / 2);
 
                 var edge = [];
@@ -1532,7 +1525,7 @@ class Brain3DApp implements Application, Loopable {
         if (typeof (node.groups) != "undefined") {
             for (var i = 0; i < node.groups.length; i++) {
                 var subgroup = node.groups[i];
-                var subEdgeList = this.buildSubTree(subRootPoint, subgroup, graphData);
+                var subEdgeList = this.buildSubTree(subRootPoint, subgroup, coordinates);
                 subEdgeList.forEach(e => { edgeList.push(e); });
             }
         }
@@ -1540,7 +1533,12 @@ class Brain3DApp implements Application, Loopable {
         if ((typeof (node.leaves) == "undefined") && (typeof (node.groups) == "undefined")) {
             // this is the leaf
             var nodeID = node.name;
-            var leafPoint = new THREE.Vector3(graphData.nodeMeshes[nodeID].position.x, graphData.nodeMeshes[nodeID].position.y, graphData.nodeMeshes[nodeID].position.z);
+
+            var index = coordinates.map(function (d) {
+                return d.id;
+            }).indexOf(nodeID);
+
+            var leafPoint = new THREE.Vector3(coordinates[index].x, coordinates[index].y, coordinates[index].z);
             var additionalPoint = new THREE.Vector3((leafPoint.x + midPoint.x) / 2, (leafPoint.y + midPoint.y) / 2, (leafPoint.z + midPoint.z) / 2);
 
             var edge = [];
@@ -1554,7 +1552,7 @@ class Brain3DApp implements Application, Loopable {
         return edgeList;
     }
 
-    getMidPointOfAGroup(group, graphData) {
+    getMidPointOfAGroup(group, coordinates) {
         var allLeaves = this.getAllLeavesInATree(group);
 
         var totalX = 0;
@@ -1563,9 +1561,14 @@ class Brain3DApp implements Application, Loopable {
 
         for (var j = 0; j < allLeaves.length; j++) {
             var nodeID = allLeaves[j].name;
-            totalX += graphData.nodeMeshes[nodeID].position.x;
-            totalY += graphData.nodeMeshes[nodeID].position.y;
-            totalZ += graphData.nodeMeshes[nodeID].position.z;
+
+            var index = coordinates.map(function (d) {
+                return d.id;
+            }).indexOf(nodeID);
+
+            totalX += coordinates[index].x;
+            totalY += coordinates[index].y;
+            totalZ += coordinates[index].z;
         }
 
         var midPoint = new THREE.Vector3(totalX / allLeaves.length, totalY / allLeaves.length, totalZ / allLeaves.length);
@@ -2147,6 +2150,7 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.filteredNodeIDs = filteredIDs;
         this.physioGraph.applyNodeFiltering();
+        this.physioGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
     }
 
@@ -2343,7 +2347,9 @@ class Brain3DApp implements Application, Loopable {
 
         // Initialize the filtering
         this.filteredAdjMatrix = this.adjMatrixFromEdgeCount(initialEdgesShown);
+        this.physioGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+        this.colaGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
         this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
         this.edgeCountSliderOnChange(initialEdgesShown);
         
@@ -2733,13 +2739,58 @@ class Graph {
         }
     }
 
-    // used by colaGraph
-    setNodeVisibilities(visArray: boolean[]) {
-        if (!visArray) return;
-        this.nodeHasNeighbors = visArray.slice(0);
+    findNodeConnectivity(filteredAdjMatrix, dissimilarityMatrix, edges: any[]) {
+        //-------------------------------------------------------------------
+        // Find the edges that have been selected after thresholding, and all the
+        // nodes that have neighbours after the thresholding of the edges takes place.
 
-        for (var i = 0; i < visArray.length; ++i) {
-            if (visArray[i]) {
+        // original:
+        /*
+        var edges = [];
+        var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
+        for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
+            for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
+                if (this.filteredAdjMatrix[i][j] === 1) {
+                    edges.push({ source: i, target: j });
+                    hasNeighbours[i] = true;
+                    hasNeighbours[j] = true;
+                }
+            }
+        }
+        */
+
+        // new:
+        //var edges = [];
+        var hasNeighbours = Array<boolean>(this.nodeMeshes.length);
+        for (var i = 0; i < this.nodeMeshes.length - 1; ++i) {
+            for (var j = i + 1; j < this.nodeMeshes.length; ++j) {
+                if (filteredAdjMatrix[i][j] === 1) {
+                    if (this.filteredNodeIDs) {
+                        if ((this.filteredNodeIDs.indexOf(i) != -1) && (this.filteredNodeIDs.indexOf(j) != -1)) {
+                            var len = dissimilarityMatrix[i][j];
+                            if (edges) edges.push({ source: i, target: j, length: len });
+                            hasNeighbours[i] = true;
+                            hasNeighbours[j] = true;
+                        }
+                    } else {
+                        var len = dissimilarityMatrix[i][j];
+                        if (edges) edges.push({ source: i, target: j, length: len });
+                        hasNeighbours[i] = true;
+                        hasNeighbours[j] = true;
+                    }
+                }
+            }
+        }
+
+        this.nodeHasNeighbors = hasNeighbours.slice(0);
+    }
+
+    // used by colaGraph
+    setNodeVisibilities() {
+        if (!this.nodeHasNeighbors) return;
+
+        for (var i = 0; i < this.nodeHasNeighbors.length; ++i) {
+            if (this.nodeHasNeighbors[i]) {
                 if (this.filteredNodeIDs) {
                     if (this.filteredNodeIDs.indexOf(i) != -1) {
                         this.rootObject.add(this.nodeMeshes[i]);
