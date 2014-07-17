@@ -77,7 +77,7 @@ class Brain3DApp implements Application, Loopable {
     dissimilarityMatrix: number[][] = []; // An inversion of the similarity matrix, used for Cola graph distances
 
     // State
-    showingCola: boolean = false;
+    //showingCola: boolean = false;
     transitionInProgress: boolean = false;
     currentThreshold: number = 0;
     filteredAdjMatrix: number[][];
@@ -249,10 +249,11 @@ class Brain3DApp implements Application, Loopable {
             this.brainObject.position = new THREE.Vector3(-this.graphOffset, 0, 0);
             this.brainObject.rotation.set(0, 0, 0);
 
-            if (this.showingCola) {
+            //if (this.showingCola) {
+            //if (this.colaGraph.isVisible()) {
                 this.colaObject.position = new THREE.Vector3(this.graphOffset, 0, 0);
                 this.colaObject.rotation.set(0, 0, 0);
-            }   
+            //}   
         });
 
         this.input.regMouseWheelCallback((delta: number) => {
@@ -528,7 +529,8 @@ class Brain3DApp implements Application, Loopable {
 
         this.setupNetworkTypeAppendedElements();
 
-        if (this.showingCola == true) {
+        //if (this.showingCola == true) {
+        if (this.colaGraph.isVisible()) {
             this.showNetwork(true);
         }
         else {
@@ -690,6 +692,8 @@ class Brain3DApp implements Application, Loopable {
         if (numEdges == this.lastSliderValue) return;
         this.lastSliderValue = numEdges;
 
+        if (this.bundlingEdges) this.edgesBundlingOnChange(); // turn off edge bundling
+
         var max = this.commonData.nodeCount * (this.commonData.nodeCount - 1) / 2;
         if (numEdges > max) numEdges = max;
         $('#count-' + this.id).get(0).textContent = numEdges;
@@ -736,32 +740,35 @@ class Brain3DApp implements Application, Loopable {
     }
 
     edgesBundlingOnChange() {
-        if ((!this.physioGraph) || (!this.colaGraph)) return;
+        if ((!this.physioGraph) || (!this.colaGraph)) {
+            this.removeProcessingNotification();
+            return;
+        }
 
         this.bundlingEdges = !this.bundlingEdges;
 
         if (this.bundlingEdges == true) {
             $('#bundling-edges-' + this.id).css('opacity', 1);
 
-            $('#edge-count-slider-' + this.id).prop('disabled', true);
-            $('#button-show-network-' + this.id).prop('disabled', true);
-            $('#select-network-type-' + this.id).prop('disabled', true);
+            //$('#edge-count-slider-' + this.id).prop('disabled', true);
+            //$('#button-show-network-' + this.id).prop('disabled', true);
+            //$('#select-network-type-' + this.id).prop('disabled', true);
 
             this.initPowerGraph(this.physioGraph);
-            this.initPowerGraph(this.colaGraph);
+            if (this.colaGraph.isVisible()) this.initPowerGraph(this.colaGraph);
         }
         else {
             $('#bundling-edges-' + this.id).css('opacity', 0.2);
 
-            $('#edge-count-slider-' + this.id).prop('disabled', false);
-            $('#button-show-network-' + this.id).prop('disabled', false);
-            $('#select-network-type-' + this.id).prop('disabled', false);
+            //$('#edge-count-slider-' + this.id).prop('disabled', false);
+            //$('#button-show-network-' + this.id).prop('disabled', false);
+            //$('#select-network-type-' + this.id).prop('disabled', false);
 
             this.physioGraph.removeAllBundlingEdges();
-            this.colaGraph.removeAllBundlingEdges();
-
             this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
-            this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+
+            this.colaGraph.removeAllBundlingEdges();
+            this.setColaGraphNodeLinkVisibilities(null);
         }
 
         this.removeProcessingNotification();
@@ -788,7 +795,8 @@ class Brain3DApp implements Application, Loopable {
     }
 
     removeProcessingNotification() {
-        document.body.removeChild(this.jDivProcessingNotification);
+        if ($('#div-processing-notification').length > 0)
+            document.body.removeChild(this.jDivProcessingNotification);
     }
 
     autoRotationOnChange(s: string) {
@@ -884,20 +892,11 @@ class Brain3DApp implements Application, Loopable {
     showNetwork(switchNetworkType: boolean) {
         if (!this.brainObject || !this.colaObject || !this.physioGraph || !this.colaGraph) return;
 
-        if (this.bundlingEdges) return;
+        if (this.bundlingEdges) this.edgesBundlingOnChange(); // turn off edge bundling
 
         if (!this.transitionInProgress) {
             // Leave *showingCola* on permanently after first turn-on
-            this.showingCola = true;
-
-            // clean bundling edges
-            /*
-            if (this.bundlingEdges) {
-                if ((this.networkType == "default") || (this.networkType == "edge-length-depends-on-weight")) {
-                    this.colaGraph.removeAllBundlingEdges();
-                }
-            }
-            */
+            //this.showingCola = true;
 
             var edges = [];
             this.setColaGraphNodeLinkVisibilities(edges);
@@ -1227,7 +1226,8 @@ class Brain3DApp implements Application, Loopable {
         var mode = "hierarchy";
         //var mode = "flat";
 
-        if (!this.showingCola) {
+        //if (!this.showingCola) {
+        if (!this.colaGraph.isVisible()) {
             this.setColaGraphNodeLinkVisibilities(null);
         }
 
@@ -1282,8 +1282,8 @@ class Brain3DApp implements Application, Loopable {
             .links(linkJson)
             .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 20));
 
-        console.log(powerGraph.groups);
-        console.log(powerGraph.powerEdges);
+        //console.log(powerGraph.groups);
+        //console.log(powerGraph.powerEdges);
 
         for (var i = 0; i < powerGraph.powerEdges.length; i++) {
             if (mode == "hierarchy") {
@@ -2141,6 +2141,8 @@ class Brain3DApp implements Application, Loopable {
     applyFilter(filteredIDs: number[]) {
         if (!this.dataSet || !this.dataSet.attributes) return;
 
+        if (this.bundlingEdges) this.edgesBundlingOnChange(); // turn off edge bundling
+
         //console.log("app id: " + this.id + "; count: " + filteredIDs.length);   
 
         this.physioGraph.filteredNodeIDs = filteredIDs;
@@ -2524,7 +2526,8 @@ class Brain3DApp implements Application, Loopable {
                 }
             }
 
-            if (this.showingCola)
+            //if (this.showingCola)
+            if (this.colaGraph.isVisible()) 
                 this.descent.rungeKutta(); // Do an iteration of the solver
 
             this.physioGraph.update();
@@ -2709,6 +2712,10 @@ class Graph {
                 this.visible = false;
             }
         }
+    }
+
+    isVisible() {
+        return this.visible;
     }
 
     // used by physioGraph
