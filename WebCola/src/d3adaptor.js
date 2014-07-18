@@ -12,6 +12,7 @@ var cola;
             event = d3.dispatch("start", "tick", "end"),
             size = [1, 1],
             linkDistance = 20,
+            linkType = null,
             avoidOverlaps = false,
             handleDisconnected = true,
             drag,
@@ -127,7 +128,7 @@ var cola;
         };
 
         d3adaptor.powerGraphGroups = function (f) {
-            var g = powergraph.getGroups(nodes, links, linkAccessor);
+            var g = cola.powergraph.getGroups(nodes, links, linkAccessor);
             this.groups(g.groups);
             f(g);
             return d3adaptor;
@@ -239,6 +240,11 @@ var cola;
             return d3adaptor;
         };
 
+        d3adaptor.linkType = function (f) {
+            linkType = f;
+            return d3adaptor;
+        }
+
         d3adaptor.convergenceThreshold = function (x) {
             if (!arguments.length) return threshold;
             threshold = typeof x === "function" ? x : +x;
@@ -272,7 +278,11 @@ var cola;
             link.length = length;
         }
 
-        var linkAccessor = { getSourceIndex: getSourceIndex, getTargetIndex: getTargetIndex, setLength: setLinkLength };
+        function getLinkType(link) {
+            return typeof linkType === "function" ? linkType(link) : 0;
+        }
+
+        var linkAccessor = { getSourceIndex: getSourceIndex, getTargetIndex: getTargetIndex, setLength: setLinkLength, getType: getLinkType };
 
         d3adaptor.symmetricDiffLinkLengths = function (idealLength, w) {
             cola.symmetricDiffLinkLengths(links, linkAccessor, w);
@@ -365,6 +375,17 @@ var cola;
             var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;
             this.avoidOverlaps(false);
             descent = new cola.Descent([x, y], D);
+
+            descent.locks.clear();
+            for (i = 0; i < n; ++i) {
+                o = nodes[i];
+                if (o.fixed) {
+                    o.px = o.x;
+                    o.py = o.y;
+                    var p = [o.x, o.y];
+                    descent.locks.add(i, p);
+                }
+            }
             descent.threshold = threshold;
 
             // apply initialIterations without user constraints or nonoverlap constraints

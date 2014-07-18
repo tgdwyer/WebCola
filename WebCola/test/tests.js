@@ -21,8 +21,9 @@ asyncTest("small power-graph", function () {
         var n = graph.nodes.length;
         ok(n == 7);
         var linkAccessor = {
-            getSourceIndex: function (e) { return e.source; },
-            getTargetIndex: function (e) { return e.target; },
+            getSourceIndex: function (e) { return e.source },
+            getTargetIndex: function (e) { return e.target },
+            getType: function(e) { return 0 },
             makeLink: function (u, v) { return { source: u, target: v } }
         };
         var c = new cola.powergraph.Configuration(n, graph.links, linkAccessor);
@@ -30,14 +31,14 @@ asyncTest("small power-graph", function () {
         var es;
         ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
         var m = c.merge(c.modules[0], c.modules[4]);
-        ok(0 in m.children);
-        ok(4 in m.children);
-        ok(1 in m.outgoing);
-        ok(3 in m.outgoing);
-        ok(5 in m.outgoing);
-        ok(6 in m.outgoing);
-        ok(2 in m.incoming);
-        ok(5 in m.incoming);
+        ok(m.children.contains(0));
+        ok(m.children.contains(4));
+        ok(m.outgoing.contains(1));
+        ok(m.outgoing.contains(3));
+        ok(m.outgoing.contains(5));
+        ok(m.outgoing.contains(6));
+        ok(m.incoming.contains(2));
+        ok(m.incoming.contains(5));
         ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
         m = c.merge(c.modules[2], c.modules[3]);
         ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
@@ -49,6 +50,8 @@ asyncTest("small power-graph", function () {
             lastR = c.R;
         }
         var finalEdges = [];
+        var powerEdges = c.allEdges();
+        ok(powerEdges.length == 7);
         var groups = c.getGroupHierarchy(finalEdges);
         ok(groups.length == 4);
         start();
