@@ -1575,6 +1575,7 @@ class Brain3DApp implements Application, Loopable {
         return midPoint;
     }
 
+    // this function have been moved to PowerGraph class; need to be deleted later
     getAllLeavesInATree(node) {
         var allLeaves = [];
 
@@ -1593,8 +1594,8 @@ class Brain3DApp implements Application, Loopable {
                 leaves.forEach(l => { allLeaves.push(l); });
             }
         }
-             
-        if ((typeof (node.leaves) == "undefined") && (typeof (node.groups) == "undefined")){
+
+        if ((typeof (node.leaves) == "undefined") && (typeof (node.groups) == "undefined")) {
             // this is the leaf
             allLeaves.push(node);
         }
@@ -2574,8 +2575,8 @@ class Brain3DApp implements Application, Loopable {
 class PowerGraph {
     nodes: any[];
     links: any[];
-    powerGroup: any[];
-    powerEdge: any[];
+    powerGroups: any[];
+    powerEdges: any[];
 
     constructor() {
         /*
@@ -2585,8 +2586,8 @@ class PowerGraph {
             this.nodes[i]['count'] = 1;
         }
         */
-        this.powerGroup = [];
-        this.powerEdge = [];
+        this.powerGroups = [];
+        this.powerEdges = [];
     }
 
     initPowerGraphSpatial3D(graph3D) {
@@ -2610,22 +2611,16 @@ class PowerGraph {
             }
         }
 
+        if (this.nodes.length <= 1) return;
+
         this.createPowerGroups();
 
         for (var i = 0; i < graph3D.edgeList.length; i++) {
             var edge = graph3D.edgeList[i];
             if (edge.visible) {
                 var link = new Object();
-
-                for (var j = 0; j < this.nodes.length; j++) {
-                    if (this.nodes[j].name == edge.sourceNode.id) {
-                        link["source"] = j;
-                    }
-
-                    if (this.nodes[j].name == edge.targetNode.id) {
-                        link["target"] = j;
-                    }
-                }
+                link["source"] = edge.sourceNode.id;
+                link["target"] = edge.targetNode.id;
 
                 this.links.push(link);
             }
@@ -2637,7 +2632,96 @@ class PowerGraph {
     createPowerEdges() {
         var allEdges = this.links.slice(0);
 
+        //this.powerGroups.sort(function (a, b) { return b.count - a.count; });
 
+        var groupPairList = [];
+
+        for (var i = 0; i < this.powerGroups.length; i++) {
+            for (var j = 1; j < this.powerGroups.length; j++) {
+                var obj = new Object();
+                obj['count'] = this.powerGroups[i].count * this.powerGroups[j].count;
+                obj['sourceGroupIndex'] = i;
+                obj['targetGroupIndex'] = j;
+                groupPairList.push(obj);
+            }
+        }
+
+        groupPairList.sort(function (a, b) { return b.count - a.count; });
+
+        this.createPowerEdgeGreedy(allEdges, groupPairList);
+    }
+
+    createPowerEdgeGreedy(allEdges: any[], groupPairList: any[]) {
+        for (var i = 0; i < groupPairList.length; i++) {
+            var g1 = this.powerGroups[groupPairList[i].sourceGroupIndex];
+            var g2 = this.powerGroups[groupPairList[i].targetGroupIndex];
+
+            if (g1.count * g2.count <= allEdges.length) {
+                var hasEdge = this.hasPowerEdgeBetweenTwoGroups(g1, g2, allEdges);
+                if (hasEdge) {
+                    var e = new Object();
+                    e['source'] = g1;
+                    e['target'] = g2;
+
+                    this.powerEdges.push(e);
+
+
+                    //...
+
+                    return;
+                }
+            }
+        }
+    }
+
+    hasPowerEdgeBetweenTwoGroups(g1, g2, allEdges: any[]) {
+        var leaves1 = this.getAllLeavesInATree(g1);
+        var leaves2 = this.getAllLeavesInATree(g2);
+
+        var edgesCSV = allEdges.map(function (d) {
+            return d.source + ";" + d.target;
+        });
+
+        for (var i = 0; i < leaves1.length; i++) {
+            for (var j = 0; j < leaves2.length; j++) {
+                var csv1 = leaves1[i].id + ";" + leaves2[j].id;
+                var csv2 = leaves2[j].id + ";" + leaves1[i].id;
+
+                var index1 = edgesCSV.indexOf(csv1);
+                var index2 = edgesCSV.indexOf(csv2);
+
+                if ((index1 == -1) && (index2 == -1)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    getAllLeavesInATree(node) {
+        var allLeaves = [];
+
+        if (typeof (node.leaves) != "undefined") {
+            for (var i = 0; i < node.leaves.length; i++) {
+                var leaves = this.getAllLeavesInATree(node.leaves[i]);
+                leaves.forEach(l => { allLeaves.push(l); });
+            }
+        }
+
+        if (typeof (node.groups) != "undefined") {
+            for (var i = 0; i < node.groups.length; i++) {
+                var leaves = this.getAllLeavesInATree(node.groups[i]);
+                leaves.forEach(l => { allLeaves.push(l); });
+            }
+        }
+
+        if ((typeof (node.leaves) == "undefined") && (typeof (node.groups) == "undefined")) {
+            // this is the leaf
+            allLeaves.push(node);
+        }
+
+        return allLeaves;
     }
 
     createPowerGroups() {
@@ -2648,13 +2732,9 @@ class PowerGraph {
             this.createPowerGroupByCoordinates(allNodes);
         }
 
-        // leaves have not been added to the power group
-        // if there are any leaves, add them to power group
-        for (var i = 0; i < allNodes.length; i++) {
-            if (allNodes[i].isLeaf) {
-                console.log("(power group) leaf id: " + allNodes[i].id);
-                this.powerGroup.push(allNodes[i]);
-            }
+        // add all leaf nodes to power group
+        for (var i = 0; i < this.nodes.length; i++) {
+            this.powerGroups.push(this.nodes[i]);
         }
     }
 
@@ -2691,7 +2771,7 @@ class PowerGraph {
 
         var g = new Object();
         g['isGroup'] = true;
-        g['id'] = 10000 + this.powerGroup.length;
+        g['id'] = 10000 + this.powerGroups.length;
         g['count'] = node1.count + node2.count;
         g['x'] = (node1.x * node1.count + node2.x * node2.count) / (node1.count + node2.count);
         g['y'] = (node1.y * node1.count + node2.y * node2.count) / (node1.count + node2.count);
@@ -2710,7 +2790,7 @@ class PowerGraph {
         }).indexOf(node2.id);
         allNodes.splice(index2, 1);
 
-        this.powerGroup.push(g);
+        this.powerGroups.push(g);
         allNodes.push(g);
     }
 
