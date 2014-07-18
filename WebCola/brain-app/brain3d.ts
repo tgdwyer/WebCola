@@ -69,9 +69,6 @@ class Brain3DApp implements Application, Loopable {
     svgNeedsUpdate: boolean = false;
     d3Zoom = d3.behavior.zoom();
 
-    powerGraphNodeArray: any[];
-    powerGraphLinkArray: any[];
-
     nodeColourings: number[]; // Stores the colourings associated with the groups
     dissimilarityMatrix: number[][] = []; // An inversion of the similarity matrix, used for Cola graph distances
 
@@ -750,10 +747,12 @@ class Brain3DApp implements Application, Loopable {
         if (this.bundlingEdges == true) {
             $('#bundling-edges-' + this.id).css('opacity', 1);
 
-            this.initPowerGraph(this.physioGraph, "3d");
+            //this.initPowerGraph(this.physioGraph, "3d");
+            var powerGraph = new PowerGraph();
+            powerGraph.initPowerGraphSpatial3D(this.physioGraph);
 
             if ((this.networkType == 'default') || (this.networkType == 'edge-length-depends-on-weight')) {
-                this.initPowerGraph(this.colaGraph, "3d");
+                //this.initPowerGraph(this.colaGraph, "3d");
             }
             else if (this.networkType == 'flatten-to-2d') {
 
@@ -1184,8 +1183,8 @@ class Brain3DApp implements Application, Loopable {
         var mode = "hierarchy";
         //var mode = "flat";
 
-        this.powerGraphNodeArray = [];
-        this.powerGraphLinkArray = [];
+        var powerGraphNodeArray = [];
+        var powerGraphLinkArray = [];
 
         var children = targetGraph.rootObject.children;
         for (var i = 0; i < children.length; i++) {
@@ -1194,7 +1193,7 @@ class Brain3DApp implements Application, Loopable {
                 if (targetGraph.nodeHasNeighbors[obj.id]) {
                     var nodeObject = new Object();
                     nodeObject["name"] = obj.id;
-                    this.powerGraphNodeArray.push(nodeObject);
+                    powerGraphNodeArray.push(nodeObject);
                 }
             }
         }
@@ -1205,25 +1204,25 @@ class Brain3DApp implements Application, Loopable {
                 var linkObject1 = new Object();
                 var linkObject2 = new Object();
 
-                for (var j = 0; j < this.powerGraphNodeArray.length; j++) {
-                    if (this.powerGraphNodeArray[j].name == edge.sourceNode.id) {
+                for (var j = 0; j < powerGraphNodeArray.length; j++) {
+                    if (powerGraphNodeArray[j].name == edge.sourceNode.id) {
                         linkObject1["source"] = j;
                         linkObject2["target"] = j;
                     }
 
-                    if (this.powerGraphNodeArray[j].name == edge.targetNode.id) {
+                    if (powerGraphNodeArray[j].name == edge.targetNode.id) {
                         linkObject1["target"] = j;
                         linkObject2["source"] = j;
                     }
                 }
 
-                this.powerGraphLinkArray.push(linkObject1);
-                this.powerGraphLinkArray.push(linkObject2);
+                powerGraphLinkArray.push(linkObject1);
+                powerGraphLinkArray.push(linkObject2);
             }
         }
 
-        var nodeJson = JSON.parse(JSON.stringify(this.powerGraphNodeArray));
-        var linkJson = JSON.parse(JSON.stringify(this.powerGraphLinkArray));
+        var nodeJson = JSON.parse(JSON.stringify(powerGraphNodeArray));
+        var linkJson = JSON.parse(JSON.stringify(powerGraphLinkArray));
 
         var d3cola = colans.d3adaptor()
             .linkDistance(80)
@@ -2574,59 +2573,145 @@ class Brain3DApp implements Application, Loopable {
 // power graph
 class PowerGraph {
     nodes: any[];
+    links: any[];
     powerGroup: any[];
     powerEdge: any[];
 
-    constructor(coordinates: any[]) {
+    constructor() {
+        /*
         this.nodes = coordinates.slice(0); // clone the array
         for (var i = 0; i < this.nodes.length; i++) {
             this.nodes[i]['isLeaf'] = true;
+            this.nodes[i]['count'] = 1;
         }
+        */
         this.powerGroup = [];
         this.powerEdge = [];
     }
 
-    createPowerGroup() {
-        var allNodes = this.nodes.slice(0);
+    initPowerGraphSpatial3D(graph3D) {
+        this.nodes = [];
+        this.links = [];
 
+        var children = graph3D.rootObject.children;
+        for (var i = 0; i < children.length; i++) {
+            var obj = children[i];
+            if ((<any>obj).isNode) {
+                if (graph3D.nodeHasNeighbors[obj.id]) {
+                    var nodeObject = new Object();
+                    nodeObject['id'] = obj.id;
+                    nodeObject['x'] = obj.position.x;
+                    nodeObject['y'] = obj.position.y;
+                    nodeObject['z'] = obj.position.z;
+                    nodeObject['isLeaf'] = true;
+                    nodeObject['count'] = 1;
+                    this.nodes.push(nodeObject);
+                }
+            }
+        }
+
+        this.createPowerGroups();
+
+        for (var i = 0; i < graph3D.edgeList.length; i++) {
+            var edge = graph3D.edgeList[i];
+            if (edge.visible) {
+                var link = new Object();
+
+                for (var j = 0; j < this.nodes.length; j++) {
+                    if (this.nodes[j].name == edge.sourceNode.id) {
+                        link["source"] = j;
+                    }
+
+                    if (this.nodes[j].name == edge.targetNode.id) {
+                        link["target"] = j;
+                    }
+                }
+
+                this.links.push(link);
+            }
+        }
+
+        this.createPowerEdges();        
+    }
+
+    createPowerEdges() {
+        var allEdges = this.links.slice(0);
+
+
+    }
+
+    createPowerGroups() {
+        var allNodes = this.nodes.slice(0);
+        var numberOfTrees = 5; // a threshold to stop creating power groups;
+
+        while (allNodes.length > numberOfTrees) {
+            this.createPowerGroupByCoordinates(allNodes);
+        }
+
+        // leaves have not been added to the power group
+        // if there are any leaves, add them to power group
+        for (var i = 0; i < allNodes.length; i++) {
+            if (allNodes[i].isLeaf) {
+                console.log("(power group) leaf id: " + allNodes[i].id);
+                this.powerGroup.push(allNodes[i]);
+            }
+        }
+    }
+
+    createPowerGroupByCoordinates(allNodes: any[]) {
         var minDist = -1;
         var minI = -1;
         var minJ = -1;
         for (var i = 0; i < allNodes.length; i++) {
             for (var j = 0; j < allNodes.length; j++) {
-                var n1 = allNodes[i];
-                var n2 = allNodes[j];
-                var distance = Math.sqrt((n1.x - n2.x) * (n1.x - n2.x) + (n1.y - n2.y) * (n1.y - n2.y) + (n1.z - n2.z) * (n1.z - n2.z));
+                if (i != j) {
+                    var n1 = allNodes[i];
+                    var n2 = allNodes[j];
+                    var s = (n1.x - n2.x) * (n1.x - n2.x) + (n1.y - n2.y) * (n1.y - n2.y) + (n1.z - n2.z) * (n1.z - n2.z);
+                    var distance = Math.sqrt(s);
 
-                if (minDist == -1) {
-                    minDist = distance;
-                    minI = i;
-                    minJ = j;
-                }
-                else {
-                    if (distance < minDist) {
+                    if (minDist == -1) {
                         minDist = distance;
                         minI = i;
                         minJ = j;
+                    }
+                    else {
+                        if (distance < minDist) {
+                            minDist = distance;
+                            minI = i;
+                            minJ = j;
+                        }
                     }
                 }
             }
         }
 
-        var id1 = allNodes[minI].id;
-        var id2 = allNodes[minJ].id;
+        var node1 = allNodes[minI];
+        var node2 = allNodes[minJ];
 
         var g = new Object();
         g['isGroup'] = true;
-        g['id'] = 10000 + this.powerEdge.length;
-        g['x'] = (allNodes[minI].x + allNodes[minJ].x) / 2;
-        g['y'] = (allNodes[minI].y + allNodes[minJ].y) / 2;
-        g['z'] = (allNodes[minI].z + allNodes[minJ].z) / 2; 
+        g['id'] = 10000 + this.powerGroup.length;
+        g['count'] = node1.count + node2.count;
+        g['x'] = (node1.x * node1.count + node2.x * node2.count) / (node1.count + node2.count);
+        g['y'] = (node1.y * node1.count + node2.y * node2.count) / (node1.count + node2.count);
+        g['z'] = (node1.z * node1.count + node2.z * node2.count) / (node1.count + node2.count);
 
-        this.AddNodeToGroup(allNodes[minI], g);
-        this.AddNodeToGroup(allNodes[minJ], g);
+        this.AddNodeToGroup(node1, g);
+        this.AddNodeToGroup(node2, g);
+
+        var index1 = allNodes.map(function (d) {
+            return d.id;
+        }).indexOf(node1.id);
+        allNodes.splice(index1, 1);
+
+        var index2 = allNodes.map(function (d) {
+            return d.id;
+        }).indexOf(node2.id);
+        allNodes.splice(index2, 1);
 
         this.powerGroup.push(g);
+        allNodes.push(g);
     }
 
     AddNodeToGroup(node, g) {
