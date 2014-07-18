@@ -58,13 +58,12 @@ class Brain3DApp implements Application, Loopable {
     sortedSimilarities: number[];
     physioGraph: Graph;
     colaGraph: Graph;
+    svgGraph: Graph2D;
 
     cola2D;
     svg;
     svgMode;
     svgAllElements;
-    svgNodeArray: any[];
-    svgLinkArray: any[];
     svgNodeBundleArray: any[];
     svgControlMode: boolean = false;
     svgNeedsUpdate: boolean = false;
@@ -1186,6 +1185,8 @@ class Brain3DApp implements Application, Loopable {
         //var mode = "flat";
 
         this.powerGraphNodeArray = [];
+        this.powerGraphLinkArray = [];
+
         var children = targetGraph.rootObject.children;
         for (var i = 0; i < children.length; i++) {
             var obj = children[i];
@@ -1198,7 +1199,6 @@ class Brain3DApp implements Application, Loopable {
             }
         }
 
-        this.powerGraphLinkArray = [];
         for (var i = 0; i < targetGraph.edgeList.length; i++) {
             var edge = targetGraph.edgeList[i];
             if (edge.visible) {
@@ -1238,8 +1238,8 @@ class Brain3DApp implements Application, Loopable {
             .links(linkJson)
             .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 20));
 
-        //console.log(powerGraph.groups);
-        //console.log(powerGraph.powerEdges);
+        console.log(powerGraph.groups);
+        console.log(powerGraph.powerEdges);
         
         targetGraph.removeAllEdges();
 
@@ -1830,25 +1830,25 @@ class Brain3DApp implements Application, Loopable {
 
     updateSVGGraph() {
         if (this.networkType == 'flatten-to-2d') {
-            if ((!this.svgNodeArray) || (!this.svgLinkArray)) return;
+            if (!this.svgGraph) return;
 
             var unitRadius = 5;
 
-            for (var i = 0; i < this.svgNodeArray.length; i++) {
-                var id = this.svgNodeArray[i].id;
-                this.svgNodeArray[i].color = this.colaGraph.nodeMeshes[id].material.color.getHexString();
-                this.svgNodeArray[i].radius = this.colaGraph.nodeMeshes[id].scale.x * unitRadius;
+            for (var i = 0; i < this.svgGraph.nodes.length; i++) {
+                var id = this.svgGraph.nodes[i].id;
+                this.svgGraph.nodes[i].color = this.colaGraph.nodeMeshes[id].material.color.getHexString();
+                this.svgGraph.nodes[i].radius = this.colaGraph.nodeMeshes[id].scale.x * unitRadius;
             }
 
-            for (var i = 0; i < this.svgLinkArray.length; i++) {
-                var index = this.svgLinkArray[i].colaGraphEdgeListIndex;
+            for (var i = 0; i < this.svgGraph.links.length; i++) {
+                var index = this.svgGraph.links[i].colaGraphEdgeListIndex;
                 var edge = this.colaGraph.edgeList[index];
-                this.svgLinkArray[i].color = edge.shape.material.color.getHexString();
-                this.svgLinkArray[i].width = edge.shape.scale.x;
+                this.svgGraph.links[i].color = edge.shape.material.color.getHexString();
+                this.svgGraph.links[i].width = edge.shape.scale.x;
             }
 
-            var nodeJson = JSON.parse(JSON.stringify(this.svgNodeArray));
-            var linkJson = JSON.parse(JSON.stringify(this.svgLinkArray));
+            var nodeJson = JSON.parse(JSON.stringify(this.svgGraph.nodes));
+            var linkJson = JSON.parse(JSON.stringify(this.svgGraph.links));
 
             var link = this.svgAllElements.selectAll(".link")
                 .data(linkJson)
@@ -1966,7 +1966,6 @@ class Brain3DApp implements Application, Loopable {
 
         var unitRadius = 5;
 
-        this.svgNodeArray = [];
         var children = this.colaGraph.rootObject.children;
         for (var i = 0; i < children.length; i++) {
             var obj = children[i];
@@ -1987,11 +1986,10 @@ class Brain3DApp implements Application, Loopable {
                 nodeObject["x"] = screenCoords.x;
                 nodeObject["y"] = screenCoords.y;
 
-                this.svgNodeArray.push(nodeObject);
+                this.svgGraph.nodes.push(nodeObject);
             }
         }
 
-        this.svgLinkArray = [];
         for (var i = 0; i < this.colaGraph.edgeList.length; i++) {
             var edge = this.colaGraph.edgeList[i];
             if (edge.visible) {
@@ -2000,26 +1998,26 @@ class Brain3DApp implements Application, Loopable {
                 linkObject["color"] = edge.shape.material.color.getHexString();
                 linkObject["width"] = edge.shape.scale.x;
 
-                for (var j = 0; j < this.svgNodeArray.length; j++) {
-                    if (this.svgNodeArray[j].id == edge.sourceNode.id) {
+                for (var j = 0; j < this.svgGraph.nodes.length; j++) {
+                    if (this.svgGraph.nodes[j].id == edge.sourceNode.id) {
                         linkObject["source"] = j;
-                        linkObject["x1"] = this.svgNodeArray[j].x;
-                        linkObject["y1"] = this.svgNodeArray[j].y;
+                        linkObject["x1"] = this.svgGraph.nodes[j].x;
+                        linkObject["y1"] = this.svgGraph.nodes[j].y;
                     }
 
-                    if (this.svgNodeArray[j].id == edge.targetNode.id) {
+                    if (this.svgGraph.nodes[j].id == edge.targetNode.id) {
                         linkObject["target"] = j;
-                        linkObject["x2"] = this.svgNodeArray[j].x;
-                        linkObject["y2"] = this.svgNodeArray[j].y;
+                        linkObject["x2"] = this.svgGraph.nodes[j].x;
+                        linkObject["y2"] = this.svgGraph.nodes[j].y;
                     }
                 }
 
-                this.svgLinkArray.push(linkObject);
+                this.svgGraph.links.push(linkObject);
             }
         }
 
-        var nodeJson = JSON.parse(JSON.stringify(this.svgNodeArray));
-        var linkJson = JSON.parse(JSON.stringify(this.svgLinkArray));
+        var nodeJson = JSON.parse(JSON.stringify(this.svgGraph.nodes));
+        var linkJson = JSON.parse(JSON.stringify(this.svgGraph.links));
 
         var link = this.svgAllElements.selectAll(".link")
             .data(linkJson)
@@ -2109,8 +2107,8 @@ class Brain3DApp implements Application, Loopable {
         // update the this.svgNodeArray
         var colaNodeData = this.svgAllElements.selectAll(".node").data();
         for (var i = 0; i < colaNodeData.length; i++) {
-            this.svgNodeArray[i].x = colaNodeData[i].x;
-            this.svgNodeArray[i].y = colaNodeData[i].y;
+            this.svgGraph.nodes[i].x = colaNodeData[i].x;
+            this.svgGraph.nodes[i].y = colaNodeData[i].y;
         }
 
         // node label
@@ -2345,6 +2343,8 @@ class Brain3DApp implements Application, Loopable {
         this.colaGraph = new Graph(this.colaObject, edgeMatrix, this.nodeColourings, this.dataSet.simMatrix);
         this.colaGraph.setVisible(false);
 
+        this.svgGraph = new Graph2D();
+
         // Initialize the filtering
         this.filteredAdjMatrix = this.adjMatrixFromEdgeCount(initialEdgesShown);
         this.physioGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
@@ -2568,6 +2568,97 @@ class Brain3DApp implements Application, Loopable {
 
     draw() {
         this.renderer.render(this.scene, this.camera);
+    }
+}
+
+// power graph
+class PowerGraph {
+    nodes: any[];
+    powerGroup: any[];
+    powerEdge: any[];
+
+    constructor(coordinates: any[]) {
+        this.nodes = coordinates.slice(0); // clone the array
+        for (var i = 0; i < this.nodes.length; i++) {
+            this.nodes[i]['isLeaf'] = true;
+        }
+        this.powerGroup = [];
+        this.powerEdge = [];
+    }
+
+    createPowerGroup() {
+        var allNodes = this.nodes.slice(0);
+
+        var minDist = -1;
+        var minI = -1;
+        var minJ = -1;
+        for (var i = 0; i < allNodes.length; i++) {
+            for (var j = 0; j < allNodes.length; j++) {
+                var n1 = allNodes[i];
+                var n2 = allNodes[j];
+                var distance = Math.sqrt((n1.x - n2.x) * (n1.x - n2.x) + (n1.y - n2.y) * (n1.y - n2.y) + (n1.z - n2.z) * (n1.z - n2.z));
+
+                if (minDist == -1) {
+                    minDist = distance;
+                    minI = i;
+                    minJ = j;
+                }
+                else {
+                    if (distance < minDist) {
+                        minDist = distance;
+                        minI = i;
+                        minJ = j;
+                    }
+                }
+            }
+        }
+
+        var id1 = allNodes[minI].id;
+        var id2 = allNodes[minJ].id;
+
+        var g = new Object();
+        g['isGroup'] = true;
+        g['id'] = 10000 + this.powerEdge.length;
+        g['x'] = (allNodes[minI].x + allNodes[minJ].x) / 2;
+        g['y'] = (allNodes[minI].y + allNodes[minJ].y) / 2;
+        g['z'] = (allNodes[minI].z + allNodes[minJ].z) / 2; 
+
+        this.AddNodeToGroup(allNodes[minI], g);
+        this.AddNodeToGroup(allNodes[minJ], g);
+
+        this.powerGroup.push(g);
+    }
+
+    AddNodeToGroup(node, g) {
+        if (node.isLeaf) {
+            if (typeof ((<any>g).leaves) == "undefined") {
+                g['leaves'] = [];
+                g['leaves'].push(node);
+            }
+            else {
+                g['leaves'].push(node);
+            }
+        }
+        else if (node.isGroup) {
+            if (typeof ((<any>g).groups) == "undefined") {
+                g['groups'] = [];
+                g['groups'].push(node);
+            }
+            else {
+                g['groups'].push(node);
+            }
+        }
+    }
+}
+
+// svg graph
+class Graph2D {
+    nodes: any[];
+    links: any[];
+
+    constructor() {
+        this.nodes = [];
+        this.links = [];
     }
 }
 
