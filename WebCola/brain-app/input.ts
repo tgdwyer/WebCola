@@ -52,11 +52,14 @@ class InputTarget {
     mouseWheelCallback;
     mouseDoubleClickCallback;
 
+    getRotationCallback;
+    setRotationCallback;
+
     // Accepts the CSS ID of the div that is to represent the input target, and the extra borders
     // which describe where in the div the region of interest is (and where the coordinates should be scaled around)
     constructor(public targetCssId: string, public currentPointer: PointerIndirection, public leftBorder = 0, public rightBorder = 0, public topBorder = 0, public bottomBorder = 0) { }
 
-    regKeyDownCallback(key: string, callback: () => void) {
+    regKeyDownCallback(key: string, callback: (b: boolean) => void) {
         this.keyDownCallbacks[key] = callback;
     }
 
@@ -94,6 +97,14 @@ class InputTarget {
 
     regMouseDoubleClickCallback(callback: () => void) {
         this.mouseDoubleClickCallback = callback;
+    }
+
+    regGetRotationCallback(callback: () => number[]) {
+        this.getRotationCallback = callback;
+    }
+
+    regSetRotationCallback(callback: (rotation: number[]) => void) {
+        this.setRotationCallback = callback;
     }
 
     // Return the pointer coordinates within the input target as a pair (x, y) E [-1, 1]x[-1, 1] as they lie within the target's borders
@@ -138,6 +149,8 @@ class InputTargetManager {
     fingerPositions;
     fpi = 0;
 
+    yokingView: boolean = false;
+
     mouseDownMode: number;
     isMouseDown: boolean = false;
     onMouseDownPosition = new THREE.Vector2();
@@ -146,6 +159,9 @@ class InputTargetManager {
 
     rightClickLabel;
     rightClickLabelAppended: boolean = false;
+    selectedNodeID: number = -1;
+    divContextMenuColorPicker;
+    contextMenuColorChanged: boolean = false;
 
     regMouseLocationCallback(callback: (x:number, y:number) => number) {
         this.mouseLocationCallback = callback;
@@ -181,6 +197,11 @@ class InputTargetManager {
         for (var i = 0; i < this.fingerSmoothingLevel; ++i)
             this.fingerPositions[i] = [1, 1, 1];
 
+        var varYokingViewAcrossPanels = () => { this.yokingViewAcrossPanels(); }
+
+        this.rightClickLabel = document.createElement('div');
+        this.rightClickLabel.id = 'right-click-label';
+
         // Mouse input handling
         /*
         document.addEventListener('mousedown', function (event) {
@@ -213,11 +234,16 @@ class InputTargetManager {
         });*/
 
         document.addEventListener('mousedown', (event) => {
-            if (this.rightClickLabel && this.rightClickLabelAppended) {
-                document.body.removeChild(this.rightClickLabel);
-                this.rightClickLabelAppended = false;
+            if (this.rightClickLabelAppended) {
+                if (((<any>(event.target)).id != "input-context-menu-node-color") && (this.contextMenuColorChanged == false)) {
+                    //if ($('#div-context-menu-color-picker').length > 0) this.divContextMenuColorPicker = $('#div-context-menu-color-picker').detach();
+                    document.body.removeChild(this.rightClickLabel);
+                    this.selectedNodeID = -1;
+                    this.rightClickLabelAppended = false;
+                }
             }
 
+            this.contextMenuColorChanged = false;
             this.mouseDownMode = event.which;
 
             var viewID = this.mouseLocationCallback(event.clientX, event.clientY);
@@ -252,18 +278,42 @@ class InputTargetManager {
             }
 
             if (record) {
-                this.rightClickLabel = document.createElement('div');
+                $('#div-context-menu-color-picker').css({ visibility: 'visible' });
+                if ($('#div-context-menu-color-picker').length > 0) this.divContextMenuColorPicker = $('#div-context-menu-color-picker').detach();
+
+                document.body.appendChild(this.rightClickLabel);
+                $('#right-click-label').empty(); // empty this.rightClickLabel
+
                 this.rightClickLabel.style.position = 'absolute';
-                this.rightClickLabel.style.zIndex = '1';    
-                this.rightClickLabel.style.backgroundColor = '#feeebd'; // the color of the control panel
-                var s = record.replace(/;/g, '<br />');
-                this.rightClickLabel.innerHTML = s;
                 this.rightClickLabel.style.left = x + 'px';
                 this.rightClickLabel.style.top = y + 'px';
                 this.rightClickLabel.style.padding = '5px';
                 this.rightClickLabel.style.borderRadius = '5px';
+                this.rightClickLabel.style.zIndex = '1';    
+                this.rightClickLabel.style.backgroundColor = '#feeebd'; // the color of the control panel
 
-                document.body.appendChild(this.rightClickLabel);
+                var attributes = record.split(';');
+
+                // the first attribute is node id
+                var idStrings = attributes[0].split(':');
+                var nodeID = parseInt(idStrings[1].trim());
+                this.selectedNodeID = nodeID;
+
+                for (var i = 0; i < attributes.length-1; i++) {
+                    var attr = attributes[i].trim();
+                    var text = document.createElement('div');
+                    text.innerHTML = attr;
+                    text.style.marginBottom = '5px';
+                    this.rightClickLabel.appendChild(text);
+                }
+
+                $(this.divContextMenuColorPicker).appendTo('#right-click-label');
+
+                // the last attribute is color
+                var color = parseInt(attributes[attributes.length - 1].trim());
+                var hex = color.toString(16);
+                (<any>document.getElementById('input-context-menu-node-color')).color.fromString(hex);   
+
                 this.rightClickLabelAppended = true;
             }
 
@@ -286,6 +336,8 @@ class InputTargetManager {
                 if (it) {
                     var callback = it.mouseDoubleClickCallback;
                     if (callback) callback();
+
+                    if (this.yokingView) varYokingViewAcrossPanels();
 
                     clearSelection();
                 }
@@ -310,6 +362,8 @@ class InputTargetManager {
             this.currentPointer.ptr = this.mouse;
             this.pointerImage.hide();
 
+            if (this.contextMenuColorChanged) return;
+
             if (this.isMouseDown === true) {
                 var it = this.inputTargets[this.activeTarget];
                 if (it) {
@@ -318,6 +372,26 @@ class InputTargetManager {
 
                     var callback = it.mouseDragCallback;
                     if (callback) callback(dx, dy, this.mouseDownMode);
+
+                    if (this.yokingView) varYokingViewAcrossPanels();
+                    /*
+                    if (this.yokingView) {
+                        var rotation = null;
+                        callback = it.getRotationCallback;
+                        if (callback) rotation = callback();
+                        if (rotation) {
+                            for (var i = 0; i < this.inputTargets.length; i++) {
+                                if (i != this.activeTarget) {
+                                    var input = this.inputTargets[i];
+                                    if (input) {
+                                        callback = input.setRotationCallback;
+                                        if (callback) callback(rotation);
+                                    }
+                                }
+                            } 
+                        }
+                    }
+                    */
                 }
             }
 
@@ -342,7 +416,9 @@ class InputTargetManager {
                 var it = this.inputTargets[this.activeTarget];
                 if (it) {
                     var callback = it.keyDownCallbacks[k];
-                    if (callback) callback();
+                    if (callback) callback(false);
+
+                    if (this.yokingView) varYokingViewAcrossPanels();
                 }
             }
         }, false);
@@ -358,6 +434,29 @@ class InputTargetManager {
                 if (callback) callback();
             }
         }, false);
+    }
+
+    yokingViewAcrossPanels() {
+        if (!this.yokingView) return;
+
+        var activeInput = this.inputTargets[this.activeTarget];
+        if (activeInput) {
+            var rotation = null;
+            var callback = activeInput.getRotationCallback;
+            if (callback) rotation = callback();
+            if (rotation) {
+                for (var i = 0; i < this.inputTargets.length; i++) {
+                    if (i != this.activeTarget) {
+                        var input = this.inputTargets[i];
+                        if (input) {
+                            callback = input.setRotationCallback;
+                            if (callback) callback(rotation);
+                        }
+                    }
+                }
+            }
+
+        }
     }
 
     translateKeycode(code) {
@@ -394,6 +493,8 @@ class InputTargetManager {
                 if (it) {
                     var callback = it.keyTickCallbacks[key];
                     if (callback) callback(deltaTime);
+
+                    if (this.yokingView) this.yokingViewAcrossPanels();
                 }
             }
         });
