@@ -5,9 +5,10 @@ var width = 350,
     height = 350;
 
 var color = d3.scale.category20();
-
 var makeEdgeBetween;
 var colans = <any>cola;
+var graphfile = "graphdata/n7e23.json";
+
 function makeSVG() {
     var svg = d3.select("body").append("svg")
         .attr("width", width)
@@ -34,15 +35,7 @@ function flatGraph() {
 
     var svg = makeSVG();
 
-    d3.json("graphdata/n7e23.json", function (error, graph) {
-    //d3.json("graphdata/miserables.json", function (error, graph) {
-        graph.nodes.forEach(v=> {
-            v.width = 50; v.height = 50;
-        });
-        d3cola
-            .nodes(graph.nodes)
-            .links(graph.links)
-            .start(10, 10, 10);
+    d3.json(graphfile, function (error, graph) {
 
         var link = svg.selectAll(".link")
             .data(graph.links)
@@ -50,23 +43,41 @@ function flatGraph() {
             .attr("class", "link");
 
         var margin = 10;
+
         var node = svg.selectAll(".node")
             .data(graph.nodes)
             .enter().append("rect")
             .attr("class", "node")
-            .attr("width", d => d.width + 2 * margin)
-            .attr("height", d => d.height + 2 * margin)
             .attr("rx", 4).attr("ry", 4)
             .call(d3cola.drag);
+
+        var labelwidth = 0, labelheight = 0;
+
         var label = svg.selectAll(".label")
             .data(graph.nodes)
             .enter().append("text")
             .attr("class", "label")
             .text(d => d.name)
-            .call(d3cola.drag);
+            .call(d3cola.drag)
+            .each(function (d) {
+                var bb = this.getBBox();
+                labelwidth = Math.max(labelwidth, bb.width);
+                labelheight = Math.max(labelheight, bb.height);
+            });
 
         node.append("title")
             .text(d => d.name);
+
+        node.attr("width", labelwidth)
+            .each(function (d) {
+                d.width = labelwidth + 2*margin + 10;
+                d.height = labelheight + 2*margin;
+            });
+
+        d3cola
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .start(10, 10, 10);
 
         d3cola.on("tick", function () {
             node.each(
@@ -87,10 +98,14 @@ function flatGraph() {
                 .attr("width", d => d.innerBounds.width())
                 .attr("height", d => d.innerBounds.height());
 
-            label.attr("x", d => d.x)
+            var b;
+            label
+                .each(function (d) {
+                    b = this.getBBox();
+                })
+                .attr("x", d => d.x)
                 .attr("y", function (d) {
-                    var h = this.getBBox().height;
-                    return d.y + h / 3.5;
+                    return d.y + b.height/3;
                 });
         });
     });
@@ -120,8 +135,7 @@ function powerGraph() {
 
     var svg = makeSVG();
 
-    d3.json("graphdata/n7e23.json", function (error, graph) {
-    //d3.json("graphdata/miserables.json", function (error, graph) {
+    d3.json(graphfile, function (error, graph) {
         graph.nodes.forEach((v, i) => {
             v.index = i;
         });
@@ -220,116 +234,35 @@ function powerGraph() {
             var N = graph.nodes.length;
             modules.edges.push({ source: getId(e.source, N), target: getId(e.target, N) });
         });
-        $.ajax({
-            type: 'post',
-            url: 'http://marvl.infotech.monash.edu/cgi-bin/test.py',
-            data: JSON.stringify(modules),
-            datatype: "json",
-            success: function (response) {
-                doLayout(response);
-            },
-            error: function (jqXHR, status, err) {
-                alert(status);
-            }
-        });
-
-        //d3.json("graphdata/response.json", function (error, response) {
-        //    doLayout(response);
-        //});
-    });
-
-}
-
-function confluent() {
-    var d3cola = colans.d3adaptor()
-        .linkDistance(80)
-        .avoidOverlaps(true)
-        .size([width, height]);
-
-    var svg = makeSVG();
-
-    d3.json("graphdata/miserables.json", function (error, graph) {
-
-        var powerGraph;
-
-        var linkAccessor = {
-            getSourceIndex: l => l.source,
-            getTargetIndex: l => l.target,
-            getType: l => 0
-        };
-
-        var g = cola.powergraph.getGroups(graph.nodes, graph.links, linkAccessor);
-
-        d3cola
-            .nodes(graph.nodes)
-            .links(graph.links)
-            .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 20))
-            .start(10, 10, 10);
-
-        var group = svg.selectAll(".group")
-            .data(powerGraph.groups)
-            .enter().append("rect")
-            .attr("rx", 8).attr("ry", 8)
-            .attr("class", "group")
-            .style("fill", (d, i) => color(i));
-
-        var link = svg.selectAll(".link")
-            .data(powerGraph.powerEdges)
-            .enter().append("line")
-            .attr("class", "link");
-
-        var margin = 10;
-        var node = svg.selectAll(".node")
-            .data(graph.nodes)
-            .enter().append("rect")
-            .attr("class", "node")
-            .attr("width", d => d.width + 2 * margin)
-            .attr("height", d => d.height + 2 * margin)
-            .attr("rx", 4).attr("ry", 4)
-            .call(d3cola.drag);
-        var label = svg.selectAll(".label")
-            .data(graph.nodes)
-            .enter().append("text")
-            .attr("class", "label")
-            .text(d => d.name)
-            .call(d3cola.drag);
-
-        node.append("title")
-            .text(d => d.name);
-
-        d3cola.on("tick", function () {
-            node.each(d => d.innerBounds = d.bounds.inflate(-margin));
-            group.each(d => d.innerBounds = d.bounds.inflate(-margin));
-            link.each(function (d) {
-                makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
-                if (isIE()) this.parentNode.insertBefore(this, this);
+        if (document.URL.toLowerCase().indexOf('marvl.infotech.monash.edu') >= 0) {
+            $.ajax({
+                type: 'post',
+                url: 'http://marvl.infotech.monash.edu/cgi-bin/test.py',
+                data: JSON.stringify(modules),
+                datatype: "json",
+                success: function (response) {
+                    doLayout(response);
+                },
+                error: function (jqXHR, status, err) {
+                    alert(status);
+                }
             });
-
-            link.attr("x1", d => d.sourceIntersection.x)
-                .attr("y1", d => d.sourceIntersection.y)
-                .attr("x2", d => d.arrowStart.x)
-                .attr("y2", d => d.arrowStart.y);
-
-            node.attr("x", d => d.innerBounds.x)
-                .attr("y", d => d.innerBounds.y)
-                .attr("width", d => d.innerBounds.width())
-                .attr("height", d => d.innerBounds.height());
-
-            group.attr("x", d => d.innerBounds.x)
-                .attr("y", d => d.innerBounds.y)
-                .attr("width", d => d.innerBounds.width())
-                .attr("height", d => d.innerBounds.height());
-
-            label.attr("x", d => d.x)
-                .attr("y", function (d) {
-                    var h = this.getBBox().height;
-                    return d.y + h / 3.5;
-                });
-        });
+        } else {
+            d3.json(graphfile.replace(/.json/,'pgresponse.json'), function (error, response) {
+                doLayout(response);
+            });
+        }
     });
+
 }
+
 function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
 
 flatGraph();
-powerGraph();
-//confluent();
+
+d3.select("#GridButton").on("click", powerGraph);
+d3.select("#filemenu").on("change", function () {
+    d3.selectAll("svg").remove();
+    graphfile = this.value;
+    flatGraph();
+});
