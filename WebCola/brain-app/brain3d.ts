@@ -767,11 +767,13 @@ class Brain3DApp implements Application, Loopable {
 
 
             // ???
+            /*
             this.colaGraph.removeAllBundlingEdges();
             this.colaGraph.filteredNodeIDs = this.physioGraph.filteredNodeIDs;
             this.colaGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
             this.colaGraph.setNodeVisibilities(); // Hide the nodes without neighbours
             this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
+            */
         }
 
         this.removeProcessingNotification();
@@ -1179,6 +1181,7 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
+    /*
     initPowerGraph(targetGraph, dimension) {
         var mode = "hierarchy";
         //var mode = "flat";
@@ -1322,7 +1325,6 @@ class Brain3DApp implements Application, Loopable {
                     }
                 }
             }
-            /*
             else if (mode == "flat") {
                 var source = powerGraph.powerEdges[i].source;
                 var target = powerGraph.powerEdges[i].target;
@@ -1457,7 +1459,6 @@ class Brain3DApp implements Application, Loopable {
                     }
                 }
             }
-            */
         }
     }
 
@@ -1575,6 +1576,7 @@ class Brain3DApp implements Application, Loopable {
         return midPoint;
     }
 
+    // !!!!!!!!!!!!!!!!!!!
     // this function have been moved to PowerGraph class; need to be deleted later
     getAllLeavesInATree(node) {
         var allLeaves = [];
@@ -1602,6 +1604,7 @@ class Brain3DApp implements Application, Loopable {
 
         return allLeaves;
     }
+    */
 
     initCircularLayout(sortByAttribute: string) {
         //var moduleIDs = this.dataSet.attributes.get('module_id');
@@ -2577,6 +2580,7 @@ class PowerGraph {
     links: any[];
     powerGroups: any[];
     powerEdges: any[];
+    targetGraph;
 
     constructor() {
         /*
@@ -2591,6 +2595,7 @@ class PowerGraph {
     }
 
     initPowerGraphSpatial3D(graph3D) {
+        this.targetGraph = graph3D;
         this.nodes = [];
         this.links = [];
 
@@ -2626,7 +2631,169 @@ class PowerGraph {
             }
         }
 
-        this.createPowerEdges();        
+        this.createPowerEdges();
+        this.targetGraph.removeAllEdges();
+
+        for (var i = 0; i < this.powerEdges.length; i++) {
+            var edgeList = this.powerEdgeToTree(this.powerEdges[i], this.nodes);
+
+            for (var j = 0; j < edgeList.length; j++) {
+                var thisEdge = edgeList[j];
+                if (thisEdge.length == 2) {
+                    var geometry = new THREE.Geometry();
+                    geometry.vertices.push(thisEdge[0]);
+                    geometry.vertices.push(thisEdge[1]);
+
+                    var material = new THREE.LineBasicMaterial({
+                        color: 0x000000,
+                    });
+
+                    var line = new THREE.Line(geometry, material);
+                    this.targetGraph.addBundlingEdge(line);
+                }
+                else if (thisEdge.length == 4) {
+                    if ((thisEdge[1].x == thisEdge[3].x) && (thisEdge[1].y == thisEdge[3].y) && (thisEdge[1].z == thisEdge[3].z)) {
+                        var geometry = new THREE.Geometry();
+                        geometry.vertices.push(thisEdge[0]);
+                        geometry.vertices.push(thisEdge[3]);
+
+                        var material = new THREE.LineBasicMaterial({
+                            color: 0x000000,
+                        });
+
+                        var line = new THREE.Line(geometry, material);
+                        this.targetGraph.addBundlingEdge(line);
+                    }
+                    else {
+                        var spline = new THREE.CubicBezierCurve3(thisEdge[0], thisEdge[1], thisEdge[2], thisEdge[3]);
+
+                        var geometry = new THREE.Geometry();
+                        var splinePoints = spline.getPoints(20);
+
+                        for (var w = 0; w < splinePoints.length; w++) {
+                            geometry.vertices.push(<any>splinePoints[w]);
+                        }
+
+                        var line = new THREE.Line(geometry, material);
+                        this.targetGraph.addBundlingEdge(line);
+                    }
+                }
+            }
+        }
+    }
+
+    powerEdgeToTree(powerEdge, coordinates) {
+        var edgeList = []; // edge list in the tree
+
+        var source = powerEdge.source;
+        var target = powerEdge.target;
+
+        var sourceMidPoint = this.getMidPointOfAGroup(source, coordinates);
+        var targetMidPoint = this.getMidPointOfAGroup(target, coordinates);
+
+        var dx = targetMidPoint.x - sourceMidPoint.x;
+        var dy = targetMidPoint.y - sourceMidPoint.y;
+        var dz = targetMidPoint.z - sourceMidPoint.z;
+
+        var rootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (1 / 2), sourceMidPoint.y + dy * (1 / 2), sourceMidPoint.z + dz * (1 / 2));
+
+        var sourceEdgeList = this.buildSubTree(rootPoint, source, coordinates);
+        sourceEdgeList.forEach(e => { edgeList.push(e); });
+
+        var targetEdgeList = this.buildSubTree(rootPoint, target, coordinates);
+        targetEdgeList.forEach(e => { edgeList.push(e); });
+
+        return edgeList;
+    }
+
+    buildSubTree(rootPoint, node, coordinates) {
+        var edgeList = [];
+
+        var midPoint = this.getMidPointOfAGroup(node, coordinates);
+
+        var dx = midPoint.x - rootPoint.x;
+        var dy = midPoint.y - rootPoint.y;
+        var dz = midPoint.z - rootPoint.z;
+
+        var subRootPoint = new THREE.Vector3(rootPoint.x + dx * (1 / 3), rootPoint.y + dy * (1 / 3), rootPoint.z + dz * (1 / 3));
+
+        var edge = []; // the first edge 
+        edge.push(rootPoint);
+        edge.push(subRootPoint);
+        edgeList.push(edge);
+
+        if (typeof (node.leaves) != "undefined") {
+            for (var i = 0; i < node.leaves.length; i++) {
+                var nodeID = node.leaves[i].id;
+
+                var index = coordinates.map(function (d) {
+                    return d.id;
+                }).indexOf(nodeID);
+
+                var leafPoint = new THREE.Vector3(coordinates[index].x, coordinates[index].y, coordinates[index].z);
+                var additionalPoint = new THREE.Vector3((leafPoint.x + midPoint.x) / 2, (leafPoint.y + midPoint.y) / 2, (leafPoint.z + midPoint.z) / 2);
+
+                var edge = [];
+                edge.push(subRootPoint);
+                edge.push(midPoint);
+                edge.push(additionalPoint);
+                edge.push(leafPoint);
+                edgeList.push(edge);
+            }
+        }
+
+        if (typeof (node.groups) != "undefined") {
+            for (var i = 0; i < node.groups.length; i++) {
+                var subgroup = node.groups[i];
+                var subEdgeList = this.buildSubTree(subRootPoint, subgroup, coordinates);
+                subEdgeList.forEach(e => { edgeList.push(e); });
+            }
+        }
+
+        if ((typeof (node.leaves) == "undefined") && (typeof (node.groups) == "undefined")) {
+            // this is the leaf
+            var nodeID = node.id;
+
+            var index = coordinates.map(function (d) {
+                return d.id;
+            }).indexOf(nodeID);
+
+            var leafPoint = new THREE.Vector3(coordinates[index].x, coordinates[index].y, coordinates[index].z);
+            var additionalPoint = new THREE.Vector3((leafPoint.x + midPoint.x) / 2, (leafPoint.y + midPoint.y) / 2, (leafPoint.z + midPoint.z) / 2);
+
+            var edge = [];
+            edge.push(subRootPoint);
+            edge.push(midPoint);
+            edge.push(additionalPoint);
+            edge.push(leafPoint);
+            edgeList.push(edge);
+        }
+
+        return edgeList;
+    }
+
+    getMidPointOfAGroup(group, coordinates) {
+        var allLeaves = this.getAllLeavesInATree(group);
+
+        var totalX = 0;
+        var totalY = 0;
+        var totalZ = 0;
+
+        for (var j = 0; j < allLeaves.length; j++) {
+            var nodeID = allLeaves[j].id;
+
+            var index = coordinates.map(function (d) {
+                return d.id;
+            }).indexOf(nodeID);
+
+            totalX += coordinates[index].x;
+            totalY += coordinates[index].y;
+            totalZ += coordinates[index].z;
+        }
+
+        var midPoint = new THREE.Vector3(totalX / allLeaves.length, totalY / allLeaves.length, totalZ / allLeaves.length);
+
+        return midPoint;
     }
 
     createPowerEdges() {
@@ -2642,6 +2809,7 @@ class PowerGraph {
                 obj['count'] = this.powerGroups[i].count * this.powerGroups[j].count;
                 obj['sourceGroupIndex'] = i;
                 obj['targetGroupIndex'] = j;
+                obj['hasChecked'] = false;
                 groupPairList.push(obj);
             }
         }
@@ -2649,6 +2817,12 @@ class PowerGraph {
         groupPairList.sort(function (a, b) { return b.count - a.count; });
 
         this.createPowerEdgeGreedy(allEdges, groupPairList);
+
+        /*
+        while (allEdges.length > 0) {
+            this.createPowerEdgeGreedy(allEdges, groupPairList);
+        }
+        */
     }
 
     createPowerEdgeGreedy(allEdges: any[], groupPairList: any[]) {
@@ -2664,14 +2838,39 @@ class PowerGraph {
                     e['target'] = g2;
 
                     this.powerEdges.push(e);
-
-
-                    //...
-
-                    return;
+                    this.removeEdges(g1, g2, allEdges);                   
+                    //return;
                 }
             }
         }
+    }
+
+    removeEdges(g1, g2, allEdges: any[]) {
+        var leaves1 = this.getAllLeavesInATree(g1);
+        var leaves2 = this.getAllLeavesInATree(g2);
+
+        var edgesCSV = allEdges.map(function (d) {
+            return d.source + ";" + d.target;
+        });
+
+        for (var i = 0; i < leaves1.length; i++) {
+            for (var j = 0; j < leaves2.length; j++) {
+                var csv1 = leaves1[i].id + ";" + leaves2[j].id;
+                var csv2 = leaves2[j].id + ";" + leaves1[i].id;
+
+                var index1 = edgesCSV.indexOf(csv1);
+                var index2 = edgesCSV.indexOf(csv2);
+
+                if (index1 >= 0) {
+                    allEdges.splice(index1, 1);
+                }
+
+                if (index2 >= 0) {
+                    allEdges.splice(index2, 1);
+                }
+            }
+        }
+
     }
 
     hasPowerEdgeBetweenTwoGroups(g1, g2, allEdges: any[]) {
