@@ -1,7 +1,9 @@
 ///<reference path="../src/vpsc.ts"/>
+///<reference path="../src/rectangle.ts"/>
+///<reference path="../extern/d3.d.ts"/>
 ///<reference path="../extern/jquery.d.ts"/>
 
-var width = 350,
+var width = 700,
     height = 350;
 
 var color = d3.scale.category20();
@@ -9,12 +11,15 @@ var makeEdgeBetween;
 var colans = <any>cola;
 var graphfile = "graphdata/n7e23.json";
 
+
 function makeSVG() {
-    var svg = d3.select("body").append("svg")
+    var outer = d3.select("body").append("svg")
         .attr("width", width)
-        .attr("height", height);
+        .attr("height", height)
+        .attr("pointer-events", "all");
+
     // define arrow markers for graph links
-    svg.append('svg:defs').append('svg:marker')
+    outer.append('svg:defs').append('svg:marker')
         .attr('id', 'end-arrow')
         .attr('viewBox', '0 -5 10 10')
         .attr('refX', 5)
@@ -25,7 +30,56 @@ function makeSVG() {
         .attr('d', 'M0,-5L10,0L0,5L2,0')
         .attr('stroke-width', '0px')
         .attr('fill', '#555');
-    return svg;
+
+    var zoomBox = outer.append('rect')
+        .attr('class', 'background')
+        .attr('width', "100%")
+        .attr('height', "100%")
+
+    var vis = <any>outer.append('g');
+    var redraw = (transition) => 
+        (transition ? <any>vis.transition() : <any> vis)
+            .attr("transform", "translate(" + zoom.translate() + ") scale(" + zoom.scale() + ")");
+    vis.zoomToFit = ()=>{
+        var b = cola.vpsc.Rectangle.empty();
+        vis.selectAll("rect").each(function (d) {
+            var bb = this.getBBox();
+            b = b.union(new cola.vpsc.Rectangle(bb.x, bb.x + bb.width, bb.y, bb.y + bb.height));
+        });
+        var w = b.width(), h = b.height();
+        var cw = Number(outer.attr("width")), ch = Number(outer.attr("height"));
+        var s = Math.min(cw / w, ch / h);
+        var tx = (-b.x * s + (cw / s - w) * s / 2), ty = (-b.y * s + (ch / s - h) * s / 2);
+        zoom.translate([tx, ty]).scale(s);
+        redraw(true);
+    }
+    var zoom = d3.behavior.zoom();
+    zoomBox.call(zoom.on("zoom", redraw))
+        .on("dblclick.zoom", vis.zoomToFit);
+
+    return vis;
+}
+function createLabels(svg, graph, node, d3cola, margin) {
+    var labelwidth = 0, labelheight = 0;
+    var labels = svg.selectAll(".label")
+                .data(graph.nodes)
+                .enter().append("text")
+                .attr("class", "label")
+                .text(d => d.name)
+                .call(d3cola.drag)
+                .each(function (d) {
+                    var bb = this.getBBox();
+                    labelwidth = Math.max(labelwidth, bb.width);
+                    labelheight = Math.max(labelheight, bb.height);
+                });
+    node.attr("width", labelwidth)
+        .each(function (d) {
+            d.width = labelwidth + 2*margin + 10;
+            d.height = labelheight + 2*margin;
+        });
+    node.append("title")
+        .text(d => d.name);
+    return labels;
 }
 function flatGraph() {
     var d3cola = colans.d3adaptor()
@@ -51,28 +105,7 @@ function flatGraph() {
             .attr("rx", 4).attr("ry", 4)
             .call(d3cola.drag);
 
-        var labelwidth = 0, labelheight = 0;
-
-        var label = svg.selectAll(".label")
-            .data(graph.nodes)
-            .enter().append("text")
-            .attr("class", "label")
-            .text(d => d.name)
-            .call(d3cola.drag)
-            .each(function (d) {
-                var bb = this.getBBox();
-                labelwidth = Math.max(labelwidth, bb.width);
-                labelheight = Math.max(labelheight, bb.height);
-            });
-
-        node.append("title")
-            .text(d => d.name);
-
-        node.attr("width", labelwidth)
-            .each(function (d) {
-                d.width = labelwidth + 2*margin + 10;
-                d.height = labelheight + 2*margin;
-            });
+        var label = createLabels(svg, graph, node, d3cola, margin);
 
         d3cola
             .nodes(graph.nodes)
@@ -107,7 +140,8 @@ function flatGraph() {
                 .attr("y", function (d) {
                     return d.y + b.height/3;
                 });
-        });
+            svg.zoomToFit();
+        }).on("end", () => { svg.zoomToFit() });
     });
 }
 
@@ -142,16 +176,6 @@ function powerGraph() {
         var powerGraph;
 
         var doLayout = function (response) {
-            var vs = response.nodes.filter(v=> v.label);
-            vs.forEach(v=> {
-                var index = Number(v.label) - 1;
-                var node = graph.nodes[index];
-                node.x = Number(v.x) / 1.2 + 50;
-                node.y = Number(v.y) / 1.2 + 50;
-                node.fixed = 1;
-            });
-            d3cola.start(1, 1, 1);
-
             var group = svg.selectAll(".group")
                 .data(powerGraph.groups)
                 .enter().append("rect")
@@ -173,16 +197,19 @@ function powerGraph() {
                 .attr("height", d => d.height + 2 * margin)
                 .attr("rx", 4).attr("ry", 4)
                 .call(d3cola.drag);
-            var label = svg.selectAll(".label")
-                .data(graph.nodes)
-                .enter().append("text")
-                .attr("class", "label")
-                .text(d => d.name)
-                .call(d3cola.drag);
 
-            node.append("title")
-                .text(d => d.name);
+            var label = createLabels(svg, graph, node, d3cola, margin);
 
+            var vs = response.nodes.filter(v=> v.label);
+            vs.forEach(v=> {
+                var index = Number(v.label) - 1;
+                var node = graph.nodes[index];
+                node.x = Number(v.x) * node.width / 80 + 50;
+                node.y = Number(v.y) / 1.2 + 50;
+                node.fixed = 1;
+            });
+
+            d3cola.start(1, 1, 1);
             d3cola.on("tick", function () {
                 node.each(
                     d => {
@@ -216,6 +243,7 @@ function powerGraph() {
                         var h = this.getBBox().height;
                         return d.y + h / 3.5;
                     });
+                svg.zoomToFit();
             });
         }
         d3cola
