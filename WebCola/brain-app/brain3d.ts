@@ -747,13 +747,13 @@ class Brain3DApp implements Application, Loopable {
         if (this.bundlingEdges == true) {
             $('#bundling-edges-' + this.id).css('opacity', 1);
 
-            //this.initPowerGraph(this.physioGraph, "3d");
-            var powerGraph = new PowerGraph(this.physioGraph);
-            powerGraph.initPowerGraphSpatial3D();
+            var powerGraphPhysio = new PowerGraph(this.physioGraph);
+            powerGraphPhysio.initPowerGraphSpatial3D();
             //powerGraph.initPowerGraph('3d', this.jDiv.width(), this.jDiv.height() - sliderSpace);
 
             if ((this.networkType == 'default') || (this.networkType == 'edge-length-depends-on-weight')) {
-                //this.initPowerGraph(this.colaGraph, "3d");
+                //var powerGraphCola = new PowerGraph(this.colaGraph);
+                //powerGraphCola.initPowerGraphSpatial3D();
             }
             else if (this.networkType == 'flatten-to-2d') {
 
