@@ -542,6 +542,8 @@ class Brain3DApp implements Application, Loopable {
             var varCircularLayoutAttributeOneOnChange = (s: string) => { this.circularLayoutAttributeOneOnChange(s); };
             var varCircularLayoutAttributeTwoOnChange = (s: string) => { this.circularLayoutAttributeTwoOnChange(s); };
             var varCircularLayoutSortOnChange = (s: string) => { this.circularLayoutSortOnChange(s); };
+            var varCircularLayoutBundleOnChange = (s: string) => { this.circularLayoutBundleOnChange(s); };
+            //------------------------------------
             this.jDiv.append($('<label class="network-type-appended-element"> 1st:</label>'));
             this.jDiv.append($('<select id="select-circular-layout-attribute-one-' + this.id + '" class="network-type-appended-element"></select>')
                 .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
@@ -558,6 +560,7 @@ class Brain3DApp implements Application, Loopable {
                 var columnName = this.dataSet.attributes.columnNames[i];
                 $('#select-circular-layout-attribute-one-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
 
+            //------------------------------------
             this.jDiv.append($('<label class="network-type-appended-element"> 2nd:</label>'));
             this.jDiv.append($('<select id="select-circular-layout-attribute-two-' + this.id + '" class="network-type-appended-element"></select>')
                 .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
@@ -576,6 +579,24 @@ class Brain3DApp implements Application, Loopable {
 
             $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', true);
 
+            //------------------------------------
+            this.jDiv.append($('<label class="network-type-appended-element"> bundle:</label>'));
+            this.jDiv.append($('<select id="select-circular-layout-bundle-' + this.id + '" class="network-type-appended-element"></select>')
+                .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
+                .on("change", function () { varCircularLayoutBundleOnChange($(this).val()); }));
+
+            $('#select-circular-layout-bundle-' + this.id).empty();
+
+            var option = document.createElement('option');
+            option.text = 'none';
+            option.value = 'none';
+            $('#select-circular-layout-bundle-' + this.id).append(option);
+
+            for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
+                var columnName = this.dataSet.attributes.columnNames[i];
+                $('#select-circular-layout-bundle-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
+
+            //------------------------------------
             this.jDiv.append($('<label class="network-type-appended-element"> sort:</label>'));
             this.jDiv.append($('<select id="select-circular-layout-sort-' + this.id + '" class="network-type-appended-element"></select>')
                 .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
@@ -646,6 +667,10 @@ class Brain3DApp implements Application, Loopable {
     }
 
     circularLayoutSortOnChange(attr: string) {
+        this.showNetwork(true);
+    }
+
+    circularLayoutBundleOnChange(attr: string) {
         this.showNetwork(true);
     }
 
@@ -966,12 +991,15 @@ class Brain3DApp implements Application, Loopable {
                 this.colaGraph.setVisible(false);
                 if ($('#select-circular-layout-attribute-one-' + this.id).length <= 0) return;
                 if ($('#select-circular-layout-attribute-two-' + this.id).length <= 0) return;
+                if ($('#select-circular-layout-bundle-' + this.id).length <= 0) return;
                 if ($('#select-circular-layout-sort-' + this.id).length <= 0) return;
+
                 var attrOne = $('#select-circular-layout-attribute-one-' + this.id).val();
                 var attrTwo = $('#select-circular-layout-attribute-two-' + this.id).val();
+                var attrBundle = $('#select-circular-layout-bundle-' + this.id).val();
                 var attrSort = $('#select-circular-layout-sort-' + this.id).val();
 
-                this.initCircularLayout(attrSort);
+                this.initCircularLayout(attrBundle, attrSort);
                 this.circularLayoutAttributeOneOnChange(attrOne);
                 this.circularLayoutAttributeTwoOnChange(attrTwo);
             }
@@ -1182,17 +1210,14 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
-    initCircularLayout(sortByAttribute: string) {
-        //var moduleIDs = this.dataSet.attributes.get('module_id');
+    initCircularLayout(bundleByAttribute: string, sortByAttribute: string) {
         this.svgNodeBundleArray = [];
         var children = this.colaGraph.rootObject.children;
         for (var i = 0; i < children.length; i++) {
             var obj = children[i];
             if ((<any>obj).isNode) {
                 var nodeObject = new Object();
-                //var moduleID = moduleIDs[obj.id];
                 nodeObject["id"] = obj.id;
-                //nodeObject["moduleID"] = moduleID;
                 for (var j = 0; j < this.dataSet.attributes.columnNames.length; j++) {
                     var colname = this.dataSet.attributes.columnNames[j];
 
@@ -1209,13 +1234,23 @@ class Brain3DApp implements Application, Loopable {
                     var min = this.dataSet.attributes.getMin(columnIndex);
                     var max = this.dataSet.attributes.getMax(columnIndex);
 
-                    var colorArray: number[];
-
                     var attrMap = d3.scale.linear().domain([min, max]).range([0.01, 1]);
                     var scalevalue = attrMap(value);
                     nodeObject['scale_' + colname] = scalevalue;
+
+                    var bundleGroupMap = d3.scale.linear().domain([min, max]).range([0, 10]);
+                    var bundleGroup = bundleGroupMap(value);
+                    bundleGroup = Math.floor(bundleGroup);
+                    nodeObject['bundle_group_' + colname] = bundleGroup;
                 }
-                nodeObject["name"] = "root.module" + nodeObject['moduleID'] + "." + obj.id;
+
+                if (bundleByAttribute == "none") {
+                    nodeObject["name"] = "root.module" + nodeObject['moduleID'] + "." + obj.id;
+                }
+                else {
+                    nodeObject["name"] = "root." + bundleByAttribute + nodeObject['bundle_group_' + bundleByAttribute] + "." + obj.id;
+                }
+
                 nodeObject["imports"] = [];
                 nodeObject["color"] = this.colaGraph.nodeMeshes[obj.id].material.color.getHexString();
                 this.svgNodeBundleArray.push(nodeObject);
@@ -1228,16 +1263,30 @@ class Brain3DApp implements Application, Loopable {
                 for (var j = 0; j < this.svgNodeBundleArray.length; j++) {
                     if (this.svgNodeBundleArray[j].id == edge.sourceNode.id) {
                         var moduleID = -1;
+                        var bundleGroupID = -1;
                         for (var k = 0; k < this.svgNodeBundleArray.length; k++) {
                             if (this.svgNodeBundleArray[k].id == edge.targetNode.id) {
-                                moduleID = this.svgNodeBundleArray[k].moduleID;
+                                if (bundleByAttribute == "none") {
+                                    moduleID = this.svgNodeBundleArray[k].moduleID;
+                                }
+                                else {
+                                    bundleGroupID = this.svgNodeBundleArray[k]['bundle_group_' + bundleByAttribute];
+                                }
                                 break;
                             }
                         }
 
-                        if (moduleID >= 0) {
-                            var nodeName = "root.module" + moduleID + "." + edge.targetNode.id;
-                            this.svgNodeBundleArray[j].imports.push(nodeName);
+                        if (bundleByAttribute == "none") {
+                            if (moduleID >= 0) {
+                                var nodeName = "root.module" + moduleID + "." + edge.targetNode.id;
+                                this.svgNodeBundleArray[j].imports.push(nodeName);
+                            }
+                        }
+                        else {
+                            if (bundleGroupID >= 0) {
+                                var nodeName = "root." + bundleByAttribute + bundleGroupID + "." + edge.targetNode.id;
+                                this.svgNodeBundleArray[j].imports.push(nodeName);
+                            }
                         }
                     }
 
@@ -1245,14 +1294,28 @@ class Brain3DApp implements Application, Loopable {
                         var moduleID = -1;
                         for (var k = 0; k < this.svgNodeBundleArray.length; k++) {
                             if (this.svgNodeBundleArray[k].id == edge.sourceNode.id) {
-                                moduleID = this.svgNodeBundleArray[k].moduleID;
+                                //moduleID = this.svgNodeBundleArray[k].moduleID;
+                                if (bundleByAttribute == "none") {
+                                    moduleID = this.svgNodeBundleArray[k].moduleID;
+                                }
+                                else {
+                                    bundleGroupID = this.svgNodeBundleArray[k]['bundle_group_' + bundleByAttribute];
+                                }
                                 break;
                             }
                         }
 
-                        if (moduleID >= 0) {
-                            var nodeName = "root.module" + moduleID + "." + edge.sourceNode.id;
-                            this.svgNodeBundleArray[j].imports.push(nodeName);
+                        if (bundleByAttribute == "none") {
+                            if (moduleID >= 0) {
+                                var nodeName = "root.module" + moduleID + "." + edge.sourceNode.id;
+                                this.svgNodeBundleArray[j].imports.push(nodeName);
+                            }
+                        }
+                        else {
+                            if (bundleGroupID >= 0) {
+                                var nodeName = "root." + bundleByAttribute + bundleGroupID + "." + edge.sourceNode.id;
+                                this.svgNodeBundleArray[j].imports.push(nodeName);
+                            }
                         }
                     }
                 }
