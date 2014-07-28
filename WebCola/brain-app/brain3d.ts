@@ -69,6 +69,9 @@ class Brain3DApp implements Application, Loopable {
     svgNeedsUpdate: boolean = false;
     d3Zoom = d3.behavior.zoom();
 
+    circularBar1ColorPicker;
+    circularBar2ColorPicker;
+
     nodeColourings: number[]; // Stores the colourings associated with the groups
     dissimilarityMatrix: number[][] = []; // An inversion of the similarity matrix, used for Cola graph distances
 
@@ -537,53 +540,19 @@ class Brain3DApp implements Application, Loopable {
     }
 
     setupNetworkTypeAppendedElements() {
+        var varClass = "network-type-appended-element-" + this.id;
+
+        var dotClass = ".network-type-appended-element-" + this.id;
         $("label").remove(".network-type-appended-element");
         $("select").remove(".network-type-appended-element");
+        $("button").remove(".network-type-appended-element");
 
         if (this.networkType == "circular-layout") {
-            //var varCircularLayoutAttributeOneOnChange = (s: string) => { this.circularLayoutAttributeOneOnChange(s); };
-            //var varCircularLayoutAttributeTwoOnChange = (s: string) => { this.circularLayoutAttributeTwoOnChange(s); };
+            var varCircularLayoutAttributeOneOnChange = (s: string) => { this.circularLayoutAttributeOneOnChange(s); };
+            var varCircularLayoutAttributeTwoOnChange = (s: string) => { this.circularLayoutAttributeTwoOnChange(s); };
             var varCircularLayoutSortOnChange = (s: string) => { this.circularLayoutSortOnChange(s); };
             var varCircularLayoutBundleOnChange = (s: string) => { this.circularLayoutBundleOnChange(s); };
             var varCircularLayoutHistogramButtonOnClick = () => { this.circularLayoutHistogramButtonOnClick(); };
-            
-            /*
-            //------------------------------------
-            this.jDiv.append($('<label class="network-type-appended-element"> 1st:</label>'));
-            this.jDiv.append($('<select id="select-circular-layout-attribute-one-' + this.id + '" class="network-type-appended-element"></select>')
-                .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
-                .on("change", function () { varCircularLayoutAttributeOneOnChange($(this).val()); }));
-
-            $('#select-circular-layout-attribute-one-' + this.id).empty();
-
-            var option = document.createElement('option');
-            option.text = 'none';
-            option.value = 'none';
-            $('#select-circular-layout-attribute-one-' + this.id).append(option);
-
-            for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
-                var columnName = this.dataSet.attributes.columnNames[i];
-                $('#select-circular-layout-attribute-one-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
-
-            //------------------------------------
-            this.jDiv.append($('<label class="network-type-appended-element"> 2nd:</label>'));
-            this.jDiv.append($('<select id="select-circular-layout-attribute-two-' + this.id + '" class="network-type-appended-element"></select>')
-                .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
-                .on("change", function () { varCircularLayoutAttributeTwoOnChange($(this).val()); }));
-
-            $('#select-circular-layout-attribute-two-' + this.id).empty();
-
-            var option = document.createElement('option');
-            option.text = 'none';
-            option.value = 'none';
-            $('#select-circular-layout-attribute-two-' + this.id).append(option);
-
-            for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
-                var columnName = this.dataSet.attributes.columnNames[i];
-                $('#select-circular-layout-attribute-two-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
-
-            $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', true);
-            */
 
             //------------------------------------
             this.jDiv.append($('<label class="network-type-appended-element"> bundle:</label>'));
@@ -620,11 +589,11 @@ class Brain3DApp implements Application, Loopable {
                 $('#select-circular-layout-sort-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
 
             //------------------------------------
-            this.jDiv.append($('<button id="div-circular-layout-histogram-' + this.id + '" class="network-type-appended-element">histogram</button>')
+            this.jDiv.append($('<button id="button-circular-layout-histogram-' + this.id + '" class="network-type-appended-element">options</button>')
                 .css({ 'margin-left': '5px', 'font-size': '12px' })
                 .click(function () { varCircularLayoutHistogramButtonOnClick(); }));
 
-            $('#div-circular-layout-histogram-' + this.id).button({
+            $('#button-circular-layout-histogram-' + this.id).button({
                 icons: {
                     primary: "ui-icon-gear",
                     secondary: "ui-icon-triangle-1-s"
@@ -632,12 +601,63 @@ class Brain3DApp implements Application, Loopable {
             });
 
             //------------------------------------
-            //this.jDiv.append($('<ul id="ul-circular-layout-menu-' + this.id + '"></ul>'));
-            
-            //$('#ul-circular-layout-menu-' + this.id).append($('<li class="network-type-appended-element">bar1</li>'));
-            //$('#ul-circular-layout-menu-' + this.id).append($('<li class="network-type-appended-element">bar2</li>'));
+            this.jDiv.append($('<div id="div-circular-layout-menu-' + this.id + '"></div>')
+                .css({ 'display': 'none', 'background-color': '#feeebd', 'position': 'absolute', 'padding': '8px', 'border-radius': '5px' }));
 
-            //$('#ul-circular-layout-menu-' + this.id).menu().hide();
+            $('#div-circular-layout-menu-' + this.id).append('<div>histogram</div>');
+
+            //---
+            $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-bar1-' + this.id + '">bar 1: </div>');
+            $('#div-circular-bar1-' + this.id).append($('<select id="select-circular-layout-attribute-one-' + this.id + '" class="network-type-appended-element"></select>')
+                .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
+                .on("change", function () { varCircularLayoutAttributeOneOnChange($(this).val()); }));
+
+            $('#select-circular-layout-attribute-one-' + this.id).empty();
+
+            var option = document.createElement('option');
+            option.text = 'none';
+            option.value = 'none';
+            $('#select-circular-layout-attribute-one-' + this.id).append(option);
+
+            for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
+                var columnName = this.dataSet.attributes.columnNames[i];
+                $('#select-circular-layout-attribute-one-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
+
+            if ($('#span-circular-layout-bar1-color-picker').length > 0) this.circularBar1ColorPicker = $('#span-circular-layout-bar1-color-picker').detach();
+            $(this.circularBar1ColorPicker).appendTo('#div-circular-bar1-' + this.id);
+
+            //---
+            $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-bar2-' + this.id + '">bar 2: </div>');
+            $('#div-circular-bar2-' + this.id).append($('<select id="select-circular-layout-attribute-two-' + this.id + '" class="network-type-appended-element"></select>')
+                .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
+                .on("change", function () { varCircularLayoutAttributeTwoOnChange($(this).val()); }));
+
+            $('#select-circular-layout-attribute-two-' + this.id).empty();
+
+            var option = document.createElement('option');
+            option.text = 'none';
+            option.value = 'none';
+            $('#select-circular-layout-attribute-two-' + this.id).append(option);
+
+            for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
+                var columnName = this.dataSet.attributes.columnNames[i];
+                $('#select-circular-layout-attribute-two-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
+
+            if ($('#span-circular-layout-bar2-color-picker').length > 0) this.circularBar2ColorPicker = $('#span-circular-layout-bar2-color-picker').detach();
+            $(this.circularBar2ColorPicker).appendTo('#div-circular-bar2-' + this.id);
+
+            //---
+            $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', true);
+
+            document.addEventListener('mousedown', (event) => {
+                if (($(event.target).attr('class') != "network-type-appended-element") &&
+                    ((<any>(event.target)).id != "input-circular-layout-bar1-color") &&
+                    ((<any>(event.target)).id != "input-circular-layout-bar2-color")) {
+                    $('#div-circular-layout-menu-0').hide();
+                }
+            }, false);
+                        
+            //------------------------------------
         }
         else {
 
@@ -648,12 +668,14 @@ class Brain3DApp implements Application, Loopable {
         // show histogram menu on button click
         //$('#ul-circular-layout-menu-' + this.id).slideToggle("fast");
         //$('.menu').slideToggle("fast");
-        var l = $('#div-circular-layout-histogram-' + this.id).offset().left;
-        var t = $('#div-circular-layout-histogram-' + this.id).offset().top - 50;
+        
+        var l = $('#button-circular-layout-histogram-' + this.id).position().left + 5;
+        var t = $('#button-circular-layout-histogram-' + this.id).position().top - $('#div-circular-layout-menu-' + this.id).height() - 15;
 
-        //$('#div-circular-layout-menu-0').css({ bottom: vtop, left: vleft, padding: '5px', visibility: 'visible' });
-        $('#div-circular-layout-menu-0').zIndex(1000);
-        $('#div-circular-layout-menu-0').css({ left: l, top: t, visibility: 'visible' });
+        $('#div-circular-layout-menu-' + this.id).zIndex(1000);
+        //$('#div-circular-layout-menu-0').css({ left: l, top: t, height: 'auto', display: 'inline' });
+        $('#div-circular-layout-menu-' + this.id).css({ left: l, top: t, height: 'auto'});
+        $('#div-circular-layout-menu-' + this.id).fadeToggle('fast');
     }
 
     circularLayoutAttributeOneOnChange(attr: string) {
@@ -1027,19 +1049,19 @@ class Brain3DApp implements Application, Loopable {
                 this.svgMode = true;
                 this.svgNeedsUpdate = true;
                 this.colaGraph.setVisible(false);
-                //if ($('#select-circular-layout-attribute-one-' + this.id).length <= 0) return;
-                //if ($('#select-circular-layout-attribute-two-' + this.id).length <= 0) return;
+                if ($('#select-circular-layout-attribute-one-' + this.id).length <= 0) return;
+                if ($('#select-circular-layout-attribute-two-' + this.id).length <= 0) return;
                 if ($('#select-circular-layout-bundle-' + this.id).length <= 0) return;
                 if ($('#select-circular-layout-sort-' + this.id).length <= 0) return;
 
-                //var attrOne = $('#select-circular-layout-attribute-one-' + this.id).val();
-                //var attrTwo = $('#select-circular-layout-attribute-two-' + this.id).val();
+                var attrOne = $('#select-circular-layout-attribute-one-' + this.id).val();
+                var attrTwo = $('#select-circular-layout-attribute-two-' + this.id).val();
                 var attrBundle = $('#select-circular-layout-bundle-' + this.id).val();
                 var attrSort = $('#select-circular-layout-sort-' + this.id).val();
 
                 this.initCircularLayout(attrBundle, attrSort);
-                //this.circularLayoutAttributeOneOnChange(attrOne);
-                //this.circularLayoutAttributeTwoOnChange(attrTwo);
+                this.circularLayoutAttributeOneOnChange(attrOne);
+                this.circularLayoutAttributeTwoOnChange(attrTwo);
             }
             else {
                 // Set up a coroutine to do the animation
