@@ -371,6 +371,8 @@ class Brain3DApp implements Application, Loopable {
             .append($('<select id="select-network-type-' + this.id + '" disabled="true"></select>').css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px', 'position': 'relative', 'z-index': 1000 })
                 .on("change", function () { varNetworkTypeOnChange($(this).val()); }));
 
+        //$('#button-show-network-' + this.id).button(); // jQuery button
+
         var networkTypeSelect = "#select-network-type-" + this.id;
         var option = document.createElement('option');
         option.text = 'default';
@@ -628,6 +630,14 @@ class Brain3DApp implements Application, Loopable {
                     secondary: "ui-icon-triangle-1-s"
                 }
             });
+
+            //------------------------------------
+            //this.jDiv.append($('<ul id="ul-circular-layout-menu-' + this.id + '"></ul>'));
+            
+            //$('#ul-circular-layout-menu-' + this.id).append($('<li class="network-type-appended-element">bar1</li>'));
+            //$('#ul-circular-layout-menu-' + this.id).append($('<li class="network-type-appended-element">bar2</li>'));
+
+            //$('#ul-circular-layout-menu-' + this.id).menu().hide();
         }
         else {
 
@@ -636,7 +646,14 @@ class Brain3DApp implements Application, Loopable {
 
     circularLayoutHistogramButtonOnClick() {
         // show histogram menu on button click
+        //$('#ul-circular-layout-menu-' + this.id).slideToggle("fast");
+        //$('.menu').slideToggle("fast");
+        var l = $('#div-circular-layout-histogram-' + this.id).offset().left;
+        var t = $('#div-circular-layout-histogram-' + this.id).offset().top - 50;
 
+        //$('#div-circular-layout-menu-0').css({ bottom: vtop, left: vleft, padding: '5px', visibility: 'visible' });
+        $('#div-circular-layout-menu-0').zIndex(1000);
+        $('#div-circular-layout-menu-0').css({ left: l, top: t, visibility: 'visible' });
     }
 
     circularLayoutAttributeOneOnChange(attr: string) {
