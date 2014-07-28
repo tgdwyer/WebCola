@@ -18,6 +18,8 @@ class CommonData {
     public noBrainSurface: boolean = false;
     public nodeCount: number; // Number of coordinates
     public nodeIDUnderPointer: number[] = [-1, -1, -1, -1, -1]; // for yoked display; the last one is for svg graphs
+    public circularBar1ColorPicker;
+    public circularBar2ColorPicker;
 
     coordCallbacks: Array<() => void> = new Array();
     labelCallbacks: Array<() => void> = new Array();

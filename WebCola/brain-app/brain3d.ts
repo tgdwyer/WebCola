@@ -69,8 +69,8 @@ class Brain3DApp implements Application, Loopable {
     svgNeedsUpdate: boolean = false;
     d3Zoom = d3.behavior.zoom();
 
-    circularBar1ColorPicker;
-    circularBar2ColorPicker;
+    circularCSSClass: string;
+    circularDotCSSClass: string;
 
     nodeColourings: number[]; // Stores the colourings associated with the groups
     dissimilarityMatrix: number[][] = []; // An inversion of the similarity matrix, used for Cola graph distances
@@ -540,12 +540,19 @@ class Brain3DApp implements Application, Loopable {
     }
 
     setupNetworkTypeAppendedElements() {
-        var varClass = "network-type-appended-element-" + this.id;
+        this.circularDotCSSClass = ".network-type-appended-element-" + this.id;
+        this.circularCSSClass = "network-type-appended-element-" + this.id;
 
-        var dotClass = ".network-type-appended-element-" + this.id;
+        /*
         $("label").remove(".network-type-appended-element");
         $("select").remove(".network-type-appended-element");
         $("button").remove(".network-type-appended-element");
+        $("div").remove(".network-type-appended-element");
+        */
+        $("label").remove(this.circularDotCSSClass);
+        $("select").remove(this.circularDotCSSClass);
+        $("button").remove(this.circularDotCSSClass);
+        $("div").remove(this.circularDotCSSClass);
 
         if (this.networkType == "circular-layout") {
             var varCircularLayoutAttributeOneOnChange = (s: string) => { this.circularLayoutAttributeOneOnChange(s); };
@@ -555,8 +562,8 @@ class Brain3DApp implements Application, Loopable {
             var varCircularLayoutHistogramButtonOnClick = () => { this.circularLayoutHistogramButtonOnClick(); };
 
             //------------------------------------
-            this.jDiv.append($('<label class="network-type-appended-element"> bundle:</label>'));
-            this.jDiv.append($('<select id="select-circular-layout-bundle-' + this.id + '" class="network-type-appended-element"></select>')
+            this.jDiv.append($('<label class=' + this.circularCSSClass + '> bundle:</label>'));
+            this.jDiv.append($('<select id="select-circular-layout-bundle-' + this.id + '" class=' + this.circularCSSClass + '></select>')
                 .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
                 .on("change", function () { varCircularLayoutBundleOnChange($(this).val()); }));
 
@@ -572,8 +579,8 @@ class Brain3DApp implements Application, Loopable {
                 $('#select-circular-layout-bundle-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
 
             //------------------------------------
-            this.jDiv.append($('<label class="network-type-appended-element"> sort:</label>'));
-            this.jDiv.append($('<select id="select-circular-layout-sort-' + this.id + '" class="network-type-appended-element"></select>')
+            this.jDiv.append($('<label class=' + this.circularCSSClass + '> sort:</label>'));
+            this.jDiv.append($('<select id="select-circular-layout-sort-' + this.id + '" class=' + this.circularCSSClass + '></select>')
                 .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
                 .on("change", function () { varCircularLayoutSortOnChange($(this).val()); }));
 
@@ -589,7 +596,7 @@ class Brain3DApp implements Application, Loopable {
                 $('#select-circular-layout-sort-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
 
             //------------------------------------
-            this.jDiv.append($('<button id="button-circular-layout-histogram-' + this.id + '" class="network-type-appended-element">options</button>')
+            this.jDiv.append($('<button id="button-circular-layout-histogram-' + this.id + '" class=' + this.circularCSSClass + '>options</button>')
                 .css({ 'margin-left': '5px', 'font-size': '12px' })
                 .click(function () { varCircularLayoutHistogramButtonOnClick(); }));
 
@@ -601,14 +608,14 @@ class Brain3DApp implements Application, Loopable {
             });
 
             //------------------------------------
-            this.jDiv.append($('<div id="div-circular-layout-menu-' + this.id + '"></div>')
+            this.jDiv.append($('<div id="div-circular-layout-menu-' + this.id + '" class=' + this.circularCSSClass + '></div>')
                 .css({ 'display': 'none', 'background-color': '#feeebd', 'position': 'absolute', 'padding': '8px', 'border-radius': '5px' }));
 
             $('#div-circular-layout-menu-' + this.id).append('<div>histogram</div>');
 
             //---
             $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-bar1-' + this.id + '">bar 1: </div>');
-            $('#div-circular-bar1-' + this.id).append($('<select id="select-circular-layout-attribute-one-' + this.id + '" class="network-type-appended-element"></select>')
+            $('#div-circular-bar1-' + this.id).append($('<select id="select-circular-layout-attribute-one-' + this.id + '" class=' + this.circularCSSClass + '></select>')
                 .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
                 .on("change", function () { varCircularLayoutAttributeOneOnChange($(this).val()); }));
 
@@ -623,12 +630,12 @@ class Brain3DApp implements Application, Loopable {
                 var columnName = this.dataSet.attributes.columnNames[i];
                 $('#select-circular-layout-attribute-one-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
 
-            if ($('#span-circular-layout-bar1-color-picker').length > 0) this.circularBar1ColorPicker = $('#span-circular-layout-bar1-color-picker').detach();
-            $(this.circularBar1ColorPicker).appendTo('#div-circular-bar1-' + this.id);
+            //if ($('#span-circular-layout-bar1-color-picker').length > 0) this.commonData.circularBar1ColorPicker = $('#span-circular-layout-bar1-color-picker').detach();
+            //$(this.commonData.circularBar1ColorPicker).appendTo('#div-circular-bar1-' + this.id);
 
             //---
             $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-bar2-' + this.id + '">bar 2: </div>');
-            $('#div-circular-bar2-' + this.id).append($('<select id="select-circular-layout-attribute-two-' + this.id + '" class="network-type-appended-element"></select>')
+            $('#div-circular-bar2-' + this.id).append($('<select id="select-circular-layout-attribute-two-' + this.id + '" class=' + this.circularCSSClass + '></select>')
                 .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
                 .on("change", function () { varCircularLayoutAttributeTwoOnChange($(this).val()); }));
 
@@ -643,17 +650,18 @@ class Brain3DApp implements Application, Loopable {
                 var columnName = this.dataSet.attributes.columnNames[i];
                 $('#select-circular-layout-attribute-two-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
 
-            if ($('#span-circular-layout-bar2-color-picker').length > 0) this.circularBar2ColorPicker = $('#span-circular-layout-bar2-color-picker').detach();
-            $(this.circularBar2ColorPicker).appendTo('#div-circular-bar2-' + this.id);
+            //if ($('#span-circular-layout-bar2-color-picker').length > 0) this.commonData.circularBar2ColorPicker = $('#span-circular-layout-bar2-color-picker').detach();
+            //$(this.commonData.circularBar2ColorPicker).appendTo('#div-circular-bar2-' + this.id);
 
             //---
             $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', true);
 
+            var varClass = this.circularCSSClass;
             document.addEventListener('mousedown', (event) => {
-                if (($(event.target).attr('class') != "network-type-appended-element") &&
+                if (($(event.target).attr('class') != varClass) &&
                     ((<any>(event.target)).id != "input-circular-layout-bar1-color") &&
                     ((<any>(event.target)).id != "input-circular-layout-bar2-color")) {
-                    $('#div-circular-layout-menu-0').hide();
+                    $('#div-circular-layout-menu-' + this.id).hide();
                 }
             }, false);
                         
@@ -671,6 +679,12 @@ class Brain3DApp implements Application, Loopable {
         
         var l = $('#button-circular-layout-histogram-' + this.id).position().left + 5;
         var t = $('#button-circular-layout-histogram-' + this.id).position().top - $('#div-circular-layout-menu-' + this.id).height() - 15;
+
+        if ($('#span-circular-layout-bar1-color-picker').length > 0) this.commonData.circularBar1ColorPicker = $('#span-circular-layout-bar1-color-picker').detach();
+        $(this.commonData.circularBar1ColorPicker).appendTo('#div-circular-bar1-' + this.id);
+
+        if ($('#span-circular-layout-bar2-color-picker').length > 0) this.commonData.circularBar2ColorPicker = $('#span-circular-layout-bar2-color-picker').detach();
+        $(this.commonData.circularBar2ColorPicker).appendTo('#div-circular-bar2-' + this.id);
 
         $('#div-circular-layout-menu-' + this.id).zIndex(1000);
         //$('#div-circular-layout-menu-0').css({ left: l, top: t, height: 'auto', display: 'inline' });
