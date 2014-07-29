@@ -170,6 +170,7 @@ interface Application {
     setNodeColor(attribute: string, minColor: string, maxColor: string);
     setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]);
     setANodeColor(nodeID: number, color: string);
+    setCircularBarColor(barNo: number, color: string);
     highlightSelectedNodes(filteredIDs: number[]);
     isDeleted();
 }
@@ -183,6 +184,7 @@ class DummyApp implements Application {
     setNodeColor() { }
     setNodeColorDiscrete() { }
     setANodeColor() { }
+    setCircularBarColor() { }
     highlightSelectedNodes() { }
     isDeleted() { }
 }
@@ -653,6 +655,18 @@ function setNodeColorInContextMenu(color: string) {
             apps[input.activeTarget].setANodeColor(input.selectedNodeID, '#' + color);
             input.contextMenuColorChanged = true;
         }
+    }
+}
+
+function setCircularBar1Color(color: string) {
+    if (apps[input.activeTarget]) {
+        apps[input.activeTarget].setCircularBarColor(1, '#' + color);
+    }
+}
+
+function setCircularBar2Color(color: string) {
+    if (apps[input.activeTarget]) {
+        apps[input.activeTarget].setCircularBarColor(2, '#' + color);
     }
 }
 
