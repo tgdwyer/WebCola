@@ -71,9 +71,11 @@ class Brain3DApp implements Application, Loopable {
 
     circularCSSClass: string;
     circularDotCSSClass: string;
-    circularBar1Color: string = 'd3d3d3';
-    circularBar2Color: string = 'd3d3d3';
+    circularBar1Color: string = '#d3d3d3';
+    circularBar2Color: string = '#d3d3d3';
     circularBarColorChange: boolean = false;
+    circularBar1Gradient: boolean = false;
+    circularBar2Gradient: boolean = false;
     circularMouseDownEventListenerAdded = false;
 
     nodeColourings: number[]; // Stores the colourings associated with the groups
@@ -559,6 +561,8 @@ class Brain3DApp implements Application, Loopable {
             var varCircularLayoutBundleOnChange = (s: string) => { this.circularLayoutBundleOnChange(s); };
             var varCircularLayoutHistogramButtonOnClick = () => { this.circularLayoutHistogramButtonOnClick(); };
 
+            var varCircularLayoutGradientOnChange = (barNo: number, b: boolean) => { this.circularLayoutGradientOnChange(barNo, b); };
+
             //------------------------------------
             this.jDiv.append($('<label class=' + this.circularCSSClass + '> bundle:</label>'));
             this.jDiv.append($('<select id="select-circular-layout-bundle-' + this.id + '" class=' + this.circularCSSClass + '></select>')
@@ -609,7 +613,7 @@ class Brain3DApp implements Application, Loopable {
             this.jDiv.append($('<div id="div-circular-layout-menu-' + this.id + '" class=' + this.circularCSSClass + '></div>')
                 .css({ 'display': 'none', 'background-color': '#feeebd', 'position': 'absolute', 'padding': '8px', 'border-radius': '5px' }));
 
-            $('#div-circular-layout-menu-' + this.id).append('<div>histogram</div>');
+            $('#div-circular-layout-menu-' + this.id).append('<div>histogram:</div>');
 
             //---
             $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-bar1-' + this.id + '">bar 1: </div>');
@@ -628,6 +632,10 @@ class Brain3DApp implements Application, Loopable {
                 var columnName = this.dataSet.attributes.columnNames[i];
                 $('#select-circular-layout-attribute-one-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
 
+            $('#div-circular-bar1-' + this.id).append($('<input type="checkbox" id="checkbox-circular-bar1-gradient-' + this.id + '" class=' + this.circularCSSClass + '>gradient</input>')
+                .css({ 'width': '12px', 'z-index': 1000 })
+                .click(function () { varCircularLayoutGradientOnChange(1, $(this).is(":checked")); }));
+
             //---
             $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-bar2-' + this.id + '">bar 2: </div>');
             $('#div-circular-bar2-' + this.id).append($('<select id="select-circular-layout-attribute-two-' + this.id + '" class=' + this.circularCSSClass + '></select>')
@@ -644,6 +652,10 @@ class Brain3DApp implements Application, Loopable {
             for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
                 var columnName = this.dataSet.attributes.columnNames[i];
                 $('#select-circular-layout-attribute-two-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
+
+            $('#div-circular-bar2-' + this.id).append($('<input type="checkbox" id="checkbox-circular-bar2-gradient-' + this.id + '" class=' + this.circularCSSClass + '>gradient</input>')
+                .css({ 'width': '12px', 'z-index': 1000 })
+                .click(function () { varCircularLayoutGradientOnChange(2, $(this).is(":checked")); }));
 
             //---
             $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', true);
@@ -670,22 +682,130 @@ class Brain3DApp implements Application, Loopable {
         }
     }
 
-    setCircularBarColor(barNo: number, color: string) {
-        this.circularBarColorChange = true;
-        var value = color.replace("#", "");
+    updateCircularBarColor(barNo: number) {
+        var gScale = 100;
+        //var varLightenColor = (rgb: string, delta: number) => { this.lightenColor(rgb, delta); };
 
         if (barNo == 1) {
-            this.circularBar1Color = color;
-         
-            this.svgAllElements.selectAll(".rect1Circular")
-                .style("fill", value);    
+            var bar1Color = this.circularBar1Color.replace("#", "");
+
+            if (this.circularBar1Gradient == true) {
+                var attr = $('#select-circular-layout-attribute-one-' + this.id).val();
+
+                this.svgAllElements.selectAll(".rect1Circular")
+                    .style("fill", function (d) {
+                        //return varLightenColor(bar1Color, 40 * (1 - d["scale_" + attr]));
+                        var r, g, b;
+                        var txt: string;
+                        var rgbtext = bar1Color;
+                        var delta = gScale * (1 - d["scale_" + attr]);
+                        rgbtext = rgbtext.replace("#", "");
+                        delta = Math.floor(delta);
+
+                        r = parseInt(rgbtext.substr(0, 2), 16),
+                        g = parseInt(rgbtext.substr(2, 2), 16),
+                        b = parseInt(rgbtext.substr(4, 2), 16),
+
+                        r += delta; if (r > 255) r = 255; if (r < 0) r = 0;
+                        g += delta; if (g > 255) g = 255; if (g < 0) g = 0;
+                        b += delta; if (b > 255) b = 255; if (b < 0) b = 0;
+
+                        txt = b.toString(16); if (txt.length < 2) txt = "0" + txt;
+                        txt = g.toString(16) + txt; if (txt.length < 4) txt = "0" + txt;
+                        txt = r.toString(16) + txt; if (txt.length < 6) txt = "0" + txt;
+
+                        return txt;
+                    });
+            }
+            else {
+                this.svgAllElements.selectAll(".rect1Circular")
+                    .style("fill", bar1Color);
+            }
         }
         else if (barNo == 2) {
-            this.circularBar2Color = color;
+            var bar2Color = this.circularBar2Color.replace("#", "");
 
-            this.svgAllElements.selectAll(".rect2Circular")
-                .style("fill", value);    
+            if (this.circularBar2Gradient == true) {
+                var attr = $('#select-circular-layout-attribute-two-' + this.id).val();
+
+                this.svgAllElements.selectAll(".rect2Circular")
+                    .style("fill", function (d) {
+                        //return varLightenColor(bar1Color, 40 * (1 - d["scale_" + attr]));
+                        var r, g, b;
+                        var txt: string;
+                        var rgbtext = bar2Color;
+                        var delta = gScale * (1 - d["scale_" + attr]);
+                        rgbtext = rgbtext.replace("#", "");
+                        delta = Math.floor(delta);
+
+                        r = parseInt(rgbtext.substr(0, 2), 16),
+                        g = parseInt(rgbtext.substr(2, 2), 16),
+                        b = parseInt(rgbtext.substr(4, 2), 16),
+
+                        r += delta; if (r > 255) r = 255; if (r < 0) r = 0;
+                        g += delta; if (g > 255) g = 255; if (g < 0) g = 0;
+                        b += delta; if (b > 255) b = 255; if (b < 0) b = 0;
+
+                        txt = b.toString(16); if (txt.length < 2) txt = "0" + txt;
+                        txt = g.toString(16) + txt; if (txt.length < 4) txt = "0" + txt;
+                        txt = r.toString(16) + txt; if (txt.length < 6) txt = "0" + txt;
+
+                        return txt;
+                    });
+            }
+            else {
+                this.svgAllElements.selectAll(".rect2Circular")
+                    .style("fill", bar2Color);
+            }
+        }
+    }
+
+    setCircularBarColor(barNo: number, color: string) {
+        this.circularBarColorChange = true;
+
+        if (barNo == 1) {
+            this.circularBar1Color = color; 
+            this.updateCircularBarColor(1);
+        }
+        else if (barNo == 2) {
+            this.circularBar2Color = color;  
+            this.updateCircularBarColor(2);
         }    
+    }
+
+
+
+    circularLayoutGradientOnChange(barNo: number, b: boolean) {
+        if (barNo == 1) {
+            this.circularBar1Gradient = b;
+            this.updateCircularBarColor(1);
+        }
+        else if (barNo == 2) {
+            this.circularBar2Gradient = b;
+            this.updateCircularBarColor(2);
+        }    
+    }
+
+    lightenColor(rgbtext: string, delta: number) {
+        var r, g, b;
+        var txt: string;
+
+        rgbtext = rgbtext.replace("#", "");
+        delta = Math.floor(delta);
+
+        r = parseInt(rgbtext.substr(0, 2), 16),
+        g = parseInt(rgbtext.substr(2, 2), 16),
+        b = parseInt(rgbtext.substr(4, 2), 16),
+
+        r += delta; if (r > 255) r = 255; if (r < 0) r = 0;
+        g += delta; if (g > 255) g = 255; if (g < 0) g = 0;
+        b += delta; if (b > 255) b = 255; if (b < 0) b = 0;
+
+        txt = b.toString(16); if (txt.length < 2) txt = "0" + txt;
+        txt = g.toString(16) + txt; if (txt.length < 4) txt = "0" + txt;
+        txt = r.toString(16) + txt; if (txt.length < 6) txt = "0" + txt;
+
+        return txt;
     }
 
     circularLayoutHistogramButtonOnClick() {
@@ -693,10 +813,12 @@ class Brain3DApp implements Application, Loopable {
         var t = $('#button-circular-layout-histogram-' + this.id).position().top - $('#div-circular-layout-menu-' + this.id).height() - 15;
 
         if ($('#span-circular-layout-bar1-color-picker').length > 0) this.commonData.circularBar1ColorPicker = $('#span-circular-layout-bar1-color-picker').detach();
-        $(this.commonData.circularBar1ColorPicker).appendTo('#div-circular-bar1-' + this.id);
+        //$(this.commonData.circularBar1ColorPicker).appendTo('#div-circular-bar1-' + this.id);
+        $(this.commonData.circularBar1ColorPicker).insertAfter('#select-circular-layout-attribute-one-' + this.id);
 
         if ($('#span-circular-layout-bar2-color-picker').length > 0) this.commonData.circularBar2ColorPicker = $('#span-circular-layout-bar2-color-picker').detach();
-        $(this.commonData.circularBar2ColorPicker).appendTo('#div-circular-bar2-' + this.id);
+        //$(this.commonData.circularBar2ColorPicker).appendTo('#div-circular-bar2-' + this.id);
+        $(this.commonData.circularBar2ColorPicker).insertAfter('#select-circular-layout-attribute-two-' + this.id);
 
         (<any>document.getElementById('input-circular-layout-bar1-color')).color.fromString(this.circularBar1Color);
         (<any>document.getElementById('input-circular-layout-bar2-color')).color.fromString(this.circularBar2Color);
@@ -734,6 +856,8 @@ class Brain3DApp implements Application, Loopable {
 
             $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', false);
         }
+
+        this.updateCircularBarColor(1);
     }
 
     circularLayoutAttributeTwoOnChange(attr: string) {
@@ -753,6 +877,8 @@ class Brain3DApp implements Application, Loopable {
                 .attr("width", function (d) { return 40 * d["scale_" + attr]; })
                 .attr("height", 4);
         }
+
+        this.updateCircularBarColor(2);
     }
 
     circularLayoutSortOnChange(attr: string) {
@@ -1091,8 +1217,12 @@ class Brain3DApp implements Application, Loopable {
                 this.initCircularLayout(attrBundle, attrSort);
                 this.circularLayoutAttributeOneOnChange(attrOne);
                 this.circularLayoutAttributeTwoOnChange(attrTwo);
-                this.setCircularBarColor(1, this.circularBar1Color);
-                this.setCircularBarColor(2, this.circularBar2Color);
+                //this.setCircularBarColor(1, this.circularBar1Color);
+                //this.setCircularBarColor(2, this.circularBar2Color);
+                //this.circularLayoutGradientOnChange(1, this.circularBar1Gradient);
+                //this.circularLayoutGradientOnChange(2, this.circularBar2Gradient);
+                this.updateCircularBarColor(1);
+                this.updateCircularBarColor(2);
             }
             else {
                 // Set up a coroutine to do the animation
