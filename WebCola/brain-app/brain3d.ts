@@ -555,6 +555,11 @@ class Brain3DApp implements Application, Loopable {
         $("div").remove(this.circularDotCSSClass);
 
         if (this.networkType == "circular-layout") {
+            this.circularBar1Gradient = false;
+            this.circularBar2Gradient = false;
+
+            var varCircularLayoutLabelOnChange = (s: string) => { this.circularLayoutLabelOnChange(s); };
+
             var varCircularLayoutAttributeOneOnChange = (s: string) => { this.circularLayoutAttributeOneOnChange(s); };
             var varCircularLayoutAttributeTwoOnChange = (s: string) => { this.circularLayoutAttributeTwoOnChange(s); };
             var varCircularLayoutSortOnChange = (s: string) => { this.circularLayoutSortOnChange(s); };
@@ -563,7 +568,7 @@ class Brain3DApp implements Application, Loopable {
 
             var varCircularLayoutGradientOnChange = (barNo: number, b: boolean) => { this.circularLayoutGradientOnChange(barNo, b); };
 
-            //------------------------------------
+            //------------------------------------------------------------------------
             this.jDiv.append($('<label class=' + this.circularCSSClass + '> bundle:</label>'));
             this.jDiv.append($('<select id="select-circular-layout-bundle-' + this.id + '" class=' + this.circularCSSClass + '></select>')
                 .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
@@ -580,7 +585,7 @@ class Brain3DApp implements Application, Loopable {
                 var columnName = this.dataSet.attributes.columnNames[i];
                 $('#select-circular-layout-bundle-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
 
-            //------------------------------------
+            //------------------------------------------------------------------------
             this.jDiv.append($('<label class=' + this.circularCSSClass + '> sort:</label>'));
             this.jDiv.append($('<select id="select-circular-layout-sort-' + this.id + '" class=' + this.circularCSSClass + '></select>')
                 .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
@@ -597,7 +602,8 @@ class Brain3DApp implements Application, Loopable {
                 var columnName = this.dataSet.attributes.columnNames[i];
                 $('#select-circular-layout-sort-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
 
-            //------------------------------------
+            //------------------------------------------------------------------------
+            // option button
             this.jDiv.append($('<button id="button-circular-layout-histogram-' + this.id + '" class=' + this.circularCSSClass + '>options</button>')
                 .css({ 'margin-left': '5px', 'font-size': '12px' })
                 .click(function () { varCircularLayoutHistogramButtonOnClick(); }));
@@ -609,10 +615,31 @@ class Brain3DApp implements Application, Loopable {
                 }
             });
 
-            //------------------------------------
+            //------------------------------------------------------------------------
+            // menu
             this.jDiv.append($('<div id="div-circular-layout-menu-' + this.id + '" class=' + this.circularCSSClass + '></div>')
                 .css({ 'display': 'none', 'background-color': '#feeebd', 'position': 'absolute', 'padding': '8px', 'border-radius': '5px' }));
 
+            //------------------------------------------------------------------------
+            // menu - label
+            $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-label-' + this.id + '">label: </div>');
+            $('#div-circular-label-' + this.id).append($('<select id="select-circular-label-' + this.id + '" class=' + this.circularCSSClass + '></select>')
+                .css({ 'margin-left': '5px', 'margin-bottom': '5px', 'font-size': '12px', 'width': '80px', 'background-color': '#feeebd' })
+                .on("change", function () { varCircularLayoutLabelOnChange($(this).val()); }));
+
+            $('#select-circular-label-' + this.id).empty();
+
+            var option = document.createElement('option');
+            option.text = 'default';
+            option.value = 'default';
+            $('#select-circular-label-' + this.id).append(option);
+
+            for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
+                var columnName = this.dataSet.attributes.columnNames[i];
+                $('#select-circular-label-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
+
+            //------------------------------------------------------------------------
+            // menu - histogram
             $('#div-circular-layout-menu-' + this.id).append('<div>histogram:</div>');
 
             //---
@@ -675,7 +702,7 @@ class Brain3DApp implements Application, Loopable {
                     this.circularBarColorChange = false;
                 }, false);
             }          
-            //------------------------------------
+            //------------------------------------------------------------------------
         }
         else {
 
@@ -773,8 +800,6 @@ class Brain3DApp implements Application, Loopable {
         }    
     }
 
-
-
     circularLayoutGradientOnChange(barNo: number, b: boolean) {
         if (barNo == 1) {
             this.circularBar1Gradient = b;
@@ -829,15 +854,32 @@ class Brain3DApp implements Application, Loopable {
         $('#div-circular-layout-menu-' + this.id).fadeToggle('fast');
     }
 
+    circularLayoutLabelOnChange(attr: string) {
+        if (attr == "default") {
+            this.svgAllElements.selectAll(".nodeCircular")
+                .text(function (d) { return d.key; });
+        }
+        else {
+            this.svgAllElements.selectAll(".nodeCircular")
+                .text(function (d) { return d[attr]; });
+        }
+    }
+
     circularLayoutAttributeOneOnChange(attr: string) {
         if (attr == "none") {
             this.svgAllElements.selectAll(".rect1Circular")
-                .attr("width", 0)
+                .attr("width", function (d) {
+                    d.bar1_width = 0;
+                    return 0;
+                })
                 .attr("height", 0);
 
             this.svgAllElements.selectAll(".rect2Circular")
                 .attr("width", 0)
                 .attr("height", 0);
+
+            this.svgAllElements.selectAll(".nodeCircular")
+                .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); });
 
             $('#select-circular-layout-attribute-two-' + this.id).val("none");
             $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', true);
@@ -845,13 +887,31 @@ class Brain3DApp implements Application, Loopable {
         else {
             if ($('#select-circular-layout-attribute-two-' + this.id).val() == "none") {
                 this.svgAllElements.selectAll(".rect1Circular")
-                    .attr("width", function (d) { return 40 * d["scale_" + attr]; })
+                    .attr("width", function (d) {
+                        var barWidth = 40 * d["scale_" + attr];
+                        d.bar1_width = barWidth;
+                        return barWidth;
+                    })
                     .attr("height", 8);
+
+                this.svgAllElements.selectAll(".nodeCircular")
+                    .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 5 + d.bar1_width) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); });
             }
             else {
                 this.svgAllElements.selectAll(".rect1Circular")
-                    .attr("width", function (d) { return 40 * d["scale_" + attr]; })
+                    .attr("width", function (d) {
+                        var barWidth = 40 * d["scale_" + attr];
+                        d.bar1_width = barWidth;
+                        return barWidth;
+                    })
                     .attr("height", 4);
+
+                this.svgAllElements.selectAll(".nodeCircular")
+                    .attr("transform", function (d) {
+                        var offset = d.bar1_width;
+                        if (d.bar1_width < d.bar2_width) offset = d.bar2_width;
+                        return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 5 + offset) + ",0)" + (d.x < 180 ? "" : "rotate(180)");
+                    });
             }
 
             $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', false);
@@ -863,19 +923,36 @@ class Brain3DApp implements Application, Loopable {
     circularLayoutAttributeTwoOnChange(attr: string) {
         if (attr == "none") {
             this.svgAllElements.selectAll(".rect2Circular")
-                .attr("width", 0)
+                .attr("width", function (d) {
+                    d.bar2_width = 0;
+                    return 0;
+                })
                 .attr("height", 0);
 
             this.svgAllElements.selectAll(".rect1Circular")
                 .attr("height", 8);
+
+            this.svgAllElements.selectAll(".nodeCircular")
+                .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 5 + d.bar1_width) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); });
         }
         else {
             this.svgAllElements.selectAll(".rect1Circular")
                 .attr("height", 4);
 
             this.svgAllElements.selectAll(".rect2Circular")
-                .attr("width", function (d) { return 40 * d["scale_" + attr]; })
+                .attr("width", function (d) {
+                    var barWidth = 40 * d["scale_" + attr];
+                    d.bar2_width = barWidth;
+                    return barWidth;
+                })
                 .attr("height", 4);
+
+            this.svgAllElements.selectAll(".nodeCircular")
+                .attr("transform", function (d) {
+                    var offset = d.bar1_width;
+                    if (d.bar1_width < d.bar2_width) offset = d.bar2_width;
+                    return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 5 + offset) + ",0)" + (d.x < 180 ? "" : "rotate(180)");
+                });
         }
 
         this.updateCircularBarColor(2);
@@ -1209,18 +1286,16 @@ class Brain3DApp implements Application, Loopable {
                 if ($('#select-circular-layout-bundle-' + this.id).length <= 0) return;
                 if ($('#select-circular-layout-sort-' + this.id).length <= 0) return;
 
+                var attrLabel = $('#select-circular-label-' + this.id).val();
                 var attrOne = $('#select-circular-layout-attribute-one-' + this.id).val();
                 var attrTwo = $('#select-circular-layout-attribute-two-' + this.id).val();
                 var attrBundle = $('#select-circular-layout-bundle-' + this.id).val();
                 var attrSort = $('#select-circular-layout-sort-' + this.id).val();
 
                 this.initCircularLayout(attrBundle, attrSort);
+                this.circularLayoutLabelOnChange(attrLabel);
                 this.circularLayoutAttributeOneOnChange(attrOne);
                 this.circularLayoutAttributeTwoOnChange(attrTwo);
-                //this.setCircularBarColor(1, this.circularBar1Color);
-                //this.setCircularBarColor(2, this.circularBar2Color);
-                //this.circularLayoutGradientOnChange(1, this.circularBar1Gradient);
-                //this.circularLayoutGradientOnChange(2, this.circularBar2Gradient);
                 this.updateCircularBarColor(1);
                 this.updateCircularBarColor(2);
             }
@@ -1455,7 +1530,7 @@ class Brain3DApp implements Application, Loopable {
                     var min = this.dataSet.attributes.getMin(columnIndex);
                     var max = this.dataSet.attributes.getMax(columnIndex);
 
-                    var attrMap = d3.scale.linear().domain([min, max]).range([0.01, 1]);
+                    var attrMap = d3.scale.linear().domain([min, max]).range([0.05, 1]);
                     var scalevalue = attrMap(value);
                     nodeObject['scale_' + colname] = scalevalue;
 
@@ -1474,6 +1549,8 @@ class Brain3DApp implements Application, Loopable {
 
                 nodeObject["imports"] = [];
                 nodeObject["color"] = this.colaGraph.nodeMeshes[obj.id].material.color.getHexString();
+                nodeObject["bar1_width"] = 0;
+                nodeObject["bar2_width"] = 0;
                 this.svgNodeBundleArray.push(nodeObject);
             }
         }
@@ -1610,17 +1687,15 @@ class Brain3DApp implements Application, Loopable {
             .data(nodes.filter(function (n) { return !n.children; }))
             .enter().append("rect")
             .attr("class", "rect1Circular")
-            .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 28) + ",-4)" + (d.x < 180 ? "" : ""); });
-            //.attr("width", function (d) { return 40 * d.scale_strength; })
-            //.attr("height", 4);
+            //.attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 28) + ",-4)" + (d.x < 180 ? "" : ""); });
+            .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y) + ",-4)" + (d.x < 180 ? "" : ""); });
 
         this.svgAllElements.selectAll(".rect2Circular")
             .data(nodes.filter(function (n) { return !n.children; }))
             .enter().append("rect")
             .attr("class", "rect2Circular")
-            .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 28) + ",0)" + (d.x < 180 ? "" : ""); });
-            //.attr("width", function (d) { return 40 * d.scale_clustering; })
-            //.attr("height", 4);
+            //.attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 28) + ",0)" + (d.x < 180 ? "" : ""); });
+            .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y) + ",0)" + (d.x < 180 ? "" : ""); });
 
         d3.select(window.frameElement).style("height", diameter + "px");
     }
