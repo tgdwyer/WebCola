@@ -62,6 +62,7 @@ class Brain3DApp implements Application, Loopable {
 
     cola2D;
     svg;
+    svgDefs;
     svgMode;
     svgAllElements;
     svgNodeBundleArray: any[];
@@ -76,6 +77,7 @@ class Brain3DApp implements Application, Loopable {
     circularBarColorChange: boolean = false;
     circularBar1Gradient: boolean = false;
     circularBar2Gradient: boolean = false;
+    circularEdgeGradient: boolean = false;
     circularMouseDownEventListenerAdded = false;
 
     nodeColourings: number[]; // Stores the colourings associated with the groups
@@ -414,6 +416,11 @@ class Brain3DApp implements Application, Loopable {
             .call(this.d3Zoom.on("zoom", varSVGZoom));  
         this.svgAllElements = this.svg.append("g");
 
+        var varSvg = this.svg[0];
+        var varNamespaceURI = varSvg[0].namespaceURI;
+        this.svgDefs = document.createElementNS(varNamespaceURI, 'defs');      
+        varSvg[0].appendChild(this.svgDefs);
+
         this.jDivProcessingNotification = document.createElement('div');
         this.jDivProcessingNotification.id = 'div-processing-notification';
 
@@ -557,6 +564,7 @@ class Brain3DApp implements Application, Loopable {
         if (this.networkType == "circular-layout") {
             this.circularBar1Gradient = false;
             this.circularBar2Gradient = false;
+            this.circularEdgeGradient = false;
 
             var varCircularLayoutLabelOnChange = (s: string) => { this.circularLayoutLabelOnChange(s); };
 
@@ -566,7 +574,8 @@ class Brain3DApp implements Application, Loopable {
             var varCircularLayoutBundleOnChange = (s: string) => { this.circularLayoutBundleOnChange(s); };
             var varCircularLayoutHistogramButtonOnClick = () => { this.circularLayoutHistogramButtonOnClick(); };
 
-            var varCircularLayoutGradientOnChange = (barNo: number, b: boolean) => { this.circularLayoutGradientOnChange(barNo, b); };
+            var varCircularLayoutEdgeGradientOnChange = (b: boolean) => { this.circularLayoutEdgeGradientOnChange(b); };
+            var varCircularLayoutBarGradientOnChange = (barNo: number, b: boolean) => { this.circularLayoutBarGradientOnChange(barNo, b); };
 
             //------------------------------------------------------------------------
             this.jDiv.append($('<label class=' + this.circularCSSClass + '> bundle:</label>'));
@@ -639,6 +648,14 @@ class Brain3DApp implements Application, Loopable {
                 $('#select-circular-label-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
 
             //------------------------------------------------------------------------
+            // menu - edge
+            $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-edge-' + this.id + '">edge: </div>');
+
+            $('#div-circular-edge-' + this.id).append($('<input type="checkbox" id="checkbox-circular-edge-gradient-' + this.id + '" class=' + this.circularCSSClass + '>gradient</input>')
+                .css({ 'width': '12px', 'z-index': 1000 })
+                .click(function () { varCircularLayoutEdgeGradientOnChange($(this).is(":checked")); }));
+
+            //------------------------------------------------------------------------
             // menu - histogram
             $('#div-circular-layout-menu-' + this.id).append('<div>histogram:</div>');
 
@@ -661,7 +678,7 @@ class Brain3DApp implements Application, Loopable {
 
             $('#div-circular-bar1-' + this.id).append($('<input type="checkbox" id="checkbox-circular-bar1-gradient-' + this.id + '" class=' + this.circularCSSClass + '>gradient</input>')
                 .css({ 'width': '12px', 'z-index': 1000 })
-                .click(function () { varCircularLayoutGradientOnChange(1, $(this).is(":checked")); }));
+                .click(function () { varCircularLayoutBarGradientOnChange(1, $(this).is(":checked")); }));
 
             //---
             $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-bar2-' + this.id + '">bar 2: </div>');
@@ -682,7 +699,7 @@ class Brain3DApp implements Application, Loopable {
 
             $('#div-circular-bar2-' + this.id).append($('<input type="checkbox" id="checkbox-circular-bar2-gradient-' + this.id + '" class=' + this.circularCSSClass + '>gradient</input>')
                 .css({ 'width': '12px', 'z-index': 1000 })
-                .click(function () { varCircularLayoutGradientOnChange(2, $(this).is(":checked")); }));
+                .click(function () { varCircularLayoutBarGradientOnChange(2, $(this).is(":checked")); }));
 
             //---
             $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', true);
@@ -800,7 +817,12 @@ class Brain3DApp implements Application, Loopable {
         }    
     }
 
-    circularLayoutGradientOnChange(barNo: number, b: boolean) {
+    circularLayoutEdgeGradientOnChange(b: boolean) {
+        this.circularEdgeGradient = b;
+        this.svgNeedsUpdate = true;
+    }
+
+    circularLayoutBarGradientOnChange(barNo: number, b: boolean) {
         if (barNo == 1) {
             this.circularBar1Gradient = b;
             this.updateCircularBarColor(1);
@@ -1712,7 +1734,8 @@ class Brain3DApp implements Application, Loopable {
         //this.commonData.nodeIDUnderPointer[4] = d.id;
         this.svgAllElements.selectAll(".nodeCircular")
             .each(function (n) { n.target = n.source = false; });
-        
+
+        var varEdgeGradient = this.circularEdgeGradient;
         this.svgAllElements.selectAll(".linkCircular")
             .style("stroke-width", function (l) {
                 if (l.target === d) { l.target.source = true; l.source.target = true; }
@@ -1729,7 +1752,12 @@ class Brain3DApp implements Application, Loopable {
                     return "#d62728";
                 }
                 else {
-                    return l.color;
+                    if (varEdgeGradient) {
+                        return l.gradientID;
+                    }
+                    else {
+                        return l.color;
+                    }
                 }
             });
 
@@ -1758,12 +1786,36 @@ class Brain3DApp implements Application, Loopable {
     mouseOutedCircularLayout(d) {
         //this.commonData.nodeIDUnderPointer[4] = -1;
 
-        this.svgAllElements.selectAll(".linkCircular")
-            .style("stroke-width", "1px")
-            .style("stroke", function (l) { return l.color; });
+        if (this.circularEdgeGradient) {
+            this.svgAllElements.selectAll(".linkCircular")
+                .style("stroke-width", "1px")
+                .style("stroke", function (l) { return l.gradientID; });
+        }
+        else {
+            this.svgAllElements.selectAll(".linkCircular")
+                .style("stroke-width", "1px")
+                .style("stroke", function (l) { return l.color; });
+        }
+
         this.svgAllElements.selectAll(".nodeCircular")
             .style("font-weight", "normal")
             .style("font-size", "11px");
+    }
+
+    createSVGLinearGradient(id, stops) {
+        var svgNS = this.svg.namespaceURI;
+        var grad = document.createElementNS(svgNS, 'linearGradient');
+        grad.setAttribute('id', id);
+        for (var i = 0; i < stops.length; i++) {
+            var attrs = stops[i];
+            var stop = document.createElementNS(svgNS, 'stop');
+            for (var attr in attrs) {
+                if (attrs.hasOwnProperty(attr)) stop.setAttribute(attr, attrs[attr]);
+            }
+            grad.appendChild(stop);
+        }
+
+        this.svgDefs.appendChild(grad);
     }
 
     updateSVGGraph() {
@@ -1876,20 +1928,60 @@ class Brain3DApp implements Application, Loopable {
 
             var linkBundle = this.svgAllElements.selectAll(".linkCircular");
 
-            var varEdgeList = this.colaGraph.edgeList;
-            linkBundle.each(function (l) {
-                for (var i = 0; i < varEdgeList.length; i++) {
-                    var edge = varEdgeList[i];
-                    if (((l.source.id == edge.sourceNode.id) && (l.target.id == edge.targetNode.id)) ||
-                        ((l.source.id == edge.targetNode.id) && (l.target.id == edge.sourceNode.id))) {
-                        l.color = edge.shape.material.color.getHexString();
-                        break;
-                    }
-                }
-            });
+            while (this.svgDefs.firstChild) {
+                this.svgDefs.removeChild(this.svgDefs.firstChild);
+            }
 
-            linkBundle
-                .style("stroke", function (l) { return l.color; });
+            if (this.circularEdgeGradient) {
+                var varSvg = this.svg[0];
+                var varNS = varSvg[0].namespaceURI;
+                var varDefs = this.svgDefs;
+
+                linkBundle
+                    .style("stroke", function (l) {
+                        console.log(l.source.color);
+                        console.log(l.target.color);
+                        var id = 'gradient_' + l.source.id + '_' + l.target.id;
+                        var stops = [
+                            { offset: '0%', 'stop-color': '#' + l.source.color },
+                            { offset: '100%', 'stop-color': '#' + l.target.color }
+                            //{ offset: '0%', 'stop-color': '#ff0000' },
+                            //{ offset: '100%', 'stop-color': '#ffff00' }
+                        ];
+
+                        var grad = document.createElementNS(varNS, 'linearGradient');
+                        grad.setAttribute('id', id);
+                        for (var i = 0; i < stops.length; i++) {
+                            var attrs = stops[i];
+                            var stop = document.createElementNS(varNS, 'stop');
+                            for (var attr in attrs) {
+                                if (attrs.hasOwnProperty(attr)) stop.setAttribute(attr, attrs[attr]);
+                            }
+                            grad.appendChild(stop);
+                        }
+                        varDefs.appendChild(grad);
+
+                        var gID = 'url(#' + id + ')';
+                        l['gradientID'] = gID;
+                        return gID;
+                    });
+            }
+            else {
+                var varEdgeList = this.colaGraph.edgeList;
+                linkBundle.each(function (l) {
+                    for (var i = 0; i < varEdgeList.length; i++) {
+                        var edge = varEdgeList[i];
+                        if (((l.source.id == edge.sourceNode.id) && (l.target.id == edge.targetNode.id)) ||
+                            ((l.source.id == edge.targetNode.id) && (l.target.id == edge.sourceNode.id))) {
+                            l.color = edge.shape.material.color.getHexString();
+                            break;
+                        }
+                    }
+                });
+
+                linkBundle
+                    .style("stroke", function (l) { return l.color; });
+            }
         }
     }
 
