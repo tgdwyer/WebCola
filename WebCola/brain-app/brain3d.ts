@@ -1752,12 +1752,15 @@ class Brain3DApp implements Application, Loopable {
                     return "#d62728";
                 }
                 else {
+                    return l.color;
+                    /*
                     if (varEdgeGradient) {
                         return l.gradientID;
                     }
                     else {
                         return l.color;
                     }
+                    */
                 }
             });
 
@@ -1785,7 +1788,11 @@ class Brain3DApp implements Application, Loopable {
 
     mouseOutedCircularLayout(d) {
         //this.commonData.nodeIDUnderPointer[4] = -1;
+        this.svgAllElements.selectAll(".linkCircular")
+            .style("stroke-width", "1px")
+            .style("stroke", function (l) { return l.color; });
 
+        /*
         if (this.circularEdgeGradient) {
             this.svgAllElements.selectAll(".linkCircular")
                 .style("stroke-width", "1px")
@@ -1796,6 +1803,7 @@ class Brain3DApp implements Application, Loopable {
                 .style("stroke-width", "1px")
                 .style("stroke", function (l) { return l.color; });
         }
+        */
 
         this.svgAllElements.selectAll(".nodeCircular")
             .style("font-weight", "normal")
@@ -1939,31 +1947,36 @@ class Brain3DApp implements Application, Loopable {
 
                 linkBundle
                     .style("stroke", function (l) {
-                        console.log(l.source.color);
-                        console.log(l.target.color);
-                        var id = 'gradient_' + l.source.id + '_' + l.target.id;
-                        var stops = [
-                            { offset: '0%', 'stop-color': '#' + l.source.color },
-                            { offset: '100%', 'stop-color': '#' + l.target.color }
-                            //{ offset: '0%', 'stop-color': '#ff0000' },
-                            //{ offset: '100%', 'stop-color': '#ffff00' }
-                        ];
-
-                        var grad = document.createElementNS(varNS, 'linearGradient');
-                        grad.setAttribute('id', id);
-                        for (var i = 0; i < stops.length; i++) {
-                            var attrs = stops[i];
-                            var stop = document.createElementNS(varNS, 'stop');
-                            for (var attr in attrs) {
-                                if (attrs.hasOwnProperty(attr)) stop.setAttribute(attr, attrs[attr]);
-                            }
-                            grad.appendChild(stop);
+                        if (l.source.color == l.target.color) {
+                            l.color = l.source.color;
                         }
-                        varDefs.appendChild(grad);
+                        else {
+                            var id = 'gradient_' + l.source.id + '_' + l.target.id;
+                            var stops = [
+                                { offset: '0%', 'stop-color': '#' + l.source.color },
+                                { offset: '100%', 'stop-color': '#' + l.target.color }
+                                //{ offset: '0%', 'stop-color': '#ff0000' },
+                                //{ offset: '100%', 'stop-color': '#ffff00' }
+                            ];
 
-                        var gID = 'url(#' + id + ')';
-                        l['gradientID'] = gID;
-                        return gID;
+                            var grad = document.createElementNS(varNS, 'linearGradient');
+                            grad.setAttribute('id', id);
+                            for (var i = 0; i < stops.length; i++) {
+                                var attrs = stops[i];
+                                var stop = document.createElementNS(varNS, 'stop');
+                                for (var attr in attrs) {
+                                    if (attrs.hasOwnProperty(attr)) stop.setAttribute(attr, attrs[attr]);
+                                }
+                                grad.appendChild(stop);
+                            }
+                            varDefs.appendChild(grad);
+
+                            var gID = 'url(#' + id + ')';
+                            l['gradientID'] = gID;
+                            l.color = gID;
+                        }
+
+                        return l.color;
                     });
             }
             else {
