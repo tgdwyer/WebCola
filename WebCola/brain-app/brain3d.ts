@@ -649,7 +649,8 @@ class Brain3DApp implements Application, Loopable {
 
             //------------------------------------------------------------------------
             // menu - edge
-            $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-edge-' + this.id + '">edge: </div>');
+            $('#div-circular-layout-menu-' + this.id).append($('<div id="div-circular-edge-' + this.id + '">edge: </div>')
+                .css({'margin-bottom': '5px'}));
 
             $('#div-circular-edge-' + this.id).append($('<input type="checkbox" id="checkbox-circular-edge-gradient-' + this.id + '" class=' + this.circularCSSClass + '>gradient</input>')
                 .css({ 'width': '12px', 'z-index': 1000 })
