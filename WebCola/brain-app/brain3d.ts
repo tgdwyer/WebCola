@@ -1174,8 +1174,8 @@ class Brain3DApp implements Application, Loopable {
 
         if (this.allLables == true) {
             $('#all-labels-' + this.id).css('opacity', 1);
-            this.physioGraph.showAllLabels(false);
-            this.colaGraph.showAllLabels(this.svgMode);
+            this.physioGraph.showAllLabels(false, false);
+            this.colaGraph.showAllLabels(this.svgMode, true);
         }
         else {
             $('#all-labels-' + this.id).css('opacity', 0.2);
@@ -1200,7 +1200,9 @@ class Brain3DApp implements Application, Loopable {
             this.colaGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, edges);
             this.colaGraph.setNodeVisibilities(); // Hide the nodes without neighbours
             this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
-
+            if (this.allLables == true) {
+                this.colaGraph.showAllLabels(this.svgMode, true);
+            }
             //-------------------------------------------------------------------------------------------------------------
             // 3d cola graph
 
@@ -1564,7 +1566,8 @@ class Brain3DApp implements Application, Loopable {
                 }
 
                 if (bundleByAttribute == "none") {
-                    nodeObject["name"] = "root.module" + nodeObject['moduleID'] + "." + obj.id;
+                    //nodeObject["name"] = "root.module" + nodeObject['moduleID'] + "." + obj.id;
+                    nodeObject["name"] = "root." + obj.id;
                 }
                 else {
                     nodeObject["name"] = "root." + bundleByAttribute + nodeObject['bundle_group_' + bundleByAttribute] + "." + obj.id;
@@ -1599,7 +1602,8 @@ class Brain3DApp implements Application, Loopable {
 
                         if (bundleByAttribute == "none") {
                             if (moduleID >= 0) {
-                                var nodeName = "root.module" + moduleID + "." + edge.targetNode.id;
+                                //var nodeName = "root.module" + moduleID + "." + edge.targetNode.id;
+                                var nodeName = "root." + edge.targetNode.id;
                                 this.svgNodeBundleArray[j].imports.push(nodeName);
                             }
                         }
@@ -1628,7 +1632,8 @@ class Brain3DApp implements Application, Loopable {
 
                         if (bundleByAttribute == "none") {
                             if (moduleID >= 0) {
-                                var nodeName = "root.module" + moduleID + "." + edge.sourceNode.id;
+                                //var nodeName = "root.module" + moduleID + "." + edge.sourceNode.id;
+                                var nodeName = "root." + edge.sourceNode.id;
                                 this.svgNodeBundleArray[j].imports.push(nodeName);
                             }
                         }
@@ -2534,8 +2539,8 @@ class Brain3DApp implements Application, Loopable {
                 }
 
                 // Select the new node ID
-                this.physioGraph.selectNode(this.selectedNodeID, false);
-                this.colaGraph.selectNode(this.selectedNodeID, this.svgMode);
+                this.physioGraph.selectNode(this.selectedNodeID, false, false);
+                this.colaGraph.selectNode(this.selectedNodeID, this.svgMode, true);
 
                 this.physioGraph.selectAdjEdges(this.selectedNodeID);
                 this.colaGraph.selectAdjEdges(this.selectedNodeID);
@@ -3376,7 +3381,7 @@ class Graph {
                 new THREE.MeshLambertMaterial({ color: nodeColourings[i] })
                 );
 
-            this.nodeLabelList[i] = this.createNodeLabel(i.toString(), 12);
+            this.nodeLabelList[i] = this.createNodeLabel(i.toString(), 10);
 
             (<any>sphere).isNode = true; // A flag to identify the node meshes
             sphere.id = i;
@@ -3451,8 +3456,8 @@ class Graph {
             this.nodeMeshes[i].position.z = colaCoords[2][i];
 
             // set the node label position 
-            this.nodeLabelList[i].position.x = this.nodeMeshes[i].position.x + 7;
-            this.nodeLabelList[i].position.y = this.nodeMeshes[i].position.y + 7;
+            this.nodeLabelList[i].position.x = this.nodeMeshes[i].position.x + 5;
+            this.nodeLabelList[i].position.y = this.nodeMeshes[i].position.y + 5;
             this.nodeLabelList[i].position.z = this.nodeMeshes[i].position.z;
         }
     }
@@ -3466,8 +3471,8 @@ class Graph {
             this.nodeMeshes[i].position.z = colaCoords1[2][i] * (1 - t) + colaCoords2[2][i] * t;
 
             // set the node label position 
-            this.nodeLabelList[i].position.x = this.nodeMeshes[i].position.x + 7;
-            this.nodeLabelList[i].position.y = this.nodeMeshes[i].position.y + 7;
+            this.nodeLabelList[i].position.x = this.nodeMeshes[i].position.x + 5;
+            this.nodeLabelList[i].position.y = this.nodeMeshes[i].position.y + 5;
             this.nodeLabelList[i].position.z = this.nodeMeshes[i].position.z;
         }
     }
@@ -3631,10 +3636,21 @@ class Graph {
         }
     }
 
-    showAllLabels(svgMode: boolean) {
+    showAllLabels(svgMode: boolean, bCola: boolean) {
+        this.hideAllLabels();
+
         for (var i = 0; i < this.nodeLabelList.length; ++i) {
             if (this.nodeLabelList[i]) {
-                if (!svgMode) this.rootObject.add(this.nodeLabelList[i]);
+                if (!svgMode) {
+                    if (bCola) {
+                        if (this.nodeHasNeighbors[i]) {
+                            this.rootObject.add(this.nodeLabelList[i]);
+                        }
+                    }
+                    else {
+                        this.rootObject.add(this.nodeLabelList[i]);
+                    }
+                }
             }
         }
     }
@@ -3704,7 +3720,7 @@ class Graph {
         this.nodeMeshes[id].material.color.setHex(color);
     }
 
-    selectNode(id: number, svgMode: boolean) {
+    selectNode(id: number, svgMode: boolean, bCola: boolean) {
         var x = this.nodeMeshes[id].scale.x;
         var y = this.nodeMeshes[id].scale.y;
         var z = this.nodeMeshes[id].scale.z;
@@ -3712,7 +3728,17 @@ class Graph {
         this.nodeMeshes[id].scale.set(2*x, 2*y, 2*z);
 
         if (this.allLabels == false) {
-            if (!svgMode) this.rootObject.add(this.nodeLabelList[id]);
+            //if (!svgMode) this.rootObject.add(this.nodeLabelList[id]);
+            if (!svgMode) {
+                if (bCola) {
+                    if (this.nodeHasNeighbors[id]) {
+                        this.rootObject.add(this.nodeLabelList[id]);
+                    }
+                }
+                else {
+                    this.rootObject.add(this.nodeLabelList[id]);
+                }
+            }
         }
     }
 
