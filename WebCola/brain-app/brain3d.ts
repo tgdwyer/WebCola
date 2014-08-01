@@ -2223,6 +2223,13 @@ class Brain3DApp implements Application, Loopable {
         this.svgNeedsUpdate = true;
     }
 
+    setEdgeSize(size: number) {
+        this.physioGraph.setEdgeScale(size);
+        this.colaGraph.setEdgeScale(size);
+
+        this.svgNeedsUpdate = true;
+    }
+
     setNodeSize(scaleArray: number[]) {
         this.physioGraph.setNodesScale(scaleArray);
         this.colaGraph.setNodesScale(scaleArray);
@@ -3687,6 +3694,12 @@ class Graph {
         }
     }
 
+    setEdgeScale(scale: number) {
+        this.edgeList.forEach(function (edge) {
+            edge.setScale(scale);
+        });
+    }
+
     setNodesColor(colorArray: number[]) {
         if (!colorArray) return;
         if (colorArray.length != this.nodeMeshes.length) return;
@@ -3796,8 +3809,9 @@ class Edge {
     shape;
     geometry;
     visible: boolean = true;
-    scaleWeighted = 0.5;
-    scaleNoWeighted = 1;
+    baseScale = 1;
+    scaleWeighted = 0.5 * this.baseScale;
+    scaleNoWeighted = this.baseScale;
 
     constructor(public parentObject, public sourceNode, public targetNode, private weight) {
         this.shape = this.makeCylinder();
@@ -3832,6 +3846,17 @@ class Edge {
 
     setColor(hex: number) {
         this.shape.material.color.setHex(hex);
+    }
+
+    setScale(scale: number) {
+        this.baseScale = scale;
+
+        this.scaleNoWeighted = this.baseScale;
+
+        this.scaleWeighted = this.baseScale * 0.5;
+        var w = (Math.ceil(this.weight * 10) - 6) * 0.5; // the edge scale is not proportional to edge weight
+        if (w < 0) w = 0;
+        this.scaleWeighted += w; 
     }
 
     multiplyScale(s: number) {

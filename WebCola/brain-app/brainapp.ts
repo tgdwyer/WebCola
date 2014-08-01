@@ -170,6 +170,7 @@ interface Application {
     setNodeColor(attribute: string, minColor: string, maxColor: string);
     setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]);
     setANodeColor(nodeID: number, color: string);
+    setEdgeSize(size: number);
     setCircularBarColor(barNo: number, color: string);
     highlightSelectedNodes(filteredIDs: number[]);
     isDeleted();
@@ -184,6 +185,7 @@ class DummyApp implements Application {
     setNodeColor() { }
     setNodeColorDiscrete() { }
     setANodeColor() { }
+    setEdgeSize() { }
     setCircularBarColor() { }
     highlightSelectedNodes() { }
     isDeleted() { }
@@ -896,6 +898,35 @@ $('#pin').draggable({ containment: '#outer-view-panel' }).on('drag', function (e
     var y = ui.position.top;
     setViewCrossroads(x, y);
 });
+
+$("#div-edge-size-slider").slider({
+    min: 0.1,
+    max: 3,
+    step: 0.1,
+    value: 1,
+    change: setEdgeSize,
+    slide: function (event, ui) {
+        $("#label_edge_size").text(ui.value);
+        setEdgeSize();
+    }
+});
+$("#div-edge-size-slider").css({
+    display: 'inline-block',
+    float: 'right',
+    clear: 'right',
+    width: '165px',
+    margin: '3px'
+});
+$("#label_edge_size").text($("#div-edge-size-slider").slider("value"));
+
+function setEdgeSize() {
+    var edgeSize = $("#div-edge-size-slider").slider("value");
+
+    if (apps[0]) apps[0].setEdgeSize(edgeSize);
+    if (apps[1]) apps[1].setEdgeSize(edgeSize);
+    if (apps[2]) apps[2].setEdgeSize(edgeSize);
+    if (apps[3]) apps[3].setEdgeSize(edgeSize);
+}
 
 // Resizes the views such that the crossroads is located at (x, y) on the screen
 function setViewCrossroads(x, y) {
