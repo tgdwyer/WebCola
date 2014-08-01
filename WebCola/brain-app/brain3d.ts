@@ -2015,6 +2015,9 @@ class Brain3DApp implements Application, Loopable {
 
         var unitRadius = 5;
 
+        this.svgGraph.nodes.splice(0, this.svgGraph.nodes.length);
+        this.svgGraph.links.splice(0, this.svgGraph.links.length);
+
         var children = this.colaGraph.rootObject.children;
         for (var i = 0; i < children.length; i++) {
             var obj = children[i];
