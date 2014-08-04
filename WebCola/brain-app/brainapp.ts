@@ -15,8 +15,11 @@ class CommonData {
     public brainCoords: number[][];
     public brainLabels: string[];
     public brainSurface;
+    public noBrainSurface: boolean = false;
     public nodeCount: number; // Number of coordinates
-    public nodeIDUnderPointer: number[] = [-1,-1,-1,-1]; // for yoked display
+    public nodeIDUnderPointer: number[] = [-1, -1, -1, -1, -1]; // for yoked display; the last one is for svg graphs
+    public circularBar1ColorPicker;
+    public circularBar2ColorPicker;
 
     coordCallbacks: Array<() => void> = new Array();
     labelCallbacks: Array<() => void> = new Array();
@@ -63,6 +66,23 @@ class DataSet {
     notifyAttributes() {
         this.attCallbacks.forEach(function (c) { c() });
     }
+}
+
+class SaveFile {
+    saveApps: SaveApp[];
+
+    constructor() {
+        this.saveApps = new Array(4);
+        for (var i = 0; i < 4; i++) {
+            var app = new SaveApp();
+            this.saveApps[i] = app;
+        }
+    }
+}
+
+class SaveApp {
+    surfaceModel: string;
+    view: string;
 }
 
 // Parses, stores, and provides access to brain node attributes from a file
@@ -167,6 +187,8 @@ interface Application {
     setNodeColor(attribute: string, minColor: string, maxColor: string);
     setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]);
     setANodeColor(nodeID: number, color: string);
+    setEdgeSize(size: number);
+    setCircularBarColor(barNo: number, color: string);
     highlightSelectedNodes(filteredIDs: number[]);
     isDeleted();
 }
@@ -180,6 +202,8 @@ class DummyApp implements Application {
     setNodeColor() { }
     setNodeColorDiscrete() { }
     setANodeColor() { }
+    setEdgeSize() { }
+    setCircularBarColor() { }
     highlightSelectedNodes() { }
     isDeleted() { }
 }
@@ -206,7 +230,10 @@ class Loop {
             this.timeOfLastFrame = currentTime;
 
             for (var i = 0; i < 4; ++i) {
-                if (apps[i] && (apps[i].isDeleted() == true)) apps[i] = new DummyApp();
+                if (apps[i] && (apps[i].isDeleted() == true)) {
+                    apps[i] = new DummyApp();
+                    saveObj.saveApps[i] = new SaveApp(); // create a new instance (if an old instance exists)
+                }
             }
 
             // Limit the maximum time step
@@ -301,6 +328,22 @@ $('#upload-attr-2 ').button().click(function () {
         loadAttributes(file, dataSets[1]);
         $('#d2-att').css({ color: 'green' });
     }
+});
+
+$('#button-save-app').button().click(function () {
+    var saveJson = JSON.stringify(saveObj);
+    $.post("saveapp.aspx",
+        {
+            save: saveJson
+        },
+        function (data, status) {
+            if (status.toLowerCase() == "success") {
+                alert("save: " + status + "; Use the following URL to retrive the project: \n");
+            }
+            else {
+                alert("save: " + status);
+            }
+        });
 });
 
 var divNodeSizeRange;
@@ -653,6 +696,18 @@ function setNodeColorInContextMenu(color: string) {
     }
 }
 
+function setCircularBar1Color(color: string) {
+    if (apps[input.activeTarget]) {
+        apps[input.activeTarget].setCircularBarColor(1, '#' + color);
+    }
+}
+
+function setCircularBar2Color(color: string) {
+    if (apps[input.activeTarget]) {
+        apps[input.activeTarget].setCircularBarColor(2, '#' + color);
+    }
+}
+
 function highlightSelectedNodes() {
     if (!dataSets[0].attributes) return;
 
@@ -720,49 +775,70 @@ $('#brain3d-icon-front').draggable(
     {
         containment: 'body',
         stop: function (event) {
-            resetBrain3D();
-
             var model = $('#brain3d-model-select').val();
-            var file = 'BrainMesh_ICBM152.obj';
-
-            if (model == 'ch2') {
-                file = 'BrainMesh_ch2.obj';
-            }
-            else if (model == 'ch2_inflated') {
-                file = 'BrainMesh_Ch2_Inflated.obj';
-            }
-            else if (model == 'icbm') {
-                file = 'BrainMesh_ICBM152.obj';
-            }
-            else if (model == 'ch2_cerebellum') {
-                file = 'BrainMesh_Ch2withCerebellum.obj';
-            }
-
-            loadBrainModel(file);
-
-            switch (getViewUnderMouse(event.pageX, event.pageY)) {
-                case tl_view:
-                    $(tl_view).empty();
-                    apps[0] = new Brain3DApp(0, commonData, $(tl_view), input.newTarget(0));
-                    break;
-                case tr_view:
-                    $(tr_view).empty();
-                    apps[1] = new Brain3DApp(1, commonData, $(tr_view), input.newTarget(1));
-                    break;
-                case bl_view:
-                    $(bl_view).empty();
-                    apps[2] = new Brain3DApp(2, commonData, $(bl_view), input.newTarget(2));
-                    break;
-                case br_view:
-                    $(br_view).empty();
-                    apps[3] = new Brain3DApp(3, commonData, $(br_view), input.newTarget(3));
-                    break;
-            }
-
- 
+            var view = getViewUnderMouse(event.pageX, event.pageY);
+            brainIconDraggableEvent(model, view);
         }
     }
 );
+
+function brainIconDraggableEvent(model: string, view: string) {
+    resetBrain3D();
+
+    var file = 'BrainMesh_ICBM152.obj';
+
+    commonData.noBrainSurface = false;
+
+    if (model == 'ch2') {
+        file = 'BrainMesh_ch2.obj';
+    }
+    else if (model == 'ch2_inflated') {
+        file = 'BrainMesh_Ch2_Inflated.obj';
+    }
+    else if (model == 'icbm') {
+        file = 'BrainMesh_ICBM152.obj';
+    }
+    else if (model == 'ch2_cerebellum') {
+        file = 'BrainMesh_Ch2withCerebellum.obj';
+    }
+    else if (model == 'none') {
+        commonData.noBrainSurface = true;
+        //file = null; // use the default brain surface to calculate the bounding sphere
+    }
+
+    loadBrainModel(file);
+
+    var appID = -1;
+    switch (view) {
+        case tl_view:
+            $(tl_view).empty();
+            apps[0] = new Brain3DApp(0, commonData, $(tl_view), input.newTarget(0));
+            appID = 0;
+            break;
+        case tr_view:
+            $(tr_view).empty();
+            apps[1] = new Brain3DApp(1, commonData, $(tr_view), input.newTarget(1));
+            appID = 1;
+            break;
+        case bl_view:
+            $(bl_view).empty();
+            apps[2] = new Brain3DApp(2, commonData, $(bl_view), input.newTarget(2));
+            appID = 2;
+            break;
+        case br_view:
+            $(br_view).empty();
+            apps[3] = new Brain3DApp(3, commonData, $(br_view), input.newTarget(3));
+            appID = 3;
+            break;
+    }
+
+    saveObj.saveApps[appID] = new SaveApp(); // create a new instance (if an old instance exists)
+    saveObj.saveApps[appID].surfaceModel = model;
+    saveObj.saveApps[appID].view = view;
+
+    $('#button-save-app').button({ disabled: false });
+}
+
 $('#dataset1-icon-front').draggable(
     {
         containment: 'body',
@@ -859,8 +935,12 @@ var apps = Array<Application>(new DummyApp(), new DummyApp(), new DummyApp(), ne
 // Initialize the view sizes and pin location
 var viewWidth = $('#outer-view-panel').width();
 var viewHeight = $('#outer-view-panel').height();
-$('#pin').css({ left: viewWidth / 2, top: viewHeight / 2 });
-setViewCrossroads(viewWidth / 2, viewHeight / 2);
+//$('#pin').css({ left: viewWidth / 2, top: viewHeight / 2 });
+//setViewCrossroads(viewWidth / 2, viewHeight / 2);
+var pinWidth = $('#pin').width();
+var pinHeight = $('#pin').height();
+$('#pin').css({ left: viewWidth - pinWidth, top: viewHeight - pinHeight });
+setViewCrossroads(viewWidth - pinWidth, viewHeight - pinHeight);
 
 // Set up the pin behaviour
 $('#pin').draggable({ containment: '#outer-view-panel' }).on('drag', function (event: JQueryEventObject, ...args: any[]) {
@@ -869,6 +949,35 @@ $('#pin').draggable({ containment: '#outer-view-panel' }).on('drag', function (e
     var y = ui.position.top;
     setViewCrossroads(x, y);
 });
+
+$("#div-edge-size-slider").slider({
+    min: 0.1,
+    max: 3,
+    step: 0.1,
+    value: 1,
+    change: setEdgeSize,
+    slide: function (event, ui) {
+        $("#label_edge_size").text(ui.value);
+        setEdgeSize();
+    }
+});
+$("#div-edge-size-slider").css({
+    display: 'inline-block',
+    float: 'right',
+    clear: 'right',
+    width: '165px',
+    margin: '3px'
+});
+$("#label_edge_size").text($("#div-edge-size-slider").slider("value"));
+
+function setEdgeSize() {
+    var edgeSize = $("#div-edge-size-slider").slider("value");
+
+    if (apps[0]) apps[0].setEdgeSize(edgeSize);
+    if (apps[1]) apps[1].setEdgeSize(edgeSize);
+    if (apps[2]) apps[2].setEdgeSize(edgeSize);
+    if (apps[3]) apps[3].setEdgeSize(edgeSize);
+}
 
 // Resizes the views such that the crossroads is located at (x, y) on the screen
 function setViewCrossroads(x, y) {
@@ -982,6 +1091,38 @@ manager.onProgress = function (item, loaded, total) {
 var loader = new (<any>THREE).OBJLoader(manager);
 var brainSurfaceColor: string = "0xe3e3e3";
 
+var saveObj = new SaveFile();
+initFromSaveFile();
+
+
+//-------------------------------------------------------------------------------------------------------------------------------------------
+// functions
+
+function initFromSaveFile() {
+    var query = window.location.search.substring(1);
+    var json;
+    if (query == 'save') {
+        $.get("getapp.aspx", function (data, status) {
+            alert("Loading is: " + status + "\nData: " + data);
+            if (status.toLowerCase() == "success") {
+                initApps(data);
+            }
+        });
+    }
+}
+
+function initApps(data: string) {
+    var save = <SaveFile>jQuery.parseJSON(data);
+
+    for (var i = 0; i < 4; i++) {
+        var app = save.saveApps[i];
+        if ((app.surfaceModel != null) && (app.surfaceModel.length > 0)) {
+            // if this app exists:
+            brainIconDraggableEvent(app.surfaceModel, app.view);
+        }
+    }
+}
+
 // Load the brain surface (hardcoded - it is not simple to load geometry from the local machine, but this has not been deeply explored yet).
 // NOTE: The loaded model cannot be used in more than one WebGL context (scene) at a time - the geometry and materials must be .cloned() into
 // new THREE.Mesh() objects by the application wishing to use the model.
@@ -1027,7 +1168,6 @@ function loadBrainModel(fileName: string) {
         commonData.notifySurface();
     });
 }
-loadBrainModel('BrainMesh_ICBM152.obj'); // Load the model right away
 
 function setBrainSurfaceColor(color: string) {
     brainSurfaceColor = '0x' + color;
@@ -1127,7 +1267,8 @@ function setupCrossFilter(attrs: Attributes) {
 
     // create the charts 
     for (var j = 0; j < attrs.columnNames.length; ++j) {
-
+        //$('#barCharts').append('<div id="barChart' + j + '" style="border: 1px solid red;"></div>');
+        $('#barCharts').append('<div id="barChart' + j + '"></div>');
         var chart = dc.barChart("#barChart" + j);
 
         var columnName = attrs.columnNames[j];
@@ -1140,7 +1281,7 @@ function setupCrossFilter(attrs: Attributes) {
 
         if (j == 1) {           
             chart
-                .width(300)
+                .width(290)
                 .height(150)
                 .dimension(dim)
                 .group(group)
@@ -1152,7 +1293,7 @@ function setupCrossFilter(attrs: Attributes) {
         else {
             chart
                 .gap(5)
-                .width(300)
+                .width(290)
                 .height(150)
                 .dimension(dim)
                 .group(group)

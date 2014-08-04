@@ -8,12 +8,13 @@
 // GLOBAL VARIABLES
 declare var d3;
 declare var numeric;
+declare var packages;
 declare function d3adaptor(): string;
 var colans = <any>cola;
 
 var sliderSpace = 70; // The number of pixels to reserve at the bottom of the div for the slider
 //var uniqueID = 0; // Each instance of this application is given a unique ID so that the DOM elements they create can be identified as belonging to them
-var maxEdgesShowable = 500;
+var maxEdgesShowable = 1000;
 var initialEdgesShown = 20; // The number of edges that are shown when the application starts
 
 // The width and the height of the box in the xy-plane that we must keep inside the camera (by modifying the distance of the camera from the scene)
@@ -34,6 +35,7 @@ class Brain3DApp implements Application, Loopable {
     loop: Loop;
     input: InputTarget;
     jDiv;
+    jDivProcessingNotification;
     deleted: boolean = false;
 
     // THREE variables
@@ -48,6 +50,7 @@ class Brain3DApp implements Application, Loopable {
     commonData: CommonData;
     dataSet: DataSet;
     brainSurface;
+    brainSurfaceBoundingSphere;
     brainObject; // Base object for the brain graph
     colaObject; // Base object for the cola graph
     brainGeometry;
@@ -55,21 +58,33 @@ class Brain3DApp implements Application, Loopable {
     sortedSimilarities: number[];
     physioGraph: Graph;
     colaGraph: Graph;
+    svgGraph: Graph2D;
 
     cola2D;
     svg;
+    svgDefs;
     svgMode;
     svgAllElements;
-    svgNodeArray: any[];
-    svgLinkArray: any[];
+    svgNodeBundleArray: any[];
     svgControlMode: boolean = false;
+    svgNeedsUpdate: boolean = false;
     d3Zoom = d3.behavior.zoom();
+
+    circularCSSClass: string;
+    circularDotCSSClass: string;
+    circularBar1Color: string = '#d3d3d3';
+    circularBar2Color: string = '#d3d3d3';
+    circularBarColorChange: boolean = false;
+    circularBar1Gradient: boolean = false;
+    circularBar2Gradient: boolean = false;
+    circularEdgeGradient: boolean = false;
+    circularMouseDownEventListenerAdded = false;
 
     nodeColourings: number[]; // Stores the colourings associated with the groups
     dissimilarityMatrix: number[][] = []; // An inversion of the similarity matrix, used for Cola graph distances
 
     // State
-    showingCola: boolean = false;
+    //showingCola: boolean = false;
     transitionInProgress: boolean = false;
     currentThreshold: number = 0;
     filteredAdjMatrix: number[][];
@@ -82,7 +97,11 @@ class Brain3DApp implements Application, Loopable {
     fovZoomRatio = 1;
     currentViewWidth: number; 
 
+    allLables: boolean = false;
     autoRotation: boolean = false;
+    weightedEdges: boolean = false;
+    coloredEdges: boolean = false;
+    bundlingEdges: boolean = false;
 
     networkType: string;
 
@@ -116,23 +135,47 @@ class Brain3DApp implements Application, Loopable {
 
         // Register callbacks
         this.input.regKeyTickCallback('a', (deltaTime: number) => {
-            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y - this.rotationSpeed * deltaTime, this.brainObject.rotation.z);
-            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y - this.rotationSpeed * deltaTime, this.colaObject.rotation.z);
+            //this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y - this.rotationSpeed * deltaTime, this.brainObject.rotation.z);
+            //this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y - this.rotationSpeed * deltaTime, this.colaObject.rotation.z);
+
+            var quat = new THREE.Quaternion();
+            var axis = new THREE.Vector3(0, -1, 0);
+            quat.setFromAxisAngle(axis, this.rotationSpeed * deltaTime); // axis must be normalized, angle in radians
+            this.brainObject.quaternion.multiplyQuaternions(quat, this.brainObject.quaternion);
+            this.colaObject.quaternion.multiplyQuaternions(quat, this.colaObject.quaternion);
         });
 
         this.input.regKeyTickCallback('d', (deltaTime: number) => {
-            this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + this.rotationSpeed * deltaTime, this.brainObject.rotation.z);
-            this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + this.rotationSpeed * deltaTime, this.colaObject.rotation.z);
+            //this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + this.rotationSpeed * deltaTime, this.brainObject.rotation.z);
+            //this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + this.rotationSpeed * deltaTime, this.colaObject.rotation.z);
+
+            var quat = new THREE.Quaternion();
+            var axis = new THREE.Vector3(0, 1, 0);
+            quat.setFromAxisAngle(axis, this.rotationSpeed * deltaTime); // axis must be normalized, angle in radians
+            this.brainObject.quaternion.multiplyQuaternions(quat, this.brainObject.quaternion);
+            this.colaObject.quaternion.multiplyQuaternions(quat, this.colaObject.quaternion);
         });
 
         this.input.regKeyTickCallback('w', (deltaTime: number) => {
-            this.brainObject.rotation.set(this.brainObject.rotation.x - this.rotationSpeed * deltaTime, this.brainObject.rotation.y, this.brainObject.rotation.z);
-            this.colaObject.rotation.set(this.colaObject.rotation.x - this.rotationSpeed * deltaTime, this.colaObject.rotation.y, this.colaObject.rotation.z);
+            //this.brainObject.rotation.set(this.brainObject.rotation.x - this.rotationSpeed * deltaTime, this.brainObject.rotation.y, this.brainObject.rotation.z);
+            //this.colaObject.rotation.set(this.colaObject.rotation.x - this.rotationSpeed * deltaTime, this.colaObject.rotation.y, this.colaObject.rotation.z);
+
+            var quat = new THREE.Quaternion();
+            var axis = new THREE.Vector3(-1, 0, 0);
+            quat.setFromAxisAngle(axis, this.rotationSpeed * deltaTime); // axis must be normalized, angle in radians
+            this.brainObject.quaternion.multiplyQuaternions(quat, this.brainObject.quaternion);
+            this.colaObject.quaternion.multiplyQuaternions(quat, this.colaObject.quaternion);
         });
 
         this.input.regKeyTickCallback('s', (deltaTime: number) => {
-            this.brainObject.rotation.set(this.brainObject.rotation.x + this.rotationSpeed * deltaTime, this.brainObject.rotation.y, this.brainObject.rotation.z);
-            this.colaObject.rotation.set(this.colaObject.rotation.x + this.rotationSpeed * deltaTime, this.colaObject.rotation.y, this.colaObject.rotation.z);
+            //this.brainObject.rotation.set(this.brainObject.rotation.x + this.rotationSpeed * deltaTime, this.brainObject.rotation.y, this.brainObject.rotation.z);
+            //this.colaObject.rotation.set(this.colaObject.rotation.x + this.rotationSpeed * deltaTime, this.colaObject.rotation.y, this.colaObject.rotation.z);
+
+            var quat = new THREE.Quaternion();
+            var axis = new THREE.Vector3(1, 0, 0);
+            quat.setFromAxisAngle(axis, this.rotationSpeed * deltaTime); // axis must be normalized, angle in radians
+            this.brainObject.quaternion.multiplyQuaternions(quat, this.brainObject.quaternion);
+            this.colaObject.quaternion.multiplyQuaternions(quat, this.colaObject.quaternion);
         });
 
         var leapRotationSpeed = 0.03; // radians per mm
@@ -153,11 +196,23 @@ class Brain3DApp implements Application, Loopable {
             if (mode == 1) {
                 if (this.autoRotation == false) {
                     var pixelAngleRatio = 50;
-                    this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + dx / pixelAngleRatio, this.brainObject.rotation.z);
-                    this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + dx / pixelAngleRatio, this.colaObject.rotation.z);
+                    //this.brainObject.rotation.set(this.brainObject.rotation.x, this.brainObject.rotation.y + dx / pixelAngleRatio, this.brainObject.rotation.z);
+                    //this.colaObject.rotation.set(this.colaObject.rotation.x, this.colaObject.rotation.y + dx / pixelAngleRatio, this.colaObject.rotation.z);
 
-                    this.brainObject.rotation.set(this.brainObject.rotation.x + dy / pixelAngleRatio, this.brainObject.rotation.y, this.brainObject.rotation.z);
-                    this.colaObject.rotation.set(this.colaObject.rotation.x + dy / pixelAngleRatio, this.colaObject.rotation.y, this.colaObject.rotation.z);
+                    var quatX = new THREE.Quaternion();
+                    var axisX = new THREE.Vector3(0, 1, 0);
+                    quatX.setFromAxisAngle(axisX, dx / pixelAngleRatio); // axis must be normalized, angle in radians
+                    this.brainObject.quaternion.multiplyQuaternions(quatX, this.brainObject.quaternion);
+                    this.colaObject.quaternion.multiplyQuaternions(quatX, this.colaObject.quaternion);
+
+                    //this.brainObject.rotation.set(this.brainObject.rotation.x + dy / pixelAngleRatio, this.brainObject.rotation.y, this.brainObject.rotation.z);
+                    //this.colaObject.rotation.set(this.colaObject.rotation.x + dy / pixelAngleRatio, this.colaObject.rotation.y, this.colaObject.rotation.z);
+
+                    var quatY = new THREE.Quaternion();
+                    var axisY = new THREE.Vector3(1, 0, 0);
+                    quatY.setFromAxisAngle(axisY, dy / pixelAngleRatio); // axis must be normalized, angle in radians
+                    this.brainObject.quaternion.multiplyQuaternions(quatY, this.brainObject.quaternion);
+                    this.colaObject.quaternion.multiplyQuaternions(quatY, this.colaObject.quaternion);
                 }
                 else {
                     this.mouse.dx = dx;
@@ -201,10 +256,11 @@ class Brain3DApp implements Application, Loopable {
             this.brainObject.position = new THREE.Vector3(-this.graphOffset, 0, 0);
             this.brainObject.rotation.set(0, 0, 0);
 
-            if (this.showingCola) {
+            //if (this.showingCola) {
+            //if (this.colaGraph.isVisible()) {
                 this.colaObject.position = new THREE.Vector3(this.graphOffset, 0, 0);
                 this.colaObject.rotation.set(0, 0, 0);
-            }   
+            //}   
         });
 
         this.input.regMouseWheelCallback((delta: number) => {
@@ -234,19 +290,22 @@ class Brain3DApp implements Application, Loopable {
             }
         });
 
-        var varShowNetwork = (b: boolean) => { this.showNetwork(b); }
-        var varEdgesThicknessByWeightedOnChange = (b: boolean) => { this.edgesThicknessByWeightedOnChange(b); }
-        var varEdgesColoredOnChange = (b: boolean) => { this.edgesColoredOnChange(b); }
-        var varAllLabelsOnChange = (b: boolean) => { this.allLabelsOnChange(b); }
-        var varAutoRotationOnChange = (b: boolean) => { this.autoRotationOnChange(b); }
-        var varSVGControlOnChange = (b: boolean) => { this.svgControlOnChange(b); }
-        var varSliderMouseEvent = (e: string) => { this.sliderMouseEvent(e); }
-        var varGraphViewSliderOnChange = (v: number) => { this.graphViewSliderOnChange(v); }
-        var varEdgeCountSliderOnChange = (v: number) => { this.edgeCountSliderOnChange(v); }
-        var varCloseBrainAppOnClick = () => { this.closeBrainAppOnClick(); }
-        var varDefaultOrientationsOnClick = (s: string) => { this.defaultOrientationsOnClick(s); }
-        var varNetworkTypeOnChange = (s: string) => { this.networkTypeOnChange(s); }
+        var varShowNetwork = (b: boolean) => { this.showNetwork(b); };
+        var varEdgesThicknessByWeightedOnChange = () => { this.edgesThicknessByWeightedOnChange(); };
+        var varEdgesColoredOnChange = () => { this.edgesColoredOnChange(); };
+        var varEdgesBundlingOnChange = () => { this.edgesBundlingOnChange(); };
+        var varAllLabelsOnChange = () => { this.allLabelsOnChange(); };
+        var varAutoRotationOnChange = (s) => { this.autoRotationOnChange(s); };
+        var varSliderMouseEvent = (e: string) => { this.sliderMouseEvent(e); };
+        var varGraphViewSliderOnChange = (v: number) => { this.graphViewSliderOnChange(v); };
+        var varEdgeCountSliderOnChange = (v: number) => { this.edgeCountSliderOnChange(v); };
+        var varCloseBrainAppOnClick = () => { this.closeBrainAppOnClick(); };
+        var varDefaultOrientationsOnClick = (s: string) => { this.defaultOrientationsOnClick(s); };
+        var varNetworkTypeOnChange = (s: string) => { this.networkTypeOnChange(s); };
         
+        var varShowProcessingNotification = () => { this.showProcessingNotification(); };
+        
+
         this.input.regKeyDownCallback(' ', varShowNetwork);
             
         // Set the background colour
@@ -255,43 +314,45 @@ class Brain3DApp implements Application, Loopable {
         // Set up renderer, and add the canvas and the slider to the div
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(jDiv.width(), (jDiv.height() - sliderSpace));
-        jDiv.append($('<span id="close-brain-app-' + this.id + '" class="view-panel-span">x</span>')
+        jDiv.append($('<span id="close-brain-app-' + this.id + '" title="Close" class="view-panel-span">x</span>')
                 .css({ 'right': '6px', 'top': '10px', 'font-size': '12px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varCloseBrainAppOnClick(); }))
-            .append($('<span id="top-view-' + this.id + '" class="view-panel-span">T</span>')
+            .append($('<span id="top-view-' + this.id + '" title="Top View" class="view-panel-span">T</span>')
                 .css({ 'right': '6px', 'top': '30px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("top"); }))
-            .append($('<span id="bottom-view-' + this.id + '" class="view-panel-span">B</span>')
+            .append($('<span id="bottom-view-' + this.id + '" title="Bottom View" class="view-panel-span">B</span>')
                 .css({ 'right': '6px', 'top': '50px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("bottom"); }))
-            .append($('<span id="left-view-' + this.id + '" class="view-panel-span">L</span>')
+            .append($('<span id="left-view-' + this.id + '" title="Left View" class="view-panel-span">L</span>')
                 .css({ 'right': '6px', 'top': '70px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("left"); }))
-            .append($('<span id="right-view-' + this.id + '" class="view-panel-span">R</span>')
+            .append($('<span id="right-view-' + this.id + '" title="Right View" class="view-panel-span">R</span>')
                 .css({ 'right': '6px', 'top': '90px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("right"); }))
-            .append($('<span id="front-view-' + this.id + '" class="view-panel-span">F</span>')
+            .append($('<span id="front-view-' + this.id + '" title="Front View" class="view-panel-span">F</span>')
                 .css({ 'right': '6px', 'top': '110px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("front"); }))
-            .append($('<span id="back-view-' + this.id + '" class="view-panel-span">B</span>')
+            .append($('<span id="back-view-' + this.id + '" title="Back View" class="view-panel-span">B</span>')
                 .css({ 'right': '6px', 'top': '130px' })
-                .fadeTo(0, 0.2)
-                .hover(function (e) { $(this).stop().fadeTo(300, e.type == "mouseenter" ? 1 : 0.2); })
                 .click(function () { varDefaultOrientationsOnClick("back"); }))
+            .append($('<span id="all-labels-' + this.id + '" title="All Labels" class="view-panel-span">&#8704</span>')
+                .css({ 'right': '6px', 'top': '150px' })
+                .click(function () { varAllLabelsOnChange(); }))
+            .append($('<span id="anti-auto-rotation-' + this.id + '" title="Anticlockwise Auto Rotation" class="view-panel-span">&#8634</span>')
+                .css({ 'right': '6px', 'top': '170px' })
+                .click(function () { varAutoRotationOnChange("anticlockwise"); }))
+            .append($('<span id="colored-edges-' + this.id + '" title="Colored Edges" class="view-panel-span">C</span>')
+                .css({ 'right': '7px', 'top': '190px' })
+                .click(function () { varEdgesColoredOnChange(); }))
+            .append($('<span id="weighted-edges-' + this.id + '" title="Weighted Edges" class="view-panel-span">W</span>')
+                .css({ 'right': '6px', 'top': '210px' })
+                .click(function () { varEdgesThicknessByWeightedOnChange(); }))
+            .append($('<span id="bundling-edges-' + this.id + '" title="Edge Bundling" class="view-panel-span">&#8712</span>')
+                .css({ 'right': '6px', 'top': '230px', 'font-size': '20px' })
+                .on("mousedown", function () { varShowProcessingNotification(); })
+                .on("mouseup", function () { varEdgesBundlingOnChange(); }))
             .append($('<input id="graph-view-slider-' + this.id + '" type="range" min="0" max="100" value="100"></input>')
-                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '250px', 'right': 0, 'top': '150px', 'z-index': 1000 })
+                .css({ 'position': 'absolute', 'visibility': 'hidden', '-webkit-appearance': 'slider-vertical', 'width': '20px', 'height': '180px', 'right': 0, 'top': '250px', 'z-index': 1000 })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varGraphViewSliderOnChange($(this).val()); })
@@ -302,24 +363,26 @@ class Brain3DApp implements Application, Loopable {
             .append(this.renderer.domElement)
             .append('<p>Showing <label id="count-' + this.id + '">0</label> edges (<label id=percentile-' + this.id + '>0</label>th percentile)</p>')
             .append($('<input id="edge-count-slider-' + this.id + '" type="range" min="1" max="' + maxEdgesShowable + '" value="' + initialEdgesShown + '" disabled="true"/></input>')
-                .css({ 'width': '180px', 'position': 'relative', 'z-index': 1000 })
+                .css({ 'width': '300px', 'position': 'relative', 'z-index': 1000 })
                 .mousedown(function () { varSliderMouseEvent("mousedown"); })
                 .mouseup(function () { varSliderMouseEvent("mouseup"); })
                 .on("input change", function () { varEdgeCountSliderOnChange($(this).val()); }))
-            .append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
-                .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
-            .append($('<input type="checkbox" id="checkbox-edge-color-' + this.id + '" disabled="true">Colored Edge</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
-                .click(function () { varEdgesColoredOnChange($(this).is(":checked")); }))
-            .append($('<input type="checkbox" id="checkbox-all-labels-' + this.id + '" disabled="true">All Labels</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
-                .click(function () { varAllLabelsOnChange($(this).is(":checked")); }))
-            .append($('<input type="checkbox" id="checkbox-auto-rotation-' + this.id + '" disabled="true">Auto Rotation</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
-                .click(function () { varAutoRotationOnChange($(this).is(":checked")); }))
-            .append($('<input type="checkbox" id="checkbox-svg-control-' + this.id + '" disabled="true">SVG</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
-                .click(function () { varSVGControlOnChange($(this).is(":checked")); }))
+            //.append($('<input type="checkbox" id="checkbox-edges-thickness-by-weight-' + this.id + '" disabled="true">Weighted Edges</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
+            //    .click(function () { varEdgesThicknessByWeightedOnChange($(this).is(":checked")); }))
+            //.append($('<input type="checkbox" id="checkbox-edge-color-' + this.id + '" disabled="true">Colored Edge</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
+            //    .click(function () { varEdgesColoredOnChange($(this).is(":checked")); }))
+            //.append($('<input type="checkbox" id="checkbox-all-labels-' + this.id + '" disabled="true">All Labels</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
+            //    .click(function () { varAllLabelsOnChange($(this).is(":checked")); }))
+            //.append($('<input type="checkbox" id="checkbox-auto-rotation-' + this.id + '" disabled="true">Auto Rotation</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
+            //    .click(function () { varAutoRotationOnChange($(this).is(":checked")); }))
+            //.append($('<input type="checkbox" id="checkbox-svg-control-' + this.id + '" disabled="true">SVG</input>').css({ 'width': '12px', 'position': 'relative', 'z-index': 1000 })
+            //    .click(function () { varSVGControlOnChange($(this).is(":checked")); }))
             .append($('<button id="button-show-network-' + this.id + '" disabled="true">Show Network</button>').css({ 'margin-left': '10px', 'font-size': '12px', 'position': 'relative', 'z-index': 1000 })
                 .click(function () { varShowNetwork(false); }))
             .append($('<select id="select-network-type-' + this.id + '" disabled="true"></select>').css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px', 'position': 'relative', 'z-index': 1000 })
                 .on("change", function () { varNetworkTypeOnChange($(this).val()); }));
+
+        //$('#button-show-network-' + this.id).button(); // jQuery button
 
         var networkTypeSelect = "#select-network-type-" + this.id;
         var option = document.createElement('option');
@@ -338,6 +401,11 @@ class Brain3DApp implements Application, Loopable {
         option.value = 'flatten-to-2d';
         $(networkTypeSelect).append(option);
 
+        var option = document.createElement('option');
+        option.text = 'circular layout';
+        option.value = 'circular-layout';
+        $(networkTypeSelect).append(option);
+
         this.cola2D = colans.d3adaptor()
             .size([jDiv.width(), jDiv.height() - sliderSpace]);
 
@@ -345,8 +413,16 @@ class Brain3DApp implements Application, Loopable {
         this.svg = d3.select('#div-svg-' + this.id).append("svg")
             .attr("width", jDiv.width())
             .attr("height", jDiv.height() - sliderSpace)
-            .call(this.d3Zoom.on("zoom", varSVGZoom));
+            .call(this.d3Zoom.on("zoom", varSVGZoom));  
         this.svgAllElements = this.svg.append("g");
+
+        var varSvg = this.svg[0];
+        var varNamespaceURI = varSvg[0].namespaceURI;
+        this.svgDefs = document.createElementNS(varNamespaceURI, 'defs');      
+        varSvg[0].appendChild(this.svgDefs);
+
+        this.jDivProcessingNotification = document.createElement('div');
+        this.jDivProcessingNotification.id = 'div-processing-notification';
 
         // Set up camera
         this.camera = new THREE.PerspectiveCamera(45, 1, this.nearClip, this.farClip);
@@ -377,8 +453,11 @@ class Brain3DApp implements Application, Loopable {
             this.restart();
         };
         var lab = () => {
-            // We don't use labels in this visualisation yet
+            // We don't use labels in this visualisation yet           
         };
+
+        //if (this.commonData.noBranSurface == true) this.surfaceLoaded = true;
+
         var surf = () => {
             if (this.surfaceLoaded == true) return;
 
@@ -386,18 +465,36 @@ class Brain3DApp implements Application, Loopable {
             this.brainObject.remove(this.brainSurface);
             // Clone the mesh - we can't share it between different canvases without cloning it
             var clonedObject = new THREE.Object3D();
+            var boundingSphereObject = new THREE.Object3D();
             this.commonData.brainSurface.traverse(function (child) {
                 if (child instanceof THREE.Mesh) {
                     clonedObject.add(new THREE.Mesh(child.geometry.clone(), child.material.clone()));
+
+                    var boundingSphere = child.geometry.boundingSphere;
+                    var material = child.material;
+                    var sphereGeometry = new THREE.SphereGeometry(boundingSphere.radius + 10, 10, 10);
+                    var sphereObject = new THREE.Mesh(sphereGeometry.clone(), material.clone());
+                    sphereObject.position.x = boundingSphere.center.x;
+                    sphereObject.position.y = boundingSphere.center.y;
+                    sphereObject.position.z = boundingSphere.center.z;
+                    sphereObject.visible = false;
+                    (<any>sphereObject).isBoundingSphere = true;
+                    boundingSphereObject.add(sphereObject);
                 }
             });
 
-            // Setting scale to some arbitrarily larger value, because the mesh isn't the right size
-            //var scale = 1.5;
-            //clonedObject.scale = new THREE.Vector3(scale, scale, scale);
+            if (this.commonData.noBrainSurface == true) {
+                this.brainSurface = null;
+                clonedObject = null;
+            }
+            else {
+                this.brainSurface = clonedObject;
+                this.brainObject.add(this.brainSurface);
+            }
 
-            this.brainSurface = clonedObject;
-            this.brainObject.add(this.brainSurface);
+            boundingSphereObject.visible = false;
+            this.brainSurfaceBoundingSphere = boundingSphereObject;           
+            this.brainObject.add(this.brainSurfaceBoundingSphere);
 
             this.surfaceLoaded = true;
         };
@@ -407,6 +504,10 @@ class Brain3DApp implements Application, Loopable {
         if (commonData.brainCoords) coords();
         if (commonData.brainLabels) lab();
         //if (commonData.brainSurface) surf(); // this line is redundant and has problem, surf() will be called in THREE.OBJLoader
+
+        // Set up loop
+        if (!this.loop)
+            this.loop = new Loop(this, 0.03);
     }   
 
     sliderMouseEvent(e: string) {
@@ -440,17 +541,452 @@ class Brain3DApp implements Application, Loopable {
     networkTypeOnChange(type: string) {
         this.networkType = type;
 
-        if (this.networkType != 'flatten-to-2d') {
-            $('#checkbox-svg-control-' + this.id).prop('checked', false);
-            this.svgControlMode = false;
-        }
+        this.setupNetworkTypeAppendedElements();
 
-        if (this.showingCola == true) {
+        //if (this.showingCola == true) {
+        if (this.colaGraph.isVisible()) {
             this.showNetwork(true);
         }
         else {
             this.showNetwork(false);
         }
+    }
+
+    setupNetworkTypeAppendedElements() {
+        this.circularDotCSSClass = ".network-type-appended-element-" + this.id;
+        this.circularCSSClass = "network-type-appended-element-" + this.id;
+
+        $("label").remove(this.circularDotCSSClass);
+        $("select").remove(this.circularDotCSSClass);
+        $("button").remove(this.circularDotCSSClass);
+        $("div").remove(this.circularDotCSSClass);
+
+        if (this.networkType == "circular-layout") {
+            this.circularBar1Gradient = false;
+            this.circularBar2Gradient = false;
+            this.circularEdgeGradient = false;
+
+            var varCircularLayoutLabelOnChange = (s: string) => { this.circularLayoutLabelOnChange(s); };
+
+            var varCircularLayoutAttributeOneOnChange = (s: string) => { this.circularLayoutAttributeOneOnChange(s); };
+            var varCircularLayoutAttributeTwoOnChange = (s: string) => { this.circularLayoutAttributeTwoOnChange(s); };
+            var varCircularLayoutSortOnChange = (s: string) => { this.circularLayoutSortOnChange(s); };
+            var varCircularLayoutBundleOnChange = (s: string) => { this.circularLayoutBundleOnChange(s); };
+            var varCircularLayoutHistogramButtonOnClick = () => { this.circularLayoutHistogramButtonOnClick(); };
+
+            var varCircularLayoutEdgeGradientOnChange = (b: boolean) => { this.circularLayoutEdgeGradientOnChange(b); };
+            var varCircularLayoutBarGradientOnChange = (barNo: number, b: boolean) => { this.circularLayoutBarGradientOnChange(barNo, b); };
+
+            //------------------------------------------------------------------------
+            this.jDiv.append($('<label class=' + this.circularCSSClass + '> bundle:</label>'));
+            this.jDiv.append($('<select id="select-circular-layout-bundle-' + this.id + '" class=' + this.circularCSSClass + '></select>')
+                .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
+                .on("change", function () { varCircularLayoutBundleOnChange($(this).val()); }));
+
+            $('#select-circular-layout-bundle-' + this.id).empty();
+
+            var option = document.createElement('option');
+            option.text = 'none';
+            option.value = 'none';
+            $('#select-circular-layout-bundle-' + this.id).append(option);
+
+            for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
+                var columnName = this.dataSet.attributes.columnNames[i];
+                $('#select-circular-layout-bundle-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
+
+            //------------------------------------------------------------------------
+            this.jDiv.append($('<label class=' + this.circularCSSClass + '> sort:</label>'));
+            this.jDiv.append($('<select id="select-circular-layout-sort-' + this.id + '" class=' + this.circularCSSClass + '></select>')
+                .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px' })
+                .on("change", function () { varCircularLayoutSortOnChange($(this).val()); }));
+
+            $('#select-circular-layout-sort-' + this.id).empty();
+
+            var option = document.createElement('option');
+            option.text = 'none';
+            option.value = 'none';
+            $('#select-circular-layout-sort-' + this.id).append(option);
+
+            for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
+                var columnName = this.dataSet.attributes.columnNames[i];
+                $('#select-circular-layout-sort-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
+
+            //------------------------------------------------------------------------
+            // option button
+            this.jDiv.append($('<button id="button-circular-layout-histogram-' + this.id + '" class=' + this.circularCSSClass + '>options</button>')
+                .css({ 'margin-left': '5px', 'font-size': '12px' })
+                .click(function () { varCircularLayoutHistogramButtonOnClick(); }));
+
+            $('#button-circular-layout-histogram-' + this.id).button({
+                icons: {
+                    primary: "ui-icon-gear",
+                    secondary: "ui-icon-triangle-1-s"
+                }
+            });
+
+            //------------------------------------------------------------------------
+            // menu
+            this.jDiv.append($('<div id="div-circular-layout-menu-' + this.id + '" class=' + this.circularCSSClass + '></div>')
+                .css({ 'display': 'none', 'background-color': '#feeebd', 'position': 'absolute', 'padding': '8px', 'border-radius': '5px' }));
+
+            //------------------------------------------------------------------------
+            // menu - label
+            $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-label-' + this.id + '">label: </div>');
+            $('#div-circular-label-' + this.id).append($('<select id="select-circular-label-' + this.id + '" class=' + this.circularCSSClass + '></select>')
+                .css({ 'margin-left': '5px', 'margin-bottom': '5px', 'font-size': '12px', 'width': '80px', 'background-color': '#feeebd' })
+                .on("change", function () { varCircularLayoutLabelOnChange($(this).val()); }));
+
+            $('#select-circular-label-' + this.id).empty();
+
+            var option = document.createElement('option');
+            option.text = 'default';
+            option.value = 'default';
+            $('#select-circular-label-' + this.id).append(option);
+
+            for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
+                var columnName = this.dataSet.attributes.columnNames[i];
+                $('#select-circular-label-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
+
+            //------------------------------------------------------------------------
+            // menu - edge
+            $('#div-circular-layout-menu-' + this.id).append($('<div id="div-circular-edge-' + this.id + '">edge: </div>')
+                .css({'margin-bottom': '5px'}));
+
+            $('#div-circular-edge-' + this.id).append($('<input type="checkbox" id="checkbox-circular-edge-gradient-' + this.id + '" class=' + this.circularCSSClass + '>gradient</input>')
+                .css({ 'width': '12px', 'z-index': 1000 })
+                .click(function () { varCircularLayoutEdgeGradientOnChange($(this).is(":checked")); }));
+
+            //------------------------------------------------------------------------
+            // menu - histogram
+            $('#div-circular-layout-menu-' + this.id).append('<div>histogram:</div>');
+
+            //---
+            $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-bar1-' + this.id + '">bar 1: </div>');
+            $('#div-circular-bar1-' + this.id).append($('<select id="select-circular-layout-attribute-one-' + this.id + '" class=' + this.circularCSSClass + '></select>')
+                .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px', 'background-color': '#feeebd' })
+                .on("change", function () { varCircularLayoutAttributeOneOnChange($(this).val()); }));
+
+            $('#select-circular-layout-attribute-one-' + this.id).empty();
+
+            var option = document.createElement('option');
+            option.text = 'none';
+            option.value = 'none';
+            $('#select-circular-layout-attribute-one-' + this.id).append(option);
+
+            for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
+                var columnName = this.dataSet.attributes.columnNames[i];
+                $('#select-circular-layout-attribute-one-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
+
+            $('#div-circular-bar1-' + this.id).append($('<input type="checkbox" id="checkbox-circular-bar1-gradient-' + this.id + '" class=' + this.circularCSSClass + '>gradient</input>')
+                .css({ 'width': '12px', 'z-index': 1000 })
+                .click(function () { varCircularLayoutBarGradientOnChange(1, $(this).is(":checked")); }));
+
+            //---
+            $('#div-circular-layout-menu-' + this.id).append('<div id="div-circular-bar2-' + this.id + '">bar 2: </div>');
+            $('#div-circular-bar2-' + this.id).append($('<select id="select-circular-layout-attribute-two-' + this.id + '" class=' + this.circularCSSClass + '></select>')
+                .css({ 'margin-left': '5px', 'font-size': '12px', 'width': '80px', 'background-color': '#feeebd' })
+                .on("change", function () { varCircularLayoutAttributeTwoOnChange($(this).val()); }));
+
+            $('#select-circular-layout-attribute-two-' + this.id).empty();
+
+            var option = document.createElement('option');
+            option.text = 'none';
+            option.value = 'none';
+            $('#select-circular-layout-attribute-two-' + this.id).append(option);
+
+            for (var i = 0; i < this.dataSet.attributes.columnNames.length; ++i) {
+                var columnName = this.dataSet.attributes.columnNames[i];
+                $('#select-circular-layout-attribute-two-' + this.id).append('<option value = "' + columnName + '">' + columnName + '</option>');            }
+
+            $('#div-circular-bar2-' + this.id).append($('<input type="checkbox" id="checkbox-circular-bar2-gradient-' + this.id + '" class=' + this.circularCSSClass + '>gradient</input>')
+                .css({ 'width': '12px', 'z-index': 1000 })
+                .click(function () { varCircularLayoutBarGradientOnChange(2, $(this).is(":checked")); }));
+
+            //---
+            $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', true);
+
+            var varClass = this.circularCSSClass;
+
+            if (this.circularMouseDownEventListenerAdded == false) {
+                this.circularMouseDownEventListenerAdded = true;
+                document.addEventListener('mousedown', (event) => {
+                    if (($(event.target).attr('class') != varClass) &&
+                        ((<any>(event.target)).id != "input-circular-layout-bar1-color") &&
+                        ((<any>(event.target)).id != "input-circular-layout-bar2-color") &&
+                        (this.circularBarColorChange == false)) {
+                        $('#div-circular-layout-menu-' + this.id).hide();
+                    }
+
+                    this.circularBarColorChange = false;
+                }, false);
+            }          
+            //------------------------------------------------------------------------
+        }
+        else {
+
+        }
+    }
+
+    updateCircularBarColor(barNo: number) {
+        var gScale = 100;
+        //var varLightenColor = (rgb: string, delta: number) => { this.lightenColor(rgb, delta); };
+
+        if (barNo == 1) {
+            var bar1Color = this.circularBar1Color.replace("#", "");
+
+            if (this.circularBar1Gradient == true) {
+                var attr = $('#select-circular-layout-attribute-one-' + this.id).val();
+
+                this.svgAllElements.selectAll(".rect1Circular")
+                    .style("fill", function (d) {
+                        //return varLightenColor(bar1Color, 40 * (1 - d["scale_" + attr]));
+                        var r, g, b;
+                        var txt: string;
+                        var rgbtext = bar1Color;
+                        var delta = gScale * (1 - d["scale_" + attr]);
+                        rgbtext = rgbtext.replace("#", "");
+                        delta = Math.floor(delta);
+
+                        r = parseInt(rgbtext.substr(0, 2), 16),
+                        g = parseInt(rgbtext.substr(2, 2), 16),
+                        b = parseInt(rgbtext.substr(4, 2), 16),
+
+                        r += delta; if (r > 255) r = 255; if (r < 0) r = 0;
+                        g += delta; if (g > 255) g = 255; if (g < 0) g = 0;
+                        b += delta; if (b > 255) b = 255; if (b < 0) b = 0;
+
+                        txt = b.toString(16); if (txt.length < 2) txt = "0" + txt;
+                        txt = g.toString(16) + txt; if (txt.length < 4) txt = "0" + txt;
+                        txt = r.toString(16) + txt; if (txt.length < 6) txt = "0" + txt;
+
+                        return txt;
+                    });
+            }
+            else {
+                this.svgAllElements.selectAll(".rect1Circular")
+                    .style("fill", bar1Color);
+            }
+        }
+        else if (barNo == 2) {
+            var bar2Color = this.circularBar2Color.replace("#", "");
+
+            if (this.circularBar2Gradient == true) {
+                var attr = $('#select-circular-layout-attribute-two-' + this.id).val();
+
+                this.svgAllElements.selectAll(".rect2Circular")
+                    .style("fill", function (d) {
+                        //return varLightenColor(bar1Color, 40 * (1 - d["scale_" + attr]));
+                        var r, g, b;
+                        var txt: string;
+                        var rgbtext = bar2Color;
+                        var delta = gScale * (1 - d["scale_" + attr]);
+                        rgbtext = rgbtext.replace("#", "");
+                        delta = Math.floor(delta);
+
+                        r = parseInt(rgbtext.substr(0, 2), 16),
+                        g = parseInt(rgbtext.substr(2, 2), 16),
+                        b = parseInt(rgbtext.substr(4, 2), 16),
+
+                        r += delta; if (r > 255) r = 255; if (r < 0) r = 0;
+                        g += delta; if (g > 255) g = 255; if (g < 0) g = 0;
+                        b += delta; if (b > 255) b = 255; if (b < 0) b = 0;
+
+                        txt = b.toString(16); if (txt.length < 2) txt = "0" + txt;
+                        txt = g.toString(16) + txt; if (txt.length < 4) txt = "0" + txt;
+                        txt = r.toString(16) + txt; if (txt.length < 6) txt = "0" + txt;
+
+                        return txt;
+                    });
+            }
+            else {
+                this.svgAllElements.selectAll(".rect2Circular")
+                    .style("fill", bar2Color);
+            }
+        }
+    }
+
+    setCircularBarColor(barNo: number, color: string) {
+        this.circularBarColorChange = true;
+
+        if (barNo == 1) {
+            this.circularBar1Color = color; 
+            this.updateCircularBarColor(1);
+        }
+        else if (barNo == 2) {
+            this.circularBar2Color = color;  
+            this.updateCircularBarColor(2);
+        }    
+    }
+
+    circularLayoutEdgeGradientOnChange(b: boolean) {
+        this.circularEdgeGradient = b;
+        this.svgNeedsUpdate = true;
+    }
+
+    circularLayoutBarGradientOnChange(barNo: number, b: boolean) {
+        if (barNo == 1) {
+            this.circularBar1Gradient = b;
+            this.updateCircularBarColor(1);
+        }
+        else if (barNo == 2) {
+            this.circularBar2Gradient = b;
+            this.updateCircularBarColor(2);
+        }    
+    }
+
+    lightenColor(rgbtext: string, delta: number) {
+        var r, g, b;
+        var txt: string;
+
+        rgbtext = rgbtext.replace("#", "");
+        delta = Math.floor(delta);
+
+        r = parseInt(rgbtext.substr(0, 2), 16),
+        g = parseInt(rgbtext.substr(2, 2), 16),
+        b = parseInt(rgbtext.substr(4, 2), 16),
+
+        r += delta; if (r > 255) r = 255; if (r < 0) r = 0;
+        g += delta; if (g > 255) g = 255; if (g < 0) g = 0;
+        b += delta; if (b > 255) b = 255; if (b < 0) b = 0;
+
+        txt = b.toString(16); if (txt.length < 2) txt = "0" + txt;
+        txt = g.toString(16) + txt; if (txt.length < 4) txt = "0" + txt;
+        txt = r.toString(16) + txt; if (txt.length < 6) txt = "0" + txt;
+
+        return txt;
+    }
+
+    circularLayoutHistogramButtonOnClick() {
+        var l = $('#button-circular-layout-histogram-' + this.id).position().left + 5;
+        var t = $('#button-circular-layout-histogram-' + this.id).position().top - $('#div-circular-layout-menu-' + this.id).height() - 15;
+
+        if ($('#span-circular-layout-bar1-color-picker').length > 0) this.commonData.circularBar1ColorPicker = $('#span-circular-layout-bar1-color-picker').detach();
+        //$(this.commonData.circularBar1ColorPicker).appendTo('#div-circular-bar1-' + this.id);
+        $(this.commonData.circularBar1ColorPicker).insertAfter('#select-circular-layout-attribute-one-' + this.id);
+
+        if ($('#span-circular-layout-bar2-color-picker').length > 0) this.commonData.circularBar2ColorPicker = $('#span-circular-layout-bar2-color-picker').detach();
+        //$(this.commonData.circularBar2ColorPicker).appendTo('#div-circular-bar2-' + this.id);
+        $(this.commonData.circularBar2ColorPicker).insertAfter('#select-circular-layout-attribute-two-' + this.id);
+
+        (<any>document.getElementById('input-circular-layout-bar1-color')).color.fromString(this.circularBar1Color);
+        (<any>document.getElementById('input-circular-layout-bar2-color')).color.fromString(this.circularBar2Color);
+
+        $('#div-circular-layout-menu-' + this.id).zIndex(1000);
+        //$('#div-circular-layout-menu-0').css({ left: l, top: t, height: 'auto', display: 'inline' });
+        $('#div-circular-layout-menu-' + this.id).css({ left: l, top: t, height: 'auto'});
+        $('#div-circular-layout-menu-' + this.id).fadeToggle('fast');
+    }
+
+    circularLayoutLabelOnChange(attr: string) {
+        if (attr == "default") {
+            this.svgAllElements.selectAll(".nodeCircular")
+                .text(function (d) { return d.key; });
+        }
+        else {
+            this.svgAllElements.selectAll(".nodeCircular")
+                .text(function (d) { return d[attr]; });
+        }
+    }
+
+    circularLayoutAttributeOneOnChange(attr: string) {
+        if (attr == "none") {
+            this.svgAllElements.selectAll(".rect1Circular")
+                .attr("width", function (d) {
+                    d.bar1_width = 0;
+                    return 0;
+                })
+                .attr("height", 0);
+
+            this.svgAllElements.selectAll(".rect2Circular")
+                .attr("width", 0)
+                .attr("height", 0);
+
+            this.svgAllElements.selectAll(".nodeCircular")
+                .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); });
+
+            $('#select-circular-layout-attribute-two-' + this.id).val("none");
+            $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', true);
+        }
+        else {
+            if ($('#select-circular-layout-attribute-two-' + this.id).val() == "none") {
+                this.svgAllElements.selectAll(".rect1Circular")
+                    .attr("width", function (d) {
+                        var barWidth = 40 * d["scale_" + attr];
+                        d.bar1_width = barWidth;
+                        return barWidth;
+                    })
+                    .attr("height", 8);
+
+                this.svgAllElements.selectAll(".nodeCircular")
+                    .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 5 + d.bar1_width) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); });
+            }
+            else {
+                this.svgAllElements.selectAll(".rect1Circular")
+                    .attr("width", function (d) {
+                        var barWidth = 40 * d["scale_" + attr];
+                        d.bar1_width = barWidth;
+                        return barWidth;
+                    })
+                    .attr("height", 4);
+
+                this.svgAllElements.selectAll(".nodeCircular")
+                    .attr("transform", function (d) {
+                        var offset = d.bar1_width;
+                        if (d.bar1_width < d.bar2_width) offset = d.bar2_width;
+                        return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 5 + offset) + ",0)" + (d.x < 180 ? "" : "rotate(180)");
+                    });
+            }
+
+            $('#select-circular-layout-attribute-two-' + this.id).prop('disabled', false);
+        }
+
+        this.updateCircularBarColor(1);
+    }
+
+    circularLayoutAttributeTwoOnChange(attr: string) {
+        if (attr == "none") {
+            this.svgAllElements.selectAll(".rect2Circular")
+                .attr("width", function (d) {
+                    d.bar2_width = 0;
+                    return 0;
+                })
+                .attr("height", 0);
+
+            this.svgAllElements.selectAll(".rect1Circular")
+                .attr("height", 8);
+
+            this.svgAllElements.selectAll(".nodeCircular")
+                .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 5 + d.bar1_width) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); });
+        }
+        else {
+            this.svgAllElements.selectAll(".rect1Circular")
+                .attr("height", 4);
+
+            this.svgAllElements.selectAll(".rect2Circular")
+                .attr("width", function (d) {
+                    var barWidth = 40 * d["scale_" + attr];
+                    d.bar2_width = barWidth;
+                    return barWidth;
+                })
+                .attr("height", 4);
+
+            this.svgAllElements.selectAll(".nodeCircular")
+                .attr("transform", function (d) {
+                    var offset = d.bar1_width;
+                    if (d.bar1_width < d.bar2_width) offset = d.bar2_width;
+                    return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 5 + offset) + ",0)" + (d.x < 180 ? "" : "rotate(180)");
+                });
+        }
+
+        this.updateCircularBarColor(2);
+    }
+
+    circularLayoutSortOnChange(attr: string) {
+        this.showNetwork(true);
+    }
+
+    circularLayoutBundleOnChange(attr: string) {
+        this.showNetwork(true);
     }
 
     defaultOrientationsOnClick(orientation: string) {
@@ -492,118 +1028,183 @@ class Brain3DApp implements Application, Loopable {
         if (numEdges == this.lastSliderValue) return;
         this.lastSliderValue = numEdges;
 
+        if (this.bundlingEdges) this.edgesBundlingOnChange(); // turn off edge bundling
+
         var max = this.commonData.nodeCount * (this.commonData.nodeCount - 1) / 2;
         if (numEdges > max) numEdges = max;
         $('#count-' + this.id).get(0).textContent = numEdges;
         var percentile = numEdges * 100 / max;
         $('#percentile-' + this.id).get(0).textContent = percentile.toFixed(2);
         this.filteredAdjMatrix = this.adjMatrixFromEdgeCount(numEdges);
+        this.physioGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
     }
 
-    edgesThicknessByWeightedOnChange(b: boolean) {
-        this.physioGraph.edgeThicknessByWeighted = b;
-        this.colaGraph.edgeThicknessByWeighted = b;
+    edgesThicknessByWeightedOnChange() {
+        if ((!this.physioGraph) || (!this.colaGraph)) return;
+
+        this.weightedEdges = !this.weightedEdges;
+
+        this.physioGraph.edgeThicknessByWeighted = this.weightedEdges;
+        this.colaGraph.edgeThicknessByWeighted = this.weightedEdges;
+
+        if (this.weightedEdges == true) {
+            $('#weighted-edges-' + this.id).css('opacity', 1);
+        }
+        else {
+            $('#weighted-edges-' + this.id).css('opacity', 0.2);
+        }
+
+        this.svgNeedsUpdate = true;
     }
 
-    edgesColoredOnChange(b: boolean) {
-        this.physioGraph.edgeColored = b;
-        this.colaGraph.edgeColored = b;
+    edgesColoredOnChange() {
+        if ((!this.physioGraph) || (!this.colaGraph)) return;
+
+        this.coloredEdges = !this.coloredEdges;
+
+        this.physioGraph.edgeColored = this.coloredEdges;
+        this.colaGraph.edgeColored = this.coloredEdges;
+
+        if (this.coloredEdges == true) {
+            $('#colored-edges-' + this.id).css('opacity', 1);
+        }
+        else {
+            $('#colored-edges-' + this.id).css('opacity', 0.2);
+        }
+
+        this.svgNeedsUpdate = true;
     }
 
-    autoRotationOnChange(b: boolean) {
-        this.autoRotation = b;
+    edgesBundlingOnChange() {
+        if ((!this.physioGraph) || (!this.colaGraph)) {
+            this.removeProcessingNotification();
+            return;
+        }
+
+        this.bundlingEdges = !this.bundlingEdges;
+
+        if (this.bundlingEdges == true) {
+            $('#bundling-edges-' + this.id).css('opacity', 1);
+
+            var powerGraphPhysio = new PowerGraph(this.physioGraph);
+            powerGraphPhysio.initPowerGraphSpatial3D();
+            //powerGraph.initPowerGraph('3d', this.jDiv.width(), this.jDiv.height() - sliderSpace);
+
+            if ((this.networkType == 'default') || (this.networkType == 'edge-length-depends-on-weight')) {
+                //var powerGraphCola = new PowerGraph(this.colaGraph);
+                //powerGraphCola.initPowerGraphSpatial3D();
+            }
+            else if (this.networkType == 'flatten-to-2d') {
+
+            }
+        }
+        else {
+            $('#bundling-edges-' + this.id).css('opacity', 0.2);
+
+            this.physioGraph.removeAllBundlingEdges();
+            this.physioGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
+            this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+
+
+            // ???
+            /*
+            this.colaGraph.removeAllBundlingEdges();
+            this.colaGraph.filteredNodeIDs = this.physioGraph.filteredNodeIDs;
+            this.colaGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
+            this.colaGraph.setNodeVisibilities(); // Hide the nodes without neighbours
+            this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
+            */
+        }
+
+        this.removeProcessingNotification();
+    }
+
+    showProcessingNotification() {
+        //console.log("function: cursorWait()");
+        //$('body').css({ cursor: 'wait' });
+
+        document.body.appendChild(this.jDivProcessingNotification);
+        $('#div-processing-notification').empty(); // empty this.rightClickLabel
+
+        this.jDivProcessingNotification.style.position = 'absolute';
+        this.jDivProcessingNotification.style.left = '50%';
+        this.jDivProcessingNotification.style.top = '50%';
+        this.jDivProcessingNotification.style.padding = '5px';
+        this.jDivProcessingNotification.style.borderRadius = '2px';
+        this.jDivProcessingNotification.style.zIndex = '1';
+        this.jDivProcessingNotification.style.backgroundColor = '#feeebd'; // the color of the control panel
+
+        var text = document.createElement('div');
+        text.innerHTML = "Processing...";
+        this.jDivProcessingNotification.appendChild(text);
+    }
+
+    removeProcessingNotification() {
+        if ($('#div-processing-notification').length > 0)
+            document.body.removeChild(this.jDivProcessingNotification);
+    }
+
+    autoRotationOnChange(s: string) {
+        this.autoRotation = !this.autoRotation;
 
         this.mouse.dx = 0;
         this.mouse.dy = 0;
 
         // set default rotation
         if (this.autoRotation == true) {
-            this.mouse.dx = 1;
-            this.mouse.dy = 0;
-        }
-    }
-
-    svgControlOnChange(b: boolean) {
-        this.svgControlMode = b;
-
-        if (this.svgControlMode) {
-            //this.svgAllElements.attr("transform", "translate(0,0)");
-            this.d3Zoom.scale(1);
-            this.d3Zoom.translate([0, 0]);
-        }
-    }
-
-    allLabelsOnChange(b: boolean) {
-        this.physioGraph.allLabels = b;
-        this.colaGraph.allLabels = b;
-
-        if (b == true) {
-            this.physioGraph.showAllLabels();
-            this.colaGraph.showAllLabels();
+            $('#anti-auto-rotation-' + this.id).css('opacity', 1);
+            if (s == "anticlockwise") {
+                this.mouse.dx = 1;
+                this.mouse.dy = 0;
+            }
         }
         else {
+            $('#anti-auto-rotation-' + this.id).css('opacity', 0.2);
+        }
+    }
+
+    allLabelsOnChange() {
+        if ((!this.physioGraph) || (!this.colaGraph)) return;
+
+        this.allLables = !this.allLables;
+
+        this.physioGraph.allLabels = this.allLables;
+        this.colaGraph.allLabels = this.allLables;
+
+        if (this.allLables == true) {
+            $('#all-labels-' + this.id).css('opacity', 1);
+            this.physioGraph.showAllLabels(false, false);
+            this.colaGraph.showAllLabels(this.svgMode, true);
+        }
+        else {
+            $('#all-labels-' + this.id).css('opacity', 0.2);
             this.physioGraph.hideAllLabels();
             this.colaGraph.hideAllLabels();
         }
+
+        this.svgNeedsUpdate = true;
     }
 
     showNetwork(switchNetworkType: boolean) {
-        if (!this.brainObject || !this.colaObject) return;
+        if (!this.brainObject || !this.colaObject || !this.physioGraph || !this.colaGraph) return;
+
+        if (this.bundlingEdges) this.edgesBundlingOnChange(); // turn off edge bundling
 
         if (!this.transitionInProgress) {
             // Leave *showingCola* on permanently after first turn-on
-            this.showingCola = true;
+            //this.showingCola = true;
 
+            var edges = [];
             this.colaGraph.filteredNodeIDs = this.physioGraph.filteredNodeIDs;
-
-            //-------------------------------------------------------------------
-            // Find the edges that have been selected after thresholding, and all the
-            // nodes that have neighbours after the thresholding of the edges takes place.
-
-            // original:
-            /*
-            var edges = [];
-            var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
-            for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
-                for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
-                    if (this.filteredAdjMatrix[i][j] === 1) {
-                        edges.push({ source: i, target: j });
-                        hasNeighbours[i] = true;
-                        hasNeighbours[j] = true;
-                    }
-                }
+            this.colaGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, edges);
+            this.colaGraph.setNodeVisibilities(); // Hide the nodes without neighbours
+            this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
+            if (this.allLables == true) {
+                this.colaGraph.showAllLabels(this.svgMode, true);
             }
-            */
-
-            // new:
-            var edges = [];
-            var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
-            for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
-                for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
-                    if (this.filteredAdjMatrix[i][j] === 1) {
-                        if (this.physioGraph.filteredNodeIDs) {
-                            if ((this.physioGraph.filteredNodeIDs.indexOf(i) != -1) && (this.physioGraph.filteredNodeIDs.indexOf(j) != -1)) {
-                                var len = this.dissimilarityMatrix[i][j];
-                                edges.push({ source: i, target: j, length: len });
-                                hasNeighbours[i] = true;
-                                hasNeighbours[j] = true;
-                            }
-                        } else {
-                            var len = this.dissimilarityMatrix[i][j];
-                            edges.push({ source: i, target: j, length: len });
-                            hasNeighbours[i] = true;
-                            hasNeighbours[j] = true;
-                        }
-                    }
-                }
-            }
-
             //-------------------------------------------------------------------------------------------------------------
             // 3d cola graph
-
-            this.colaGraph.setNodeVisibilities(hasNeighbours); // Hide the nodes without neighbours
-            this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix); // Hide the edges that have not been selected
 
             var getSourceIndex = function (e) {
                 return e.source;
@@ -661,97 +1262,73 @@ class Brain3DApp implements Application, Loopable {
                 this.descent.reduceStress();
             }
 
+            // clear svg graphs
+            if (this.svgMode) {
+                var node = this.svgAllElements.selectAll(".node").data(new Array());
+                var link = this.svgAllElements.selectAll(".link").data(new Array());
+                var nodeLable = this.svgAllElements.selectAll(".nodeLabel").data(new Array());
+
+                var nodeBundle = this.svgAllElements.selectAll(".nodeCircular").data(new Array());
+                var linkBundle = this.svgAllElements.selectAll(".linkCircular").data(new Array());
+                var rect1Bundle = this.svgAllElements.selectAll(".rect1Circular").data(new Array());
+                var rect2Bundle = this.svgAllElements.selectAll(".rect2Circular").data(new Array());
+
+                node.exit().remove();
+                link.exit().remove();
+                nodeLable.exit().remove();
+
+                nodeBundle.exit().remove();
+                linkBundle.exit().remove();
+                rect1Bundle.exit().remove();
+                rect2Bundle.exit().remove();
+
+                this.cola2D = null;
+                this.cola2D = colans.d3adaptor()
+                    .size([this.jDiv.width(), this.jDiv.height() - sliderSpace]);
+
+                this.svgMode = false;
+            }
+
             //-------------------------------------------------------------------------------------------------------------
             // animation
             if (this.networkType == 'flatten-to-2d') {
-                var colaCoordsMatrix3D: number[][];
+                if (!switchNetworkType) {
+                    // Set up a coroutine to do the animation
+                    var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
+                    var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
 
-                colaCoordsMatrix3D = this.colaCoords.map(function (array) {
-                    return array.slice(0);
-                });
-
-                colaCoordsMatrix3D = numeric.transpose(colaCoordsMatrix3D); // more row than column
-                var V = numeric.svd(colaCoordsMatrix3D).V; // V is orthogonal
-                var Vt = numeric.transpose(V);
-                var newX = Vt[0]; // 2d array is row first
-                var newY = Vt[1];
-                var newZ = this.cross(newX, newY);
-
-                var rotationAngle = this.angle(newZ, [0, 0, 1]);
-                var ax = this.cross(newZ, [0, 0, 1]);
-                var rotationAxis = new THREE.Vector3(ax[0], ax[1], ax[2]);
-                var rotationMatrix = new THREE.Matrix4().makeRotationAxis(rotationAxis, rotationAngle);
-
-                //var test = new THREE.Vector3(newZ[0], newZ[1], newZ[2]);
-                //test.applyMatrix4(rotationMatrix);
-
-                var colaCoordsMatrixRotated3D: number[][] = [];
-                var colaCoordsMatrixRotatedProjected3D: number[][] = [];
-                var cloneColaCoords2D: number[][] = [];
-
-                for (var i = 0; i < colaCoordsMatrix3D.length; i++) {
-                    var row = colaCoordsMatrix3D[i];
-                    var v = new THREE.Vector3(row[0], row[1], row[2]);
-
-                    v.applyMatrix4(rotationMatrix);
-
-                    colaCoordsMatrixRotated3D.push([v.x, v.y, v.z]);
-                    colaCoordsMatrixRotatedProjected3D.push([v.x, v.y, 0]);
-                    cloneColaCoords2D.push([v.x, v.y]);
+                    this.colaObjectAnimation(origin, target, originColaCoords, this.colaCoords, switchNetworkType, false);
                 }
-
-                colaCoordsMatrixRotated3D = numeric.transpose(colaCoordsMatrixRotated3D); // more column than row
-                colaCoordsMatrixRotatedProjected3D = numeric.transpose(colaCoordsMatrixRotatedProjected3D); // more column than row
-                cloneColaCoords2D = numeric.transpose(cloneColaCoords2D); // more column than row
-
-                // step 3: apply cola to 2d graph
-                this.descent = new cola.Descent(cloneColaCoords2D, D); // Create the solver
-
-                // Relieve some of the initial stress
-                for (var i = 0; i < 10; ++i) {
-                    this.descent.reduceStress();
-                }
-
-                this.colaCoords = this.descent.x.map(function (array) {
-                    return array.slice(0);
-                });
-
-                var zeroZCoords: number[] = [];
-                for (var i = 0; i < this.colaCoords[0].length; i++) zeroZCoords[i] = 0;
-                this.colaCoords.push(zeroZCoords);
-
-                // setup animation
-                var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
-                var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
-
-                var rotationOrigin = new THREE.Vector3(this.colaObject.rotation.x, this.colaObject.rotation.y, this.colaObject.rotation.z);
-                var rotationTarget = new THREE.Vector3(0, 0, 0);
-
-                if ((this.colaObject.rotation.x != 0) || (this.colaObject.rotation.y != 0) || (this.colaObject.rotation.z != 0)) {
-                    // animation: cola object rotation
-                    this.colaObjectRotation(origin, target, rotationOrigin, rotationTarget, originColaCoords, colaCoordsMatrixRotated3D, switchNetworkType, false);
-
-                    // animation: rotate by changing coordinates
-                    //this.colaObjectAnimation(target, target, originColaCoords, colaCoordsMatrixRotated3D, true, false);
-                }
-                else {
-                    // animation: rotate by changing coordinates
-                    this.colaObjectAnimation(origin, target, originColaCoords, colaCoordsMatrixRotated3D, switchNetworkType, false);
-                }
-                // animation: flatten to 2d
-                this.colaObjectAnimation(target, target, colaCoordsMatrixRotated3D, colaCoordsMatrixRotatedProjected3D, true, false);
-
-                // animation: cola graph in 2d coordinate
-                this.colaObjectAnimation(target, target, colaCoordsMatrixRotatedProjected3D, this.colaCoords, true, false);
 
                 this.threeToSVGAnimation(true);
+            }
+            else if (this.networkType == 'circular-layout') {
+                this.svgMode = true;
+                this.svgNeedsUpdate = true;
+                this.colaGraph.setVisible(false);
+                if ($('#select-circular-layout-attribute-one-' + this.id).length <= 0) return;
+                if ($('#select-circular-layout-attribute-two-' + this.id).length <= 0) return;
+                if ($('#select-circular-layout-bundle-' + this.id).length <= 0) return;
+                if ($('#select-circular-layout-sort-' + this.id).length <= 0) return;
+
+                var attrLabel = $('#select-circular-label-' + this.id).val();
+                var attrOne = $('#select-circular-layout-attribute-one-' + this.id).val();
+                var attrTwo = $('#select-circular-layout-attribute-two-' + this.id).val();
+                var attrBundle = $('#select-circular-layout-bundle-' + this.id).val();
+                var attrSort = $('#select-circular-layout-sort-' + this.id).val();
+
+                this.initCircularLayout(attrBundle, attrSort);
+                this.circularLayoutLabelOnChange(attrLabel);
+                this.circularLayoutAttributeOneOnChange(attrOne);
+                this.circularLayoutAttributeTwoOnChange(attrTwo);
+                this.updateCircularBarColor(1);
+                this.updateCircularBarColor(2);
             }
             else {
                 // Set up a coroutine to do the animation
                 var origin = new THREE.Vector3(this.brainObject.position.x, this.brainObject.position.y, this.brainObject.position.z);
                 var target = new THREE.Vector3(this.brainObject.position.x + 2 * this.graphOffset, this.brainObject.position.y, this.brainObject.position.z);
 
-                //this.colaGraph.setNodePositions(this.commonData.brainCoords); // Move the Cola graph nodes to their starting position
                 this.colaObjectAnimation(origin, target, originColaCoords, this.colaCoords, switchNetworkType, true);
             }
         }
@@ -779,6 +1356,9 @@ class Brain3DApp implements Application, Loopable {
     }
 
     threeToSVGAnimation(transitionFinish: boolean) {
+        this.colaGraph.setVisible(true);
+        this.transitionInProgress = true;
+
         $('#button-show-network-' + this.id).prop('disabled', true);
         $('#select-network-type-' + this.id).prop('disabled', true);
         $('#graph-view-slider-' + this.id).prop('disabled', true); 
@@ -799,6 +1379,7 @@ class Brain3DApp implements Application, Loopable {
                     .style("stroke-opacity", 1);
 
                 this.svgMode = true;
+                this.svgNeedsUpdate = true;
 
                 if (transitionFinish) {
                     this.transitionInProgress = false;
@@ -840,16 +1421,6 @@ class Brain3DApp implements Application, Loopable {
         var children = this.colaGraph.rootObject.children;
         for (var i = 0; i < children.length; i++) {
             children[i].material.opacity = 1;
-        }
-
-        if (this.svgMode) {
-            var node = this.svgAllElements.selectAll(".node").data(new Array());
-            var link = this.svgAllElements.selectAll(".link").data(new Array());
-
-            node.exit().remove();
-            link.exit().remove();
-
-            this.svgMode = false;
         }
 
         this.transitionInProgress = true;
@@ -953,176 +1524,484 @@ class Brain3DApp implements Application, Loopable {
         });
     }
 
-    /*
-    updateSVGGraph(init: boolean) {
-        var width = this.jDiv.width();
-        var height = this.jDiv.height() - sliderSpace;
-        var widthHalf = width / 2;
-        var heightHalf = height / 2;
+    svgZoom() {
+        if (this.svgControlMode) {
+            this.svgAllElements.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+            if (this.networkType == "flatten-to-2d") this.svgNeedsUpdate = true;
+        }
+    }
 
-        var projector = new THREE.Projector();
-        var screenCoords = new THREE.Vector3();
-
-        var unitRadius = 5;
-
-        var svgNodeArray = [];
+    initCircularLayout(bundleByAttribute: string, sortByAttribute: string) {
+        this.svgNodeBundleArray = [];
         var children = this.colaGraph.rootObject.children;
         for (var i = 0; i < children.length; i++) {
             var obj = children[i];
             if ((<any>obj).isNode) {
                 var nodeObject = new Object();
                 nodeObject["id"] = obj.id;
+                for (var j = 0; j < this.dataSet.attributes.columnNames.length; j++) {
+                    var colname = this.dataSet.attributes.columnNames[j];
+
+                    if (colname == 'module_id') {
+                        nodeObject['moduleID'] = this.dataSet.attributes.get(colname)[obj.id]; // add a special property for module id
+                    }
+
+                    var value = this.dataSet.attributes.get(colname)[obj.id];
+                    nodeObject[colname] = value;
+
+                    var columnIndex = this.dataSet.attributes.columnNames.indexOf(colname);
+
+                    // assume all positive numbers in the array
+                    var min = this.dataSet.attributes.getMin(columnIndex);
+                    var max = this.dataSet.attributes.getMax(columnIndex);
+
+                    var attrMap = d3.scale.linear().domain([min, max]).range([0.05, 1]);
+                    var scalevalue = attrMap(value);
+                    nodeObject['scale_' + colname] = scalevalue;
+
+                    var bundleGroupMap = d3.scale.linear().domain([min, max]).range([0, 9.99]); // use 9.99 instead of 10 to avoid a group of a single element (that has the max attribute value)
+                    var bundleGroup = bundleGroupMap(value);
+                    bundleGroup = Math.floor(bundleGroup);
+                    nodeObject['bundle_group_' + colname] = bundleGroup;
+                }
+
+                if (bundleByAttribute == "none") {
+                    //nodeObject["name"] = "root.module" + nodeObject['moduleID'] + "." + obj.id;
+                    nodeObject["name"] = "root." + obj.id;
+                }
+                else {
+                    nodeObject["name"] = "root." + bundleByAttribute + nodeObject['bundle_group_' + bundleByAttribute] + "." + obj.id;
+                }
+
+                nodeObject["imports"] = [];
                 nodeObject["color"] = this.colaGraph.nodeMeshes[obj.id].material.color.getHexString();
-                nodeObject["radius"] = this.colaGraph.nodeMeshes[obj.id].scale.x * unitRadius;
-
-                var v = new THREE.Vector3(obj.position.x, obj.position.y, obj.position.z);
-                var matrixWorld = obj.matrixWorld;
-                //screenCoords.setFromMatrixPosition(matrixWorld); // not sure why this method is undefined; maybe we have an old version of three.js
-                (<any>screenCoords).getPositionFromMatrix(matrixWorld);
-                projector.projectVector(screenCoords, this.camera);
-
-                screenCoords.x = (screenCoords.x * widthHalf) + widthHalf;
-                screenCoords.y = - (screenCoords.y * heightHalf) + heightHalf;
-                nodeObject["x"] = screenCoords.x;
-                nodeObject["y"] = screenCoords.y;
-
-                svgNodeArray.push(nodeObject);
+                nodeObject["bar1_width"] = 0;
+                nodeObject["bar2_width"] = 0;
+                this.svgNodeBundleArray.push(nodeObject);
             }
         }
 
-        var svgLinkArray = [];
         for (var i = 0; i < this.colaGraph.edgeList.length; i++) {
             var edge = this.colaGraph.edgeList[i];
             if (edge.visible) {
-                var linkObject = new Object();
-                linkObject["value"] = 1;
-                linkObject["color"] = edge.shape.material.color.getHexString();
-                linkObject["width"] = edge.shape.scale.x;
+                for (var j = 0; j < this.svgNodeBundleArray.length; j++) {
+                    if (this.svgNodeBundleArray[j].id == edge.sourceNode.id) {
+                        var moduleID = -1;
+                        var bundleGroupID = -1;
+                        for (var k = 0; k < this.svgNodeBundleArray.length; k++) {
+                            if (this.svgNodeBundleArray[k].id == edge.targetNode.id) {
+                                if (bundleByAttribute == "none") {
+                                    moduleID = this.svgNodeBundleArray[k].moduleID;
+                                }
+                                else {
+                                    bundleGroupID = this.svgNodeBundleArray[k]['bundle_group_' + bundleByAttribute];
+                                }
+                                break;
+                            }
+                        }
 
-                for (var j = 0; j < svgNodeArray.length; j++) {
-                    if (svgNodeArray[j].id == edge.sourceNode.id) {
-                        linkObject["source"] = j;
-                        linkObject["x1"] = svgNodeArray[j].x;
-                        linkObject["y1"] = svgNodeArray[j].y;
+                        if (bundleByAttribute == "none") {
+                            if (moduleID >= 0) {
+                                //var nodeName = "root.module" + moduleID + "." + edge.targetNode.id;
+                                var nodeName = "root." + edge.targetNode.id;
+                                this.svgNodeBundleArray[j].imports.push(nodeName);
+                            }
+                        }
+                        else {
+                            if (bundleGroupID >= 0) {
+                                var nodeName = "root." + bundleByAttribute + bundleGroupID + "." + edge.targetNode.id;
+                                this.svgNodeBundleArray[j].imports.push(nodeName);
+                            }
+                        }
                     }
 
-                    if (svgNodeArray[j].id == edge.targetNode.id) {
-                        linkObject["target"] = j;
-                        linkObject["x2"] = svgNodeArray[j].x;
-                        linkObject["y2"] = svgNodeArray[j].y;
+                    if (this.svgNodeBundleArray[j].id == edge.targetNode.id) {
+                        var moduleID = -1;
+                        for (var k = 0; k < this.svgNodeBundleArray.length; k++) {
+                            if (this.svgNodeBundleArray[k].id == edge.sourceNode.id) {
+                                //moduleID = this.svgNodeBundleArray[k].moduleID;
+                                if (bundleByAttribute == "none") {
+                                    moduleID = this.svgNodeBundleArray[k].moduleID;
+                                }
+                                else {
+                                    bundleGroupID = this.svgNodeBundleArray[k]['bundle_group_' + bundleByAttribute];
+                                }
+                                break;
+                            }
+                        }
+
+                        if (bundleByAttribute == "none") {
+                            if (moduleID >= 0) {
+                                //var nodeName = "root.module" + moduleID + "." + edge.sourceNode.id;
+                                var nodeName = "root." + edge.sourceNode.id;
+                                this.svgNodeBundleArray[j].imports.push(nodeName);
+                            }
+                        }
+                        else {
+                            if (bundleGroupID >= 0) {
+                                var nodeName = "root." + bundleByAttribute + bundleGroupID + "." + edge.sourceNode.id;
+                                this.svgNodeBundleArray[j].imports.push(nodeName);
+                            }
+                        }
                     }
                 }
-
-                svgLinkArray.push(linkObject);
             }
         }
 
-        var nodeJson = JSON.parse(JSON.stringify(svgNodeArray));
-        var linkJson = JSON.parse(JSON.stringify(svgLinkArray));
+        var nodeJson = JSON.parse(JSON.stringify(this.svgNodeBundleArray));
 
-        if (init) {
-            var link = this.svg.selectAll(".link")
-                .data(linkJson)
-                .enter().append("line")
-                .attr("class", "link")
-                .attr("x1", function (d) { return d.x1; })
-                .attr("y1", function (d) { return d.y1; })
-                .attr("x2", function (d) { return d.x2; })
-                .attr("y2", function (d) { return d.y2; })
-                .style("stroke-width", function (d) { return d.width; })
-                .style("stroke", function (d) { return d.color; });
+        var width = 250 + this.jDiv.width() / 2;
+        var height = (this.jDiv.height() - sliderSpace) / 2;
 
-            var node = this.svg.selectAll(".node")
-                .data(nodeJson)
-                .enter().append("circle")
-                .attr("class", "node")
-                .attr("r", function (d) { return d.radius; })
-                .attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; })
-                .style("fill", function (d) { return d.color; })
-                .call(this.cola2D.drag);
+        var diameter = 800,
+            radius = diameter / 2,
+            innerRadius = radius - 120;
 
-            node.append("title")
-                .text(function (d) { return d.id; });
+        var cluster;
+        if (sortByAttribute == "none") {
+            cluster = d3.layout.cluster()
+                .size([360, innerRadius])
+                .sort(null)
+                .value(function (d) { return d.size; });
         }
         else {
-            var link = this.svg.selectAll(".link")
-                .data(linkJson)
-                .attr("x1", function (d) { return d.x1; })
-                .attr("y1", function (d) { return d.y1; })
-                .attr("x2", function (d) { return d.x2; })
-                .attr("y2", function (d) { return d.y2; })
-                .style("stroke-width", function (d) { return d.width; })
-                .style("stroke", function (d) { return d.color; });
-
-            var node = this.svg.selectAll(".node")
-                .data(nodeJson)
-                .attr("r", function (d) { return d.radius; })
-                .attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; })
-                .style("fill", function (d) { return d.color; })
+            cluster = d3.layout.cluster()
+                .size([360, innerRadius])
+                .sort(function (a, b) { return d3.ascending(a[sortByAttribute], b[sortByAttribute]); })
+                .value(function (d) { return d.size; });
         }
 
+        var bundle = d3.layout.bundle();
 
-        this.cola2D
-            .nodes(nodeJson)
-            .links(linkJson)
-            .start();
-               
-        this.cola2D.on("tick", function () {
-            link.attr("x1", function (d) { return d.x1; })
-                .attr("y1", function (d) { return d.y1; })
-                .attr("x2", function (d) { return d.x2; })
-                .attr("y2", function (d) { return d.y2; });
+        var line = d3.svg.line.radial()
+            .interpolate("bundle")
+            .tension(.85)
+            .radius(function (d) { return d.y; })
+            .angle(function (d) { return d.x / 180 * Math.PI; });
 
-            node.attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; });
-        });
+        this.svgAllElements.attr("transform", "translate(" + width + "," + height + ")");
 
+        this.d3Zoom.scale(1);
+        this.d3Zoom.translate([width, height]);
+
+        var nodes = cluster.nodes(packages.root(nodeJson)),
+            links = packages.imports(nodes);
+
+        this.svgAllElements.selectAll(".linkCircular")
+            .data(bundle(links))
+            .enter().append("path")
+            .each(function (d) { d.source = d[0], d.target = d[d.length - 1]; })
+            .attr("class", "linkCircular")
+            .attr("d", line);
+
+        var varMouseOveredSetNodeID = (id) => { this.mouseOveredSetNodeID(id); }
+        var varMouseOutedSetNodeID = () => { this.mouseOutedSetNodeID(); }
+
+        var varMouseOveredCircularLayout = (d) => { this.mouseOveredCircularLayout(d); }
+        var varMouseOutedCircularLayout = (d) => { this.mouseOutedCircularLayout(d); }
+        
+        this.svgAllElements.selectAll(".nodeCircular")
+            .data(nodes.filter(function (n) { return !n.children; }))
+            .enter().append("text")
+            .attr("class", "nodeCircular")
+            .attr("dy", ".31em")
+            .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+            .style("text-anchor", function (d) { return d.x < 180 ? "start" : "end"; })
+            .text(function (d) { return d.key; })
+            .on("mouseover", function (d) { varMouseOveredCircularLayout(d); varMouseOveredSetNodeID(d.id); })
+            .on("mouseout", function (d) { varMouseOutedCircularLayout(d); varMouseOutedSetNodeID(); });      
+
+        this.svgAllElements.selectAll(".rect1Circular")
+            .data(nodes.filter(function (n) { return !n.children; }))
+            .enter().append("rect")
+            .attr("class", "rect1Circular")
+            //.attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 28) + ",-4)" + (d.x < 180 ? "" : ""); });
+            .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y) + ",-4)" + (d.x < 180 ? "" : ""); });
+
+        this.svgAllElements.selectAll(".rect2Circular")
+            .data(nodes.filter(function (n) { return !n.children; }))
+            .enter().append("rect")
+            .attr("class", "rect2Circular")
+            //.attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 28) + ",0)" + (d.x < 180 ? "" : ""); });
+            .attr("transform", function (d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y) + ",0)" + (d.x < 180 ? "" : ""); });
+
+        d3.select(window.frameElement).style("height", diameter + "px");
     }
-    */
 
-    svgZoom() {
-        if (this.svgControlMode)
-            this.svgAllElements.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+    mouseOveredSetNodeID(id) {
+        this.commonData.nodeIDUnderPointer[4] = id;
+    }
+
+    mouseOutedSetNodeID() {
+        this.commonData.nodeIDUnderPointer[4] = -1;
+    }
+
+    mouseOveredCircularLayout(d) {
+        //this.commonData.nodeIDUnderPointer[4] = d.id;
+        this.svgAllElements.selectAll(".nodeCircular")
+            .each(function (n) { n.target = n.source = false; });
+
+        var varEdgeGradient = this.circularEdgeGradient;
+        this.svgAllElements.selectAll(".linkCircular")
+            .style("stroke-width", function (l) {
+                if (l.target === d) { l.target.source = true; l.source.target = true; }
+                if (l.source === d) { l.source.source = true; l.target.target = true; }
+                if ((l.target === d) || (l.source === d)) {
+                    return "3px";
+                }
+                else {
+                    return "1px";
+                }
+            })
+            .style("stroke", function (l) {
+                if ((l.target === d) || (l.source === d)) {
+                    return "#d62728";
+                }
+                else {
+                    return l.color;
+                    /*
+                    if (varEdgeGradient) {
+                        return l.gradientID;
+                    }
+                    else {
+                        return l.color;
+                    }
+                    */
+                }
+            });
+
+        this.svgAllElements.selectAll(".nodeCircular")
+            .style("font-weight", function (n) {
+                if ((n.target || n.source)) {
+                    return "bolder";
+                }
+                else {
+                    return "normal";
+                }
+            })
+            .style("font-size", function (n) {
+                if (n.source) {
+                    return "17px";
+                }
+                else if (n.target) {
+                    return "13px";
+                }
+                else {
+                    return "11px";
+                }
+            });
+    }
+
+    mouseOutedCircularLayout(d) {
+        //this.commonData.nodeIDUnderPointer[4] = -1;
+        this.svgAllElements.selectAll(".linkCircular")
+            .style("stroke-width", "1px")
+            .style("stroke", function (l) { return l.color; });
+
+        /*
+        if (this.circularEdgeGradient) {
+            this.svgAllElements.selectAll(".linkCircular")
+                .style("stroke-width", "1px")
+                .style("stroke", function (l) { return l.gradientID; });
+        }
+        else {
+            this.svgAllElements.selectAll(".linkCircular")
+                .style("stroke-width", "1px")
+                .style("stroke", function (l) { return l.color; });
+        }
+        */
+
+        this.svgAllElements.selectAll(".nodeCircular")
+            .style("font-weight", "normal")
+            .style("font-size", "11px");
+    }
+
+    createSVGLinearGradient(id, stops) {
+        var svgNS = this.svg.namespaceURI;
+        var grad = document.createElementNS(svgNS, 'linearGradient');
+        grad.setAttribute('id', id);
+        for (var i = 0; i < stops.length; i++) {
+            var attrs = stops[i];
+            var stop = document.createElementNS(svgNS, 'stop');
+            for (var attr in attrs) {
+                if (attrs.hasOwnProperty(attr)) stop.setAttribute(attr, attrs[attr]);
+            }
+            grad.appendChild(stop);
+        }
+
+        this.svgDefs.appendChild(grad);
     }
 
     updateSVGGraph() {
-        if ((!this.svgNodeArray) || (!this.svgLinkArray)) return;
+        if (this.networkType == 'flatten-to-2d') {
+            if (!this.svgGraph) return;
 
-        var unitRadius = 5;
+            var unitRadius = 5;
 
-        for (var i = 0; i < this.svgNodeArray.length; i++) {
-            var id = this.svgNodeArray[i].id;
-            this.svgNodeArray[i].color = this.colaGraph.nodeMeshes[id].material.color.getHexString();
-            this.svgNodeArray[i].radius = this.colaGraph.nodeMeshes[id].scale.x * unitRadius;
+            for (var i = 0; i < this.svgGraph.nodes.length; i++) {
+                var id = this.svgGraph.nodes[i].id;
+                this.svgGraph.nodes[i].color = this.colaGraph.nodeMeshes[id].material.color.getHexString();
+                this.svgGraph.nodes[i].radius = this.colaGraph.nodeMeshes[id].scale.x * unitRadius;
+            }
+
+            for (var i = 0; i < this.svgGraph.links.length; i++) {
+                var index = this.svgGraph.links[i].colaGraphEdgeListIndex;
+                var edge = this.colaGraph.edgeList[index];
+                this.svgGraph.links[i].color = edge.shape.material.color.getHexString();
+                this.svgGraph.links[i].width = edge.shape.scale.x;
+            }
+
+            var nodeJson = JSON.parse(JSON.stringify(this.svgGraph.nodes));
+            var linkJson = JSON.parse(JSON.stringify(this.svgGraph.links));
+
+            var link = this.svgAllElements.selectAll(".link")
+                .data(linkJson)
+                .style("stroke-width", function (d) { return d.width; })
+                .style("stroke", function (d) { return d.color; });
+
+            var node = this.svgAllElements.selectAll(".node")
+                .data(nodeJson)
+                .attr("r", function (d) { return d.radius; })
+                .style("fill", function (d) { return d.color; });
+
+            // node labels
+            if (this.physioGraph.allLabels) {
+                this.svgAllElements.selectAll(".nodeLabel")
+                    .style("visibility", "visible");
+            }
+            else {
+                this.svgAllElements.selectAll(".nodeLabel")
+                    .style("visibility", "hidden");
+            }
+
+            var svgLabelArray = [];
+            var colaNodeData = this.svgAllElements.selectAll(".node").data();
+            for (var i = 0; i < colaNodeData.length; i++) {
+                var labelObject = new Object();
+                labelObject["x"] = colaNodeData[i].x;
+                labelObject["y"] = colaNodeData[i].y;
+                labelObject["id"] = colaNodeData[i].id;
+                labelObject["node_radius"] = colaNodeData[i].radius;
+                svgLabelArray.push(labelObject);
+            }
+
+            var labelJson = JSON.parse(JSON.stringify(svgLabelArray));
+
+            var scale = this.d3Zoom.scale();
+            var defaultFontSize = 10;
+            var fontSize = defaultFontSize;
+            if (scale >= 1) {
+                fontSize = Math.ceil(defaultFontSize / scale);
+            }
+
+            var nodeLable = this.svgAllElements.selectAll(".nodeLabel")
+                .data(labelJson)
+                .style("font-size", fontSize + 'px');
+
+            nodeLable.each(function (d) {
+                var box = this.getBBox();
+                var width = box.width;
+                var height = box.height;
+
+                if ((box.width <= d.node_radius * 2) && (box.height <= d.node_radius * 2)) {
+                    d.x -= box.width / 2;
+                    d.y += (box.height / 2 - 1);
+                }
+                else {
+                    d.x += 3.5;
+                    d.y -= 3.5;
+                }
+            });
+
+            nodeLable
+                .attr("x", function (d) { return d.x; })
+                .attr("y", function (d) { return d.y; });
         }
+        else if (this.networkType == 'circular-layout') {           
+            if (!this.svgNodeBundleArray) return;
 
-        for (var i = 0; i < this.svgLinkArray.length; i++) {
-            var index = this.svgLinkArray[i].colaGraphEdgeListIndex;
-            var edge = this.colaGraph.edgeList[index];
-            this.svgLinkArray[i].color = edge.shape.material.color.getHexString();
-            this.svgLinkArray[i].width = edge.shape.scale.x;
+            for (var i = 0; i < this.svgNodeBundleArray.length; i++) {
+                var id = this.svgNodeBundleArray[i].id;
+                this.svgNodeBundleArray[i].color = this.colaGraph.nodeMeshes[id].material.color.getHexString();
+            }
+
+            var nodeBundle = this.svgAllElements.selectAll(".nodeCircular");
+
+            var varSvgNodeBundleArray = this.svgNodeBundleArray;
+            nodeBundle.each(function (d) {
+                for (var i = 0; i < varSvgNodeBundleArray.length; i++) {
+                    if (d.id == varSvgNodeBundleArray[i].id) {
+                        d.color = varSvgNodeBundleArray[i].color;
+                        break;
+                    }
+                }
+            });
+
+            nodeBundle
+                .style("fill", function (d) { return d.color; });
+
+            var linkBundle = this.svgAllElements.selectAll(".linkCircular");
+
+            while (this.svgDefs.firstChild) {
+                this.svgDefs.removeChild(this.svgDefs.firstChild);
+            }
+
+            if (this.circularEdgeGradient) {
+                var varSvg = this.svg[0];
+                var varNS = varSvg[0].namespaceURI;
+                var varDefs = this.svgDefs;
+
+                linkBundle
+                    .style("stroke", function (l) {
+                        if (l.source.color == l.target.color) {
+                            l.color = l.source.color;
+                        }
+                        else {
+                            var id = 'gradient_' + l.source.id + '_' + l.target.id;
+                            var stops = [
+                                { offset: '0%', 'stop-color': '#' + l.source.color },
+                                { offset: '100%', 'stop-color': '#' + l.target.color }
+                                //{ offset: '0%', 'stop-color': '#ff0000' },
+                                //{ offset: '100%', 'stop-color': '#ffff00' }
+                            ];
+
+                            var grad = document.createElementNS(varNS, 'linearGradient');
+                            grad.setAttribute('id', id);
+                            for (var i = 0; i < stops.length; i++) {
+                                var attrs = stops[i];
+                                var stop = document.createElementNS(varNS, 'stop');
+                                for (var attr in attrs) {
+                                    if (attrs.hasOwnProperty(attr)) stop.setAttribute(attr, attrs[attr]);
+                                }
+                                grad.appendChild(stop);
+                            }
+                            varDefs.appendChild(grad);
+
+                            var gID = 'url(#' + id + ')';
+                            l['gradientID'] = gID;
+                            l.color = gID;
+                        }
+
+                        return l.color;
+                    });
+            }
+            else {
+                var varEdgeList = this.colaGraph.edgeList;
+                linkBundle.each(function (l) {
+                    for (var i = 0; i < varEdgeList.length; i++) {
+                        var edge = varEdgeList[i];
+                        if (((l.source.id == edge.sourceNode.id) && (l.target.id == edge.targetNode.id)) ||
+                            ((l.source.id == edge.targetNode.id) && (l.target.id == edge.sourceNode.id))) {
+                            l.color = edge.shape.material.color.getHexString();
+                            break;
+                        }
+                    }
+                });
+
+                linkBundle
+                    .style("stroke", function (l) { return l.color; });
+            }
         }
-
-        var nodeJson = JSON.parse(JSON.stringify(this.svgNodeArray));
-        var linkJson = JSON.parse(JSON.stringify(this.svgLinkArray));
-
-        var link = this.svgAllElements.selectAll(".link")
-            .data(linkJson)
-            .attr("x1", function (d) { return d.x1; })
-            .attr("y1", function (d) { return d.y1; })
-            .attr("x2", function (d) { return d.x2; })
-            .attr("y2", function (d) { return d.y2; })
-            .style("stroke-width", function (d) { return d.width; })
-            .style("stroke", function (d) { return d.color; });
-
-        var node = this.svgAllElements.selectAll(".node")
-            .data(nodeJson)
-            .attr("r", function (d) { return d.radius; })
-            .attr("cx", function (d) { return d.x; })
-            .attr("cy", function (d) { return d.y; })
-            .style("fill", function (d) { return d.color; });
     }
 
     initSVGGraph() {
@@ -1136,7 +2015,9 @@ class Brain3DApp implements Application, Loopable {
 
         var unitRadius = 5;
 
-        this.svgNodeArray = [];
+        this.svgGraph.nodes.splice(0, this.svgGraph.nodes.length);
+        this.svgGraph.links.splice(0, this.svgGraph.links.length);
+
         var children = this.colaGraph.rootObject.children;
         for (var i = 0; i < children.length; i++) {
             var obj = children[i];
@@ -1157,11 +2038,10 @@ class Brain3DApp implements Application, Loopable {
                 nodeObject["x"] = screenCoords.x;
                 nodeObject["y"] = screenCoords.y;
 
-                this.svgNodeArray.push(nodeObject);
+                this.svgGraph.nodes.push(nodeObject);
             }
         }
 
-        this.svgLinkArray = [];
         for (var i = 0; i < this.colaGraph.edgeList.length; i++) {
             var edge = this.colaGraph.edgeList[i];
             if (edge.visible) {
@@ -1170,26 +2050,26 @@ class Brain3DApp implements Application, Loopable {
                 linkObject["color"] = edge.shape.material.color.getHexString();
                 linkObject["width"] = edge.shape.scale.x;
 
-                for (var j = 0; j < this.svgNodeArray.length; j++) {
-                    if (this.svgNodeArray[j].id == edge.sourceNode.id) {
+                for (var j = 0; j < this.svgGraph.nodes.length; j++) {
+                    if (this.svgGraph.nodes[j].id == edge.sourceNode.id) {
                         linkObject["source"] = j;
-                        linkObject["x1"] = this.svgNodeArray[j].x;
-                        linkObject["y1"] = this.svgNodeArray[j].y;
+                        linkObject["x1"] = this.svgGraph.nodes[j].x;
+                        linkObject["y1"] = this.svgGraph.nodes[j].y;
                     }
 
-                    if (this.svgNodeArray[j].id == edge.targetNode.id) {
+                    if (this.svgGraph.nodes[j].id == edge.targetNode.id) {
                         linkObject["target"] = j;
-                        linkObject["x2"] = this.svgNodeArray[j].x;
-                        linkObject["y2"] = this.svgNodeArray[j].y;
+                        linkObject["x2"] = this.svgGraph.nodes[j].x;
+                        linkObject["y2"] = this.svgGraph.nodes[j].y;
                     }
                 }
 
-                this.svgLinkArray.push(linkObject);
+                this.svgGraph.links.push(linkObject);
             }
         }
 
-        var nodeJson = JSON.parse(JSON.stringify(this.svgNodeArray));
-        var linkJson = JSON.parse(JSON.stringify(this.svgLinkArray));
+        var nodeJson = JSON.parse(JSON.stringify(this.svgGraph.nodes));
+        var linkJson = JSON.parse(JSON.stringify(this.svgGraph.links));
 
         var link = this.svgAllElements.selectAll(".link")
             .data(linkJson)
@@ -1202,6 +2082,9 @@ class Brain3DApp implements Application, Loopable {
             .style("stroke-width", function (d) { return d.width; })
             .style("stroke", function (d) { return d.color; });
 
+        var varMouseOveredSetNodeID = (id) => { this.mouseOveredSetNodeID(id); }
+        var varMouseOutedSetNodeID = () => { this.mouseOutedSetNodeID(); }
+
         var node = this.svgAllElements.selectAll(".node")
             .data(nodeJson)
             .enter().append("circle")
@@ -1209,35 +2092,101 @@ class Brain3DApp implements Application, Loopable {
             .attr("r", function (d) { return d.radius; })
             .attr("cx", function (d) { return d.x; })
             .attr("cy", function (d) { return d.y; })
-            .style("fill", function (d) { return d.color; });
-            //.call(this.cola2D.drag);
+            .style("fill", function (d) { return d.color; })
+            .on("mouseover", function (d) { varMouseOveredSetNodeID(d.id); })
+            .on("mouseout", function () { varMouseOutedSetNodeID(); });
+        //.call(this.cola2D.drag);
 
         node.append("title")
             .text(function (d) { return d.id; });
+
+        node.each(d=> d.width = d.height = d.radius * 2);
 
         //this.svgAllElements.attr("transform", "translate(0,0)scale(1)");
         this.svgAllElements.attr("transform", "translate(0,0)");
         this.d3Zoom.scale(1);
         this.d3Zoom.translate([0, 0]);
-
-        /*
+               
         this.cola2D
+            .handleDisconnected(true)
+            .avoidOverlaps(true)
             .nodes(nodeJson)
             .links(linkJson)
-            .start();
+            .start(30, 20, 20);
 
-        this.cola2D.on("tick", function () {
-            link.attr("x1", function (d) { return d.x1; })
-                .attr("y1", function (d) { return d.y1; })
-                .attr("x2", function (d) { return d.x2; })
-                .attr("y2", function (d) { return d.y2; });
-
-            node.attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; });
+        var offsetx = 250;
+        var offsety = 0;
+        node.each(d=> {
+            d.x += offsetx;
+            d.y += offsety;
         });
-        */
-    }
 
+        /*
+        var ctr = 0;
+        var endTransition = (transition) => {
+            transition
+                .each(() => ++ctr)
+                .each("end", () => {
+                    if (!--ctr) {
+                        this.cola2D.on("tick", function () {
+                            link.attr("x1", function (d) { return d.source.x; })
+                                .attr("y1", function (d) { return d.source.y; })
+                                .attr("x2", function (d) { return d.target.x; })
+                                .attr("y2", function (d) { return d.target.y; })
+                                .style("stroke-width", function (d) { return d.width; })
+                                .style("stroke", function (d) { return d.color; });
+                            node.attr("cx", function (d) { return d.x; })
+                                .attr("cy", function (d) { return d.y; })
+                                .attr("r", function (d) { return d.radius; })
+                                .style("fill", function (d) { return d.color; });
+                        });                        
+                    }
+                });
+        };
+        */
+
+        link.transition().duration(1000)
+            .attr("x1", function (d) { return d.source.x; })
+            .attr("y1", function (d) { return d.source.y; })
+            .attr("x2", function (d) { return d.target.x; })
+            .attr("y2", function (d) { return d.target.y; });
+            //.call(endTransition);
+        node.transition().duration(1000)
+            .attr("cx", function (d) { return d.x; })
+            .attr("cy", function (d) { return d.y; });
+        //.call(endTransition);     
+
+        // update the this.svgNodeArray
+        var colaNodeData = this.svgAllElements.selectAll(".node").data();
+        for (var i = 0; i < colaNodeData.length; i++) {
+            this.svgGraph.nodes[i].x = colaNodeData[i].x;
+            this.svgGraph.nodes[i].y = colaNodeData[i].y;
+        }
+
+        // node label
+        var svgLabelArray = [];
+        var colaNodeData = this.svgAllElements.selectAll(".node").data();
+        for (var i = 0; i < colaNodeData.length; i++) {
+            var labelObject = new Object();
+            labelObject["x"] = colaNodeData[i].x;
+            labelObject["y"] = colaNodeData[i].y;
+            labelObject["id"] = colaNodeData[i].id;
+            labelObject["node_radius"] = colaNodeData[i].radius;
+            svgLabelArray.push(labelObject);
+        }
+
+        var labelJson = JSON.parse(JSON.stringify(svgLabelArray));
+
+        var nodeLable = this.svgAllElements.selectAll(".nodeLabel")
+            .data(labelJson)
+            .enter().append("text")
+            .attr("class", "nodeLabel")
+            .attr("x", function (d) { return d.x + 3.5; })
+            .attr("y", function (d) { return d.y - 3.5; })
+            .text(function (d) { return d.id; })
+            .style("visibility", "hidden");
+    }
+    
     isDeleted() {
         return this.deleted;
     }
@@ -1245,20 +2194,25 @@ class Brain3DApp implements Application, Loopable {
     applyFilter(filteredIDs: number[]) {
         if (!this.dataSet || !this.dataSet.attributes) return;
 
-        console.log("app id: " + this.id + "; count: " + filteredIDs.length);   
+        if (this.bundlingEdges) this.edgesBundlingOnChange(); // turn off edge bundling
+
+        //console.log("app id: " + this.id + "; count: " + filteredIDs.length);   
 
         this.physioGraph.filteredNodeIDs = filteredIDs;
         this.physioGraph.applyNodeFiltering();
+        this.physioGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
     }
 
     highlightSelectedNodes(filteredIDs: number[]) {
         if (!this.dataSet || !this.dataSet.attributes) return;
 
-        console.log("app id: " + this.id + "; count: " + filteredIDs.length);
+        //console.log("app id: " + this.id + "; count: " + filteredIDs.length);
 
         this.physioGraph.highlightSelectedNodes(filteredIDs);
         this.colaGraph.highlightSelectedNodes(filteredIDs);
+
+        this.svgNeedsUpdate = true;
     }
 
     setNodeDefaultSizeColor() {
@@ -1268,11 +2222,22 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setDefaultNodeScale();
         this.colaGraph.setDefaultNodeScale();
+
+        this.svgNeedsUpdate = true;
+    }
+
+    setEdgeSize(size: number) {
+        this.physioGraph.setEdgeScale(size);
+        this.colaGraph.setEdgeScale(size);
+
+        this.svgNeedsUpdate = true;
     }
 
     setNodeSize(scaleArray: number[]) {
         this.physioGraph.setNodesScale(scaleArray);
         this.colaGraph.setNodesScale(scaleArray);
+
+        this.svgNeedsUpdate = true;
     }
 
     setANodeColor(nodeID: number, color: string) {
@@ -1280,6 +2245,8 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setNodeColor(nodeID, value);
         this.colaGraph.setNodeColor(nodeID, value);
+
+        this.svgNeedsUpdate = true;
     }
 
     setNodeColor(attribute: string, minColor: string, maxColor: string) {
@@ -1316,6 +2283,8 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setNodesColor(colorArray);
         this.colaGraph.setNodesColor(colorArray);
+
+        this.svgNeedsUpdate = true;
     }
 
     setNodeColorDiscrete(attribute: string, keyArray: number[], colorArray: string[]) {
@@ -1337,6 +2306,8 @@ class Brain3DApp implements Application, Loopable {
 
         this.physioGraph.setNodesColor(colorArrayNum);
         this.colaGraph.setNodesColor(colorArrayNum);
+
+        this.svgNeedsUpdate = true;
     }
 
     resize(width: number, height: number) {
@@ -1344,7 +2315,7 @@ class Brain3DApp implements Application, Loopable {
         this.renderer.setSize(width, height - sliderSpace);
         this.currentViewWidth = width;
 
-        //this.cola2D.size([width, height - sliderSpace]);
+        if (this.cola2D) this.cola2D.size([width, height - sliderSpace]);
 
         this.svg
             .attr("width", width)
@@ -1417,8 +2388,8 @@ class Brain3DApp implements Application, Loopable {
         });
 
         // Set up loop
-        if (!this.loop)
-            this.loop = new Loop(this, 0.03);
+        //if (!this.loop)
+        //    this.loop = new Loop(this, 0.03);
 
         // Set up the two graphs
         var edgeMatrix = this.adjMatrixFromEdgeCount(maxEdgesShowable); // Don''t create more edges than we will ever be showing
@@ -1431,21 +2402,25 @@ class Brain3DApp implements Application, Loopable {
         this.colaGraph = new Graph(this.colaObject, edgeMatrix, this.nodeColourings, this.dataSet.simMatrix);
         this.colaGraph.setVisible(false);
 
+        this.svgGraph = new Graph2D();
+
         // Initialize the filtering
         this.filteredAdjMatrix = this.adjMatrixFromEdgeCount(initialEdgesShown);
+        this.physioGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
         this.physioGraph.setEdgeVisibilities(this.filteredAdjMatrix);
+        this.colaGraph.findNodeConnectivity(this.filteredAdjMatrix, this.dissimilarityMatrix, null);
         this.colaGraph.setEdgeVisibilities(this.filteredAdjMatrix);
         this.edgeCountSliderOnChange(initialEdgesShown);
         
         // Enable the slider
         $('#edge-count-slider-' + this.id).prop('disabled', false);
         $('#button-show-network-' + this.id).prop('disabled', false);
-        $('#checkbox-edges-thickness-by-weight-' + this.id).prop('disabled', false);
-        $('#checkbox-all-labels-' + this.id).prop('disabled', false);
-        $('#checkbox-edge-color-' + this.id).prop('disabled', false);
-        $('#checkbox-auto-rotation-' + this.id).prop('disabled', false);
-        $('#checkbox-svg-control-' + this.id).prop('disabled', false);
         $('#select-network-type-' + this.id).prop('disabled', false);
+        //$('#checkbox-edges-thickness-by-weight-' + this.id).prop('disabled', false);
+        //$('#checkbox-all-labels-' + this.id).prop('disabled', false);
+        //$('#checkbox-edge-color-' + this.id).prop('disabled', false);
+        //$('#checkbox-auto-rotation-' + this.id).prop('disabled', false);
+        //$('#checkbox-svg-control-' + this.id).prop('disabled', false);
     }
 
     // Create a matrix where a 1 in (i, j) means the edge between node i and node j is selected
@@ -1486,11 +2461,45 @@ class Brain3DApp implements Application, Loopable {
             if ((<any>intersected[i].object).isNode) { // Node objects have this special boolean flag
                 this.commonData.nodeIDUnderPointer[this.id] = intersected[i].object.id;
                 return intersected[i].object;
-            }
+            }       
         }
 
         this.commonData.nodeIDUnderPointer[this.id] = -1;
         return null;
+    }
+
+    getBoundingSphereUnderPointer(pointer) {
+        var pointerNDC = new THREE.Vector3(pointer.x, pointer.y, 1);
+        this.projector.unprojectVector(pointerNDC, this.camera);
+        var directionVector = pointerNDC.sub(this.camera.position);
+        directionVector.normalize();
+
+        var raycaster = new THREE.Raycaster(this.camera.position, directionVector, this.nearClip, this.farClip);
+        var intersected = raycaster.intersectObjects(this.scene.children, true);
+
+        var inBoundingSphere = false;
+        for (var i = 0; i < intersected.length; ++i) {
+            if ((<any>intersected[i].object).isBoundingSphere) { // Node objects have this special boolean flag
+                inBoundingSphere = true;
+                break;
+            }
+        }
+
+        if ((this.networkType == 'flatten-to-2d') || (this.networkType == 'circular-layout')){
+            if (inBoundingSphere == true) {
+                this.svgControlMode = false;
+                this.svg.on(".zoom", null);
+            }
+            else {
+                this.svgControlMode = true;
+                var varSVGZoom = () => { this.svgZoom(); }
+                this.svg.call(this.d3Zoom.on("zoom", varSVGZoom));
+            }
+        }
+        else {
+            this.svgControlMode = false;
+            this.svg.on(".zoom", null);
+        }
     }
 
     update(deltaTime: number) {
@@ -1504,67 +2513,113 @@ class Brain3DApp implements Application, Loopable {
         }
         */
 
-        // execute animation sequently
-        if (coroutines.length > 0) {
-            if (coroutines[0].func(coroutines[0], deltaTime))
-                coroutines.splice(0, 1);
-        }
-
-        var node = this.getNodeUnderPointer(this.input.localPointerPosition());
-
-        var nodeIDUnderPointer = -1;
-        for (var i = 0; i < 4; i++) {
-            if (this.commonData.nodeIDUnderPointer[i] != -1) {
-                nodeIDUnderPointer = this.commonData.nodeIDUnderPointer[i];
-                break;
-            }
-        }
-
-        if (node || (nodeIDUnderPointer != -1)) {
-            // If we already have a node ID selected, deselect it
-            if (this.selectedNodeID >= 0) {
-                this.physioGraph.deselectNode(this.selectedNodeID);
-                this.colaGraph.deselectNode(this.selectedNodeID);
-
-                this.physioGraph.deselectAdjEdges(this.selectedNodeID);
-                this.colaGraph.deselectAdjEdges(this.selectedNodeID);
+        if ((this.physioGraph) && (this.colaGraph)) {
+            // execute animation sequently
+            if (coroutines.length > 0) {
+                if (coroutines[0].func(coroutines[0], deltaTime))
+                    coroutines.splice(0, 1);
             }
 
-            if (node) {
-                this.selectedNodeID = node.id;
+            var node = this.getNodeUnderPointer(this.input.localPointerPosition());
+            this.getBoundingSphereUnderPointer(this.input.localPointerPosition());
+
+            var nodeIDUnderPointer = -1;
+            for (var i = 0; i < this.commonData.nodeIDUnderPointer.length; i++) {
+                if (this.commonData.nodeIDUnderPointer[i] != -1) {
+                    nodeIDUnderPointer = this.commonData.nodeIDUnderPointer[i];
+                    break;
+                }
+            }
+
+            if (node || (nodeIDUnderPointer != -1)) {
+                // If we already have a node ID selected, deselect it
+                if (this.selectedNodeID >= 0) {
+                    this.physioGraph.deselectNode(this.selectedNodeID);
+                    this.colaGraph.deselectNode(this.selectedNodeID);
+
+                    this.physioGraph.deselectAdjEdges(this.selectedNodeID);
+                    this.colaGraph.deselectAdjEdges(this.selectedNodeID);
+                }
+
+                if (node) {
+                    this.selectedNodeID = node.id;
+                }
+                else {
+                    this.selectedNodeID = nodeIDUnderPointer;
+                }
+
+                // Select the new node ID
+                this.physioGraph.selectNode(this.selectedNodeID, false, false);
+                this.colaGraph.selectNode(this.selectedNodeID, this.svgMode, true);
+
+                this.physioGraph.selectAdjEdges(this.selectedNodeID);
+                this.colaGraph.selectAdjEdges(this.selectedNodeID);
+
+                var varNodeID = this.selectedNodeID;
+                if (this.networkType == "circular-layout") {
+                    var varMouseOveredCircularLayout = (d) => { this.mouseOveredCircularLayout(d); }
+                this.svgAllElements.selectAll(".nodeCircular")
+                        .each(function (d) {
+                            if (varNodeID == d.id) varMouseOveredCircularLayout(d);
+                        });
+                }
+                else if (this.networkType == "flatten-to-2d") {
+                    this.svgNeedsUpdate = true;
+                }
             }
             else {
-                this.selectedNodeID = nodeIDUnderPointer;
+                if (this.selectedNodeID >= 0) {
+                    this.physioGraph.deselectNode(this.selectedNodeID);
+                    this.colaGraph.deselectNode(this.selectedNodeID);
+
+                    this.physioGraph.deselectAdjEdges(this.selectedNodeID);
+                    this.colaGraph.deselectAdjEdges(this.selectedNodeID);
+
+                    var varNodeID = this.selectedNodeID;
+                    if (this.networkType == "circular-layout") {
+                        var varMouseOutedCircularLayout = (d) => { this.mouseOutedCircularLayout(d); };
+                        this.svgAllElements.selectAll(".nodeCircular")
+                            .each(function (d) {
+                                if (varNodeID == d.id) varMouseOutedCircularLayout(d);
+                            });
+                    }
+                    else if (this.networkType == "flatten-to-2d") {
+                        this.svgNeedsUpdate = true;
+                    }
+
+                    this.selectedNodeID = -1;
+                }
             }
 
-            // Select the new node ID
-            this.physioGraph.selectNode(this.selectedNodeID, false);
-            this.colaGraph.selectNode(this.selectedNodeID, this.svgMode);
+            //if (this.showingCola)
+            if (this.colaGraph.isVisible()) 
+                this.descent.rungeKutta(); // Do an iteration of the solver
 
-            this.physioGraph.selectAdjEdges(this.selectedNodeID);
-            this.colaGraph.selectAdjEdges(this.selectedNodeID);
-        }
-        else {
-            if (this.selectedNodeID >= 0) {
-                this.physioGraph.deselectNode(this.selectedNodeID);
-                this.colaGraph.deselectNode(this.selectedNodeID);
-
-                this.physioGraph.deselectAdjEdges(this.selectedNodeID);
-                this.colaGraph.deselectAdjEdges(this.selectedNodeID);
-                this.selectedNodeID = -1;
+            this.physioGraph.update();
+            this.colaGraph.update(); // Update all the edge positions
+            if (this.svgMode && this.svgNeedsUpdate) {
+                this.updateSVGGraph();
+                this.svgNeedsUpdate = false;
             }
         }
-
-        if (this.showingCola)
-            this.descent.rungeKutta(); // Do an iteration of the solver
-
-        this.physioGraph.update(); 
-        this.colaGraph.update(); // Update all the edge positions
-        if (this.svgMode) this.updateSVGGraph();
 
         if (this.autoRotation) {
-            this.brainObject.rotation.set(this.brainObject.rotation.x + this.mouse.dy / 100, this.brainObject.rotation.y + this.mouse.dx / 100, this.brainObject.rotation.z);
-            this.colaObject.rotation.set(this.colaObject.rotation.x + this.mouse.dy / 100, this.colaObject.rotation.y + this.mouse.dx / 100, this.colaObject.rotation.z);
+            //this.brainObject.rotation.set(this.brainObject.rotation.x + this.mouse.dy / 100, this.brainObject.rotation.y + this.mouse.dx / 100, this.brainObject.rotation.z);
+            //this.colaObject.rotation.set(this.colaObject.rotation.x + this.mouse.dy / 100, this.colaObject.rotation.y + this.mouse.dx / 100, this.colaObject.rotation.z);
+
+            var pixelAngleRatio = 50;
+
+            var quatX = new THREE.Quaternion();
+            var axisX = new THREE.Vector3(0, 1, 0);
+            quatX.setFromAxisAngle(axisX, this.mouse.dx / pixelAngleRatio); // axis must be normalized, angle in radians
+            this.brainObject.quaternion.multiplyQuaternions(quatX, this.brainObject.quaternion);
+            this.colaObject.quaternion.multiplyQuaternions(quatX, this.colaObject.quaternion);
+
+            var quatY = new THREE.Quaternion();
+            var axisY = new THREE.Vector3(1, 0, 0);
+            quatY.setFromAxisAngle(axisY, this.mouse.dy / pixelAngleRatio); // axis must be normalized, angle in radians
+            this.brainObject.quaternion.multiplyQuaternions(quatY, this.brainObject.quaternion);
+            this.colaObject.quaternion.multiplyQuaternions(quatY, this.colaObject.quaternion);
         }
 
         this.draw(); // Draw the graph
@@ -1572,6 +2627,728 @@ class Brain3DApp implements Application, Loopable {
 
     draw() {
         this.renderer.render(this.scene, this.camera);
+    }
+}
+
+// power graph
+class PowerGraph {
+    nodes: any[];
+    links: any[];
+    powerGroups: any[];
+    powerEdges: any[];
+    targetGraph;
+
+    constructor(graph) {
+        this.targetGraph = graph;
+        this.powerGroups = [];
+        this.powerEdges = [];
+    }
+
+    initPowerGraph(dimension, divWidth, divHeight) {
+        var mode = "hierarchy";
+        //var mode = "flat";
+
+        var powerGraphNodeArray = [];
+        var powerGraphLinkArray = [];
+
+        var children = this.targetGraph.rootObject.children;
+        for (var i = 0; i < children.length; i++) {
+            var obj = children[i];
+            if ((<any>obj).isNode) {
+                if (this.targetGraph.nodeHasNeighbors[obj.id]) {
+                    var nodeObject = new Object();
+                    nodeObject["id"] = obj.id;
+                    powerGraphNodeArray.push(nodeObject);
+                }
+            }
+        }
+
+        for (var i = 0; i < this.targetGraph.edgeList.length; i++) {
+            var edge = this.targetGraph.edgeList[i];
+            if (edge.visible) {
+                var linkObject1 = new Object();
+                var linkObject2 = new Object();
+
+                for (var j = 0; j < powerGraphNodeArray.length; j++) {
+                    if (powerGraphNodeArray[j].id == edge.sourceNode.id) {
+                        linkObject1["source"] = j;
+                        linkObject2["target"] = j;
+                    }
+
+                    if (powerGraphNodeArray[j].id == edge.targetNode.id) {
+                        linkObject1["target"] = j;
+                        linkObject2["source"] = j;
+                    }
+                }
+
+                powerGraphLinkArray.push(linkObject1);
+                powerGraphLinkArray.push(linkObject2);
+            }
+        }
+
+        var nodeJson = JSON.parse(JSON.stringify(powerGraphNodeArray));
+        var linkJson = JSON.parse(JSON.stringify(powerGraphLinkArray));
+
+        var d3cola = colans.d3adaptor()
+            .linkDistance(80)
+            .handleDisconnected(true)
+            .avoidOverlaps(true)
+            .size([divWidth, divHeight]);
+
+        var powerGraph;
+                
+        d3cola
+            .nodes(nodeJson)
+            .links(linkJson)
+            .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 20));
+
+        console.log(powerGraph.groups);
+        console.log(powerGraph.powerEdges);
+        
+        this.targetGraph.removeAllEdges();
+        
+        for (var i = 0; i < powerGraph.powerEdges.length; i++) {
+            if (mode == "hierarchy") {
+                var coordinates = [];
+                if (dimension == "3d") {
+                    for (var j = 0; j < this.targetGraph.nodeMeshes.length; ++j) {
+                        var coord = new Object();
+                        coord["id"] = j;
+                        coord["x"] = this.targetGraph.nodeMeshes[j].position.x;
+                        coord["y"] = this.targetGraph.nodeMeshes[j].position.y;
+                        coord["z"] = this.targetGraph.nodeMeshes[j].position.z;
+                        coordinates.push(coord);
+                    }
+                }
+                else if (dimension == "2d") {
+
+                }
+
+                var edgeList = this.powerEdgeToTree(powerGraph.powerEdges[i], coordinates);
+
+                //console.log("hierarchy edge list:");
+                //console.log(edgeList);
+
+                for (var j = 0; j < edgeList.length; j++) {
+                    var thisEdge = edgeList[j];
+                    if (thisEdge.length == 2) {
+                        if (dimension == "3d") {
+                            var geometry = new THREE.Geometry();
+                            geometry.vertices.push(thisEdge[0]);
+                            geometry.vertices.push(thisEdge[1]);
+
+                            var material = new THREE.LineBasicMaterial({
+                                color: 0x000000,
+                            });
+
+                            var line = new THREE.Line(geometry, material);
+                            this.targetGraph.addBundlingEdge(line);
+                        }
+                        else if (dimension == "2d") {
+
+                        }
+                    }
+                    else if (thisEdge.length == 4) {
+                        if ((thisEdge[1].x == thisEdge[3].x) && (thisEdge[1].y == thisEdge[3].y) && (thisEdge[1].z == thisEdge[3].z)) {
+                            if (dimension == "3d") {
+                                var geometry = new THREE.Geometry();
+                                geometry.vertices.push(thisEdge[0]);
+                                geometry.vertices.push(thisEdge[3]);
+
+                                var material = new THREE.LineBasicMaterial({
+                                    color: 0x000000,
+                                });
+
+                                var line = new THREE.Line(geometry, material);
+                                this.targetGraph.addBundlingEdge(line);
+                            }
+                            else if (dimension == "2d") {
+
+                            }
+                        }
+                        else {
+                            if (dimension == "3d") {
+                                var spline = new THREE.CubicBezierCurve3(thisEdge[0], thisEdge[1], thisEdge[2], thisEdge[3]);
+
+                                var geometry = new THREE.Geometry();
+                                var splinePoints = spline.getPoints(20);
+
+                                for (var w = 0; w < splinePoints.length; w++) {
+                                    geometry.vertices.push(<any>splinePoints[w]);
+                                }
+
+                                var line = new THREE.Line(geometry, material);
+                                this.targetGraph.addBundlingEdge(line);
+                            }
+                            else if (dimension == "2d") {
+
+                            }
+                        }
+                    }
+                }
+            }
+            else if (mode == "flat") {
+                /*
+                var source = powerGraph.powerEdges[i].source;
+                var target = powerGraph.powerEdges[i].target;
+
+                //console.log("source " + i + " leaves: ");
+                var allSourceLeaves = this.getAllLeavesInATree(source);
+                var allTargetLeaves = this.getAllLeavesInATree(target);
+
+                if ((allSourceLeaves.length == 1) && (allTargetLeaves.length == 1)) {
+                    var sourceID = allSourceLeaves[0].name;
+                    var targetID = allTargetLeaves[0].name;
+
+                    var sourcePoint = new THREE.Vector3(this.targetGraph.nodeMeshes[sourceID].position.x, this.targetGraph.nodeMeshes[sourceID].position.y, this.targetGraph.nodeMeshes[sourceID].position.z);
+                    var targetPoint = new THREE.Vector3(this.targetGraph.nodeMeshes[targetID].position.x, this.targetGraph.nodeMeshes[targetID].position.y, this.targetGraph.nodeMeshes[targetID].position.z);
+
+                    var geometry = new THREE.Geometry();
+                    geometry.vertices.push(sourcePoint);
+                    geometry.vertices.push(targetPoint);
+
+                    var material = new THREE.LineBasicMaterial({
+                        color: 0x000000,
+                    });
+
+                    var line = new THREE.Line(geometry, material);
+                    this.targetGraph.addBundlingEdge(line);
+                }
+                else {
+                    var totalX = 0;
+                    var totalY = 0;
+                    var totalZ = 0;
+
+                    for (var j = 0; j < allSourceLeaves.length; j++) {
+                        var nodeID = allSourceLeaves[j].name;
+                        totalX += this.targetGraph.nodeMeshes[nodeID].position.x;
+                        totalY += this.targetGraph.nodeMeshes[nodeID].position.y;
+                        totalZ += this.targetGraph.nodeMeshes[nodeID].position.z;
+                    }
+
+                    var sourceMidPoint = new THREE.Vector3(totalX / allSourceLeaves.length, totalY / allSourceLeaves.length, totalZ / allSourceLeaves.length);
+
+                    totalX = 0;
+                    totalY = 0;
+                    totalZ = 0;
+
+                    for (var j = 0; j < allTargetLeaves.length; j++) {
+                        var nodeID = allTargetLeaves[j].name;
+                        totalX += this.targetGraph.nodeMeshes[nodeID].position.x;
+                        totalY += this.targetGraph.nodeMeshes[nodeID].position.y;
+                        totalZ += this.targetGraph.nodeMeshes[nodeID].position.z;
+                    }
+
+                    var targetMidPoint = new THREE.Vector3(totalX / allTargetLeaves.length, totalY / allTargetLeaves.length, totalZ / allTargetLeaves.length);
+
+                    var dx = targetMidPoint.x - sourceMidPoint.x;
+                    var dy = targetMidPoint.y - sourceMidPoint.y;
+                    var dz = targetMidPoint.z - sourceMidPoint.z;
+
+                    var sourceRootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (1 / 3), sourceMidPoint.y + dy * (1 / 3), sourceMidPoint.z + dz * (1 / 3));
+                    var targetRootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (2 / 3), sourceMidPoint.y + dy * (2 / 3), sourceMidPoint.z + dz * (2 / 3));
+
+                    //var count = allSourceLeaves.length + allTargetLeaves.length;
+                    //var midPoint = new THREE.Vector3(totalX / count, totalY / count, totalZ / count);
+
+                    for (var u = 0; u < allSourceLeaves.length; u++) {
+                        for (var v = 0; v < allTargetLeaves.length; v++) {
+                            var sourceID = allSourceLeaves[u].name;
+                            var targetID = allTargetLeaves[v].name;
+
+                            var sourcePoint = new THREE.Vector3(this.targetGraph.nodeMeshes[sourceID].position.x, this.targetGraph.nodeMeshes[sourceID].position.y, this.targetGraph.nodeMeshes[sourceID].position.z);
+                            var targetPoint = new THREE.Vector3(this.targetGraph.nodeMeshes[targetID].position.x, this.targetGraph.nodeMeshes[targetID].position.y, this.targetGraph.nodeMeshes[targetID].position.z);
+                            var additionalSourcePoint = new THREE.Vector3((sourcePoint.x + sourceMidPoint.x) / 2, (sourcePoint.y + sourceMidPoint.y) / 2, (sourcePoint.z + sourceMidPoint.z) / 2);
+                            var additionalTargetPoint = new THREE.Vector3((targetPoint.x + targetMidPoint.x) / 2, (targetPoint.y + targetMidPoint.y) / 2, (targetPoint.z + targetMidPoint.z) / 2);
+
+                            var material = new THREE.LineBasicMaterial({
+                                color: 0x000000,
+                            });
+
+                            // segment 1
+                            if (allSourceLeaves.length == 1) {
+                                var geometry = new THREE.Geometry();
+                                geometry.vertices.push(sourcePoint);
+                                geometry.vertices.push(sourceRootPoint);
+
+                                var line = new THREE.Line(geometry, material);
+                                this.targetGraph.addBundlingEdge(line);
+                            }
+                            else if (allSourceLeaves.length > 1) {
+                                var spline = new THREE.CubicBezierCurve3(sourcePoint, additionalSourcePoint, sourceMidPoint, sourceRootPoint);
+
+                                var geometry = new THREE.Geometry();
+                                var splinePoints = spline.getPoints(20);
+
+                                for (var w = 0; w < splinePoints.length; w++) {
+                                    geometry.vertices.push(<any>splinePoints[w]);
+                                }
+
+                                var line = new THREE.Line(geometry, material);
+                                this.targetGraph.addBundlingEdge(line);
+                            }
+
+                            // segment 2
+                            var geometry = new THREE.Geometry();
+                            geometry.vertices.push(sourceRootPoint);
+                            geometry.vertices.push(targetRootPoint);
+
+                            var line = new THREE.Line(geometry, material);
+                            this.targetGraph.addBundlingEdge(line);
+
+                            // segment 3
+                            if (allTargetLeaves.length == 1) {
+                                var geometry = new THREE.Geometry();
+                                geometry.vertices.push(targetPoint);
+                                geometry.vertices.push(targetRootPoint);
+
+                                var line = new THREE.Line(geometry, material);
+                                this.targetGraph.addBundlingEdge(line);
+                            }
+                            else if (allTargetLeaves.length > 1) {
+                                var spline = new THREE.CubicBezierCurve3(targetPoint, additionalTargetPoint, targetMidPoint, targetRootPoint);
+
+                                var geometry = new THREE.Geometry();
+                                var splinePoints = spline.getPoints(20);
+
+                                for (var w = 0; w < splinePoints.length; w++) {
+                                    geometry.vertices.push(<any>splinePoints[w]);
+                                }
+
+                                var line = new THREE.Line(geometry, material);
+                                this.targetGraph.addBundlingEdge(line);
+                            }
+                        }
+                    }
+                }
+                */
+            }
+        }
+    }
+
+    initPowerGraphSpatial3D() {
+        this.nodes = [];
+        this.links = [];
+
+        var children = this.targetGraph.rootObject.children;
+        for (var i = 0; i < children.length; i++) {
+            var obj = children[i];
+            if ((<any>obj).isNode) {
+                if (this.targetGraph.nodeHasNeighbors[obj.id]) {
+                    var nodeObject = new Object();
+                    nodeObject['id'] = obj.id;
+                    nodeObject['x'] = obj.position.x;
+                    nodeObject['y'] = obj.position.y;
+                    nodeObject['z'] = obj.position.z;
+                    nodeObject['isLeaf'] = true;
+                    nodeObject['count'] = 1;
+                    this.nodes.push(nodeObject);
+                }
+            }
+        }
+
+        if (this.nodes.length <= 1) return;
+
+        this.createPowerGroups();
+
+        for (var i = 0; i < this.targetGraph.edgeList.length; i++) {
+            var edge = this.targetGraph.edgeList[i];
+            if (edge.visible) {
+                var link = new Object();
+                link["source"] = edge.sourceNode.id;
+                link["target"] = edge.targetNode.id;
+
+                this.links.push(link);
+            }
+        }
+
+        this.createPowerEdges();
+        this.targetGraph.removeAllEdges();
+
+        for (var i = 0; i < this.powerEdges.length; i++) {
+            var edgeList = this.powerEdgeToTree(this.powerEdges[i], this.nodes);
+
+            for (var j = 0; j < edgeList.length; j++) {
+                var thisEdge = edgeList[j];
+                if (thisEdge.length == 2) {
+                    var geometry = new THREE.Geometry();
+                    geometry.vertices.push(thisEdge[0]);
+                    geometry.vertices.push(thisEdge[1]);
+
+                    var material = new THREE.LineBasicMaterial({
+                        color: 0x000000,
+                    });
+
+                    var line = new THREE.Line(geometry, material);
+                    this.targetGraph.addBundlingEdge(line);
+                }
+                else if (thisEdge.length == 4) {
+                    if ((thisEdge[1].x == thisEdge[3].x) && (thisEdge[1].y == thisEdge[3].y) && (thisEdge[1].z == thisEdge[3].z)) {
+                        var geometry = new THREE.Geometry();
+                        geometry.vertices.push(thisEdge[0]);
+                        geometry.vertices.push(thisEdge[3]);
+
+                        var material = new THREE.LineBasicMaterial({
+                            color: 0x000000,
+                        });
+
+                        var line = new THREE.Line(geometry, material);
+                        this.targetGraph.addBundlingEdge(line);
+                    }
+                    else {
+                        var spline = new THREE.CubicBezierCurve3(thisEdge[0], thisEdge[1], thisEdge[2], thisEdge[3]);
+
+                        var geometry = new THREE.Geometry();
+                        var splinePoints = spline.getPoints(20);
+
+                        for (var w = 0; w < splinePoints.length; w++) {
+                            geometry.vertices.push(<any>splinePoints[w]);
+                        }
+
+                        var line = new THREE.Line(geometry, material);
+                        this.targetGraph.addBundlingEdge(line);
+                    }
+                }
+            }
+        }
+    }
+
+    powerEdgeToTree(powerEdge, coordinates) {
+        var edgeList = []; // edge list in the tree
+
+        var source = powerEdge.source;
+        var target = powerEdge.target;
+
+        var sourceMidPoint = this.getMidPointOfAGroup(source, coordinates);
+        var targetMidPoint = this.getMidPointOfAGroup(target, coordinates);
+
+        var dx = targetMidPoint.x - sourceMidPoint.x;
+        var dy = targetMidPoint.y - sourceMidPoint.y;
+        var dz = targetMidPoint.z - sourceMidPoint.z;
+
+        var rootPoint = new THREE.Vector3(sourceMidPoint.x + dx * (1 / 2), sourceMidPoint.y + dy * (1 / 2), sourceMidPoint.z + dz * (1 / 2));
+
+        var sourceEdgeList = this.buildSubTree(rootPoint, source, coordinates);
+        sourceEdgeList.forEach(e => { edgeList.push(e); });
+
+        var targetEdgeList = this.buildSubTree(rootPoint, target, coordinates);
+        targetEdgeList.forEach(e => { edgeList.push(e); });
+
+        return edgeList;
+    }
+
+    buildSubTree(rootPoint, node, coordinates) {
+        var edgeList = [];
+
+        var midPoint = this.getMidPointOfAGroup(node, coordinates);
+
+        var dx = midPoint.x - rootPoint.x;
+        var dy = midPoint.y - rootPoint.y;
+        var dz = midPoint.z - rootPoint.z;
+
+        var subRootPoint = new THREE.Vector3(rootPoint.x + dx * (1 / 3), rootPoint.y + dy * (1 / 3), rootPoint.z + dz * (1 / 3));
+
+        var edge = []; // the first edge 
+        edge.push(rootPoint);
+        edge.push(subRootPoint);
+        edgeList.push(edge);
+
+        if (typeof (node.leaves) != "undefined") {
+            for (var i = 0; i < node.leaves.length; i++) {
+                var nodeID = node.leaves[i].id;
+
+                var index = coordinates.map(function (d) {
+                    return d.id;
+                }).indexOf(nodeID);
+
+                var leafPoint = new THREE.Vector3(coordinates[index].x, coordinates[index].y, coordinates[index].z);
+                var additionalPoint = new THREE.Vector3((leafPoint.x + midPoint.x) / 2, (leafPoint.y + midPoint.y) / 2, (leafPoint.z + midPoint.z) / 2);
+
+                var edge = [];
+                edge.push(subRootPoint);
+                edge.push(midPoint);
+                edge.push(additionalPoint);
+                edge.push(leafPoint);
+                edgeList.push(edge);
+            }
+        }
+
+        if (typeof (node.groups) != "undefined") {
+            for (var i = 0; i < node.groups.length; i++) {
+                var subgroup = node.groups[i];
+                var subEdgeList = this.buildSubTree(subRootPoint, subgroup, coordinates);
+                subEdgeList.forEach(e => { edgeList.push(e); });
+            }
+        }
+
+        if ((typeof (node.leaves) == "undefined") && (typeof (node.groups) == "undefined")) {
+            // this is the leaf
+            var nodeID = node.id;
+
+            var index = coordinates.map(function (d) {
+                return d.id;
+            }).indexOf(nodeID);
+
+            var leafPoint = new THREE.Vector3(coordinates[index].x, coordinates[index].y, coordinates[index].z);
+            var additionalPoint = new THREE.Vector3((leafPoint.x + midPoint.x) / 2, (leafPoint.y + midPoint.y) / 2, (leafPoint.z + midPoint.z) / 2);
+
+            var edge = [];
+            edge.push(subRootPoint);
+            edge.push(midPoint);
+            edge.push(additionalPoint);
+            edge.push(leafPoint);
+            edgeList.push(edge);
+        }
+
+        return edgeList;
+    }
+
+    getMidPointOfAGroup(group, coordinates) {
+        var allLeaves = this.getAllLeavesInATree(group);
+
+        var totalX = 0;
+        var totalY = 0;
+        var totalZ = 0;
+
+        for (var j = 0; j < allLeaves.length; j++) {
+            var nodeID = allLeaves[j].id;
+
+            var index = coordinates.map(function (d) {
+                return d.id;
+            }).indexOf(nodeID);
+
+            totalX += coordinates[index].x;
+            totalY += coordinates[index].y;
+            totalZ += coordinates[index].z;
+        }
+
+        var midPoint = new THREE.Vector3(totalX / allLeaves.length, totalY / allLeaves.length, totalZ / allLeaves.length);
+
+        return midPoint;
+    }
+
+    createPowerEdges() {
+        var allEdges = this.links.slice(0);
+
+        //this.powerGroups.sort(function (a, b) { return b.count - a.count; });
+
+        var groupPairList = [];
+
+        for (var i = 0; i < this.powerGroups.length; i++) {
+            for (var j = 1; j < this.powerGroups.length; j++) {
+                var obj = new Object();
+                obj['count'] = this.powerGroups[i].count * this.powerGroups[j].count;
+                obj['sourceGroupIndex'] = i;
+                obj['targetGroupIndex'] = j;
+                obj['hasChecked'] = false;
+                groupPairList.push(obj);
+            }
+        }
+
+        groupPairList.sort(function (a, b) { return b.count - a.count; });
+
+        this.createPowerEdgeGreedy(allEdges, groupPairList);
+    }
+
+    createPowerEdgeGreedy(allEdges: any[], groupPairList: any[]) {
+        for (var i = 0; i < groupPairList.length; i++) {
+            var g1 = this.powerGroups[groupPairList[i].sourceGroupIndex];
+            var g2 = this.powerGroups[groupPairList[i].targetGroupIndex];
+
+            if (g1.count * g2.count <= allEdges.length) {
+                var hasEdge = this.hasPowerEdgeBetweenTwoGroups(g1, g2, allEdges);
+                if (hasEdge) {
+                    var e = new Object();
+                    e['source'] = g1;
+                    e['target'] = g2;
+
+                    this.powerEdges.push(e);
+                    this.removeEdges(g1, g2, allEdges);                   
+                }
+            }
+
+            if (allEdges.length <= 0) return;
+        }
+    }
+
+    removeEdges(g1, g2, allEdges: any[]) {
+        var leaves1 = this.getAllLeavesInATree(g1);
+        var leaves2 = this.getAllLeavesInATree(g2);
+
+        var edgesCSV = allEdges.map(function (d) {
+            return d.source + ";" + d.target;
+        });
+
+        for (var i = 0; i < leaves1.length; i++) {
+            for (var j = 0; j < leaves2.length; j++) {
+                var csv1 = leaves1[i].id + ";" + leaves2[j].id;
+                var csv2 = leaves2[j].id + ";" + leaves1[i].id;
+
+                var index1 = edgesCSV.indexOf(csv1);
+                var index2 = edgesCSV.indexOf(csv2);
+
+                if (index1 >= 0) {
+                    allEdges.splice(index1, 1);
+                }
+
+                if (index2 >= 0) {
+                    allEdges.splice(index2, 1);
+                }
+            }
+        }
+
+    }
+
+    hasPowerEdgeBetweenTwoGroups(g1, g2, allEdges: any[]) {
+        var leaves1 = this.getAllLeavesInATree(g1);
+        var leaves2 = this.getAllLeavesInATree(g2);
+
+        var edgesCSV = allEdges.map(function (d) {
+            return d.source + ";" + d.target;
+        });
+
+        for (var i = 0; i < leaves1.length; i++) {
+            for (var j = 0; j < leaves2.length; j++) {
+                var csv1 = leaves1[i].id + ";" + leaves2[j].id;
+                var csv2 = leaves2[j].id + ";" + leaves1[i].id;
+
+                var index1 = edgesCSV.indexOf(csv1);
+                var index2 = edgesCSV.indexOf(csv2);
+
+                if ((index1 == -1) && (index2 == -1)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    getAllLeavesInATree(node) {
+        var allLeaves = [];
+
+        if (typeof (node.leaves) != "undefined") {
+            for (var i = 0; i < node.leaves.length; i++) {
+                var leaves = this.getAllLeavesInATree(node.leaves[i]);
+                leaves.forEach(l => { allLeaves.push(l); });
+            }
+        }
+
+        if (typeof (node.groups) != "undefined") {
+            for (var i = 0; i < node.groups.length; i++) {
+                var leaves = this.getAllLeavesInATree(node.groups[i]);
+                leaves.forEach(l => { allLeaves.push(l); });
+            }
+        }
+
+        if ((typeof (node.leaves) == "undefined") && (typeof (node.groups) == "undefined")) {
+            // this is the leaf
+            allLeaves.push(node);
+        }
+
+        return allLeaves;
+    }
+
+    createPowerGroups() {
+        var allNodes = this.nodes.slice(0);
+        var numberOfTrees = 5; // a threshold to stop creating power groups;
+
+        while (allNodes.length > numberOfTrees) {
+            this.createPowerGroupByCoordinates(allNodes);
+        }
+
+        // add all leaf nodes to power group
+        for (var i = 0; i < this.nodes.length; i++) {
+            this.powerGroups.push(this.nodes[i]);
+        }
+    }
+
+    createPowerGroupByCoordinates(allNodes: any[]) {
+        var minDist = -1;
+        var minI = -1;
+        var minJ = -1;
+        for (var i = 0; i < allNodes.length; i++) {
+            for (var j = 0; j < allNodes.length; j++) {
+                if (i != j) {
+                    var n1 = allNodes[i];
+                    var n2 = allNodes[j];
+                    var s = (n1.x - n2.x) * (n1.x - n2.x) + (n1.y - n2.y) * (n1.y - n2.y) + (n1.z - n2.z) * (n1.z - n2.z);
+                    var distance = Math.sqrt(s);
+
+                    if (minDist == -1) {
+                        minDist = distance;
+                        minI = i;
+                        minJ = j;
+                    }
+                    else {
+                        if (distance < minDist) {
+                            minDist = distance;
+                            minI = i;
+                            minJ = j;
+                        }
+                    }
+                }
+            }
+        }
+
+        var node1 = allNodes[minI];
+        var node2 = allNodes[minJ];
+
+        var g = new Object();
+        g['isGroup'] = true;
+        g['id'] = 10000 + this.powerGroups.length;
+        g['count'] = node1.count + node2.count;
+        g['x'] = (node1.x * node1.count + node2.x * node2.count) / (node1.count + node2.count);
+        g['y'] = (node1.y * node1.count + node2.y * node2.count) / (node1.count + node2.count);
+        g['z'] = (node1.z * node1.count + node2.z * node2.count) / (node1.count + node2.count);
+
+        this.AddNodeToGroup(node1, g);
+        this.AddNodeToGroup(node2, g);
+
+        var index1 = allNodes.map(function (d) {
+            return d.id;
+        }).indexOf(node1.id);
+        allNodes.splice(index1, 1);
+
+        var index2 = allNodes.map(function (d) {
+            return d.id;
+        }).indexOf(node2.id);
+        allNodes.splice(index2, 1);
+
+        this.powerGroups.push(g);
+        allNodes.push(g);
+    }
+
+    AddNodeToGroup(node, g) {
+        if (node.isLeaf) {
+            if (typeof ((<any>g).leaves) == "undefined") {
+                g['leaves'] = [];
+                g['leaves'].push(node);
+            }
+            else {
+                g['leaves'].push(node);
+            }
+        }
+        else if (node.isGroup) {
+            if (typeof ((<any>g).groups) == "undefined") {
+                g['groups'] = [];
+                g['groups'].push(node);
+            }
+            else {
+                g['groups'].push(node);
+            }
+        }
+    }
+}
+
+// svg graph
+class Graph2D {
+    nodes: any[];
+    links: any[];
+
+    constructor() {
+        this.nodes = [];
+        this.links = [];
     }
 }
 
@@ -1587,6 +3364,8 @@ class Graph {
     edgeMatrix: any[][];
     edgeList: Edge[] = [];
     visible: boolean = true;
+
+    bundlingEdgeList: any[] = [];
 
     filteredNodeIDs: number[];
     nodeHasNeighbors: boolean[]; // used for cola graph only
@@ -1612,7 +3391,7 @@ class Graph {
                 new THREE.MeshLambertMaterial({ color: nodeColourings[i] })
                 );
 
-            this.nodeLabelList[i] = this.createNodeLabel(i.toString(), 12);
+            this.nodeLabelList[i] = this.createNodeLabel(i.toString(), 10);
 
             (<any>sphere).isNode = true; // A flag to identify the node meshes
             sphere.id = i;
@@ -1687,8 +3466,8 @@ class Graph {
             this.nodeMeshes[i].position.z = colaCoords[2][i];
 
             // set the node label position 
-            this.nodeLabelList[i].position.x = this.nodeMeshes[i].position.x + 7;
-            this.nodeLabelList[i].position.y = this.nodeMeshes[i].position.y + 7;
+            this.nodeLabelList[i].position.x = this.nodeMeshes[i].position.x + 5;
+            this.nodeLabelList[i].position.y = this.nodeMeshes[i].position.y + 5;
             this.nodeLabelList[i].position.z = this.nodeMeshes[i].position.z;
         }
     }
@@ -1702,8 +3481,8 @@ class Graph {
             this.nodeMeshes[i].position.z = colaCoords1[2][i] * (1 - t) + colaCoords2[2][i] * t;
 
             // set the node label position 
-            this.nodeLabelList[i].position.x = this.nodeMeshes[i].position.x + 7;
-            this.nodeLabelList[i].position.y = this.nodeMeshes[i].position.y + 7;
+            this.nodeLabelList[i].position.x = this.nodeMeshes[i].position.x + 5;
+            this.nodeLabelList[i].position.y = this.nodeMeshes[i].position.y + 5;
             this.nodeLabelList[i].position.z = this.nodeMeshes[i].position.z;
         }
     }
@@ -1722,6 +3501,10 @@ class Graph {
         }
     }
 
+    isVisible() {
+        return this.visible;
+    }
+
     // used by physioGraph
     applyNodeFiltering() {
         for (var i = 0; i < this.nodeMeshes.length; ++i) {
@@ -1737,13 +3520,58 @@ class Graph {
         }
     }
 
-    // used by colaGraph
-    setNodeVisibilities(visArray: boolean[]) {
-        if (!visArray) return;
-        this.nodeHasNeighbors = visArray.slice(0);
+    findNodeConnectivity(filteredAdjMatrix, dissimilarityMatrix, edges: any[]) {
+        //-------------------------------------------------------------------
+        // Find the edges that have been selected after thresholding, and all the
+        // nodes that have neighbours after the thresholding of the edges takes place.
 
-        for (var i = 0; i < visArray.length; ++i) {
-            if (visArray[i]) {
+        // original:
+        /*
+        var edges = [];
+        var hasNeighbours = Array<boolean>(this.commonData.nodeCount);
+        for (var i = 0; i < this.commonData.nodeCount - 1; ++i) {
+            for (var j = i + 1; j < this.commonData.nodeCount; ++j) {
+                if (this.filteredAdjMatrix[i][j] === 1) {
+                    edges.push({ source: i, target: j });
+                    hasNeighbours[i] = true;
+                    hasNeighbours[j] = true;
+                }
+            }
+        }
+        */
+
+        // new:
+        //var edges = [];
+        var hasNeighbours = Array<boolean>(this.nodeMeshes.length);
+        for (var i = 0; i < this.nodeMeshes.length - 1; ++i) {
+            for (var j = i + 1; j < this.nodeMeshes.length; ++j) {
+                if (filteredAdjMatrix[i][j] === 1) {
+                    if (this.filteredNodeIDs) {
+                        if ((this.filteredNodeIDs.indexOf(i) != -1) && (this.filteredNodeIDs.indexOf(j) != -1)) {
+                            var len = dissimilarityMatrix[i][j];
+                            if (edges) edges.push({ source: i, target: j, length: len });
+                            hasNeighbours[i] = true;
+                            hasNeighbours[j] = true;
+                        }
+                    } else {
+                        var len = dissimilarityMatrix[i][j];
+                        if (edges) edges.push({ source: i, target: j, length: len });
+                        hasNeighbours[i] = true;
+                        hasNeighbours[j] = true;
+                    }
+                }
+            }
+        }
+
+        this.nodeHasNeighbors = hasNeighbours.slice(0);
+    }
+
+    // used by colaGraph
+    setNodeVisibilities() {
+        if (!this.nodeHasNeighbors) return;
+
+        for (var i = 0; i < this.nodeHasNeighbors.length; ++i) {
+            if (this.nodeHasNeighbors[i]) {
                 if (this.filteredNodeIDs) {
                     if (this.filteredNodeIDs.indexOf(i) != -1) {
                         this.rootObject.add(this.nodeMeshes[i]);
@@ -1794,10 +3622,45 @@ class Graph {
         }
     }
 
-    showAllLabels() {
+    addBundlingEdge(line) {
+        (<any>line).isBundlingEdge = true;
+        this.bundlingEdgeList.push(line);
+        this.rootObject.add(line);
+    }
+
+    removeAllBundlingEdges() {
+        for (var i = 0; i < this.bundlingEdgeList.length; ++i) {
+            this.rootObject.remove(this.bundlingEdgeList[i]);
+        }
+
+        // remove all elements in the list
+        this.bundlingEdgeList.splice(0, this.bundlingEdgeList.length); 
+    }
+
+    removeAllEdges() {
+        for (var i = 0; i < this.edgeList.length; i++) {
+            var e = this.edgeList[i];
+            if (e.visible) {
+                e.setVisible(false);
+            }
+        }
+    }
+
+    showAllLabels(svgMode: boolean, bCola: boolean) {
+        this.hideAllLabels();
+
         for (var i = 0; i < this.nodeLabelList.length; ++i) {
             if (this.nodeLabelList[i]) {
-                this.parentObject.add(this.nodeLabelList[i]);
+                if (!svgMode) {
+                    if (bCola) {
+                        if (this.nodeHasNeighbors[i]) {
+                            this.rootObject.add(this.nodeLabelList[i]);
+                        }
+                    }
+                    else {
+                        this.rootObject.add(this.nodeLabelList[i]);
+                    }
+                }
             }
         }
     }
@@ -1805,7 +3668,7 @@ class Graph {
     hideAllLabels() {
         for (var i = 0; i < this.nodeLabelList.length; ++i) {
             if (this.nodeLabelList[i]) {
-                this.parentObject.remove(this.nodeLabelList[i]);
+                this.rootObject.remove(this.nodeLabelList[i]);
             }
         }
     }
@@ -1818,7 +3681,7 @@ class Graph {
 
     setDefaultNodeColor() {
         this.nodeCurrentColor = this.nodeDefaultColor.slice(0);
-
+        
         for (var i = 0; i < this.nodeMeshes.length; ++i) {
             this.nodeMeshes[i].material.color.setHex(this.nodeDefaultColor[i]);
         }
@@ -1832,6 +3695,12 @@ class Graph {
             var scale = scaleArray[i];
             this.nodeMeshes[i].scale.set(scale, scale, scale);
         }
+    }
+
+    setEdgeScale(scale: number) {
+        this.edgeList.forEach(function (edge) {
+            edge.setScale(scale);
+        });
     }
 
     setNodesColor(colorArray: number[]) {
@@ -1867,7 +3736,7 @@ class Graph {
         this.nodeMeshes[id].material.color.setHex(color);
     }
 
-    selectNode(id: number, svgMode: boolean) {
+    selectNode(id: number, svgMode: boolean, bCola: boolean) {
         var x = this.nodeMeshes[id].scale.x;
         var y = this.nodeMeshes[id].scale.y;
         var z = this.nodeMeshes[id].scale.z;
@@ -1875,7 +3744,17 @@ class Graph {
         this.nodeMeshes[id].scale.set(2*x, 2*y, 2*z);
 
         if (this.allLabels == false) {
-            if (!svgMode) this.parentObject.add(this.nodeLabelList[id]);
+            //if (!svgMode) this.rootObject.add(this.nodeLabelList[id]);
+            if (!svgMode) {
+                if (bCola) {
+                    if (this.nodeHasNeighbors[id]) {
+                        this.rootObject.add(this.nodeLabelList[id]);
+                    }
+                }
+                else {
+                    this.rootObject.add(this.nodeLabelList[id]);
+                }
+            }
         }
     }
 
@@ -1887,7 +3766,7 @@ class Graph {
         this.nodeMeshes[id].scale.set(0.5*x, 0.5*y, 0.5*z);
 
         if (this.allLabels == false) {
-            this.parentObject.remove(this.nodeLabelList[id]);
+            this.rootObject.remove(this.nodeLabelList[id]);
         }
     }
 
@@ -1933,11 +3812,13 @@ class Edge {
     shape;
     geometry;
     visible: boolean = true;
-    scaleWeighted = 0.5;
-    scaleNoWeighted = 1;
+    baseScale = 1;
+    scaleWeighted = 0.5 * this.baseScale;
+    scaleNoWeighted = this.baseScale;
 
     constructor(public parentObject, public sourceNode, public targetNode, private weight) {
         this.shape = this.makeCylinder();
+        (<any>this.shape).isEdge = true; // A flag to identify the edge
         parentObject.add(this.shape);
 
         var w = (Math.ceil(weight * 10) - 6) * 0.5; // the edge scale is not proportional to edge weight
@@ -1968,6 +3849,17 @@ class Edge {
 
     setColor(hex: number) {
         this.shape.material.color.setHex(hex);
+    }
+
+    setScale(scale: number) {
+        this.baseScale = scale;
+
+        this.scaleNoWeighted = this.baseScale;
+
+        this.scaleWeighted = this.baseScale * 0.5;
+        var w = (Math.ceil(this.weight * 10) - 6) * 0.5; // the edge scale is not proportional to edge weight
+        if (w < 0) w = 0;
+        this.scaleWeighted += w; 
     }
 
     multiplyScale(s: number) {

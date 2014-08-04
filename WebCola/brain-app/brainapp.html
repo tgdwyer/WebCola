@@ -124,8 +124,13 @@
             position: absolute;
             width: 24px;
             height: 24px;
-            background-color: black;
+            background-color: grey;
+            opacity: 0.2;
             z-index: 1000;
+        }
+
+        #pin:hover {
+            opacity: 1;
         }
 
         .icon {
@@ -179,20 +184,66 @@
             display: inline-block;
             line-height: 0px;
             z-index: 1000;
+            opacity: 0.2;
+        }
+
+        .view-panel-span:hover {
+            opacity: 1;
         }
 
         .node {
           stroke: #fff;
-          stroke-width: 1.5px;
+          stroke-width: 0.5px;
           /*stroke-opacity: .5;*/
           /*opacity: 0.5;*/
         }
 
+        .nodeLable {
+            font: 10px "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
         .link {
-          stroke: #999;
+            stroke: #999;
           /*stroke-opacity: .8;*/
         }
 
+        .nodeCircular {
+            font: 11px "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
+        .linkCircular {
+            stroke: steelblue;
+            stroke-opacity: .4;
+            fill: none;
+        }
+
+        .rect1Circular {
+            fill: #d3d3d3;
+        }
+
+        .rect2Circular {
+            fill: #d3d3d3;
+        }
+
+        .network-type-appended-element-0 {
+            z-index: 1000;
+            position: relative;
+        }
+
+        .network-type-appended-element-1 {
+            z-index: 1000;
+            position: relative;
+        }
+
+        .network-type-appended-element-2 {
+            z-index: 1000;
+            position: relative;
+        }
+
+        .network-type-appended-element-3 {
+            z-index: 1000;
+            position: relative;
+        }
     </style>
     <link rel="stylesheet" href="../extern/jquery-ui-1.10.4.custom/css/sunny/jquery-ui-1.10.4.custom.css" />
 </head>
@@ -225,12 +276,23 @@
                         <option value="ch2">CH2</option>
                         <option value="ch2_inflated">CH2 Inflated</option>
                         <option value="ch2_cerebellum">CH2 Cerebellum</option>
+                        <option value="none">None</option>
                     </select>
                 </p>
                 <div id="brain3d-icon-back" class="icon"></div>
             </div>
-            <div style="margin-left: 0px;">
-                <input type="checkbox" id="checkbox_yoking_view" style="width: 12px;">Yoking View Orientation
+            <div id="div-save-app" style="margin-left: 0px; margin-bottom: 10px;">
+                app:
+                <button id="button-save-app" style="font-size:10px;" disabled="true">Save</button>
+            </div>
+            <div style="margin-left: 0px; margin-bottom: 10px;">
+                view: 
+                <input type="checkbox" id="checkbox_yoking_view" style="width: 12px;">yoking orientation
+            </div>
+            <div id="div-edge-size" style="margin-left: 0px; margin-bottom: 10px;">
+                edge size:
+                <label id="label_edge_size"></label>
+                <span id="div-edge-size-slider"></span>
             </div>
         </div>
         <div id="tab-2" class="tab">
@@ -290,15 +352,11 @@
                 <p id="d2-att" class="dataset-component">Attributes</p>
             </div>
         </div>
-        <div id="tab-3" class="tab">
-            <div id="barChart0" class="chart"></div>
-            <div id="barChart1" class="chart"></div>
-            <div id="barChart2" class="chart"></div>
-            <div id="barChart3" class="chart"></div>
-            <div id="barChart4" class="chart"></div>
-            <div style='clear:both'></div> 	
+        <div id="tab-3" class="tab" style="height: 95%; overflow-x: hidden; overflow-y: auto;">
+            <div id="barCharts"></div>
+            <div style='clear:both'></div>
             <div class="dc-data-count">
-                <button id="button-apply-filter" title="Show only nodes that are selected above" style="font-size:10px;" disabled="true">Apply</button> 
+                <button id="button-apply-filter" title="Show only nodes that are selected above" style="font-size:10px;" disabled="true">Apply</button>
                 <span class="filter-count"></span> selected out of <span class="total-count"></span> | <a href="javascript:dc.filterAll();dc.renderAll();">Reset</a>
                 <div id="div-set-node-scale" style="visibility:hidden; margin-top: 10px; margin-bottom: 5px; margin-left: 5px;">
                     <!--button id="button-set-node-size-color" title="Set node size/color based on its attributes" style="font-size:10px;">Set</button-->
@@ -421,6 +479,32 @@
         <input id="input-context-menu-node-color-style" style="width: 11px; height: 11px; border: 1px solid #000000" readonly>
     </div>
 
+    <span id="span-circular-layout-bar1-color-picker">
+        color:
+        <input id="input-circular-layout-bar1-color"
+               class="color {pickerFace:3,
+                             pickerFaceColor:'#feeebd',
+                             styleElement:'input-circular-layout-bar1-color-style',
+                             onImmediateChange: 'setCircularBar1Color(this);'}"
+               value="FFFF00"
+               style="width: 80px; background-color: #feeebd; border: 1px solid grey"
+               onchange="setCircularBar1Color(this.color);">
+        <input id="input-circular-layout-bar1-color-style" style="width: 11px; height: 11px; border: 1px solid #000000" readonly>
+    </span>
+
+    <span id="span-circular-layout-bar2-color-picker">
+        color:
+        <input id="input-circular-layout-bar2-color"
+               class="color {pickerFace:3,
+                             pickerFaceColor:'#feeebd',
+                             styleElement:'input-circular-layout-bar2-color-style',
+                             onImmediateChange: 'setCircularBar2Color(this);'}"
+               value="FFFF00"
+               style="width: 80px; background-color: #feeebd; border: 1px solid grey"
+               onchange="setCircularBar2Color(this.color);">
+        <input id="input-circular-layout-bar2-color-style" style="width: 11px; height: 11px; border: 1px solid #000000" readonly>
+    </span>
+
     <!-- Required scripts -->
 
     <script src="../extern/jquery-1.10.2.min.js"></script>
@@ -429,24 +513,26 @@
     <script src="../extern/three.js"></script>
     <script src="../extern/OBJLoader.js"></script>
     <script src="../extern/leap.js"></script>
-    <script src="input.js"></script>
+
     <!-- Used for resource loading -->
     <script src="../extern/d3.v3.js"></script>
+    <script src="input.js"></script> 
 
     <script src="../extern/crossfilter.js"></script>
     <script src="../extern/dc.js"></script>
     <script src="../extern/jscolor/jscolor.js"></script>
 
     <script src="../extern/numeric-1.2.6.js"></script>
+    <script src="../extern/packages.js"></script>
 
     <script src="../cola.v3.min.js"></script>
     <script src="../src/descent.js"></script>
     <script src="../src/d3adaptor.js"></script>
 
-    <script src="brain3d.js"></script>
-    
     <!-- The main application script -->
     <script src="brainapp.js"></script>
+    <script src="brain3d.js"></script>
+
 
 </body>
 </html>
