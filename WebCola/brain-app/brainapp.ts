@@ -230,7 +230,10 @@ class Loop {
             this.timeOfLastFrame = currentTime;
 
             for (var i = 0; i < 4; ++i) {
-                if (apps[i] && (apps[i].isDeleted() == true)) apps[i] = new DummyApp();
+                if (apps[i] && (apps[i].isDeleted() == true)) {
+                    apps[i] = new DummyApp();
+                    saveObj.saveApps[i] = new SaveApp(); // create a new instance (if an old instance exists)
+                }
             }
 
             // Limit the maximum time step
@@ -334,7 +337,12 @@ $('#button-save-app').button().click(function () {
             save: saveJson
         },
         function (data, status) {
-            alert("Data: " + data + "\nStatus: " + status);
+            if (status.toLowerCase() == "success") {
+                alert("save: " + status + "; Use the following URL to retrive the project: \n");
+            }
+            else {
+                alert("save: " + status);
+            }
         });
 });
 
@@ -824,6 +832,7 @@ function brainIconDraggableEvent(model: string, view: string) {
             break;
     }
 
+    saveObj.saveApps[appID] = new SaveApp(); // create a new instance (if an old instance exists)
     saveObj.saveApps[appID].surfaceModel = model;
     saveObj.saveApps[appID].view = view;
 
@@ -1086,24 +1095,33 @@ var saveObj = new SaveFile();
 initFromSaveFile();
 
 
-
-
-
-
 //-------------------------------------------------------------------------------------------------------------------------------------------
 // functions
 
 function initFromSaveFile() {
     var query = window.location.search.substring(1);
+    var json;
     if (query == 'save') {
-        console.log("initFromSaveFile...");
-
-
-
+        $.get("getapp.aspx", function (data, status) {
+            alert("Loading is: " + status + "\nData: " + data);
+            if (status.toLowerCase() == "success") {
+                initApps(data);
+            }
+        });
     }
 }
 
+function initApps(data: string) {
+    var save = <SaveFile>jQuery.parseJSON(data);
 
+    for (var i = 0; i < 4; i++) {
+        var app = save.saveApps[i];
+        if ((app.surfaceModel != null) && (app.surfaceModel.length > 0)) {
+            // if this app exists:
+            brainIconDraggableEvent(app.surfaceModel, app.view);
+        }
+    }
+}
 
 // Load the brain surface (hardcoded - it is not simple to load geometry from the local machine, but this has not been deeply explored yet).
 // NOTE: The loaded model cannot be used in more than one WebGL context (scene) at a time - the geometry and materials must be .cloned() into
