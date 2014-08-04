@@ -4,13 +4,13 @@
 
 module tetrisbug {
     var width = 1280,
-        height = 800;
+        height = 500;
 
     var color = d3.scale.category10();
 
     var makeEdgeBetween;
     var colans = <any>cola;
-    var graphfile = "graphdata/tetrisbugmultiedges.json";
+    var graphfile = "graphdata/pre_trip.json";
     function makeSVG() {
         var svg = d3.select("body").append("svg")
             .attr("width", width)
@@ -31,7 +31,7 @@ module tetrisbug {
     }
     function flatGraph() {
         var d3cola = colans.d3adaptor()
-            .linkDistance(80)
+            .linkDistance(150)
             .avoidOverlaps(true)
             .size([width, height]);
 
@@ -39,7 +39,7 @@ module tetrisbug {
 
         d3.json(graphfile, function (error, graph) {
             graph.nodes.forEach(v=> {
-                v.width = 180; v.height = 50;
+                v.width = 200; v.height = 50;
             });
             d3cola
                 .nodes(graph.nodes)
@@ -51,8 +51,8 @@ module tetrisbug {
             var link = svg.selectAll(".link")
                 .data(graph.links)
                 .enter().append("line")
-                .attr("stroke", l => color(l.type))
-                .attr("fill", l => color(l.type))
+                .attr("stroke", l => color(linkTypes.lookup[l.type]))
+                .attr("fill", l => color(linkTypes.lookup[l.type]))
                 .attr("class", "link");
 
             var margin = 10;
@@ -99,7 +99,8 @@ module tetrisbug {
                         return d.y + h / 3.5;
                     });
             });
-            var indent = 100, topindent = 150;
+
+            var indent = 100, topindent = 120;
             var swatches = svg.selectAll('.swatch')
                 .data(linkTypes.list)
                 .enter().append('rect').attr('x', indent).attr('y', (l, i) => topindent + 40 * i)
@@ -150,8 +151,8 @@ module tetrisbug {
                 vs.forEach(v=> {
                     var index = Number(v.label) - 1;
                     var node = graph.nodes[index];
-                    node.y = Number(v.y) / 1.5 + 50;
-                    node.x = Number(v.x) * 2 + 50;
+                    node.y = Number(v.x) / 1.5 + 50;
+                    node.x = Number(v.y) * 2 + 50;
                     node.fixed = 1;
                 });
                 d3cola.start(1, 1, 1);
@@ -223,18 +224,11 @@ module tetrisbug {
                         });
                 });
             }
-            var linkTypes = {};
-            graph.links.forEach(l=> linkTypes[l.type] = {});
-            var typeCount = 0;
-            var linkTypesList = [];
-            for (var type in linkTypes) {
-                linkTypesList.push(type);
-                linkTypes[type] = typeCount++;
-            }
+            var linkTypes = getLinkTypes(graph.links);
             d3cola
                 .nodes(graph.nodes)
                 .links(graph.links)
-                .linkType(l => linkTypes[l.type])
+                .linkType(l => linkTypes.lookup[l.type])
                 .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 10));
 
             var modules = { N: graph.nodes.length, ms: [], edges: [] };
@@ -248,20 +242,21 @@ module tetrisbug {
                 var N = graph.nodes.length;
                 modules.edges.push({ source: getId(e.source, N), target: getId(e.target, N) });
             });
-            if (document.URL.toLowerCase().indexOf('marvl.infotech.monash.edu') >= 0) {
-                $.ajax({
-                    type: 'post',
-                    url: 'http://marvl.infotech.monash.edu/cgi-bin/test.py',
-                    data: JSON.stringify(modules),
-                    datatype: "json",
-                    success: function (response) {
-                        doLayout(response);
-                    },
-                    error: function (jqXHR, status, err) {
-                        alert(status);
-                    }
-                });
-            } else {
+            //if (document.URL.toLowerCase().indexOf('marvl.infotech.monash.edu') >= 0) {
+            //    $.ajax({
+            //        type: 'post',
+            //        url: 'http://marvl.infotech.monash.edu/cgi-bin/test.py',
+            //        data: JSON.stringify(modules),
+            //        datatype: "json",
+            //        success: function (response) {
+            //            doLayout(response);
+            //        },
+            //        error: function (jqXHR, status, err) {
+            //            alert(status);
+            //        }
+            //    });
+            //} else
+            {
                 d3.json(graphfile.replace(/.json/,'pgresponse.json'), function (error, response) {
                     doLayout(response);
                 });

@@ -108,6 +108,7 @@ function flatGraph() {
         var label = createLabels(svg, graph, node, d3cola, margin);
 
         d3cola
+            .convergenceThreshold(0.1)
             .nodes(graph.nodes)
             .links(graph.links)
             .start(10, 10, 10);
@@ -140,7 +141,7 @@ function flatGraph() {
                 .attr("y", function (d) {
                     return d.y + b.height/3;
                 });
-            svg.zoomToFit();
+            //svg.zoomToFit();
         }).on("end", () => { svg.zoomToFit() });
     });
 }
@@ -162,6 +163,7 @@ function getId(v, n) {
 
 function powerGraph() {
     var d3cola = colans.d3adaptor()
+        .convergenceThreshold(0.01)
         .linkDistance(80)
         .handleDisconnected(false)
         .avoidOverlaps(true)
@@ -243,8 +245,8 @@ function powerGraph() {
                         var h = this.getBBox().height;
                         return d.y + h / 3.5;
                     });
-                svg.zoomToFit();
-            });
+            }).on("end", () => 
+                svg.zoomToFit());
         }
         d3cola
             .nodes(graph.nodes)

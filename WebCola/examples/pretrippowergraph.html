@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Power graph representation of a dense graph</title>
+    <style>
+        @import url(../style.css);
+
+.node {
+  cursor: move;
+  fill: #550000;
+}
+
+.group {
+  fill: #AA6c39;
+  opacity: 0.4;
+}
+
+.link {
+    /*stroke: #661141;*/
+    stroke-width: 3px;
+    stroke-opacity: 1;
+    marker-end: url(#end-arrow);
+}
+
+.label {
+    fill: white;
+    font-family: Verdana;
+    font-size: 15px;
+    text-anchor: middle;
+    cursor: move;
+}
+
+.swatchlabel {
+    font-family: Verdana;
+    font-size: 15px;
+}
+
+</style>
+</head>
+<body>
+    <script src="../extern/d3.v3.js"></script>
+    <script src="../cola.v3.min.js"></script>    
+    <script src="../extern/jquery-1.10.2.min.js"></script>
+    <script src="../src/powergraph.js"></script>
+    <script src="../src/d3adaptor.js"></script>
+
+    <!--<script src="../src/descent.js"></script>
+    <script src="../src/vpsc.js"></script>
+    <script src="../src/rectangle.js"></script>-->
+    <script src="pretrip.js"></script>
+</body>
+</html>

@@ -1,12 +1,12 @@
 /// <reference path="../src/descent.ts"/>
 /// <reference path="../src/shortestpaths.ts"/>
+///<reference path="../extern/d3.d.ts"/>
 /**
     This application uses similarity data between areas of the brain to construct a thresholded graph with edges
     between the most similar areas. It is designed to be embedded in a view defined in brainapp.html / brainapp.ts.
 */
 
 // GLOBAL VARIABLES
-declare var d3;
 declare var numeric;
 declare var packages;
 declare function d3adaptor(): string;
@@ -2267,14 +2267,14 @@ class Brain3DApp implements Application, Loopable {
         if (max / min > 10) {
             var colorMap = d3.scale.linear().domain([Math.log(min), Math.log(max)]).range([minColor, maxColor]);
             colorArray = attrArray.map((value: number) => {
-                var str = colorMap(Math.log(value)).replace("#", "0x");
+                var str = colorMap(Math.log(value)).toString().replace("#", "0x");
                 return parseInt(str);
             });
         }
         else {
             var colorMap = d3.scale.linear().domain([min, max]).range([minColor, maxColor]);
             colorArray = attrArray.map((value: number) => {
-                var str = colorMap(value).replace("#", "0x");
+                var str = colorMap(value).toString().replace("#", "0x");
                 return parseInt(str);
             });
         }
