@@ -68,6 +68,23 @@ class DataSet {
     }
 }
 
+class SaveFile {
+    saveApps: SaveApp[];
+
+    constructor() {
+        this.saveApps = new Array(4);
+        for (var i = 0; i < 4; i++) {
+            var app = new SaveApp();
+            this.saveApps[i] = app;
+        }
+    }
+}
+
+class SaveApp {
+    surfaceModel: string;
+    view: string;
+}
+
 // Parses, stores, and provides access to brain node attributes from a file
 class Attributes {
     attrValues: number[][];
@@ -308,6 +325,17 @@ $('#upload-attr-2 ').button().click(function () {
         loadAttributes(file, dataSets[1]);
         $('#d2-att').css({ color: 'green' });
     }
+});
+
+$('#button-save-app').button().click(function () {
+    var saveJson = JSON.stringify(saveObj);
+    $.post("saveapp.aspx",
+        {
+            save: saveJson
+        },
+        function (data, status) {
+            alert("Data: " + data + "\nStatus: " + status);
+        });
 });
 
 var divNodeSizeRange;
@@ -739,55 +767,69 @@ $('#brain3d-icon-front').draggable(
     {
         containment: 'body',
         stop: function (event) {
-            resetBrain3D();
-
             var model = $('#brain3d-model-select').val();
-            var file = 'BrainMesh_ICBM152.obj';
-
-            commonData.noBrainSurface = false;
-
-            if (model == 'ch2') {
-                file = 'BrainMesh_ch2.obj';
-            }
-            else if (model == 'ch2_inflated') {
-                file = 'BrainMesh_Ch2_Inflated.obj';
-            }
-            else if (model == 'icbm') {
-                file = 'BrainMesh_ICBM152.obj';
-            }
-            else if (model == 'ch2_cerebellum') {
-                file = 'BrainMesh_Ch2withCerebellum.obj';
-            }
-            else if (model == 'none') {
-                commonData.noBrainSurface = true;
-                //file = null; // use the default brain surface to calculate the bounding sphere
-            }
-
-            loadBrainModel(file);
-
-            switch (getViewUnderMouse(event.pageX, event.pageY)) {
-                case tl_view:
-                    $(tl_view).empty();
-                    apps[0] = new Brain3DApp(0, commonData, $(tl_view), input.newTarget(0));
-                    break;
-                case tr_view:
-                    $(tr_view).empty();
-                    apps[1] = new Brain3DApp(1, commonData, $(tr_view), input.newTarget(1));
-                    break;
-                case bl_view:
-                    $(bl_view).empty();
-                    apps[2] = new Brain3DApp(2, commonData, $(bl_view), input.newTarget(2));
-                    break;
-                case br_view:
-                    $(br_view).empty();
-                    apps[3] = new Brain3DApp(3, commonData, $(br_view), input.newTarget(3));
-                    break;
-            }
-
- 
+            var view = getViewUnderMouse(event.pageX, event.pageY);
+            brainIconDraggableEvent(model, view);
         }
     }
 );
+
+function brainIconDraggableEvent(model: string, view: string) {
+    resetBrain3D();
+
+    var file = 'BrainMesh_ICBM152.obj';
+
+    commonData.noBrainSurface = false;
+
+    if (model == 'ch2') {
+        file = 'BrainMesh_ch2.obj';
+    }
+    else if (model == 'ch2_inflated') {
+        file = 'BrainMesh_Ch2_Inflated.obj';
+    }
+    else if (model == 'icbm') {
+        file = 'BrainMesh_ICBM152.obj';
+    }
+    else if (model == 'ch2_cerebellum') {
+        file = 'BrainMesh_Ch2withCerebellum.obj';
+    }
+    else if (model == 'none') {
+        commonData.noBrainSurface = true;
+        //file = null; // use the default brain surface to calculate the bounding sphere
+    }
+
+    loadBrainModel(file);
+
+    var appID = -1;
+    switch (view) {
+        case tl_view:
+            $(tl_view).empty();
+            apps[0] = new Brain3DApp(0, commonData, $(tl_view), input.newTarget(0));
+            appID = 0;
+            break;
+        case tr_view:
+            $(tr_view).empty();
+            apps[1] = new Brain3DApp(1, commonData, $(tr_view), input.newTarget(1));
+            appID = 1;
+            break;
+        case bl_view:
+            $(bl_view).empty();
+            apps[2] = new Brain3DApp(2, commonData, $(bl_view), input.newTarget(2));
+            appID = 2;
+            break;
+        case br_view:
+            $(br_view).empty();
+            apps[3] = new Brain3DApp(3, commonData, $(br_view), input.newTarget(3));
+            appID = 3;
+            break;
+    }
+
+    saveObj.saveApps[appID].surfaceModel = model;
+    saveObj.saveApps[appID].view = view;
+
+    $('#button-save-app').button({ disabled: false });
+}
+
 $('#dataset1-icon-front').draggable(
     {
         containment: 'body',
@@ -1039,6 +1081,29 @@ manager.onProgress = function (item, loaded, total) {
 };
 var loader = new (<any>THREE).OBJLoader(manager);
 var brainSurfaceColor: string = "0xe3e3e3";
+
+var saveObj = new SaveFile();
+initFromSaveFile();
+
+
+
+
+
+
+//-------------------------------------------------------------------------------------------------------------------------------------------
+// functions
+
+function initFromSaveFile() {
+    var query = window.location.search.substring(1);
+    if (query == 'save') {
+        console.log("initFromSaveFile...");
+
+
+
+    }
+}
+
+
 
 // Load the brain surface (hardcoded - it is not simple to load geometry from the local machine, but this has not been deeply explored yet).
 // NOTE: The loaded model cannot be used in more than one WebGL context (scene) at a time - the geometry and materials must be .cloned() into
