@@ -347,11 +347,9 @@ asyncTest('grid visibility', function() {
     d3.json("../examples/graphdata/tetrisbugmultiedgeslayout.json", function (error, graph) {
         function isLeaf(v) { return typeof v.children === 'undefined' };
         function isGroup(v) { return !isLeaf(v) };
-        var bounds = cola.vpsc.Rectangle.empty();
         var leaves = graph.nodes.filter(isLeaf);
         leaves.forEach(function (v) {
             v.rect = new cola.vpsc.Rectangle(v.bounds.x, v.bounds.X, v.bounds.y, v.bounds.Y);
-            bounds = bounds.union(v.rect);
         });
         var avg = function (a) { return a.reduce(function(x,y) { return x+y })/a.length }
         var getGridDim = function(axis) {
@@ -411,8 +409,60 @@ asyncTest('grid visibility', function() {
         }
         var colMids = midPoints(cols.map(function(r) {return r.x}));
         var rowMids = midPoints(rows.map(function(r) {return r.y}));
+        var rowx = colMids[0]-10, rowX = colMids[colMids.length-1]+10;
+        var coly = rowMids[0]-10, colY = rowMids[rowMids.length-1]+10;
+        var hlines = rows.map(function (r) {
+            return {x1: rowx, x2: rowX, y1: r.y, y2: r.y};
+        }).concat(rowMids.map(function (m) {
+            return {x1: rowx, x2: rowX, y1: m, y2: m};
+        }));
+        var vlines = cols.map(function (c) {
+            return {x1: c.x, x2: c.x, y1: coly, y2: colY};
+        }).concat(colMids.map(function (m) {
+            return {x1: m, x2: m, y1: coly, y2: colY};
+        }));
+        var lines = hlines.concat(vlines);
+        lines.forEach(function (l) { l.verts = [] });
+        var verts = [];
+        var edges = [];
+        hlines.forEach(function (h) {
+            vlines.forEach(function (v) {
+                var p = {id: verts.length, x: v.x1, y: h.y1};
+                h.verts.push(p);
+                v.verts.push(p);
+                verts.push(p);
+            });
+        });
+
+        lines.forEach(function (l) {
+            graph.nodes.forEach(function (v) {
+                v.rect.lineIntersections(l.x1,l.y1,l.x2,l.y2).forEach(function (p) {
+                    p.line = l;
+                    p.v = v;
+                    p.id = verts.length;
+                    verts.push(p);
+                    l.verts.push(p);
+                });
+            });
+            var isHoriz = Math.abs(l.y1 - l.y2) < 0.1;
+            l.verts.sort(function(a,b) { return isHoriz ? b.x - a.x : b.y - a.y });
+            for (var i = 1; i < l.verts.length; i++) {
+                var u = l.verts[i-1], v = l.verts[i];
+                edges.push({source: u.id, target: v.id});
+            }
+        });
         if (draw) {
             var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 400).append('g').attr('transform', 'scale(0.5,0.8)')
+            svg.selectAll('.gridLines')
+                .data(lines)
+                .enter()
+                .append('line')
+                .attr('x1',function(d) {return d.x1})
+                .attr('x2',function(d) {return d.x2})
+                .attr('y1',function(d) {return d.y1})
+                .attr('y2',function(d) {return d.y2})
+                .style('stroke', 'orange')
+                .style('stroke-width','3')
             svg.selectAll('.gridNodes')
                 .data(frontToBack)
                 .enter()
@@ -423,47 +473,24 @@ asyncTest('grid visibility', function() {
                 .attr('height', function (d) { return d.rect.height() })
                 .style('stroke', 'brown')
                 .style('fill', 'beige')
-                .style('stroke-width','2')
-            svg.selectAll('.rows')
-                .data(rows)
+                .style('stroke-width','2');
+            svg.selectAll('.edges')
+                .data(edges)
                 .enter()
                 .append('line')
-                .attr('x1',colMids[0])
-                .attr('x2',colMids[colMids.length-1])
-                .attr('y1',function(d) {return d.y})
-                .attr('y2',function(d) {return d.y})
-                .style('stroke', 'brown')
-                .style('stroke-width','2')
-            svg.selectAll('.cols')
-                .data(cols)
-                .enter()
-                .append('line')
-                .attr('y1',rowMids[0])
-                .attr('y2',rowMids[rowMids.length-1])
-                .attr('x1',function(d) {return d.x})
-                .attr('x2',function(d) {return d.x})
-                .style('stroke', 'brown')
-                .style('stroke-width','2')
-            svg.selectAll('.rowMids')
-                .data(rowMids)
-                .enter()
-                .append('line')
-                .attr('x1',colMids[0])
-                .attr('x2',colMids[colMids.length-1])
-                .attr('y1',function(d) {return d})
-                .attr('y2',function(d) {return d})
+                .attr('x1',function(d) {return verts[d.source].x})
+                .attr('y1',function(d) {return verts[d.source].y})
+                .attr('x2',function(d) {return verts[d.target].x})
+                .attr('y2',function(d) {return verts[d.target].y})
                 .style('stroke', 'green')
                 .style('stroke-width','2')
-            svg.selectAll('.colMids')
-                .data(midPoints(cols.map(function(r) {return r.x})))
-                .enter(colMids)
-                .append('line')
-                .attr('y1',rowMids[0])
-                .attr('y2',rowMids[rowMids.length-1])
-                .attr('x1',function(d) {return d})
-                .attr('x2',function(d) {return d})
-                .style('stroke', 'green')
-                .style('stroke-width','2')
+            svg.selectAll('.verts')
+                .data(verts)
+                .enter()
+                .append("circle")
+                .attr("cx", function(d) { return d.x })
+                .attr("cy", function(d) { return d.y })
+                .attr('fill', 'red').attr("r", 4);
         }
         start();
     });
