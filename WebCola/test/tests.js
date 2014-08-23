@@ -342,6 +342,134 @@ function midPoint(p) {
     return { x: mx/n, y: my/n };
 }
 
+asyncTest('grid visibility', function() {
+    var draw = true;
+    d3.json("../examples/graphdata/tetrisbugmultiedgeslayout.json", function (error, graph) {
+        function isLeaf(v) { return typeof v.children === 'undefined' };
+        function isGroup(v) { return !isLeaf(v) };
+        var bounds = cola.vpsc.Rectangle.empty();
+        var leaves = graph.nodes.filter(isLeaf);
+        leaves.forEach(function (v) {
+            v.rect = new cola.vpsc.Rectangle(v.bounds.x, v.bounds.X, v.bounds.y, v.bounds.Y);
+            bounds = bounds.union(v.rect);
+        });
+        var avg = function (a) { return a.reduce(function(x,y) { return x+y })/a.length }
+        var getGridDim = function(axis) {
+            var columns = [];
+            var ls = leaves.slice(0,leaves.length);
+            while(ls.length > 0) {
+                var r = ls[0].rect;
+                var col = ls.filter(function (v) {
+                    return v.rect['overlap'+axis.toUpperCase()](r);
+                });
+                columns.push(col);
+                col.forEach(function (v) {
+                    ls.splice(ls.indexOf(v),1);
+                });
+                col[axis] = avg(col.map(function (v) { return v.rect['c'+axis]() }))
+            }
+            columns.sort(function (x,y) { return x[axis] - y[axis] })
+            return columns;
+        }
+        var cols = getGridDim('x');
+        var rows = getGridDim('y');
+        graph.nodes
+            .filter(isGroup)
+            .forEach(function (v) {
+                v.children.forEach(function (c) { 
+                    graph.nodes[c].parent = v;
+                });
+            });
+        var getDepth = function (v) {
+            var depth = 0;
+            while (typeof v.parent !== 'undefined') {
+                depth++;
+                v = v.parent;
+            }
+            return depth;
+        };
+        var frontToBack = graph.nodes.slice(0);
+        frontToBack.sort(function (x,y) { return getDepth(x) - getDepth(y) }); 
+        var backToFront = frontToBack.slice(0).reverse();
+        backToFront
+            .filter(isGroup)
+            .forEach(function (v) {
+                var r = cola.vpsc.Rectangle.empty();
+                v.children.forEach(function (c) { 
+                    r = r.union(graph.nodes[c].rect);
+                });
+                v.rect = r.inflate(5);
+            });
+        var midPoints = function(a) {
+            var gap = a[1] - a[0];
+            var mids = [a[0]-gap/2];
+            for(var i = 1; i < a.length; i++) {
+                mids.push((a[i]+a[i-1])/2);
+            }
+            mids.push(a[a.length-1] + gap/2);
+            return mids;
+        }
+        var colMids = midPoints(cols.map(function(r) {return r.x}));
+        var rowMids = midPoints(rows.map(function(r) {return r.y}));
+        if (draw) {
+            var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 400).append('g').attr('transform', 'scale(0.5,0.8)')
+            svg.selectAll('.gridNodes')
+                .data(frontToBack)
+                .enter()
+                .append('rect')
+                .attr('x',function (d) { return d.rect.x })            
+                .attr('y', function (d) { return d.rect.y })
+                .attr('width', function (d) { return d.rect.width() })
+                .attr('height', function (d) { return d.rect.height() })
+                .style('stroke', 'brown')
+                .style('fill', 'beige')
+                .style('stroke-width','2')
+            svg.selectAll('.rows')
+                .data(rows)
+                .enter()
+                .append('line')
+                .attr('x1',colMids[0])
+                .attr('x2',colMids[colMids.length-1])
+                .attr('y1',function(d) {return d.y})
+                .attr('y2',function(d) {return d.y})
+                .style('stroke', 'brown')
+                .style('stroke-width','2')
+            svg.selectAll('.cols')
+                .data(cols)
+                .enter()
+                .append('line')
+                .attr('y1',rowMids[0])
+                .attr('y2',rowMids[rowMids.length-1])
+                .attr('x1',function(d) {return d.x})
+                .attr('x2',function(d) {return d.x})
+                .style('stroke', 'brown')
+                .style('stroke-width','2')
+            svg.selectAll('.rowMids')
+                .data(rowMids)
+                .enter()
+                .append('line')
+                .attr('x1',colMids[0])
+                .attr('x2',colMids[colMids.length-1])
+                .attr('y1',function(d) {return d})
+                .attr('y2',function(d) {return d})
+                .style('stroke', 'green')
+                .style('stroke-width','2')
+            svg.selectAll('.colMids')
+                .data(midPoints(cols.map(function(r) {return r.x})))
+                .enter(colMids)
+                .append('line')
+                .attr('y1',rowMids[0])
+                .attr('y2',rowMids[rowMids.length-1])
+                .attr('x1',function(d) {return d})
+                .attr('x2',function(d) {return d})
+                .style('stroke', 'green')
+                .style('stroke-width','2')
+        }
+        start();
+    });
+    ok(true);
+});
+
 test("tangent visibility graph", function () {
     var draw = false;
     for (var tt = 0; tt < 100; tt++) {

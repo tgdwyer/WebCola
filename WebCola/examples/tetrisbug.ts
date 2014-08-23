@@ -1,4 +1,5 @@
 ///<reference path="../src/vpsc.ts"/>
+///<reference path="../src/rectangle.ts"/>
 ///<reference path="../extern/jquery.d.ts"/>
 ///<reference path="../extern/d3.d.ts"/>
 
@@ -150,8 +151,8 @@ module tetrisbug {
                 vs.forEach(v=> {
                     var index = Number(v.label) - 1;
                     var node = graph.nodes[index];
-                    node.y = Number(v.y) / 1.5 + 50;
-                    node.x = Number(v.x) * 2 + 50;
+                    node.y = Number(v.y) / 1.2 + 50;
+                    node.x = Number(v.x) * 2.2 + 50;
                     node.fixed = 1;
                 });
                 d3cola.start(1, 1, 1);
@@ -221,6 +222,27 @@ module tetrisbug {
                             var h = this.getBBox().height;
                             return d.y + h / 3.5;
                         });
+                }).on('end', function () {
+                    var n = graph.nodes.length,
+                        _id = v => getId(v,n),
+                        g = { 
+                            nodes: graph.nodes.map(d=> <any>{
+                                id: d.index, 
+                                name: d.name, 
+                                bounds: d.innerBounds 
+                                }).concat(
+                                    powerGraph.groups.map(d=> <any>{
+                                    id: _id(d),
+                                    bounds: d.innerBounds,
+                                    children: (typeof d.groups !== 'undefined' ? d.groups.map(c=>n+c.id) : [])
+                                        .concat(typeof d.leaves !== 'undefined' ? d.leaves.map(c=>c.index) : [])
+                                })),
+                            edges: powerGraph.powerEdges.map(e=> <any>{
+                                source: getId(e.source,n),
+                                target: getId(e.target,n)
+                            })
+                        };
+                    console.log(JSON.stringify(g));
                 });
             }
             var linkTypes = {};
@@ -235,7 +257,7 @@ module tetrisbug {
                 .nodes(graph.nodes)
                 .links(graph.links)
                 .linkType(l => linkTypes[l.type])
-                .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 10));
+                .powerGraphGroups(d => (powerGraph = d).groups.forEach(v => v.padding = 5));
 
             var modules = { N: graph.nodes.length, ms: [], edges: [] };
             var n = modules.N;
