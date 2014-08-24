@@ -400,7 +400,7 @@ asyncTest('grid visibility', function() {
             // leaf nodes will have exactly one internal node at the center
             // and four boundary nodes
             // groups will have potentially many of each
-            v.verts = []
+            v.ports = []
         });
 
         // get the depth of the given node in the group hierarchy
@@ -503,6 +503,7 @@ asyncTest('grid visibility', function() {
                     p.id = verts.length;
                     verts.push(p);
                     l.verts.push(p);
+                    v.ports.push(p);
                 });
             });
 
@@ -512,14 +513,9 @@ asyncTest('grid visibility', function() {
             l.verts.sort(delta);
             for (var i = 1; i < l.verts.length; i++) {
                 var u = l.verts[i-1], v = l.verts[i];
+                if (u.node && u.node === v.node && isLeaf(u.node)) continue;
                 edges.push({source: u.id, target: v.id, length: Math.abs(delta(u,v))});
             }
-        });
-
-        // populate the node verts lists so we can easily find 
-        // the vertices associated with a given node
-        verts.forEach(function (v) {
-            if (typeof v.node !== 'undefined') v.node.verts.push(v);
         });
 
         // find path from v to root including both v and root
@@ -563,13 +559,19 @@ asyncTest('grid visibility', function() {
             ok(obstacles.map(function (v) { return v.id }).indexOf(target.id) < 0);
         }
         check(8);
-        // source = graph.nodes[0], target = graph.nodes[7];
-        // obstacles = siblingObstacles(source,target);
-        // check(6);
+        source = graph.nodes[0], target = graph.nodes[7];
+        obstacles = siblingObstacles(source,target);
+        check(6);
 
-        // source = graph.nodes[4], target = graph.nodes[5];
+        source = graph.nodes[4], target = graph.nodes[5];
+        obstacles = siblingObstacles(source,target);
+        check(8)
+
+        source = graph.nodes[6], target = graph.nodes[15];
+        obstacles = siblingObstacles(source,target);
+        // // group to node
+        // source = graph.nodes[16], target = graph.nodes[5];
         // obstacles = siblingObstacles(source,target);
-        // check(8)
 
         var obstacleLookup = {};
         obstacles.forEach(function (o) {
@@ -582,25 +584,45 @@ asyncTest('grid visibility', function() {
                      || v.node && v.node.id in obstacleLookup);
         });
 
+        for(var i = 1; i < source.ports.length; i++) {
+            var u = source.ports[0].id;
+            var v = source.ports[i].id;
+            passableEdges.push({
+                source: u,
+                target: v,
+                length: 0
+            });
+        }
+        for(var i = 1; i < target.ports.length; i++) {
+            var u = target.ports[0].id;
+            var v = target.ports[i].id;
+            passableEdges.push({
+                source: u,
+                target: v,
+                length: 0
+            });
+        }
+
         var getSource = function (e) { return e.source }, 
             getTarget = function(e) { return e.target}, 
             getLength = function(e) { return e.length },
             shortestPath = (new cola.shortestpaths.Calculator(verts.length, passableEdges, getSource, getTarget, getLength))
-                .PathFromNodeToNode(source.verts[0].id, target.verts[0].id);
+                .PathFromNodeToNode(source.ports[0].id, target.ports[0].id);
 
         if (draw) {
             var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 400).append('g').attr('transform', 'scale(0.5,0.8)')
-            var color = d3.scale.category20();
-            svg.selectAll('.gridLines')
-                .data(lines)
-                .enter()
-                .append('line')
-                .attr('x1',function(d) {return d.x1})
-                .attr('x2',function(d) {return d.x2})
-                .attr('y1',function(d) {return d.y1})
-                .attr('y2',function(d) {return d.y2})
-                .style('stroke', 'orange')
-                .style('stroke-width','3')
+            var color = d3.scale.category10();
+            function color(d) { return 'grey' }
+            // svg.selectAll('.gridLines')
+            //     .data(lines)
+            //     .enter()
+            //     .append('line')
+            //     .attr('x1',function(d) {return d.x1})
+            //     .attr('x2',function(d) {return d.x2})
+            //     .attr('y1',function(d) {return d.y1})
+            //     .attr('y2',function(d) {return d.y2})
+            //     .style('stroke', 'orange')
+            //     .style('stroke-width','3')
             var nodegroups = svg.selectAll('.gridNodes')
                 .data(backToFront)
                 .enter()
@@ -610,7 +632,8 @@ asyncTest('grid visibility', function() {
                 .append('rect')
                 .attr('width', function (d) { return d.rect.width() })
                 .attr('height', function (d) { return d.rect.height() })
-                .style('fill', function (d) { return color(d.id) })
+                .style('fill', function (d) { return isGroup(d) ? 'blue' : 'beige' })
+                .style('opacity', function (d) { return isGroup(d) ? 0.5: 1 })
                 //.style('fill', 'beige')
                 .style('stroke-width','2');
             nodegroups.append('text')
@@ -626,19 +649,19 @@ asyncTest('grid visibility', function() {
                 .attr('x2',function(d) {return verts[d.target].x})
                 .attr('y2',function(d) {return verts[d.target].y})
                 .style('stroke', 'black')
-                .style('stroke-width','2')
-            svg.selectAll('.verts')
-                .data(verts)
-                .enter()
-                .append("circle")
-                .attr("cx", function(d) { return d.x })
-                .attr("cy", function(d) { return d.y })
-                .attr("r", 2)
-                .style('stroke', 'black')
-                .style('stroke-width', '0.5')
-                .style('fill', function (d) { 
-                    return typeof d.node === 'undefined' ? 'black' : color(d.node.id) 
-                })
+                .style('stroke-width','1')
+            // svg.selectAll('.verts')
+            //     .data(verts)
+            //     .enter()
+            //     .append("circle")
+            //     .attr("cx", function(d) { return d.x })
+            //     .attr("cy", function(d) { return d.y })
+            //     .attr("r", 2)
+            //     .style('stroke', 'black')
+            //     .style('stroke-width', '0.5')
+            //     .style('fill', function (d) { 
+            //         return typeof d.node === 'undefined' ? 'black' : color(d.node.id) 
+            //     })
             svg.selectAll('.obstacles')
                 .data(obstacles)
                 .enter()
@@ -650,24 +673,30 @@ asyncTest('grid visibility', function() {
                 .style('stroke', 'black')
                 .style('stroke-width', '3')
                 .style('fill', 'none');
-            svg.append('line')
-                .attr('x1', source.rect.cx())
-                .attr('y1', source.rect.cy())
-                .attr('x2', target.rect.cx())
-                .attr('y2', target.rect.cy())
-                .style('stroke', 'black')
-                .style('stroke-width',3);
+            svg.selectAll('.sourcetarget')
+                .data([source,target])
+                .enter()
+                .append('rect')
+                .attr('x', function(d) { return d.rect.x })
+                .attr('y', function(d) { return d.rect.y })
+                .attr('width',function(d){return d.rect.width()})
+                .attr('height',function(d){return d.rect.height()})
+                .style('stroke', 'red')
+                .style('stroke-width', '1')
+                .style('fill', 'none');
 
             for (var i = 0; i < shortestPath.length; i++) {
-                var u = i === 0 ? target.verts[0] : verts[shortestPath[i - 1]];
+                var u = i === 0 ? target.ports[0] : verts[shortestPath[i - 1]];
                 var v = verts[shortestPath[i]];
+                if (u.node === source && v.node === source) continue;
+                if (u.node === target && v.node === target) continue;
                 svg.append('line')
                     .attr('x1', u.x)
                     .attr('y1', u.y)
                     .attr('x2', v.x)
                     .attr('y2', v.y)
                     .style('stroke', 'red')
-                    .style('stroke-width',3);
+                    .style('stroke-width',5);
             }
         }
         start();
