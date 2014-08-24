@@ -342,17 +342,25 @@ function midPoint(p) {
     return { x: mx/n, y: my/n };
 }
 
+// next steps: 
+//  o label node and group centre and boundary vertices
+//  - non-traversable regions (obstacles) are determined by finding the highest common ancestors of the source and target nodes
+//  - to route each edge the weights of the edges are adjusted such that those inside obstacles
+//    have infinite weight while those inside the source and target node have zero weight
+//  - augment dijkstra with a cost for bends
 asyncTest('grid visibility', function() {
     var draw = true;
     d3.json("../examples/graphdata/tetrisbugmultiedgeslayout.json", function (error, graph) {
+        var groupPadding = 5;
         function isLeaf(v) { return typeof v.children === 'undefined' };
-        function isGroup(v) { return !isLeaf(v) };
         var leaves = graph.nodes.filter(isLeaf);
         leaves.forEach(function (v) {
             v.rect = new cola.vpsc.Rectangle(v.bounds.x, v.bounds.X, v.bounds.y, v.bounds.Y);
         });
-        var avg = function (a) { return a.reduce(function(x,y) { return x+y })/a.length }
-        var getGridDim = function(axis) {
+        function isGroup(v) { return !isLeaf(v) };
+        var groups = graph.nodes.filter(isGroup);
+        function avg(a) { return a.reduce(function(x,y) { return x+y })/a.length }
+        function getGridDim(axis) {
             var columns = [];
             var ls = leaves.slice(0,leaves.length);
             while(ls.length > 0) {
@@ -371,34 +379,58 @@ asyncTest('grid visibility', function() {
         }
         var cols = getGridDim('x');
         var rows = getGridDim('y');
-        graph.nodes
-            .filter(isGroup)
-            .forEach(function (v) {
-                v.children.forEach(function (c) { 
-                    graph.nodes[c].parent = v;
-                });
+
+        // create parents for each node or group that is a member of another's children 
+        groups.forEach(function (v) {
+            v.children.forEach(function (c) { 
+                graph.nodes[c].parent = v;
             });
-        var getDepth = function (v) {
+        });
+
+        // root claims the remaining orphans
+        var root = {children:[]};
+        graph.nodes.forEach(function (v) {
+            if (typeof v.parent === 'undefined') {
+                v.parent = root;
+                root.children.push(v.id);
+            }
+
+            // each node will have grid vertices associated with it,
+            // some inside the node and some on the boundary
+            // leaf nodes will have exactly one internal node at the center
+            // and four boundary nodes
+            // groups will have potentially many of each
+            v.verts = []
+        });
+
+        // get the depth of the given node in the group hierarchy
+        function getDepth(v) {
             var depth = 0;
-            while (typeof v.parent !== 'undefined') {
+            while (v.parent !== root) {
                 depth++;
                 v = v.parent;
             }
             return depth;
         };
-        var frontToBack = graph.nodes.slice(0);
-        frontToBack.sort(function (x,y) { return getDepth(x) - getDepth(y) }); 
-        var backToFront = frontToBack.slice(0).reverse();
-        backToFront
-            .filter(isGroup)
-            .forEach(function (v) {
-                var r = cola.vpsc.Rectangle.empty();
-                v.children.forEach(function (c) { 
-                    r = r.union(graph.nodes[c].rect);
-                });
-                v.rect = r.inflate(5);
+
+        // nodes ordered by their position in the group hierarchy
+        var backToFront = graph.nodes.slice(0);
+        backToFront.sort(function (x,y) { return getDepth(x) - getDepth(y) }); 
+
+        // compute boundary rectangles for each group
+        // has to be done from front to back, i.e. inside groups to outside groups
+        // such that each can be made large enough to enclose its interior
+        var frontToBackGroups = backToFront.slice(0).reverse().filter(isGroup);
+        frontToBackGroups.forEach(function (v) {
+            var r = cola.vpsc.Rectangle.empty();
+            v.children.forEach(function (c) { 
+                r = r.union(graph.nodes[c].rect);
             });
-        var midPoints = function(a) {
+            v.rect = r.inflate(groupPadding);
+        });
+
+        // medial axes between node centres and also boundary lines for the grid
+        function midPoints(a) {
             var gap = a[1] - a[0];
             var mids = [a[0]-gap/2];
             for(var i = 1; i < a.length; i++) {
@@ -407,52 +439,158 @@ asyncTest('grid visibility', function() {
             mids.push(a[a.length-1] + gap/2);
             return mids;
         }
+
         var colMids = midPoints(cols.map(function(r) {return r.x}));
         var rowMids = midPoints(rows.map(function(r) {return r.y}));
+
+        // extend the lines a little beyond the first and last boundary lines
         var rowx = colMids[0]-10, rowX = colMids[colMids.length-1]+10;
         var coly = rowMids[0]-10, colY = rowMids[rowMids.length-1]+10;
+
+        // horizontal lines
         var hlines = rows.map(function (r) {
             return {x1: rowx, x2: rowX, y1: r.y, y2: r.y};
         }).concat(rowMids.map(function (m) {
             return {x1: rowx, x2: rowX, y1: m, y2: m};
         }));
+
+        // vertical lines
         var vlines = cols.map(function (c) {
             return {x1: c.x, x2: c.x, y1: coly, y2: colY};
         }).concat(colMids.map(function (m) {
             return {x1: m, x2: m, y1: coly, y2: colY};
         }));
+
+        // the full set of lines
         var lines = hlines.concat(vlines);
+
+        // we record the vertices associated with each line
         lines.forEach(function (l) { l.verts = [] });
+
+        // the routing graph
         var verts = [];
         var edges = [];
+
+        // create vertices at the crossings of horizontal and vertical grid-lines
         hlines.forEach(function (h) {
             vlines.forEach(function (v) {
                 var p = {id: verts.length, x: v.x1, y: h.y1};
                 h.verts.push(p);
                 v.verts.push(p);
                 verts.push(p);
+
+                // assign vertices to the nodes immediately under them
+                var i = backToFront.length;
+                while (i-- > 0) {
+                    var node = backToFront[i],
+                        r = node.rect;
+                    var dx = Math.abs(p.x - r.cx()),
+                        dy = Math.abs(p.y - r.cy());
+                    if (dx < r.width()/2 && dy < r.height()/2) {
+                        p.node = node;
+                        break;
+                    }
+                }
             });
         });
 
         lines.forEach(function (l) {
+            // create vertices at the intersections of nodes and lines
             graph.nodes.forEach(function (v) {
                 v.rect.lineIntersections(l.x1,l.y1,l.x2,l.y2).forEach(function (p) {
                     p.line = l;
-                    p.v = v;
+                    p.node = v;
                     p.id = verts.length;
                     verts.push(p);
                     l.verts.push(p);
                 });
             });
+
+            // split lines into edges joining vertices
             var isHoriz = Math.abs(l.y1 - l.y2) < 0.1;
-            l.verts.sort(function(a,b) { return isHoriz ? b.x - a.x : b.y - a.y });
+            function delta(a,b) { return isHoriz ? b.x - a.x : b.y - a.y };
+            l.verts.sort(delta);
             for (var i = 1; i < l.verts.length; i++) {
                 var u = l.verts[i-1], v = l.verts[i];
-                edges.push({source: u.id, target: v.id});
+                edges.push({source: u.id, target: v.id, length: Math.abs(delta(u,v))});
             }
         });
+
+        // populate the node verts lists so we can easily find 
+        // the vertices associated with a given node
+        verts.forEach(function (v) {
+            if (typeof v.node !== 'undefined') v.node.verts.push(v);
+        });
+
+        // find path from v to root including both v and root
+        function findLineage(v) {
+            var lineage = [v];
+            do {
+                v = v.parent; 
+                lineage.push(v);
+            } while (v!==root);
+            return lineage.reverse();
+        }
+
+        // find path connecting a and b through their lowest common ancestor
+        function findAncestorPathBetween(a,b) {
+            var aa = findLineage(a), ba = findLineage(b), i = 0;
+            while (aa[i] === ba[i]) i++;
+            // i-1 to include common ancestor only once (as first element)
+            return {commonAncestor: aa[i-1], lineages: aa.slice(i).concat(ba.slice(i))};
+        }
+
+        // when finding a path between two nodes a and b, siblings of a and b on the
+        // paths from a and b to their least common ancestor are obstacles
+        function siblingObstacles(a,b) {
+            var path = findAncestorPathBetween(a,b);
+            var lineageLookup = {};
+            path.lineages.forEach(function(v) {lineageLookup[v.id] = {} });
+            var obstacles = path.commonAncestor.children.filter(function (v) {
+                return !(v in lineageLookup);
+            });
+
+            path.lineages.filter(function(v) { return v.parent !== path.commonAncestor }).forEach(function (v) {
+                obstacles = obstacles.concat(v.parent.children.filter(function (c) { return c !== v.id }));
+            });
+            return obstacles.map(function (v) { return graph.nodes[v] });
+        }
+        var source = graph.nodes[1], target = graph.nodes[5];
+        var obstacles = siblingObstacles(source,target);
+        function check(expected) {
+            ok(obstacles.length === expected);
+            ok(obstacles.map(function (v) { return v.id }).indexOf(source.id) < 0);
+            ok(obstacles.map(function (v) { return v.id }).indexOf(target.id) < 0);
+        }
+        check(8);
+        // source = graph.nodes[0], target = graph.nodes[7];
+        // obstacles = siblingObstacles(source,target);
+        // check(6);
+
+        // source = graph.nodes[4], target = graph.nodes[5];
+        // obstacles = siblingObstacles(source,target);
+        // check(8)
+
+        var obstacleLookup = {};
+        obstacles.forEach(function (o) {
+            obstacleLookup[o.id] = {}
+        });
+        var passableEdges = edges.filter(function (e) {
+            var u = verts[e.source],
+                v = verts[e.target];
+            return !(u.node && u.node.id in obstacleLookup 
+                     || v.node && v.node.id in obstacleLookup);
+        });
+
+        var getSource = function (e) { return e.source }, 
+            getTarget = function(e) { return e.target}, 
+            getLength = function(e) { return e.length },
+            shortestPath = (new cola.shortestpaths.Calculator(verts.length, passableEdges, getSource, getTarget, getLength))
+                .PathFromNodeToNode(source.verts[0].id, target.verts[0].id);
+
         if (draw) {
             var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 400).append('g').attr('transform', 'scale(0.5,0.8)')
+            var color = d3.scale.category20();
             svg.selectAll('.gridLines')
                 .data(lines)
                 .enter()
@@ -463,26 +601,31 @@ asyncTest('grid visibility', function() {
                 .attr('y2',function(d) {return d.y2})
                 .style('stroke', 'orange')
                 .style('stroke-width','3')
-            svg.selectAll('.gridNodes')
-                .data(frontToBack)
+            var nodegroups = svg.selectAll('.gridNodes')
+                .data(backToFront)
                 .enter()
+                .append('g')
+                .attr('transform',function (d) { return 'translate('+d.rect.x+','+d.rect.y+')' });
+            nodegroups
                 .append('rect')
-                .attr('x',function (d) { return d.rect.x })            
-                .attr('y', function (d) { return d.rect.y })
                 .attr('width', function (d) { return d.rect.width() })
                 .attr('height', function (d) { return d.rect.height() })
-                .style('stroke', 'brown')
-                .style('fill', 'beige')
+                .style('fill', function (d) { return color(d.id) })
+                //.style('fill', 'beige')
                 .style('stroke-width','2');
+            nodegroups.append('text')
+                .attr('x', 10)
+                .attr('y',function(d) { return d.rect.height()/2 })
+                .text(function (d) { return d.id +":" + d.name })
             svg.selectAll('.edges')
-                .data(edges)
+                .data(passableEdges)
                 .enter()
                 .append('line')
                 .attr('x1',function(d) {return verts[d.source].x})
                 .attr('y1',function(d) {return verts[d.source].y})
                 .attr('x2',function(d) {return verts[d.target].x})
                 .attr('y2',function(d) {return verts[d.target].y})
-                .style('stroke', 'green')
+                .style('stroke', 'black')
                 .style('stroke-width','2')
             svg.selectAll('.verts')
                 .data(verts)
@@ -490,7 +633,42 @@ asyncTest('grid visibility', function() {
                 .append("circle")
                 .attr("cx", function(d) { return d.x })
                 .attr("cy", function(d) { return d.y })
-                .attr('fill', 'red').attr("r", 4);
+                .attr("r", 2)
+                .style('stroke', 'black')
+                .style('stroke-width', '0.5')
+                .style('fill', function (d) { 
+                    return typeof d.node === 'undefined' ? 'black' : color(d.node.id) 
+                })
+            svg.selectAll('.obstacles')
+                .data(obstacles)
+                .enter()
+                .append('rect')
+                .attr('x', function(d) { return d.rect.x })
+                .attr('y', function(d) { return d.rect.y })
+                .attr('width',function(d){return d.rect.width()})
+                .attr('height',function(d){return d.rect.height()})
+                .style('stroke', 'black')
+                .style('stroke-width', '3')
+                .style('fill', 'none');
+            svg.append('line')
+                .attr('x1', source.rect.cx())
+                .attr('y1', source.rect.cy())
+                .attr('x2', target.rect.cx())
+                .attr('y2', target.rect.cy())
+                .style('stroke', 'black')
+                .style('stroke-width',3);
+
+            for (var i = 0; i < shortestPath.length; i++) {
+                var u = i === 0 ? target.verts[0] : verts[shortestPath[i - 1]];
+                var v = verts[shortestPath[i]];
+                svg.append('line')
+                    .attr('x1', u.x)
+                    .attr('y1', u.y)
+                    .attr('x2', v.x)
+                    .attr('y2', v.y)
+                    .style('stroke', 'red')
+                    .style('stroke-width',3);
+            }
         }
         start();
     });

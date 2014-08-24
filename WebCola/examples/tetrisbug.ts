@@ -224,10 +224,10 @@ module tetrisbug {
                         });
                 }).on('end', function () {
                     var n = graph.nodes.length,
-                        _id = v => getId(v,n),
+                        _id = v => getId(v,n)-1,
                         g = { 
                             nodes: graph.nodes.map(d=> <any>{
-                                id: d.index, 
+                                id: _id(d),
                                 name: d.name, 
                                 bounds: d.innerBounds 
                                 }).concat(
@@ -238,8 +238,8 @@ module tetrisbug {
                                         .concat(typeof d.leaves !== 'undefined' ? d.leaves.map(c=>c.index) : [])
                                 })),
                             edges: powerGraph.powerEdges.map(e=> <any>{
-                                source: getId(e.source,n),
-                                target: getId(e.target,n)
+                                source: _id(e.source),
+                                target: _id(e.target)
                             })
                         };
                     console.log(JSON.stringify(g));
