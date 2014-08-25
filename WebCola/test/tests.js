@@ -6,6 +6,7 @@
 /// <reference path="../src/rectangle.js"/>
 /// <reference path="../src/geom.js"/>
 /// <reference path="../src/powergraph.js"/>
+/// <reference path="../src/gridrouter.js"/>
 
 function nodeDistance(u, v) {
     var dx = u.x - v.x, dy = u.y - v.y;
@@ -348,211 +349,212 @@ function midPoint(p) {
 //  - to route each edge the weights of the edges are adjusted such that those inside obstacles
 //    have infinite weight while those inside the source and target node have zero weight
 //  - augment dijkstra with a cost for bends
-asyncTest('grid visibility', function() {
+asyncTest('grid router', function() {
     var draw = true;
     d3.json("../examples/graphdata/tetrisbugmultiedgeslayout.json", function (error, graph) {
-        var groupPadding = 5;
-        function isLeaf(v) { return typeof v.children === 'undefined' };
-        var leaves = graph.nodes.filter(isLeaf);
-        leaves.forEach(function (v) {
-            v.rect = new cola.vpsc.Rectangle(v.bounds.x, v.bounds.X, v.bounds.y, v.bounds.Y);
-        });
-        function isGroup(v) { return !isLeaf(v) };
-        var groups = graph.nodes.filter(isGroup);
-        function avg(a) { return a.reduce(function(x,y) { return x+y })/a.length }
-        function getGridDim(axis) {
-            var columns = [];
-            var ls = leaves.slice(0,leaves.length);
-            while(ls.length > 0) {
-                var r = ls[0].rect;
-                var col = ls.filter(function (v) {
-                    return v.rect['overlap'+axis.toUpperCase()](r);
-                });
-                columns.push(col);
-                col.forEach(function (v) {
-                    ls.splice(ls.indexOf(v),1);
-                });
-                col[axis] = avg(col.map(function (v) { return v.rect['c'+axis]() }))
-            }
-            columns.sort(function (x,y) { return x[axis] - y[axis] })
-            return columns;
-        }
-        var cols = getGridDim('x');
-        var rows = getGridDim('y');
+        // var groupPadding = 5;
+        // function isLeaf(v) { return typeof v.children === 'undefined' };
+        // var leaves = graph.nodes.filter(isLeaf);
+        // leaves.forEach(function (v) {
+        //     v.rect = new cola.vpsc.Rectangle(v.bounds.x, v.bounds.X, v.bounds.y, v.bounds.Y);
+        // });
+        // function isGroup(v) { return !isLeaf(v) };
+        // var groups = graph.nodes.filter(isGroup);
+        // function avg(a) { return a.reduce(function(x,y) { return x+y })/a.length }
+        // function getGridDim(axis) {
+        //     var columns = [];
+        //     var ls = leaves.slice(0,leaves.length);
+        //     while(ls.length > 0) {
+        //         var r = ls[0].rect;
+        //         var col = ls.filter(function (v) {
+        //             return v.rect['overlap'+axis.toUpperCase()](r);
+        //         });
+        //         columns.push(col);
+        //         col.forEach(function (v) {
+        //             ls.splice(ls.indexOf(v),1);
+        //         });
+        //         col[axis] = avg(col.map(function (v) { return v.rect['c'+axis]() }))
+        //     }
+        //     columns.sort(function (x,y) { return x[axis] - y[axis] })
+        //     return columns;
+        // }
+        // var cols = getGridDim('x');
+        // var rows = getGridDim('y');
 
-        // create parents for each node or group that is a member of another's children 
-        groups.forEach(function (v) {
-            v.children.forEach(function (c) { 
-                graph.nodes[c].parent = v;
-            });
-        });
+        // // create parents for each node or group that is a member of another's children 
+        // groups.forEach(function (v) {
+        //     v.children.forEach(function (c) { 
+        //         graph.nodes[c].parent = v;
+        //     });
+        // });
 
-        // root claims the remaining orphans
-        var root = {children:[]};
-        graph.nodes.forEach(function (v) {
-            if (typeof v.parent === 'undefined') {
-                v.parent = root;
-                root.children.push(v.id);
-            }
+        // // root claims the remaining orphans
+        // var root = {children:[]};
+        // graph.nodes.forEach(function (v) {
+        //     if (typeof v.parent === 'undefined') {
+        //         v.parent = root;
+        //         root.children.push(v.id);
+        //     }
 
-            // each node will have grid vertices associated with it,
-            // some inside the node and some on the boundary
-            // leaf nodes will have exactly one internal node at the center
-            // and four boundary nodes
-            // groups will have potentially many of each
-            v.ports = []
-        });
+        //     // each node will have grid vertices associated with it,
+        //     // some inside the node and some on the boundary
+        //     // leaf nodes will have exactly one internal node at the center
+        //     // and four boundary nodes
+        //     // groups will have potentially many of each
+        //     v.ports = []
+        // });
 
-        // get the depth of the given node in the group hierarchy
-        function getDepth(v) {
-            var depth = 0;
-            while (v.parent !== root) {
-                depth++;
-                v = v.parent;
-            }
-            return depth;
-        };
+        // // get the depth of the given node in the group hierarchy
+        // function getDepth(v) {
+        //     var depth = 0;
+        //     while (v.parent !== root) {
+        //         depth++;
+        //         v = v.parent;
+        //     }
+        //     return depth;
+        // };
 
-        // nodes ordered by their position in the group hierarchy
-        var backToFront = graph.nodes.slice(0);
-        backToFront.sort(function (x,y) { return getDepth(x) - getDepth(y) }); 
+        // // nodes ordered by their position in the group hierarchy
+        // var backToFront = graph.nodes.slice(0);
+        // backToFront.sort(function (x,y) { return getDepth(x) - getDepth(y) }); 
 
-        // compute boundary rectangles for each group
-        // has to be done from front to back, i.e. inside groups to outside groups
-        // such that each can be made large enough to enclose its interior
-        var frontToBackGroups = backToFront.slice(0).reverse().filter(isGroup);
-        frontToBackGroups.forEach(function (v) {
-            var r = cola.vpsc.Rectangle.empty();
-            v.children.forEach(function (c) { 
-                r = r.union(graph.nodes[c].rect);
-            });
-            v.rect = r.inflate(groupPadding);
-        });
+        // // compute boundary rectangles for each group
+        // // has to be done from front to back, i.e. inside groups to outside groups
+        // // such that each can be made large enough to enclose its interior
+        // var frontToBackGroups = backToFront.slice(0).reverse().filter(isGroup);
+        // frontToBackGroups.forEach(function (v) {
+        //     var r = cola.vpsc.Rectangle.empty();
+        //     v.children.forEach(function (c) { 
+        //         r = r.union(graph.nodes[c].rect);
+        //     });
+        //     v.rect = r.inflate(groupPadding);
+        // });
 
-        // medial axes between node centres and also boundary lines for the grid
-        function midPoints(a) {
-            var gap = a[1] - a[0];
-            var mids = [a[0]-gap/2];
-            for(var i = 1; i < a.length; i++) {
-                mids.push((a[i]+a[i-1])/2);
-            }
-            mids.push(a[a.length-1] + gap/2);
-            return mids;
-        }
+        // // medial axes between node centres and also boundary lines for the grid
+        // function midPoints(a) {
+        //     var gap = a[1] - a[0];
+        //     var mids = [a[0]-gap/2];
+        //     for(var i = 1; i < a.length; i++) {
+        //         mids.push((a[i]+a[i-1])/2);
+        //     }
+        //     mids.push(a[a.length-1] + gap/2);
+        //     return mids;
+        // }
 
-        var colMids = midPoints(cols.map(function(r) {return r.x}));
-        var rowMids = midPoints(rows.map(function(r) {return r.y}));
+        // var colMids = midPoints(cols.map(function(r) {return r.x}));
+        // var rowMids = midPoints(rows.map(function(r) {return r.y}));
 
-        // extend the lines a little beyond the first and last boundary lines
-        var rowx = colMids[0]-10, rowX = colMids[colMids.length-1]+10;
-        var coly = rowMids[0]-10, colY = rowMids[rowMids.length-1]+10;
+        // // setup extents of lines
+        // var rowx = colMids[0], rowX = colMids[colMids.length-1];
+        // var coly = rowMids[0], colY = rowMids[rowMids.length-1];
 
-        // horizontal lines
-        var hlines = rows.map(function (r) {
-            return {x1: rowx, x2: rowX, y1: r.y, y2: r.y};
-        }).concat(rowMids.map(function (m) {
-            return {x1: rowx, x2: rowX, y1: m, y2: m};
-        }));
+        // // horizontal lines
+        // var hlines = rows.map(function (r) {
+        //     return {x1: rowx, x2: rowX, y1: r.y, y2: r.y};
+        // }).concat(rowMids.map(function (m) {
+        //     return {x1: rowx, x2: rowX, y1: m, y2: m};
+        // }));
 
-        // vertical lines
-        var vlines = cols.map(function (c) {
-            return {x1: c.x, x2: c.x, y1: coly, y2: colY};
-        }).concat(colMids.map(function (m) {
-            return {x1: m, x2: m, y1: coly, y2: colY};
-        }));
+        // // vertical lines
+        // var vlines = cols.map(function (c) {
+        //     return {x1: c.x, x2: c.x, y1: coly, y2: colY};
+        // }).concat(colMids.map(function (m) {
+        //     return {x1: m, x2: m, y1: coly, y2: colY};
+        // }));
 
-        // the full set of lines
-        var lines = hlines.concat(vlines);
+        // // the full set of lines
+        // var lines = hlines.concat(vlines);
 
-        // we record the vertices associated with each line
-        lines.forEach(function (l) { l.verts = [] });
+        // // we record the vertices associated with each line
+        // lines.forEach(function (l) { l.verts = [] });
 
-        // the routing graph
-        var verts = [];
-        var edges = [];
+        // // the routing graph
+        // var verts = [];
+        // var edges = [];
 
-        // create vertices at the crossings of horizontal and vertical grid-lines
-        hlines.forEach(function (h) {
-            vlines.forEach(function (v) {
-                var p = {id: verts.length, x: v.x1, y: h.y1};
-                h.verts.push(p);
-                v.verts.push(p);
-                verts.push(p);
+        // // create vertices at the crossings of horizontal and vertical grid-lines
+        // hlines.forEach(function (h) {
+        //     vlines.forEach(function (v) {
+        //         var p = {id: verts.length, x: v.x1, y: h.y1};
+        //         h.verts.push(p);
+        //         v.verts.push(p);
+        //         verts.push(p);
 
-                // assign vertices to the nodes immediately under them
-                var i = backToFront.length;
-                while (i-- > 0) {
-                    var node = backToFront[i],
-                        r = node.rect;
-                    var dx = Math.abs(p.x - r.cx()),
-                        dy = Math.abs(p.y - r.cy());
-                    if (dx < r.width()/2 && dy < r.height()/2) {
-                        p.node = node;
-                        break;
-                    }
-                }
-            });
-        });
+        //         // assign vertices to the nodes immediately under them
+        //         var i = backToFront.length;
+        //         while (i-- > 0) {
+        //             var node = backToFront[i],
+        //                 r = node.rect;
+        //             var dx = Math.abs(p.x - r.cx()),
+        //                 dy = Math.abs(p.y - r.cy());
+        //             if (dx < r.width()/2 && dy < r.height()/2) {
+        //                 p.node = node;
+        //                 break;
+        //             }
+        //         }
+        //     });
+        // });
 
-        lines.forEach(function (l) {
-            // create vertices at the intersections of nodes and lines
-            graph.nodes.forEach(function (v) {
-                v.rect.lineIntersections(l.x1,l.y1,l.x2,l.y2).forEach(function (p) {
-                    p.line = l;
-                    p.node = v;
-                    p.id = verts.length;
-                    verts.push(p);
-                    l.verts.push(p);
-                    v.ports.push(p);
-                });
-            });
+        // lines.forEach(function (l) {
+        //     // create vertices at the intersections of nodes and lines
+        //     graph.nodes.forEach(function (v) {
+        //         v.rect.lineIntersections(l.x1,l.y1,l.x2,l.y2).forEach(function (p) {
+        //             p.line = l;
+        //             p.node = v;
+        //             p.id = verts.length;
+        //             verts.push(p);
+        //             l.verts.push(p);
+        //             v.ports.push(p);
+        //         });
+        //     });
 
-            // split lines into edges joining vertices
-            var isHoriz = Math.abs(l.y1 - l.y2) < 0.1;
-            function delta(a,b) { return isHoriz ? b.x - a.x : b.y - a.y };
-            l.verts.sort(delta);
-            for (var i = 1; i < l.verts.length; i++) {
-                var u = l.verts[i-1], v = l.verts[i];
-                if (u.node && u.node === v.node && isLeaf(u.node)) continue;
-                edges.push({source: u.id, target: v.id, length: Math.abs(delta(u,v))});
-            }
-        });
+        //     // split lines into edges joining vertices
+        //     var isHoriz = Math.abs(l.y1 - l.y2) < 0.1;
+        //     function delta(a,b) { return isHoriz ? b.x - a.x : b.y - a.y };
+        //     l.verts.sort(delta);
+        //     for (var i = 1; i < l.verts.length; i++) {
+        //         var u = l.verts[i-1], v = l.verts[i];
+        //         if (u.node && u.node === v.node && isLeaf(u.node)) continue;
+        //         edges.push({source: u.id, target: v.id, length: Math.abs(delta(u,v))});
+        //     }
+        // });
 
-        // find path from v to root including both v and root
-        function findLineage(v) {
-            var lineage = [v];
-            do {
-                v = v.parent; 
-                lineage.push(v);
-            } while (v!==root);
-            return lineage.reverse();
-        }
+        // // find path from v to root including both v and root
+        // function findLineage(v) {
+        //     var lineage = [v];
+        //     do {
+        //         v = v.parent; 
+        //         lineage.push(v);
+        //     } while (v!==root);
+        //     return lineage.reverse();
+        // }
 
-        // find path connecting a and b through their lowest common ancestor
-        function findAncestorPathBetween(a,b) {
-            var aa = findLineage(a), ba = findLineage(b), i = 0;
-            while (aa[i] === ba[i]) i++;
-            // i-1 to include common ancestor only once (as first element)
-            return {commonAncestor: aa[i-1], lineages: aa.slice(i).concat(ba.slice(i))};
-        }
+        // // find path connecting a and b through their lowest common ancestor
+        // function findAncestorPathBetween(a,b) {
+        //     var aa = findLineage(a), ba = findLineage(b), i = 0;
+        //     while (aa[i] === ba[i]) i++;
+        //     // i-1 to include common ancestor only once (as first element)
+        //     return {commonAncestor: aa[i-1], lineages: aa.slice(i).concat(ba.slice(i))};
+        // }
 
-        // when finding a path between two nodes a and b, siblings of a and b on the
-        // paths from a and b to their least common ancestor are obstacles
-        function siblingObstacles(a,b) {
-            var path = findAncestorPathBetween(a,b);
-            var lineageLookup = {};
-            path.lineages.forEach(function(v) {lineageLookup[v.id] = {} });
-            var obstacles = path.commonAncestor.children.filter(function (v) {
-                return !(v in lineageLookup);
-            });
+        // // when finding a path between two nodes a and b, siblings of a and b on the
+        // // paths from a and b to their least common ancestor are obstacles
+        // function siblingObstacles(a,b) {
+        //     var path = findAncestorPathBetween(a,b);
+        //     var lineageLookup = {};
+        //     path.lineages.forEach(function(v) {lineageLookup[v.id] = {} });
+        //     var obstacles = path.commonAncestor.children.filter(function (v) {
+        //         return !(v in lineageLookup);
+        //     });
 
-            path.lineages.filter(function(v) { return v.parent !== path.commonAncestor }).forEach(function (v) {
-                obstacles = obstacles.concat(v.parent.children.filter(function (c) { return c !== v.id }));
-            });
-            return obstacles.map(function (v) { return graph.nodes[v] });
-        }
+        //     path.lineages.filter(function(v) { return v.parent !== path.commonAncestor }).forEach(function (v) {
+        //         obstacles = obstacles.concat(v.parent.children.filter(function (c) { return c !== v.id }));
+        //     });
+        //     return obstacles.map(function (v) { return graph.nodes[v] });
+        // }
+        var gridrouter = new GridRouter(graph);
         var source = graph.nodes[1], target = graph.nodes[5];
-        var obstacles = siblingObstacles(source,target);
+        var obstacles = gridrouter.siblingObstacles(source,target);
         function check(expected) {
             ok(obstacles.length === expected);
             ok(obstacles.map(function (v) { return v.id }).indexOf(source.id) < 0);
@@ -560,15 +562,15 @@ asyncTest('grid visibility', function() {
         }
         check(8);
         source = graph.nodes[0], target = graph.nodes[7];
-        obstacles = siblingObstacles(source,target);
+        obstacles = gridrouter.siblingObstacles(source,target);
         check(6);
 
         source = graph.nodes[4], target = graph.nodes[5];
-        obstacles = siblingObstacles(source,target);
+        obstacles = gridrouter.siblingObstacles(source,target);
         check(8)
 
-        source = graph.nodes[6], target = graph.nodes[15];
-        obstacles = siblingObstacles(source,target);
+        source = graph.nodes[11], target = graph.nodes[2];
+        obstacles = gridrouter.siblingObstacles(source,target);
         // // group to node
         // source = graph.nodes[16], target = graph.nodes[5];
         // obstacles = siblingObstacles(source,target);
@@ -577,9 +579,9 @@ asyncTest('grid visibility', function() {
         obstacles.forEach(function (o) {
             obstacleLookup[o.id] = {}
         });
-        var passableEdges = edges.filter(function (e) {
-            var u = verts[e.source],
-                v = verts[e.target];
+        var passableEdges = gridrouter.edges.filter(function (e) {
+            var u = gridrouter.verts[e.source],
+                v = gridrouter.verts[e.target];
             return !(u.node && u.node.id in obstacleLookup 
                      || v.node && v.node.id in obstacleLookup);
         });
@@ -606,7 +608,7 @@ asyncTest('grid visibility', function() {
         var getSource = function (e) { return e.source }, 
             getTarget = function(e) { return e.target}, 
             getLength = function(e) { return e.length },
-            shortestPath = (new cola.shortestpaths.Calculator(verts.length, passableEdges, getSource, getTarget, getLength))
+            shortestPath = (new cola.shortestpaths.Calculator(gridrouter.verts.length, passableEdges, getSource, getTarget, getLength))
                 .PathFromNodeToNode(source.ports[0].id, target.ports[0].id);
 
         if (draw) {
@@ -624,7 +626,7 @@ asyncTest('grid visibility', function() {
             //     .style('stroke', 'orange')
             //     .style('stroke-width','3')
             var nodegroups = svg.selectAll('.gridNodes')
-                .data(backToFront)
+                .data(gridrouter.backToFront)
                 .enter()
                 .append('g')
                 .attr('transform',function (d) { return 'translate('+d.rect.x+','+d.rect.y+')' });
@@ -632,8 +634,8 @@ asyncTest('grid visibility', function() {
                 .append('rect')
                 .attr('width', function (d) { return d.rect.width() })
                 .attr('height', function (d) { return d.rect.height() })
-                .style('fill', function (d) { return isGroup(d) ? 'blue' : 'beige' })
-                .style('opacity', function (d) { return isGroup(d) ? 0.5: 1 })
+                .style('fill', function (d) { return gridrouter.isGroup(d) ? 'blue' : 'beige' })
+                .style('opacity', function (d) { return gridrouter.isGroup(d) ? 0.5: 1 })
                 //.style('fill', 'beige')
                 .style('stroke-width','2');
             nodegroups.append('text')
@@ -644,10 +646,10 @@ asyncTest('grid visibility', function() {
                 .data(passableEdges)
                 .enter()
                 .append('line')
-                .attr('x1',function(d) {return verts[d.source].x})
-                .attr('y1',function(d) {return verts[d.source].y})
-                .attr('x2',function(d) {return verts[d.target].x})
-                .attr('y2',function(d) {return verts[d.target].y})
+                .attr('x1',function(d) {return gridrouter.verts[d.source].x})
+                .attr('y1',function(d) {return gridrouter.verts[d.source].y})
+                .attr('x2',function(d) {return gridrouter.verts[d.target].x})
+                .attr('y2',function(d) {return gridrouter.verts[d.target].y})
                 .style('stroke', 'black')
                 .style('stroke-width','1')
             // svg.selectAll('.verts')
@@ -686,8 +688,8 @@ asyncTest('grid visibility', function() {
                 .style('fill', 'none');
 
             for (var i = 0; i < shortestPath.length; i++) {
-                var u = i === 0 ? target.ports[0] : verts[shortestPath[i - 1]];
-                var v = verts[shortestPath[i]];
+                var u = i === 0 ? target.ports[0] : gridrouter.verts[shortestPath[i - 1]];
+                var v = gridrouter.verts[shortestPath[i]];
                 if (u.node === source && v.node === source) continue;
                 if (u.node === target && v.node === target) continue;
                 svg.append('line')
