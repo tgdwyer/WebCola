@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @module cola
  */
 var cola;
@@ -8,8 +8,50 @@ var cola;
      * @class d3adaptor
      */
     cola.d3adaptor = function () {
-        var d3adaptor = {},
-            event = d3.dispatch("start", "tick", "end"),
+        var event = d3.dispatch("start", "tick", "end");
+
+        var adaptor = cola.adaptor({
+            trigger: function (e) {
+                event[e.type](e); // via d3 dispatcher, e.g. event.start(e);
+            },
+
+            on: function(type, listener){
+                return event.on(type, listener);
+            },
+
+            kick: function (tick) {
+                d3.timer(tick);
+            },
+
+            // use `node.call(adaptor.drag)` to make nodes draggable
+            drag: function () {
+                var drag = d3.behavior.drag()
+                    .origin(function(d){ return d; })
+                    .on("dragstart.d3adaptor", colaDragstart)
+                    .on("drag.d3adaptor", function (d) {
+                        d.px = d3.event.x, d.py = d3.event.y;
+                        adaptor.resume(); // restart annealing
+                    })
+                    .on("dragend.d3adaptor", colaDragend);
+
+                if (!arguments.length) return drag;
+
+                this//.on("mouseover.adaptor", colaMouseover)
+                    //.on("mouseout.adaptor", colaMouseout)
+                    .call(drag);
+            }
+        });
+        
+        return adaptor;
+    };
+
+    /**
+     * @class adaptor
+     */
+    cola.adaptor = function (options) {   
+        var adaptor = {},
+            trigger = options.trigger, // a function that is notified of events like "tick"
+            kick = options.kick, // a function that kicks off the simulation tick loop
             size = [1, 1],
             linkDistance = 20,
             linkType = null,
@@ -18,7 +60,7 @@ var cola;
             drag,
             alpha,
             lastStress,
-			running = false,
+            running = false,
             nodes = [],
             groups = [],
             variables = [],
@@ -32,11 +74,20 @@ var cola;
             defaultNodeSize = 10,
             visibilityGraph = null;
 
-        d3adaptor.tick = function () {
+        adaptor.on = options.on; // a function for binding to events on the adapter
+        adaptor.drag = options.drag; // a function to allow for dragging of nodes
+
+        // give external access to drag-related helper functions
+        adaptor.dragstart = colaDragstart;
+        adaptor.dragend = colaDragend;
+        adaptor.mouseover = colaMouseover;
+        adaptor.mouseout = colaMouseout;
+
+        adaptor.tick = function () {
             if (alpha < threshold) {
-                event.end({ type: "end", alpha: alpha = 0 });
+                trigger({ type: "end", alpha: alpha = 0 });
                 delete lastStress;
-				running = false;
+                running = false;
                 return true;
             }
 
@@ -77,7 +128,7 @@ var cola;
                 }
             }
 
-            event.tick({ type: "tick", alpha: alpha });
+            trigger({ type: "tick", alpha: alpha });
         };
 
         /**
@@ -87,7 +138,7 @@ var cola;
          * @property nodes {Array}
          * @default empty list
          */
-        d3adaptor.nodes = function (v) {
+        adaptor.nodes = function (v) {
             if (!arguments.length) {
                 if (nodes.length === 0 && links.length > 0) {
                     var n = 0;
@@ -102,7 +153,7 @@ var cola;
                 return nodes;
             }
             nodes = v;
-            return d3adaptor;
+            return adaptor;
         };
 
         /**
@@ -110,7 +161,7 @@ var cola;
          * @property groups {Array}
          * @default empty list
          */
-        d3adaptor.groups = function (x) {
+        adaptor.groups = function (x) {
             if (!arguments.length) return groups;
             groups = x;
             rootGroup = {};
@@ -124,14 +175,14 @@ var cola;
             });
             rootGroup.leaves = nodes.filter(function (v) { return typeof v.parent === 'undefined'; });
             rootGroup.groups = groups.filter(function (g) { return typeof g.parent === 'undefined'; });
-            return d3adaptor;
+            return adaptor;
         };
 
-        d3adaptor.powerGraphGroups = function (f) {
+        adaptor.powerGraphGroups = function (f) {
             var g = cola.powergraph.getGroups(nodes, links, linkAccessor);
             this.groups(g.groups);
             f(g);
-            return d3adaptor;
+            return adaptor;
         }
 
         /**
@@ -140,10 +191,10 @@ var cola;
          * @type bool
          * @default false
          */
-        d3adaptor.avoidOverlaps = function (v) {
+        adaptor.avoidOverlaps = function (v) {
             if (!arguments.length) return avoidOverlaps;
             avoidOverlaps = v;
-            return d3adaptor;
+            return adaptor;
         }
 
         /**
@@ -152,10 +203,10 @@ var cola;
          * @type bool
          * @default false
          */
-        d3adaptor.handleDisconnected = function (v) {
+        adaptor.handleDisconnected = function (v) {
             if (!arguments.length) return handleDisconnected;
             handleDisconnected = v;
-            return d3adaptor;
+            return adaptor;
         }
 
 
@@ -165,13 +216,13 @@ var cola;
          * @param axis {string} 'x' for left-to-right, 'y' for top-to-bottom
          * @param minSeparation {number|link=>number} either a number specifying a minimum spacing required across all links or a function to return the minimum spacing for each link
          */
-        d3adaptor.flowLayout = function (axis, minSeparation) {
+        adaptor.flowLayout = function (axis, minSeparation) {
             if (!arguments.length) axis = 'y';
             directedLinkConstraints = {
                 axis: axis,
                 getMinSeparation: typeof minSeparation === 'number' ?  function () { return minSeparation } : minSeparation
             };
-            return d3adaptor;
+            return adaptor;
         }
 
         /**
@@ -179,10 +230,10 @@ var cola;
          * @property links {array}
          * @default empty list
          */
-        d3adaptor.links = function (x) {
+        adaptor.links = function (x) {
             if (!arguments.length) return links;
             links = x;
-            return d3adaptor;
+            return adaptor;
         };
 
         /**
@@ -191,10 +242,10 @@ var cola;
          * @type {array} 
          * @default empty list
          */
-        d3adaptor.constraints = function (c) {
+        adaptor.constraints = function (c) {
             if (!arguments.length) return constraints;
             constraints = c;
-            return d3adaptor;
+            return adaptor;
         }
 
         /**
@@ -204,10 +255,10 @@ var cola;
          * @type {Array of Array of Number}
          * @default null
          */
-        d3adaptor.distanceMatrix = function (d) {
+        adaptor.distanceMatrix = function (d) {
             if (!arguments.length) return distanceMatrix;
             distanceMatrix = d;
-            return d3adaptor;
+            return adaptor;
         }
 
         /**
@@ -216,10 +267,10 @@ var cola;
          * @property size
          * @type {Array of Number}
          */
-        d3adaptor.size = function (x) {
+        adaptor.size = function (x) {
             if (!arguments.length) return size;
             size = x;
-            return d3adaptor;
+            return adaptor;
         };
 
         /**
@@ -227,31 +278,31 @@ var cola;
          * @property defaultNodeSize
          * @type {Number}
          */
-        d3adaptor.defaultNodeSize = function (x) {
+        adaptor.defaultNodeSize = function (x) {
             if (!arguments.length) return defaultNodeSize;
             defaultNodeSize = x;
-            return d3adaptor;
+            return adaptor;
         };
 
-        d3adaptor.linkDistance = function (x) {
+        adaptor.linkDistance = function (x) {
             if (!arguments.length) 
-				return typeof linkDistance === "function" ? linkDistance() : linkDistance;
+                return typeof linkDistance === "function" ? linkDistance() : linkDistance;
             linkDistance = typeof x === "function" ? x : +x;
-            return d3adaptor;
+            return adaptor;
         };
 
-        d3adaptor.linkType = function (f) {
+        adaptor.linkType = function (f) {
             linkType = f;
-            return d3adaptor;
+            return adaptor;
         }
 
-        d3adaptor.convergenceThreshold = function (x) {
+        adaptor.convergenceThreshold = function (x) {
             if (!arguments.length) return threshold;
             threshold = typeof x === "function" ? x : +x;
-            return d3adaptor;
+            return adaptor;
         };
 
-        d3adaptor.alpha = function (x) {
+        adaptor.alpha = function (x) {
             if (!arguments.length) return alpha;
 
             x = +x;
@@ -259,15 +310,14 @@ var cola;
                 if (x > 0) alpha = x; // we might keep it hot
                 else alpha = 0; // or, next tick will dispatch "end"
             } else if (x > 0) { // otherwise, fire it up!
-				if (!running)
-				{
-					running = true;
-                event.start({ type: "start", alpha: alpha = x });
-                d3.timer(d3adaptor.tick);
-            }
+                if (!running) {
+                    running = true;
+                    trigger({ type: "start", alpha: alpha = x });
+                    kick( adaptor.tick );
+                }
             }
 
-            return d3adaptor;
+            return adaptor;
         };
 
         function getLinkLength(link) {
@@ -284,16 +334,16 @@ var cola;
 
         var linkAccessor = { getSourceIndex: getSourceIndex, getTargetIndex: getTargetIndex, setLength: setLinkLength, getType: getLinkType };
 
-        d3adaptor.symmetricDiffLinkLengths = function (idealLength, w) {
+        adaptor.symmetricDiffLinkLengths = function (idealLength, w) {
             cola.symmetricDiffLinkLengths(links, linkAccessor, w);
             this.linkDistance(function (l) { return idealLength * l.length });
-            return d3adaptor;
+            return adaptor;
         }
 
-        d3adaptor.jaccardLinkLengths = function (idealLength, w) {
+        adaptor.jaccardLinkLengths = function (idealLength, w) {
             cola.jaccardLinkLengths(links, linkAccessor, w);
             this.linkDistance(function (l) { return idealLength * l.length });
-            return d3adaptor;
+            return adaptor;
         }
 
         /**
@@ -303,7 +353,7 @@ var cola;
          * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
          * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
          */
-        d3adaptor.start = function () {
+        adaptor.start = function () {
             var i,
                 j,
                 n = this.nodes().length,
@@ -420,29 +470,25 @@ var cola;
                 });
             }
             
-            return d3adaptor.resume();
+            return adaptor.resume();
         };
 
-        d3adaptor.resume = function () {
-            return d3adaptor.alpha(.1);
+        adaptor.resume = function () {
+            return adaptor.alpha(.1);
         };
 
-        d3adaptor.stop = function () {
-            return d3adaptor.alpha(0);
+        adaptor.stop = function () {
+            return adaptor.alpha(0);
         };
 
-        function d3_identity(d) {
-            return d;
-        }
-
-        d3adaptor.prepareEdgeRouting = function (nodeMargin) {
+        adaptor.prepareEdgeRouting = function (nodeMargin) {
             visibilityGraph = new cola.geom.TangentVisibilityGraph(
                     nodes.map(function (v) {
                         return v.bounds.inflate(-nodeMargin).vertices();
                     }));
         }
 
-        d3adaptor.routeEdge = function(d, draw) {
+        adaptor.routeEdge = function(d, draw) {
             var lineData = [];
             if (d.source.id === 10 && d.target.id === 11) {
                 debugger;
@@ -486,21 +532,6 @@ var cola;
             return lineData;
         }
 
-        // use `node.call(d3adaptor.drag)` to make nodes draggable
-        d3adaptor.drag = function () {
-            if (!drag) drag = d3.behavior.drag()
-                .origin(d3_identity)
-                .on("dragstart.d3adaptor", colaDragstart)
-                .on("drag.d3adaptor", dragmove)
-                .on("dragend.d3adaptor", colaDragend);
-
-            if (!arguments.length) return drag;
-
-            this//.on("mouseover.d3adaptor", colaMouseover)
-                //.on("mouseout.d3adaptor", colaMouseout)
-                .call(drag);
-        };
-
         //The link source and target may be just a node index, or they may be references to nodes themselves.
         function getSourceIndex(e) {
             return typeof e.source === 'number' ? e.source : e.source.index;
@@ -511,16 +542,11 @@ var cola;
             return typeof e.target === 'number' ? e.target : e.target.index;
         }
         // Get a string ID for a given link.
-        d3adaptor.linkId = function (e) {
+        adaptor.linkId = function (e) {
             return getSourceIndex(e) + "-" + getTargetIndex(e);
         }
 
-        function dragmove(d) {
-            d.px = d3.event.x, d.py = d3.event.y;
-            d3adaptor.resume(); // restart annealing
-        }
-
-        return d3.rebind(d3adaptor, event, "on");
+        return adaptor;
     };
 
     // The fixed property has three bits:

@@ -39,7 +39,7 @@
     <Content Include="examples\ariel.html" />
     <Content Include="examples\unix.html" />
     <Content Include="examples\unix.png" />
-    <Content Include="src\d3adaptor.js" />
+    <Content Include="src\adaptor.js" />
     <Content Include="examples\smallgroups.html" />
     <Content Include="examples\graphdata\biological_images\C00002.gif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
