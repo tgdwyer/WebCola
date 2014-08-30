@@ -17,6 +17,10 @@ module cola.shortestpaths {
         q: PairingHeap<Node>;
     }
 
+    class QueueEntry {
+        constructor(public node: Node, public prev: QueueEntry, public d: number) {}
+    }
+
     /**
      * calculates all-pairs shortest paths or shortest paths from a single node
      * @class Calculator
@@ -66,8 +70,56 @@ module cola.shortestpaths {
             return this.dijkstraNeighbours(start);
         }
 
-        PathFromNodeToNode(start: number, end: number): number[]{
+        PathFromNodeToNode(start: number, end: number): number[] {
             return this.dijkstraNeighbours(start, end);
+        }
+
+        // find shortest path from start to end, with the opportunity at 
+        // each edge traversal to compute a custom cost based on the 
+        // previous edge.  For example, to penalise bends.
+        PathFromNodeToNodeWithPrevCost(
+            start: number, 
+            end: number, 
+            prevCost: (u:number,v:number,w:number)=>number): number[]
+        {
+            var q = new PriorityQueue<QueueEntry>((a, b) => a.d <= b.d),
+                u: Node = this.neighbours[start],
+                qu: QueueEntry = new QueueEntry(u,null,0),
+                visitedFrom = {};
+            q.push(qu);
+            while(!q.empty()) {
+                qu = q.pop();
+                u = qu.node;
+                if (u.id === end) {
+                    break;
+                }
+                var i = u.neighbours.length; while (i--) {
+                    var neighbour = u.neighbours[i],
+                        v = this.neighbours[neighbour.id];
+
+                    // don't double back
+                    if (qu.prev && v.id === qu.prev.node.id) continue;                    
+
+                    // don't retraverse an edge if it has already been explored
+                    // from a lower cost route
+                    var viduid = v.id + ',' + u.id;
+                    if(viduid in visitedFrom && visitedFrom[viduid] <= qu.d) 
+                        continue;
+
+                    var cc = qu.prev ? prevCost(qu.prev.node.id, u.id, v.id) : 0,
+                        t = qu.d + neighbour.distance + cc;
+
+                    // store cost of this traversal
+                    visitedFrom[viduid] = t;
+                    q.push(new QueueEntry(v, qu, t));
+                }
+            }
+            var path:number[] = [];
+            while (qu.prev) {
+                qu = qu.prev;
+                path.push(qu.node.id);
+            }
+            return path;
         }
 
         private dijkstraNeighbours(start: number, dest: number = -1): number[] {
