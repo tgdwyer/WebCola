@@ -110,7 +110,9 @@ module tetrisbug {
             var swatchlabels = svg.selectAll('.swatchlabel')
                 .data(linkTypes.list)
                 .enter()
-                .append('text').text(t => t ? t : "Any").attr('x', indent + 40).attr('y', (l, i) => topindent + 20 + 40 * i).attr('fill', 'black')
+                .append('text').text(t => t ? t : "Any").attr('x', indent + 40).attr('y', (l, i) => topindent + 20 + 40 * i)
+                .attr('fill', 'black')
+                .attr("font-size", "15")
                 .attr('class', 'swatchlabel');
         });
     }
@@ -183,7 +185,7 @@ module tetrisbug {
                         return v.bounds;
                     }
                 });
-                //d3cola.start(1, 1, 1);
+
                 var gs = gridrouter.backToFront.filter(v=>!v.leaf);
                 var group = svg.selectAll(".group")
                     .data(gs)
@@ -194,13 +196,6 @@ module tetrisbug {
                     .attr('width',d=>d.rect.width())
                     .attr('height',d=>d.rect.height())
                     .attr("class", "group");
-
-                // var link = svg.selectAll(".link")
-                //     .data(powerGraph.powerEdges)
-                //     .enter().append("line")
-                //     .attr("stroke", l => color(l.type))
-                //     .attr("fill", l => color(l.type))
-                //     .attr("class", "link");
 
                 var margin = 10;
                 var node = svg.selectAll(".node")
