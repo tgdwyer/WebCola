@@ -1,5 +1,6 @@
 /// <reference path="rectangle.ts"/>
 /// <reference path="shortestpaths.ts"/>
+/// <reference path="geom.ts"/>
 module cola {
 	export interface NodeAccessor<Node>{
 		getChildren(v:Node) : number[];
@@ -211,11 +212,88 @@ module cola {
 	        	.forEach(v=> obstacles = obstacles.concat(v.parent.children.filter(c=> c !== v.id)));
 
 	        return obstacles.map(v=> this.nodes[v]);
-	    }
+        }
+
+        // obtain routes for the specified edges, nicely nudged apart
+        routeEdges<Edge>(edges: Edge[], source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][][]{
+            var routes = edges.map(e=> this.route(source(e), target(e)));
+
+            function nudgeSegments(x, y) {
+                // vsegments is a list of vertical segments sorted by x position
+                var vsegments = [];
+                for (var ei = 0; ei < edges.length; ei++) {
+                    var route = routes[ei];
+                    for (var si = 0; si < route.length; si++) {
+                        var s = <any>route[si];
+                        s.edgeid = ei;
+                        s.i = si;
+                        var sdx = s[1][x] - s[0][x];
+                        if (Math.abs(sdx) < 0.1) {
+                            vsegments.push(s);
+                        }
+                    }
+                }
+                vsegments.sort((a, b) => a[0][x] - b[0][x]);
+
+                // vsegmentsets is a segments grouped by x position
+                var vsegmentsets = [];
+                var segmentset = null;
+                for (var i = 0; i < vsegments.length; i++) {
+                    var s = vsegments[i];
+                    if (!segmentset || Math.abs(s[0][x] - segmentset.pos) > 0.1) {
+                        segmentset = { pos: s[0][x], segments: [] };
+                        vsegmentsets.push(segmentset);
+                    }
+                    segmentset.segments.push(s);
+                }
+                var nudge = x == 'x' ? -10 : 10;
+                for (var i = 0; i < vsegmentsets.length; i++) {
+                    var ss = vsegmentsets[i];
+                    var events = [];
+                    for (var j = 0; j < ss.segments.length; j++) {
+                        var s = ss.segments[j];
+                        events.push({ type: 0, s: s, pos: Math.min(s[0][y], s[1][y]) });
+                        events.push({ type: 1, s: s, pos: Math.max(s[0][y], s[1][y]) });
+                    }
+                    events.sort((a, b) => a.pos - b.pos + a.type - b.type);
+                    var open = [];
+                    var openCount = 0;
+                    events.forEach(e=> {
+                        if (e.type === 0) {
+                            open.push(e.s);
+                            openCount++;
+                        } else {
+                            openCount--;
+                        }
+                        if (openCount == 0) {
+                            var n = open.length;
+                            if (n > 1) {
+                                var x0 = ss.pos - (n - 1) * nudge / 2;
+                                open.forEach(s=> {
+                                    s[0][x] = s[1][x] = x0;
+                                    var route = routes[s.edgeid];
+                                    if (s.i > 0) {
+                                        route[s.i - 1][1][x] = x0;
+                                    }
+                                    if (s.i < route.length - 1) {
+                                        route[s.i + 1][0][x] = x0;
+                                    }
+                                    x0 += nudge;
+                                });
+                            }
+                            open = [];
+                        }
+                    })
+                    }
+            }
+            nudgeSegments('x', 'y');
+            nudgeSegments('y', 'x');
+            return routes;
+        }
 
 	    // find a route between node s and node t
 	    // returns an array of indices to verts
-	    route(s: number, t: number):any[] {
+	    route(s: number, t: number):geom.Point[][] {
 	    	var source = this.nodes[<number>s], target = this.nodes[<number>t];
 	    	this.obstacles = this.siblingObstacles(source, target);
 
@@ -286,5 +364,5 @@ module cola {
             result.reverse();
             return result;
 	    }
-	}
+    }
 }
