@@ -336,7 +336,8 @@ module tetrisbug {
                                 var y1 = l[1].y;
                                 dx = x1 - x0;
                                 dy = y1 - y0;
-                                var angle = angleBetween2Lines(li,l) < 0 ? 1: 0;
+                                var angle = angleBetween2Lines(li, l) < 0 ? 1 : 0;
+                                var x2, y2;
                                 if (Math.abs(dx) > 0) {
                                     x2 = x0 + dx/Math.abs(dx)*cornerradius;
                                     y2 = y0;

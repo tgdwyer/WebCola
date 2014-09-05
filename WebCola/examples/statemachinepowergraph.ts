@@ -185,7 +185,7 @@ module tetrisbug {
                     }
                 });
 
-                gridrouter.padding = 20;
+                gridrouter.groupPadding = 20;
 
                 var gs = gridrouter.backToFront.filter(v=>!v.leaf);
                 var group = svg.selectAll(".group")
