@@ -16,7 +16,8 @@ var cola;
             },
 
             on: function(type, listener){
-                return event.on(type, listener);
+                event.on(type, listener);
+                return this;
             },
 
             kick: function (tick) {
