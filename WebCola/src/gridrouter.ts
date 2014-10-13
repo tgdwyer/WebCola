@@ -155,10 +155,11 @@ module cola {
 	            })
 	        );
 
-	        lines.forEach(l=> {
+	        lines.forEach((l,li)=> {
 	            // create vertices at the intersections of nodes and lines
-	            this.nodes.forEach(v=> {
-	                v.rect.lineIntersections(l.x1,l.y1,l.x2,l.y2).forEach(intersect=>{
+	            this.nodes.forEach((v,i)=> {
+                    v.rect.lineIntersections(l.x1, l.y1, l.x2, l.y2).forEach((intersect,j)=> {
+                        console.log(li+','+i+','+j+':'+intersect.x + ',' + intersect.y);
 	                	var p = new Vert(this.verts.length, intersect.x, intersect.y, v, l);
 	                    this.verts.push(p);
 	                    l.verts.push(p);

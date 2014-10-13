@@ -24,6 +24,8 @@
     <TypeScriptCompile Include="brain-app\input.ts" />
     <Content Include="examples\3dLayout.html" />
     <Content Include="examples\brainnetwork2.html" />
+    <Content Include="examples\dansgraph.html" />
+    <Content Include="examples\dansgraph.js" />
     <Content Include="examples\disconnected_graphs.html" />
     <Content Include="examples\alexnetwork.html" />
     <Content Include="examples\friendnetworks.html" />

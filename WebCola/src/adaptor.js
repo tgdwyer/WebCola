@@ -447,7 +447,11 @@ var cola;
 
             // subsequent iterations will apply all constraints
             this.avoidOverlaps(ao);
-            if (ao) descent.project = new cola.vpsc.Projection(nodes, groups, rootGroup, curConstraints, true).projectFunctions();
+            if (ao) {
+                nodes.forEach(function (v, i) { v.x = x[i], v.y = y[i]; });
+                descent.project = new cola.vpsc.Projection(nodes, groups, rootGroup, curConstraints, true).projectFunctions();
+                nodes.forEach(function (v, i) { x[i] = v.x, y[i] = v.y; });
+            }
 
             // allow not immediately connected nodes to relax apart (p-stress)
             descent.G = G;
@@ -490,9 +494,9 @@ var cola;
 
         adaptor.routeEdge = function(d, draw) {
             var lineData = [];
-            if (d.source.id === 10 && d.target.id === 11) {
-                debugger;
-            }
+            //if (d.source.id === 10 && d.target.id === 11) {
+            //    debugger;
+            //}
             var vg2 = new cola.geom.TangentVisibilityGraph(visibilityGraph.P, { V: visibilityGraph.V, E: visibilityGraph.E }),
                 port1 = { x: d.source.x, y: d.source.y },
                 port2 = { x: d.target.x, y: d.target.y },
