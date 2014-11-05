@@ -248,51 +248,36 @@ module tetrisbug {
                     .text(d => d.name);
 
                 var routes = gridrouter.routeEdges<any>(g.edges, e=> e.source, e=> e.target);
-                g.edges.forEach((e, i) => e.route = routes[i]);
-
-                function angleBetween2Lines(line1, line2)
-                {
-                    var angle1 = Math.atan2(line1[0].y - line1[1].y,
-                                               line1[0].x - line1[1].x);
-                    var angle2 = Math.atan2(line2[0].y - line2[1].y,
-                                               line2[0].x - line2[1].x);
-                    var diff = angle1 - angle2;
-                    if (diff > Math.PI || diff < -Math.PI) {
-                        diff = angle2 - angle1;
-                    }
-                    return diff;
-                }
-                g.edges.forEach(e=> {
-                    var shortestPath = e.route;
+                g.edges.forEach((e, j) => {
+                    var route = routes[j];
                     var id = 'e'+e.source+'-'+e.target;
-
                     var cornerradius = 10;
                     var arrowwidth = 6;
                     var arrowheight = 12;
                     var c = color(e.type);
                     var linewidth = 5;
-                    var path= 'M '+shortestPath[0][0].x+' '+shortestPath[0][0].y+' ';
-                    if (shortestPath.length>1) {
-                        for (var i = 0; i < shortestPath.length; i++) {
-                            var li = shortestPath[i];
+                    var path= 'M '+route[0][0].x+' '+route[0][0].y+' ';
+                    if (route.length>1) {
+                        for (var i = 0; i < route.length; i++) {
+                            var li = route[i];
                             var x = li[1].x, y=li[1].y;
                             var dx = x - li[0].x;
                             var dy = y - li[0].y;
-                            if (i < shortestPath.length - 1) {
+                            if (i < route.length - 1) {
                                 if (Math.abs(dx) > 0) {
                                     x -= dx/Math.abs(dx)*cornerradius;
                                 } else {
                                     y -= dy/Math.abs(dy)*cornerradius;
                                 }
                                 path += 'L '+x+' '+y+' ';
-                                var l = shortestPath[i+1];
+                                var l = route[i+1];
                                 var x0 = l[0].x, y0 = l[0].y;
                                 var x1 = l[1].x;
                                 var y1 = l[1].y;
                                 dx = x1 - x0;
                                 dy = y1 - y0;
-                                var angle = angleBetween2Lines(li,l) < 0 ? 1: 0;
-                                console.log(angleBetween2Lines(li,l))
+                                var angle = cola.GridRouter.angleBetween2Lines(li,l) < 0 ? 1: 0;
+                                console.log(cola.GridRouter.angleBetween2Lines(li,l))
                                 var x2,y2;
                                 if (Math.abs(dx) > 0) {
                                     x2 = x0 + dx/Math.abs(dx)*cornerradius;
@@ -330,7 +315,7 @@ module tetrisbug {
                             }
                         }
                     } else {
-                        var li = shortestPath[0];
+                        var li = route[0];
                         var x = li[1].x, y=li[1].y;
                         var dx = x - li[0].x;
                         var dy = y - li[0].y;

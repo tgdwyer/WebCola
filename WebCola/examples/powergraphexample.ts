@@ -296,3 +296,94 @@ d3.select("#filemenu").on("change", function () {
     graphfile = this.value;
     flatGraph();
 });
+
+function powerGraph2() {
+    var d3cola = colans.d3adaptor()
+        //.linkDistance(100)
+        .jaccardLinkLengths(10, 0.5)
+        .avoidOverlaps(true)
+        .size([width, height]);
+
+    var svg = makeSVG();
+
+    d3.json("graphdata/n7e23.json", function (error, graph) {
+
+        var powerGraph;
+        d3cola
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .powerGraphGroups(function (d) {
+                powerGraph = d;
+                powerGraph.groups.forEach(function (v) { v.padding = 20 });
+
+            })
+            .start(10, 10, 10);
+
+        var group = svg.selectAll(".group")
+            .data(powerGraph.groups)
+            .enter().append("rect")
+            .attr("rx", 8).attr("ry", 8)
+            .attr("class", "group")
+            .style("fill", function (d, i) { return color(i); });
+
+        var link = svg.selectAll(".link")
+            .data(powerGraph.powerEdges)
+            .enter().append("line")
+            .attr("class", "link");
+
+        var margin = 10;
+        var node = svg.selectAll(".node")
+            .data(graph.nodes)
+            .enter().append("rect")
+            .attr("class", "node")
+            .attr("width", function (d) { return d.width + 2 * margin; })
+            .attr("height", function (d) { return d.height + 2 * margin; })
+            .attr("rx", 4).attr("ry", 4)
+            .call(d3cola.drag);
+        var label = svg.selectAll(".label")
+            .data(graph.nodes)
+            .enter().append("text")
+            .attr("class", "label")
+            .text(function (d) { return d.name; })
+            .call(d3cola.drag);
+
+        node.append("title")
+            .text(function (d) { return d.name; });
+
+        d3cola.on("tick", function () {
+            node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
+            group.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
+            link.each(function (d) {
+                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                if (isIE()) this.parentNode.insertBefore(this, this);
+
+            });
+
+            link.attr("x1", function (d) { return d.sourceIntersection.x; })
+                .attr("y1", function (d) { return d.sourceIntersection.y; })
+                .attr("x2", function (d) { return d.arrowStart.x; })
+                .attr("y2", function (d) { return d.arrowStart.y; });
+
+            node.attr("x", function (d) { return d.innerBounds.x; })
+                .attr("y", function (d) { return d.innerBounds.y; })
+                .attr("width", function (d) { return d.innerBounds.width(); })
+                .attr("height", function (d) { return d.innerBounds.height(); });
+
+            group.attr("x", function (d) { return d.innerBounds.x; })
+                .attr("y", function (d) { return d.innerBounds.y; })
+                .attr("width", function (d) { return d.innerBounds.width(); })
+                .attr("height", function (d) { return d.innerBounds.height(); });
+
+            label.attr("x", function (d) { return d.x; })
+                .attr("y", function (d) {
+                    var h = this.getBBox().height;
+                    return d.y + h / 3.5;
+
+                });
+
+        });
+
+    });
+}
+
+powerGraph2();

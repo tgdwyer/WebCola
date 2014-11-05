@@ -521,18 +521,18 @@ var cola;
                     lineData.push(vg2.V[shortestPath[i]].p);
                 lineData.push(cola.vpsc.makeEdgeTo(q, d.target.innerBounds, 5));
             }
-            lineData.forEach(function (v, i) {
-                if (i > 0) {
-                    var u = lineData[i - 1];
-                    nodes.forEach(function (node) {
-                        if (node.id === getSourceIndex(d) || node.id === getTargetIndex(d)) return;
-                        var ints = node.innerBounds.lineIntersections(u.x, u.y, v.x, v.y);
-                        if (ints.length > 0) {
-                            debugger;
-                        }
-                    })
-                }
-            })
+            //lineData.forEach(function (v, i) {
+            //    if (i > 0) {
+            //        var u = lineData[i - 1];
+            //        nodes.forEach(function (node) {
+            //            if (node.id === getSourceIndex(d) || node.id === getTargetIndex(d)) return;
+            //            var ints = node.innerBounds.lineIntersections(u.x, u.y, v.x, v.y);
+            //            if (ints.length > 0) {
+            //                debugger;
+            //            }
+            //        })
+            //    }
+            //})
             return lineData;
         }
 
