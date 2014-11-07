@@ -322,6 +322,7 @@ module cola {
                     // then the 'left' segment needs to go higher, i.e. to have y pos less than that of the right
                     if (x == 'x') {
                         if (leftOf(e1, e2)) {
+                            console.log('s1: ' + s1[0][x] + ',' + s1[0][y] + '-' + s1[1][x] + ',' + s1[1][y]);
                             if (s1[0][y] < s1[1][y]) {
                                 lind = j, rind = i;
                             } else {
@@ -338,6 +339,7 @@ module cola {
                         }
                     }
                     if (lind >= 0) {
+                        console.log(x+' constraint: ' + lind + '<' + rind);
                         cs.push(new cola.vpsc.Constraint(vs[lind], vs[rind], gap));
                     }
                 }
@@ -347,32 +349,16 @@ module cola {
             vs.forEach((v, i) => {
                 var s = segments[i];
                 var pos = v.position();
-                var u = s[0];
-                s[0] = {};
-                s[0][x] = pos;
-                s[0][y] = u[y];
-                u = s[1];
-                s[1] = {};
-                s[1][x] = pos;
-                s[1][y] = u[y];
+                s[0][x] = s[1][x] = pos;
                 var route = routes[s.edgeid];
-                if (s.i > 0) {
-                    var u = route[s.i - 1][1];
-                    var v = route[s.i - 1][1] = <any>{};
-                    v[x] = pos;
-                    v[y] = u[y];
-                }
-                if (s.i < route.length - 1) {
-                    var u = route[s.i + 1][0];
-                    var v = route[s.i + 1][0] = <any>{};
-                    v[x] = pos;
-                    v[y] = u[y];
-                }
+                if (s.i > 0) route[s.i - 1][1][x] = pos;
+                if (s.i < route.length - 1) route[s.i + 1][0][x] = pos;
             });
         }
 
         static nudgeSegments(routes, x:string, y:string, leftOf: (e1:number,e2:number)=>boolean, gap: number) {
             var vsegmentsets = GridRouter.getSegmentSets(routes, x, y);
+            // scan the grouped (by x) segment sets to find co-linear bundles
             for (var i = 0; i < vsegmentsets.length; i++) {
                 var ss = vsegmentsets[i];
                 var events = [];
@@ -420,7 +406,12 @@ module cola {
             return diff;
         }
 
-        static getOrder(pairs: { l: number; r: number }[]): (l: number, r: number) => boolean {
+        // does the path a-b-c describe a left turn?
+        private static isLeft(a, b, c) {
+            return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) <= 0;
+        }
+
+        private static getOrder(pairs: { l: number; r: number }[]): (l: number, r: number) => boolean {
             var outgoing = {};
             for (var i = 0; i < pairs.length; i++) {
                 var p = pairs[i];
@@ -430,44 +421,57 @@ module cola {
             return (l, r) => typeof outgoing[l] !== 'undefined' && outgoing[l][r];
         }
 
-        //static topologicalSort(nodeIds: number[], edges: { sourceId: number; targetId: number }[]) {
-        //    var sources = {}, outgoing = {}, incoming = {};
-        //    for (var i = 0; i < nodeIds.length; i++) {
-        //        sources[i] = true;
-        //    }
-        //    for (var i = 0; i < edges.length; i++) {
-        //        var e = edges[i], u = e.sourceId, v = e.targetId;
-        //        delete sources[v];
-        //        if (typeof outgoing[u] === 'undefined') outgoing[u] = {};
-        //        outgoing[u][v] = true;
-        //        if (typeof incoming[v] === 'undefined') incoming[v] = {};
-        //        incoming[v][u] = true;
-        //    }
-        //    var L = [];
-        //    while (true) {
-        //        var ss = Object.keys(sources);
-        //        if (ss.length === 0) break;
-        //        var u = Number(ss[0]);
-        //        delete sources[u];
-        //        L.push(u);
-        //        for (var v in outgoing[u]) {
-        //            delete incoming[v][u];
-        //            if (Object.keys(incoming[v]).length === 0) {
-        //                sources[v] = true;
-        //            }
-        //        }
-        //    }
-        //    return L;
-        //}
+        static orderEdges(edges) {
+            var edgeOrder = [];
+            for (var i = 0; i < edges.length - 1; i++) {
+                for (var j = i + 1; j < edges.length; j++) {
+                    var e = edges[i],
+                        f = edges[j],
+                        lcs = new cola.LongestCommonSubsequence(e, f);
+                    if (!lcs.reversed) {
+                        var u = e[lcs.si + lcs.length - 2],
+                            vi = e[lcs.si + lcs.length],
+                            vj = f[lcs.ti + lcs.length];
+                        if (GridRouter.isLeft(u, vi, vj)) {
+                            edgeOrder.push({ l: j, r: i });
+                        } else {
+                            edgeOrder.push({ l: i, r: j });
+                        }
+                    } else {
+                        lcs.s.forEach((p, i) => {
+                            console.log('s[' + i + ']=' + p.id);
+                        });
+                        lcs.t.forEach((p, i) => {
+                            console.log('t[' + i + ']=' + p.id);
+                        });
+                        var u = e[lcs.si],
+                            vi = e[lcs.si - 1],
+                            vj = f[lcs.ti + lcs.length];
+                        
+                        if (GridRouter.isLeft(u, vi, vj)) {
+                            edgeOrder.push({ l: j, r: i });
+                        } else {
+                            edgeOrder.push({ l: i, r: j });
+                        }
+                    }
+                }
+            }
+            edgeOrder.forEach(function (e) { console.log('l:' + e.l + ',r:' + e.r) });
+            return cola.GridRouter.getOrder(edgeOrder);
+        }
 
         // for an orthogonal path described by a sequence of points, create a list of segments
         // if consecutive segments would make a straight line they are merged into a single segment
+        // segments are over cloned points, not the original vertices
         static makeSegments(path: geom.Point[]): geom.Point[][]{
+            function copyPoint(p: geom.Point) {
+                return <geom.Point>{ x: p.x, y: p.y };
+            }
             var isStraight = (a, b, c) => Math.abs((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) < 0.001;
             var segments = [];
-            var a = path[0];
+            var a = copyPoint(path[0]);
             for (var i = 1; i < path.length; i++) {
-                var b = path[i], c = i < path.length - 1 ? path[i + 1] : null;
+                var b = copyPoint(path[i]), c = i < path.length - 1 ? path[i + 1] : null;
                 if (!c || !isStraight(a, b, c)) {
                     segments.push([a, b]);
                     a = b;

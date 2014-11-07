@@ -344,6 +344,21 @@ function midPoint(p) {
 }
 
 test('metro crossing min', function () {
+    function countRouteIntersections(routes) {
+        var ints = [];
+        for (var i = 0; i < routes.length - 1; i++) {
+            for (var j = i + 1; j < routes.length ; j++) {
+                var r1 = routes[i], r2 = routes[j];
+                r1.forEach(function (s1) {
+                    r2.forEach(function (s2) {
+                        var int = cola.vpsc.Rectangle.lineIntersection(s1[0].x, s1[0].y, s1[1].x, s1[1].y, s2[0].x, s2[0].y, s2[1].x, s2[1].y);
+                        if (int) ints.push(int);
+                    })
+                })
+            }
+        }
+        return ints.length;
+    }
     var verts, edges;
     function makeInstance() {
         verts = [
@@ -366,15 +381,10 @@ test('metro crossing min', function () {
         ];
         edges.forEach(function (e, i) {
             e.id = i;
-            e.segments = cola.GridRouter.makeSegments(e);
         });
     }
 
     makeInstance();
-    equal(edges[0].segments.length, 2);
-    equal(edges[1].segments.length, 3);
-    equal(edges[2].segments.length, 2);
-
     var lcs = new cola.LongestCommonSubsequence('ABAB'.split(''), 'DABA'.split(''));
     deepEqual(lcs.getSequence(), 'ABA'.split(''));
     lcs = new cola.LongestCommonSubsequence(edges[0], edges[1]);
@@ -384,66 +394,72 @@ test('metro crossing min', function () {
     lcs = new cola.LongestCommonSubsequence(e0reversed, edges[1]);
     deepEqual(lcs.getSequence().map(function (v) { return v.id }), [2, 1, 0]);
     ok(lcs.reversed);
-    // does the path a-b-c describe a left turn?
-    function isLeft(a, b, c) {
-        return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) <= 0;
-    }
-    function orderEdges() {
-        var edgeOrder = [];
-        for (var i = 0; i < edges.length - 1; i++) {
-            for (var j = i + 1; j < edges.length; j++) {
-                var e = edges[i],
-                    f = edges[j],
-                    lcs = new cola.LongestCommonSubsequence(e, f);
-                if (!lcs.reversed) {
-                    var u = e[lcs.si + lcs.length - 2],
-                        vi = e[lcs.si + lcs.length],
-                        vj = f[lcs.ti + lcs.length];
-                    if (isLeft(u, vi, vj)) {
-                        edgeOrder.push({ l: j, r: i });
-                    } else {
-                        edgeOrder.push({ l: i, r: j });
-                    }
-                } else {
-                    console.log('reversed');
-                }
-            }
-        }
-        return cola.GridRouter.getOrder(edgeOrder);
-    }
-    var order = orderEdges();
-    var routes = edges.map(function (e) { return e.segments });
+
+    var order = cola.GridRouter.orderEdges(edges);
+    var routes = edges.map(function (e) {
+        return cola.GridRouter.makeSegments(e);
+    });
+    equal(routes[0].length, 2);
+    equal(routes[1].length, 3);
+    equal(routes[2].length, 2);
+
     cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
     cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+    equal(countRouteIntersections(routes), 2);
 
     var draw = function() {
         var svg = d3.select("body").append("svg").attr("width", 100).attr("height", 100).append('g').attr('transform', 'scale(4,4)')
         var color = d3.scale.category10();
-        //var edgepaths = svg.selectAll(".edge").data(edges).enter()
-        //    .append('path').attr('class', 'edge').attr('opacity', 0.5)
-        //    .attr('d', function (d) { return lineFunction(d) })
-        //    .attr('stroke', function (d) { return color(d.id) })
-        //    .attr('fill', 'none')
-        var getPoints = function (edge) {
-            var segs = edge.segments;
+        // draw segments
+        var getPoints = function (segs) {
             return [segs[0][0]].concat(segs.map(function (s) { return s[1] }));
         }
         var lineFunction = d3.svg.line()
             .x(function (d) { return d.x; })
             .y(function (d) { return d.y; }).interpolate('linear');
-        var edgepaths = svg.selectAll(".edge").data(edges).enter()
+        var edgepaths = svg.selectAll(".edge").data(routes).enter()
             .append('path').attr('class', 'edge').attr('opacity', 0.5)
             .attr('d', function (d) { return lineFunction(getPoints(d)) })
-            .attr('stroke', function (d) { return color(d.id) })
+            .attr('stroke', function (d,i) { return color(i) })
             .attr('fill', 'none')
+        // draw from edge paths
+        //var edgepaths = svg.selectAll(".edge").data(edges).enter()
+        //    .append('path').attr('class', 'edge').attr('opacity', 0.5)
+        //    .attr('d', function (d) { return lineFunction(d) })
+        //    .attr('stroke', function (d) { return color(d.id) })
+        //    .attr('fill', 'none')
     }
     draw();
+
+    // flip it in y and try again
     makeInstance();
-    verts.forEach(function(v) { v.y = 30 - v.y })
-    var order = orderEdges();
-    var routes = edges.map(function (e) { return e.segments });
+    verts.forEach(function (v) { v.y = 30 - v.y });
+    var order = cola.GridRouter.orderEdges(edges);
+    var routes = edges.map(function (e) { return cola.GridRouter.makeSegments(e); });
     cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
     cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+    equal(countRouteIntersections(routes), 2);
+    draw();
+
+    // reverse the first edge path and see what happens
+    makeInstance();
+    edges[0].reverse();
+    var order = cola.GridRouter.orderEdges(edges);
+    var routes = edges.map(function (e) { return cola.GridRouter.makeSegments(e); });
+    cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
+    cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+    equal(countRouteIntersections(routes), 2);
+    draw();
+
+    // reverse the 2 edge paths
+    makeInstance();
+    edges[0].reverse();
+    edges[1].reverse();
+    var order = cola.GridRouter.orderEdges(edges);
+    var routes = edges.map(function (e) { return cola.GridRouter.makeSegments(e); });
+    cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
+    cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+    equal(countRouteIntersections(routes), 2);
     draw();
 });
 
