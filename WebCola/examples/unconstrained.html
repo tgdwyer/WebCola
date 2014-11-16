@@ -55,6 +55,9 @@
             .attr("class", "node")
             .attr("r", 5)
             .style("fill", function (d) { return color(d.group); })
+            .on("click", function (d) {
+                d.fixed = true;
+            })
             .call(cola.drag);
 
         node.append("title")

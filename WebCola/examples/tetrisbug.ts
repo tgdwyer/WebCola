@@ -213,91 +213,92 @@ module tetrisbug {
                     .enter().append("text")
                     .attr("class", "label")
                     .text(d => /*d.index +':' +*/ d.name)
-                    //.attr("x", d => d.x + d.width/2) // centred
-                    .style('text-anchor','start')
+                //.attr("x", d => d.x + d.width/2) // centred
+                    .style('text-anchor', 'start')
                     .attr("x", d => d.x + 10)
                     .attr("y", function (d) {
                         var h = this.getBBox().height;
-                        return d.y + d.height/2 + h/2;
-                    })
-                    .call(d3cola.drag);
+                        return d.y + d.height / 2 + h / 2;
+                    });
+                    //.call(d3cola.drag);
 
                 node.append("title")
                     .text(d => d.name);
 
-                g.edges.forEach(e=> {
-                    e.route = gridrouter.route(e.source, e.target);
-                })
+                //g.edges.forEach(e=> {
+                //    e.route = gridrouter.route(e.source, e.target);
+                //})
 
-                function nudgeSegments(x,y) {
-                    // vsegments is a list of vertical segments sorted by x position
-                    var vsegments = [];
-                    for (var ei = 0; ei < g.edges.length; ei++) {
-                        var e = g.edges[ei];
-                        for (var si = 0; si < e.route.length; si++) {
-                            var s = e.route[si];
-                            s.edge = e;
-                            s.i = si;
-                            var sdx = s[1][x] - s[0][x];
-                            if (Math.abs(sdx) < 0.1) {
-                                vsegments.push(s);
-                            }
-                        }
-                    }
-                    vsegments.sort((a,b)=>a[0][x] - b[0][x]);
+                //function nudgeSegments(x,y) {
+                //    // vsegments is a list of vertical segments sorted by x position
+                //    var vsegments = [];
+                //    for (var ei = 0; ei < g.edges.length; ei++) {
+                //        var e = g.edges[ei];
+                //        for (var si = 0; si < e.route.length; si++) {
+                //            var s = e.route[si];
+                //            s.edge = e;
+                //            s.i = si;
+                //            var sdx = s[1][x] - s[0][x];
+                //            if (Math.abs(sdx) < 0.1) {
+                //                vsegments.push(s);
+                //            }
+                //        }
+                //    }
+                //    vsegments.sort((a,b)=>a[0][x] - b[0][x]);
 
-                    // vsegmentsets is a segments grouped by x position
-                    var vsegmentsets = [];
-                    var segmentset = null;
-                    for(var i = 0; i < vsegments.length; i++) {
-                        var s = vsegments[i];
-                        if (!segmentset || Math.abs(s[0][x] - segmentset.pos) > 0.1) {
-                            segmentset = {pos:s[0][x], segments:[]};
-                            vsegmentsets.push(segmentset);
-                        }
-                        segmentset.segments.push(s);
-                    }
-                    var nudge = x=='x'?-10:10;
-                    for(var i = 0; i < vsegmentsets.length; i++) {
-                        var ss = vsegmentsets[i];
-                        var events = [];
-                        for (var j = 0; j < ss.segments.length; j++) {
-                            var s = ss.segments[j];
-                            events.push({type:0, s:s, pos:Math.min(s[0][y], s[1][y])});
-                            events.push({type:1, s:s, pos:Math.max(s[0][y], s[1][y])});
-                        }
-                        events.sort((a,b)=>a.pos-b.pos + a.type - b.type);
-                        var open = [];
-                        var openCount = 0;
-                        events.forEach(e=> {
-                            if (e.type === 0) {
-                                open.push(e.s);
-                                openCount++;
-                            } else {
-                                openCount--;
-                            }
-                            if (openCount == 0) {
-                                var n = open.length;
-                                if (n>1) {
-                                    var x0 = ss.pos - (n-1)*nudge/2;
-                                    open.forEach(s=>{
-                                        s[0][x] = s[1][x] = x0;
-                                        if(s.i > 0) {
-                                            s.edge.route[s.i-1][1][x] = x0;
-                                        }
-                                        if (s.i < s.edge.route.length -1) {
-                                            s.edge.route[s.i+1][0][x] = x0;
-                                        }
-                                        x0+=nudge;
-                                    });
-                                }
-                                open = [];
-                            }
-                        })
-                    }
-                }
-                nudgeSegments('x','y');
-                nudgeSegments('y','x');
+                //    // vsegmentsets is a segments grouped by x position
+                //    var vsegmentsets = [];
+                //    var segmentset = null;
+                //    for(var i = 0; i < vsegments.length; i++) {
+                //        var s = vsegments[i];
+                //        if (!segmentset || Math.abs(s[0][x] - segmentset.pos) > 0.1) {
+                //            segmentset = {pos:s[0][x], segments:[]};
+                //            vsegmentsets.push(segmentset);
+                //        }
+                //        segmentset.segments.push(s);
+                //    }
+                //    var nudge = x=='x'?-10:10;
+                //    for(var i = 0; i < vsegmentsets.length; i++) {
+                //        var ss = vsegmentsets[i];
+                //        var events = [];
+                //        for (var j = 0; j < ss.segments.length; j++) {
+                //            var s = ss.segments[j];
+                //            events.push({type:0, s:s, pos:Math.min(s[0][y], s[1][y])});
+                //            events.push({type:1, s:s, pos:Math.max(s[0][y], s[1][y])});
+                //        }
+                //        events.sort((a,b)=>a.pos-b.pos + a.type - b.type);
+                //        var open = [];
+                //        var openCount = 0;
+                //        events.forEach(e=> {
+                //            if (e.type === 0) {
+                //                open.push(e.s);
+                //                openCount++;
+                //            } else {
+                //                openCount--;
+                //            }
+                //            if (openCount == 0) {
+                //                var n = open.length;
+                //                if (n>1) {
+                //                    var x0 = ss.pos - (n-1)*nudge/2;
+                //                    open.forEach(s=>{
+                //                        s[0][x] = s[1][x] = x0;
+                //                        if(s.i > 0) {
+                //                            s.edge.route[s.i-1][1][x] = x0;
+                //                        }
+                //                        if (s.i < s.edge.route.length -1) {
+                //                            s.edge.route[s.i+1][0][x] = x0;
+                //                        }
+                //                        x0+=nudge;
+                //                    });
+                //                }
+                //                open = [];
+                //            }
+                //        })
+                //    }
+                //}
+                //nudgeSegments('x','y');
+                //nudgeSegments('y','x');
+                var routes = gridrouter.routeEdges<any>(g.edges, e=> e.source, e=> e.target);
 
                 function angleBetween2Lines(line1, line2)
                 {
@@ -307,8 +308,8 @@ module tetrisbug {
                                                line2[0].x - line2[1].x);
                     return angle1-angle2;
                 }
-                g.edges.forEach(e=> {
-                    var shortestPath = e.route;
+                g.edges.forEach((e,ri)=> {
+                    var shortestPath = routes[ri];
                     var id = 'e'+e.source+'-'+e.target;
 
                     var cornerradius = 10;
@@ -317,7 +318,7 @@ module tetrisbug {
                     var c = color(e.type);
                     var linewidth = 5;
                     var path= 'M '+shortestPath[0][0].x+' '+shortestPath[0][0].y+' ';
-                    if (shortestPath.length>1) {
+                    if (shortestPath.length > 1) {
                         for (var i = 0; i < shortestPath.length; i++) {
                             var li = shortestPath[i];
                             var x = li[1].x, y=li[1].y;
@@ -336,7 +337,8 @@ module tetrisbug {
                                 var y1 = l[1].y;
                                 dx = x1 - x0;
                                 dy = y1 - y0;
-                                var angle = angleBetween2Lines(li,l) < 0 ? 1: 0;
+                                var angle = angleBetween2Lines(li, l) < 0 ? 1 : 0;
+                                var x2, y2;
                                 if (Math.abs(dx) > 0) {
                                     x2 = x0 + dx/Math.abs(dx)*cornerradius;
                                     y2 = y0;

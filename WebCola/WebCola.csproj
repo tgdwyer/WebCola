@@ -9,6 +9,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
+    <TypeScriptToolsVersion>1.1</TypeScriptToolsVersion>
     <UseIISExpress>true</UseIISExpress>
     <IISExpressSSLPort />
     <IISExpressAnonymousAuthentication />
@@ -24,6 +25,8 @@
     <TypeScriptCompile Include="brain-app\input.ts" />
     <Content Include="examples\3dLayout.html" />
     <Content Include="examples\brainnetwork2.html" />
+    <Content Include="examples\dansgraph.html" />
+    <Content Include="examples\dansgraph.js" />
     <Content Include="examples\disconnected_graphs.html" />
     <Content Include="examples\alexnetwork.html" />
     <Content Include="examples\friendnetworks.html" />
@@ -32,15 +35,20 @@
     <Content Include="examples\movies.html" />
     <Content Include="examples\browsemovies.html" />
     <Content Include="examples\powergraphcolalayout.html" />
+    <Content Include="examples\statemachinepowergraph.html" />
+    <Content Include="examples\pretrippowergraph.html" />
+    <Content Include="examples\tetrisbugpowergraph.html" />
     <Content Include="examples\powergraph.html" />
     <Content Include="examples\sankey.html" />
     <Content Include="examples\sucrosebreakdown-handdrawn.png" />
     <Content Include="examples\sucrosebreakdown.html" />
     <Content Include="examples\alignment.png" />
     <Content Include="examples\ariel.html" />
+    <Content Include="examples\tetrisbug.html" />
+    <Content Include="examples\adam.html" />
     <Content Include="examples\unix.html" />
     <Content Include="examples\unix.png" />
-    <Content Include="src\d3adaptor.js" />
+    <Content Include="src\adaptor.js" />
     <Content Include="examples\smallgroups.html" />
     <Content Include="examples\graphdata\biological_images\C00002.gif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -149,6 +157,7 @@
     <Content Include="examples\graphdata\biological.json" />
     <Content Include="examples\graphdata\Approval_state.dot" />
     <Content Include="examples\graphdata\unix.dot" />
+    <Content Include="examples\graphdata\adam.json" />
     <None Include="examples\graphdata\chris.json" />
     <Content Include="examples\rectangletest.js" />
     <Content Include="examples\smallnonoverlappinggraph.png" />
@@ -162,11 +171,15 @@
     <TypeScriptCompile Include="examples\3dlayout.ts" />
     <TypeScriptCompile Include="examples\powergraphcolalayout.ts" />
     <TypeScriptCompile Include="examples\powergraphexample.ts" />
+    <TypeScriptCompile Include="examples\statemachinepowergraph.ts" />
+    <TypeScriptCompile Include="examples\pretrip.ts" />
+    <TypeScriptCompile Include="examples\tetrisbug.ts" />
     <TypeScriptCompile Include="examples\tmdbgraph.ts" />
     <TypeScriptCompile Include="src\geom.ts" />
     <Content Include="src\geom.js">
       <DependentUpon>geom.ts</DependentUpon>
     </Content>
+    <TypeScriptCompile Include="src\gridrouter.ts" />
     <TypeScriptCompile Include="src\linklengths.ts" />
     <TypeScriptCompile Include="src\powergraph.ts" />
     <Content Include="src\powergraph.js">
@@ -212,6 +225,7 @@
     </Content>
     <Content Include="test\test.html" />
     <Content Include="test\tests.js" />
+    <Content Include="examples\graphdata\pre_trip.json" />
     <None Include="examples\graphdata\test1.json" />
   </ItemGroup>
   <ItemGroup>
@@ -229,6 +243,9 @@
       <DependentUpon>powergraph.ts</DependentUpon>
     </Content>
     <Content Include="examples\graphdata\n7e23.json" />
+    <Content Include="examples\graphdata\tetrisbug.json" />
+    <Content Include="examples\graphdata\tetrisbugmultiedges.json" />
+    <Content Include="examples\graphdata\tetrisbugmultiedgespgresponse.json" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>

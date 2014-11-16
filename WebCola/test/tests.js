@@ -1,5 +1,5 @@
 ﻿/// <reference path="d3.v3.min.js"/>
-/// <reference path="../src/d3adaptor.js"/>
+/// <reference path="../src/adaptor.js"/>
 /// <reference path="../src/shortestpaths.js"/>
 /// <reference path="../src/descent.js"/>
 /// <reference path="../src/cola.vpsc.js"/>
@@ -343,6 +343,126 @@ function midPoint(p) {
     return { x: mx/n, y: my/n };
 }
 
+test('metro crossing min', function () {
+    function countRouteIntersections(routes) {
+        var ints = [];
+        for (var i = 0; i < routes.length - 1; i++) {
+            for (var j = i + 1; j < routes.length ; j++) {
+                var r1 = routes[i], r2 = routes[j];
+                r1.forEach(function (s1) {
+                    r2.forEach(function (s2) {
+                        var int = cola.vpsc.Rectangle.lineIntersection(s1[0].x, s1[0].y, s1[1].x, s1[1].y, s2[0].x, s2[0].y, s2[1].x, s2[1].y);
+                        if (int) ints.push(int);
+                    })
+                })
+            }
+        }
+        return ints.length;
+    }
+    var verts, edges;
+    function makeInstance() {
+        verts = [
+            { x: 0, y: 10 },
+            { x: 10, y: 10 },
+            { x: 10, y: 20 },
+            { x: 10, y: 30 },
+            { x: 20, y: 20 },
+            { x: 10, y: 0 },
+            { x: 0, y: 20 }
+        ]
+        verts.forEach(function (v, i) {
+            v.id = i;
+            v.edges = {};
+        })
+        edges = [
+            [verts[0], verts[1], verts[2], verts[3]],
+            [verts[0], verts[1], verts[2], verts[4]],
+            [verts[5], verts[1], verts[2], verts[6]]
+        ];
+        edges.forEach(function (e, i) {
+            e.id = i;
+        });
+    }
+
+    makeInstance();
+    var lcs = new cola.LongestCommonSubsequence('ABAB'.split(''), 'DABA'.split(''));
+    deepEqual(lcs.getSequence(), 'ABA'.split(''));
+    lcs = new cola.LongestCommonSubsequence(edges[0], edges[1]);
+    equal(lcs.length, 3);
+    deepEqual(lcs.getSequence().map(function (v) { return v.id }), [0, 1, 2]);
+    var e0reversed = edges[0].slice(0).reverse();
+    lcs = new cola.LongestCommonSubsequence(e0reversed, edges[1]);
+    deepEqual(lcs.getSequence().map(function (v) { return v.id }), [2, 1, 0]);
+    ok(lcs.reversed);
+
+    var order = cola.GridRouter.orderEdges(edges);
+    var routes = edges.map(function (e) {
+        return cola.GridRouter.makeSegments(e);
+    });
+    equal(routes[0].length, 2);
+    equal(routes[1].length, 3);
+    equal(routes[2].length, 2);
+
+    cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
+    cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+    equal(countRouteIntersections(routes), 2);
+
+    var draw = function() {
+        var svg = d3.select("body").append("svg").attr("width", 100).attr("height", 100).append('g').attr('transform', 'scale(4,4)')
+        var color = d3.scale.category10();
+        // draw segments
+        var getPoints = function (segs) {
+            return [segs[0][0]].concat(segs.map(function (s) { return s[1] }));
+        }
+        var lineFunction = d3.svg.line()
+            .x(function (d) { return d.x; })
+            .y(function (d) { return d.y; }).interpolate('linear');
+        var edgepaths = svg.selectAll(".edge").data(routes).enter()
+            .append('path').attr('class', 'edge').attr('opacity', 0.5)
+            .attr('d', function (d) { return lineFunction(getPoints(d)) })
+            .attr('stroke', function (d,i) { return color(i) })
+            .attr('fill', 'none')
+        // draw from edge paths
+        //var edgepaths = svg.selectAll(".edge").data(edges).enter()
+        //    .append('path').attr('class', 'edge').attr('opacity', 0.5)
+        //    .attr('d', function (d) { return lineFunction(d) })
+        //    .attr('stroke', function (d) { return color(d.id) })
+        //    .attr('fill', 'none')
+    }
+    draw();
+
+    // flip it in y and try again
+    makeInstance();
+    verts.forEach(function (v) { v.y = 30 - v.y });
+    var order = cola.GridRouter.orderEdges(edges);
+    var routes = edges.map(function (e) { return cola.GridRouter.makeSegments(e); });
+    cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
+    cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+    equal(countRouteIntersections(routes), 2);
+    draw();
+
+    // reverse the first edge path and see what happens
+    makeInstance();
+    edges[0].reverse();
+    var order = cola.GridRouter.orderEdges(edges);
+    var routes = edges.map(function (e) { return cola.GridRouter.makeSegments(e); });
+    cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
+    cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+    equal(countRouteIntersections(routes), 2);
+    draw();
+
+    // reverse the 2 edge paths
+    makeInstance();
+    edges[0].reverse();
+    edges[1].reverse();
+    var order = cola.GridRouter.orderEdges(edges);
+    var routes = edges.map(function (e) { return cola.GridRouter.makeSegments(e); });
+    cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
+    cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+    equal(countRouteIntersections(routes), 2);
+    draw();
+});
+
 // next steps: 
 //  o label node and group centre and boundary vertices
 //  - non-traversable regions (obstacles) are determined by finding the highest common ancestors of the source and target nodes
@@ -350,7 +470,7 @@ function midPoint(p) {
 //    have infinite weight while those inside the source and target node have zero weight
 //  - augment dijkstra with a cost for bends
 asyncTest('grid router', function() {
-    var draw = true;
+    var draw = false;
     d3.json("../examples/graphdata/tetrisbugmultiedgeslayout.json", function (error, graph) {
         var gridrouter = new cola.GridRouter(graph.nodes,{
             getChildren: function(v) {
@@ -383,14 +503,14 @@ asyncTest('grid router', function() {
         shortestPath = gridrouter.route(source, target);
         check(13);
 
-        // bend minimal?
-        source = 1, target = 2;
-        shortestPath = gridrouter.route(source, target);
-
         // group to node
         source = 16, target = 5;
         shortestPath = gridrouter.route(source, target);
         check(7);
+
+        // bend minimal?
+        source = 1, target = 2;
+        shortestPath = gridrouter.route(source, target);
 
         if (draw) {
             var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 400).append('g').attr('transform', 'scale(0.5,0.8)')
@@ -412,7 +532,7 @@ asyncTest('grid router', function() {
             nodegroups.append('text')
                 .attr('x', 10)
                 .attr('y',function(d) { return d.rect.height()/2 })
-                .text(function (d) { return d.id +":" + d.name })
+                .text(function (d) { return d.id/* +":" + d.name*/ })
             svg.selectAll('.edges')
                 .data(gridrouter.passableEdges)
                 .enter()

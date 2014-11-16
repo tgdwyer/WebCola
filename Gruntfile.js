@@ -42,7 +42,7 @@ module.exports = function (grunt) {
       dist: {
         src: [
           'WebCola/compiledtypescript.js',
-          'WebCola/src/d3adaptor.js',
+          'WebCola/src/adaptor.js',
           'WebCola/src/rbtree.js',
           'WebCola/src/scc.js',
           'WebCola/src/handle_disconnected.js'
@@ -63,9 +63,9 @@ module.exports = function (grunt) {
     uglify: {
       dist: {
         options: {
-          //sourceMap: 'WebCola/cola.min.map',
-          //sourceMapIn: 'WebCola/compiledtypescript.js.map',
-          //sourceMapRoot: 'WebCola'
+          sourceMap: 'WebCola/cola.v3.min.map',
+          sourceMapIn: 'WebCola/compiledtypescript.js.map',
+          sourceMapRoot: 'WebCola'
         },
         files: {
           'WebCola/cola.v3.min.js': [
