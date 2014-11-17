@@ -298,7 +298,7 @@ module tetrisbug {
                 //}
                 //nudgeSegments('x','y');
                 //nudgeSegments('y','x');
-                var routes = gridrouter.routeEdges<any>(g.edges, e=> e.source, e=> e.target);
+                var routes = gridrouter.routeEdges<any>(g.edges, 10, e=> e.source, e=> e.target);
 
                 function angleBetween2Lines(line1, line2)
                 {

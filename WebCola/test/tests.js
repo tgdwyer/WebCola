@@ -500,7 +500,7 @@ test('metro crossing min', function () {
     threeByThreeSegments();
     edges[1].reverse();
     nudge();
-    equal(countRouteIntersections(routes), 3, "BUG BUG!!");
+    equal(countRouteIntersections(routes), 2);
 
     // reverse the first 2 edge paths
     threeByThreeSegments();

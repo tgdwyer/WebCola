@@ -386,11 +386,13 @@ module cola {
         }
 
         // obtain routes for the specified edges, nicely nudged apart
-        routeEdges<Edge>(edges: Edge[], source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][]{
-            var routes = edges.map(e=> this.route(source(e), target(e)));
-
-            //GridRouter.nudgeSegments(routes, 'x', 'y');
-            //GridRouter.nudgeSegments(routes, 'y', 'x');
+        // warning: edge paths may be reversed!
+        routeEdges<Edge>(edges: Edge[], gap: number, source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][][]{
+            var routePaths = edges.map(e=> this.route(source(e), target(e)));
+            var order = cola.GridRouter.orderEdges(routePaths);
+            var routes = routePaths.map(function (e) { return cola.GridRouter.makeSegments(e); });
+            cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, gap);
+            cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, gap);
             return routes;
         }
 
@@ -431,36 +433,31 @@ module cola {
                     var u, vi, vj;
                     if (lcs.length === 0)
                         continue; // no common subpath
+                    if (lcs.reversed) {
+                        // if we found a common subpath but one of the edges runs the wrong way, 
+                        // then reverse f.
+                        f.reverse();
+                        f.reversed = true;
+                        lcs = new cola.LongestCommonSubsequence(e, f);
+                    }
                     if (lcs.length === e.length || lcs.length === f.length) {
                         // the edges are completely co-linear so make an arbitrary ordering decision
                         edgeOrder.push({ l: i, r: j });
                         continue;
                     }
-                    if (!lcs.reversed) {
-                        if (lcs.si + lcs.length >= e.length || lcs.ti + lcs.length >= f.length) {
-                            // if the common subsequence of the
-                            // two edges being considered goes all the way to the
-                            // end of one (or both) of the lines then we have to 
-                            // base our ordering decision on the other end of the
-                            // common subsequence
-                            u = e[lcs.si + 1];
-                            vj = e[lcs.si - 1];
-                            vi = f[lcs.ti - 1];
-                        } else {
-                            u = e[lcs.si + lcs.length - 2];
-                            vi = e[lcs.si + lcs.length];
-                            vj = f[lcs.ti + lcs.length];
-                        }
+                    if (lcs.si + lcs.length >= e.length || lcs.ti + lcs.length >= f.length) {
+                        // if the common subsequence of the
+                        // two edges being considered goes all the way to the
+                        // end of one (or both) of the lines then we have to 
+                        // base our ordering decision on the other end of the
+                        // common subsequence
+                        u = e[lcs.si + 1];
+                        vj = e[lcs.si - 1];
+                        vi = f[lcs.ti - 1];
                     } else {
-                        if (lcs.si > 0 && lcs.ti + lcs.length <= f.length) {
-                            u = e[lcs.si];
-                            vj = e[lcs.si - 1];
-                            vi = f[lcs.ti + lcs.length];
-                        } else {
-                            u = e[lcs.si + lcs.length - 2];
-                            vi = e[lcs.si + lcs.length];
-                            vj = f[lcs.ti - 1];
-                        }
+                        u = e[lcs.si + lcs.length - 2];
+                        vi = e[lcs.si + lcs.length];
+                        vj = f[lcs.ti + lcs.length];
                     }
                     if (GridRouter.isLeft(u, vi, vj)) {
                         edgeOrder.push({ l: j, r: i });
