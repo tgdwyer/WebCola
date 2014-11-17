@@ -322,7 +322,7 @@ module cola {
                     // then the 'left' segment needs to go higher, i.e. to have y pos less than that of the right
                     if (x == 'x') {
                         if (leftOf(e1, e2)) {
-                            console.log('s1: ' + s1[0][x] + ',' + s1[0][y] + '-' + s1[1][x] + ',' + s1[1][y]);
+                            //console.log('s1: ' + s1[0][x] + ',' + s1[0][y] + '-' + s1[1][x] + ',' + s1[1][y]);
                             if (s1[0][y] < s1[1][y]) {
                                 lind = j, rind = i;
                             } else {
@@ -339,7 +339,7 @@ module cola {
                         }
                     }
                     if (lind >= 0) {
-                        console.log(x+' constraint: ' + lind + '<' + rind);
+                        //console.log(x+' constraint: ' + lind + '<' + rind);
                         cs.push(new cola.vpsc.Constraint(vs[lind], vs[rind], gap));
                     }
                 }
@@ -466,7 +466,7 @@ module cola {
                     }
                 }
             }
-            edgeOrder.forEach(function (e) { console.log('l:' + e.l + ',r:' + e.r) });
+            //edgeOrder.forEach(function (e) { console.log('l:' + e.l + ',r:' + e.r) });
             return cola.GridRouter.getOrder(edgeOrder);
         }
 
