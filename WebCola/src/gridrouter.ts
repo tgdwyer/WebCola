@@ -386,7 +386,7 @@ module cola {
         }
 
         // obtain routes for the specified edges, nicely nudged apart
-        routeEdges<Edge>(edges: Edge[], source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][][]{
+        routeEdges<Edge>(edges: Edge[], source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][]{
             var routes = edges.map(e=> this.route(source(e), target(e)));
 
             //GridRouter.nudgeSegments(routes, 'x', 'y');
@@ -428,50 +428,44 @@ module cola {
                     var e = edges[i],
                         f = edges[j],
                         lcs = new cola.LongestCommonSubsequence(e, f);
+                    var u, vi, vj;
+                    if (lcs.length === 0)
+                        continue; // no common subpath
+                    if (lcs.length === e.length || lcs.length === f.length) {
+                        // the edges are completely co-linear so make an arbitrary ordering decision
+                        edgeOrder.push({ l: i, r: j });
+                        continue;
+                    }
                     if (!lcs.reversed) {
-                        var u = e[lcs.si + lcs.length - 2],
-                            vi = e[lcs.si + lcs.length],
-                            vj = f[lcs.ti + lcs.length];
-                        var subseqAtLineEnd = false;
                         if (lcs.si + lcs.length >= e.length || lcs.ti + lcs.length >= f.length) {
-                        	// if the common subsequence of the
-                        	// two edges being considered goes all the way to the
-                        	// end of one (or both) of the lines then we have to 
-                        	// base our ordering decision on the other end of the
-                        	// common subsequence
-                        	u = e[lcs.si + 1];
-                        	vi = e[lcs.si - 1];
-                        	vj = f[lcs.ti - 1];
-                        	subseqAtLineEnd = true;
-                        }
-                        if (!subseqAtLineEnd && GridRouter.isLeft(u, vi, vj)) {
-                            edgeOrder.push({ l: j, r: i });
+                            // if the common subsequence of the
+                            // two edges being considered goes all the way to the
+                            // end of one (or both) of the lines then we have to 
+                            // base our ordering decision on the other end of the
+                            // common subsequence
+                            u = e[lcs.si + 1];
+                            vj = e[lcs.si - 1];
+                            vi = f[lcs.ti - 1];
                         } else {
-                            edgeOrder.push({ l: i, r: j });
+                            u = e[lcs.si + lcs.length - 2];
+                            vi = e[lcs.si + lcs.length];
+                            vj = f[lcs.ti + lcs.length];
                         }
                     } else {
-                        lcs.s.forEach((p:any, i) => {
-                            console.log('s[' + i + ']=' + p.id);
-                        });
-                        lcs.t.forEach((p:any, i) => {
-                            console.log('t[' + i + ']=' + p.id);
-                        });
-                        var u, vi, vj;
-                        if (lcs.si >= 0 && lcs.ti + lcs.length <= f.length) {
-                         	u = e[lcs.si];
-                            vi = e[lcs.si - 1];
-                            vj = f[lcs.ti + lcs.length];
-                        } else {      
-                           	u = e[lcs.si + lcs.length - 2];
+                        if (lcs.si > 0 && lcs.ti + lcs.length <= f.length) {
+                            u = e[lcs.si];
+                            vj = e[lcs.si - 1];
+                            vi = f[lcs.ti + lcs.length];
+                        } else {
+                            u = e[lcs.si + lcs.length - 2];
                             vi = e[lcs.si + lcs.length];
                             vj = f[lcs.ti - 1];
                         }
-                        
-                        if (GridRouter.isLeft(u, vi, vj)) {
-                            edgeOrder.push({ l: j, r: i });
-                        } else {
-                            edgeOrder.push({ l: i, r: j });
-                        }
+                    }
+                    if (GridRouter.isLeft(u, vi, vj)) {
+                        edgeOrder.push({ l: j, r: i });
+                    } else {
+                        edgeOrder.push({ l: i, r: j });
                     }
                 }
             }
@@ -501,7 +495,7 @@ module cola {
 
 	    // find a route between node s and node t
 	    // returns an array of indices to verts
-	    route(s: number, t: number):geom.Point[][] {
+        route(s: number, t: number): geom.Point[]{
 	    	var source = this.nodes[<number>s], target = this.nodes[<number>t];
 	    	this.obstacles = this.siblingObstacles(source, target);
 
@@ -514,6 +508,7 @@ module cola {
 	                     || v.node && v.node.id in obstacleLookup);
 	        });
 
+            // add dummy segments linking ports inside source and target
 	        for(var i = 1; i < source.ports.length; i++) {
 	            var u = source.ports[0].id;
 	            var v = source.ports[i].id;
@@ -547,41 +542,19 @@ module cola {
         		return dx > 1 && dy > 1  ? 1000 : 0;
             };
 
-            // get shortest path (it comes back reversed and does not include the target port
+            // get shortest path
 	        var shortestPath = shortestPathCalculator.PathFromNodeToNodeWithPrevCost(
 	        	source.ports[0].id, target.ports[0].id,
                 bendPenalty);
+            
+            // shortest path is reversed and does not include the target port
+            var pathPoints = shortestPath.reverse().map(vi => this.verts[vi]);
+            pathPoints.push(this.nodes[target.id].ports[0]);
 
-            // create chain of segments, filtering out segments inside the source or target node boundaries
-            // also add in the target port
-            // path is still reversed
-	        var pathSegments: Vert[][] = [];
-            for (var i = 0; i < shortestPath.length; i++) {
-                var a:Vert = i === 0 ? this.nodes[target.id].ports[0] : this.verts[shortestPath[i - 1]];
-                var b:Vert = this.verts[shortestPath[i]];
-                if (a.node === source && b.node === source) continue;
-                if (a.node === target && b.node === target) continue;
-                pathSegments.push([a,b]);
-            }
-
-            // merge contiguous segments if they do not feature a bend
-            var mergedSegments = [];
-            var a = pathSegments[0][0];
-            for (var i = 0; i < pathSegments.length; i++) {
-            	var b = pathSegments[i][1],
-            		c = i < pathSegments.length - 1 ? pathSegments[i+1][1] : null;
-            	if (!c || c && bendPenalty(a.id,b.id,c.id)>0) {
-                	mergedSegments.push([a,b]);
-                	a = b;
-            	}
-            }
-
-            // reverse
-            mergedSegments = pathSegments;
-            var result = mergedSegments.map(s=>[{x:s[1].x,y:s[1].y},{x:s[0].x,y:s[0].y}]);
-            result.reverse();
-            return result;
-            return pathSegments;
+            // filter out any extra end points that are inside the source or target (i.e. the dummy segments above)
+            return pathPoints.filter((v, i) => 
+                !(i < pathPoints.length - 1 && pathPoints[i + 1].node === source && v.node === source
+                || i > 0 && v.node === target && pathPoints[i - 1].node === target));
 	    }
     }
 }

@@ -124,10 +124,6 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     var colaGraph = new cola3.Graph(colaObject, n, graph.links, nodeColourings);
     var linkAccessor = new LinkAccessor();
     cola.jaccardLinkLengths(graph.links, linkAccessor, 1.5);
-<<<<<<< HEAD
-
-=======
->>>>>>> 48a2df80c426a351ec2af8f8cd343a4e4530a188
     // Create the distance matrix that Cola needs
     var distanceMatrix = (new cola.shortestpaths.Calculator(n, graph.links, linkAccessor.getSourceIndex, linkAccessor.getTargetIndex, linkAccessor.getLength)).DistanceMatrix();
     var D = cola.Descent.createSquareMatrix(n, function (i, j) {

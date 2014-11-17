@@ -34,7 +34,6 @@
     <Content Include="examples\graphdata\SucroseBreakdownDicots-flowlayout.svg" />
     <Content Include="examples\movies.html" />
     <Content Include="examples\browsemovies.html" />
-    <Content Include="examples\powergraphcolalayout.html" />
     <Content Include="examples\statemachinepowergraph.html" />
     <Content Include="examples\pretrippowergraph.html" />
     <Content Include="examples\tetrisbugpowergraph.html" />
@@ -169,7 +168,6 @@
     <TypeScriptCompile Include="brain-app\brain3d.ts" />
     <TypeScriptCompile Include="brain-app\brainapp.ts" />
     <TypeScriptCompile Include="examples\3dlayout.ts" />
-    <TypeScriptCompile Include="examples\powergraphcolalayout.ts" />
     <TypeScriptCompile Include="examples\powergraphexample.ts" />
     <TypeScriptCompile Include="examples\statemachinepowergraph.ts" />
     <TypeScriptCompile Include="examples\pretrip.ts" />

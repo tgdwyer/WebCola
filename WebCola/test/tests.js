@@ -359,8 +359,28 @@ test('metro crossing min', function () {
         }
         return ints.length;
     }
-    var verts, edges;
+    var verts, edges, order, routes;
     function makeInstance() {
+        verts.forEach(function (v, i) {
+            v.id = i;
+            v.edges = {};
+        });
+        edges.forEach(function (e, i) {
+            e.id = i;
+        });
+    }
+    function twoParallelSegments() {
+        verts = [
+            { x: 0, y: 10 },
+            { x: 10, y: 10 }
+        ];
+        edges = [
+            [verts[0], verts[1]],
+            [verts[0], verts[1]]
+        ];
+        makeInstance();
+    }
+    function threeByThreeSegments() {
         verts = [
             { x: 0, y: 10 },
             { x: 10, y: 10 },
@@ -369,45 +389,55 @@ test('metro crossing min', function () {
             { x: 20, y: 20 },
             { x: 10, y: 0 },
             { x: 0, y: 20 }
-        ]
-        verts.forEach(function (v, i) {
-            v.id = i;
-            v.edges = {};
-        })
+        ];
         edges = [
             [verts[0], verts[1], verts[2], verts[3]],
             [verts[0], verts[1], verts[2], verts[4]],
             [verts[5], verts[1], verts[2], verts[6]]
         ];
-        edges.forEach(function (e, i) {
-            e.id = i;
+        makeInstance();
+    }
+    function regression1() {
+        verts = [
+            {x:430.79999999999995, y:202.5},
+            {x:464.4, y:202.5},
+            {x:464.4, y:261.6666666666667},
+            {x:464.4, y:320.83333333333337},
+            {x:474, y:320.83333333333337},
+            {x:486, y:320.83333333333337},
+            {x:498.0000000000001, y:202.5},
+            {x:474, y:202.5},
+        ];
+        verts.forEach(function(v) {
+            v.x -= 400;
+            v.y -= 200;
+            v.x /= 4;
+            v.y /= 8;
         });
+        edges = [[
+            verts[0],
+            verts[1],
+            verts[2],
+            verts[3],
+            verts[4],
+            verts[5]
+            ], [
+            verts[6],
+            verts[7],
+            verts[1],
+            verts[0]
+            ]];
+        makeInstance();
+    }
+    function nudge() {
+        order = cola.GridRouter.orderEdges(edges);
+        routes = edges.map(function (e) { return cola.GridRouter.makeSegments(e); });
+        cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
+        cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+        draw();
     }
 
-    makeInstance();
-    var lcs = new cola.LongestCommonSubsequence('ABAB'.split(''), 'DABA'.split(''));
-    deepEqual(lcs.getSequence(), 'ABA'.split(''));
-    lcs = new cola.LongestCommonSubsequence(edges[0], edges[1]);
-    equal(lcs.length, 3);
-    deepEqual(lcs.getSequence().map(function (v) { return v.id }), [0, 1, 2]);
-    var e0reversed = edges[0].slice(0).reverse();
-    lcs = new cola.LongestCommonSubsequence(e0reversed, edges[1]);
-    deepEqual(lcs.getSequence().map(function (v) { return v.id }), [2, 1, 0]);
-    ok(lcs.reversed);
-
-    var order = cola.GridRouter.orderEdges(edges);
-    var routes = edges.map(function (e) {
-        return cola.GridRouter.makeSegments(e);
-    });
-    equal(routes[0].length, 2);
-    equal(routes[1].length, 3);
-    equal(routes[2].length, 2);
-
-    cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
-    cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
-    equal(countRouteIntersections(routes), 2);
-
-    var draw = function() {
+    var draw = function () {
         var svg = d3.select("body").append("svg").attr("width", 100).attr("height", 100).append('g').attr('transform', 'scale(4,4)')
         var color = d3.scale.category10();
         // draw segments
@@ -420,7 +450,7 @@ test('metro crossing min', function () {
         var edgepaths = svg.selectAll(".edge").data(routes).enter()
             .append('path').attr('class', 'edge').attr('opacity', 0.5)
             .attr('d', function (d) { return lineFunction(getPoints(d)) })
-            .attr('stroke', function (d,i) { return color(i) })
+            .attr('stroke', function (d, i) { return color(i) })
             .attr('fill', 'none')
         // draw from edge paths
         //var edgepaths = svg.selectAll(".edge").data(edges).enter()
@@ -429,38 +459,58 @@ test('metro crossing min', function () {
         //    .attr('stroke', function (d) { return color(d.id) })
         //    .attr('fill', 'none')
     }
-    draw();
+    // trivial case
+    twoParallelSegments();
+    nudge();
+    // two segments, one reversed
+    edges[1].reverse();
+    nudge();
+
+    threeByThreeSegments();
+    var lcs = new cola.LongestCommonSubsequence('ABAB'.split(''), 'DABA'.split(''));
+    deepEqual(lcs.getSequence(), 'ABA'.split(''));
+    lcs = new cola.LongestCommonSubsequence(edges[0], edges[1]);
+    equal(lcs.length, 3);
+    deepEqual(lcs.getSequence().map(function (v) { return v.id }), [0, 1, 2]);
+    var e0reversed = edges[0].slice(0).reverse();
+    lcs = new cola.LongestCommonSubsequence(e0reversed, edges[1]);
+    deepEqual(lcs.getSequence().map(function (v) { return v.id }), [2, 1, 0]);
+    ok(lcs.reversed);
+
+    nudge();
+    equal(routes[0].length, 2);
+    equal(routes[1].length, 3);
+    equal(routes[2].length, 2);
+
+    equal(countRouteIntersections(routes), 2);
 
     // flip it in y and try again
-    makeInstance();
+    threeByThreeSegments();
     verts.forEach(function (v) { v.y = 30 - v.y });
-    var order = cola.GridRouter.orderEdges(edges);
-    var routes = edges.map(function (e) { return cola.GridRouter.makeSegments(e); });
-    cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
-    cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+    nudge();
     equal(countRouteIntersections(routes), 2);
-    draw();
 
     // reverse the first edge path and see what happens
-    makeInstance();
+    threeByThreeSegments();
     edges[0].reverse();
-    var order = cola.GridRouter.orderEdges(edges);
-    var routes = edges.map(function (e) { return cola.GridRouter.makeSegments(e); });
-    cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
-    cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+    nudge();
     equal(countRouteIntersections(routes), 2);
-    draw();
 
-    // reverse the 2 edge paths
-    makeInstance();
+    // reverse the second edge path
+    threeByThreeSegments();
+    edges[1].reverse();
+    nudge();
+    equal(countRouteIntersections(routes), 3, "BUG BUG!!");
+
+    // reverse the first 2 edge paths
+    threeByThreeSegments();
     edges[0].reverse();
     edges[1].reverse();
-    var order = cola.GridRouter.orderEdges(edges);
-    var routes = edges.map(function (e) { return cola.GridRouter.makeSegments(e); });
-    cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
-    cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+    nudge();
     equal(countRouteIntersections(routes), 2);
-    draw();
+
+    regression1();
+    nudge();
 });
 
 // next steps: 
@@ -470,7 +520,7 @@ test('metro crossing min', function () {
 //    have infinite weight while those inside the source and target node have zero weight
 //  - augment dijkstra with a cost for bends
 asyncTest('grid router', function() {
-    var draw = false;
+    var draw = true;
     d3.json("../examples/graphdata/tetrisbugmultiedgeslayout.json", function (error, graph) {
         var gridrouter = new cola.GridRouter(graph.nodes,{
             getChildren: function(v) {
@@ -543,21 +593,6 @@ asyncTest('grid router', function() {
                 .attr('y2',function(d) {return gridrouter.verts[d.target].y})
                 .style('stroke', 'black')
                 .style('stroke-width','1')
-            // svg.selectAll('.verts')
-            //      .data(gridrouter.verts)
-            //      .enter()
-            //      .append('text')
-
-            // //     .append("circle")
-            //      .attr("x", function(d) { return d.x })
-            //      .attr("y", function(d) { return d.y })
-            //      .text(function (d) { return d.id });
-            //     .attr("r", 2)
-            //     .style('stroke', 'black')
-            //     .style('stroke-width', '0.5')
-            //     .style('fill', function (d) { 
-            //         return typeof d.node === 'undefined' ? 'black' : color(d.node.id) 
-            //     })
             svg.selectAll('.obstacles')
                 .data(gridrouter.obstacles)
                 .enter()
@@ -581,16 +616,17 @@ asyncTest('grid router', function() {
                 .style('stroke-width', '1')
                 .style('fill', 'none');
 
+            var lineFunction = d3.svg.line()
+                .x(function (d) { return d.x; })
+                .y(function (d) { return d.y; }).interpolate('linear');
             svg.selectAll('.route')
-                .data(shortestPath)
-                .enter()
-                .append('line')
-                .attr('x1', function(d) { return d[0].x })
-                .attr('y1', function(d) { return d[0].y })
-                .attr('x2', function(d) { return d[1].x })
-                .attr('y2', function(d) { return d[1].y })
+                .data([shortestPath])
+                .enter().append('path')
+                .attr('class', 'route').attr('opacity', 0.5)
+                .attr('d', function (d) { return lineFunction(d) })
+                .attr('fill', 'none')
                 .style('stroke', 'red')
-                .style('stroke-width',5);
+                .style('stroke-width', 5);
         }
         start();
     });

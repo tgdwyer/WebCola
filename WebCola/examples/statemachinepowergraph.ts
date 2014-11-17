@@ -247,7 +247,29 @@ module tetrisbug {
                 node.append("title")
                     .text(d => d.name);
 
-                var routes = gridrouter.routeEdges<any>(g.edges, e=> e.source, e=> e.target);
+                var routePaths = gridrouter.routeEdges<any>(g.edges, e=> e.source, e=> e.target);
+                var vLookup = {};
+                var verts = [];
+                g.edges.forEach((e, i) => {
+                    if (e.source === 6 && e.target === 17 || e.source === 2 && e.target === 6) {
+                        var route = routePaths[i];
+                        route.forEach(v => {
+                            var id = (<any>v).id;
+                            if (!(id in vLookup)) {
+                                (<any>vLookup)[id] = verts.length;
+                                verts.push(v);
+                            }
+                            console.log("e"+e.source+","+e.target+": "+(<any>vLookup)[id]);
+                        });
+                    }
+                });
+                verts.forEach(v=> console.log("{x:" + v.x + ", y:" + v.y+"},"));
+
+                var order = cola.GridRouter.orderEdges(routePaths);
+                var routes = routePaths.map(function (e) { return cola.GridRouter.makeSegments(e); });
+                cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 10);
+                cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 10);
+
                 g.edges.forEach((e, j) => {
                     var route = routes[j];
                     var id = 'e'+e.source+'-'+e.target;
