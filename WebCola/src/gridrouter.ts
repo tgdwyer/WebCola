@@ -64,7 +64,6 @@ module cola {
         }
     }
 	export class GridRouter<Node> {
-		groupPadding = 12;
 		leaves:any[] = null;
 		groups: NodeWrapper[];
 		nodes: NodeWrapper[];
@@ -112,7 +111,7 @@ module cola {
 	        return mids;
 	    }
 
-		constructor(public originalnodes: Node[], accessor: NodeAccessor<Node>) {
+        constructor(public originalnodes: Node[], accessor: NodeAccessor<Node>, public groupPadding: number = 12) {
 			this.nodes = originalnodes.map((v,i)=> new NodeWrapper(i, accessor.getBounds(v), accessor.getChildren(v)));
 	        this.leaves = this.nodes.filter(v=>v.leaf);
 	        this.groups = this.nodes.filter(g=>!g.leaf);
@@ -386,7 +385,7 @@ module cola {
         }
 
         // obtain routes for the specified edges, nicely nudged apart
-        // warning: edge paths may be reversed!
+        // warning: edge paths may be reversed such that common paths are ordered consistently within bundles!
         routeEdges<Edge>(edges: Edge[], gap: number, source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][][]{
             var routePaths = edges.map(e=> this.route(source(e), target(e)));
             var order = cola.GridRouter.orderEdges(routePaths);
@@ -413,6 +412,8 @@ module cola {
             return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) <= 0;
         }
 
+        // for the given list of ordered pairs, returns a function that (efficiently) looks-up a specific pair to
+        // see if it exists in the list
         private static getOrder(pairs: { l: number; r: number }[]): (l: number, r: number) => boolean {
             var outgoing = {};
             for (var i = 0; i < pairs.length; i++) {
@@ -423,6 +424,8 @@ module cola {
             return (l, r) => typeof outgoing[l] !== 'undefined' && outgoing[l][r];
         }
 
+        // returns an ordering (a lookup function) that determines the correct order to nudge the
+        // edge paths apart to minimize crossings
         static orderEdges(edges) {
             var edgeOrder = [];
             for (var i = 0; i < edges.length - 1; i++) {

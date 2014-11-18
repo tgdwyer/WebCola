@@ -176,7 +176,7 @@ module tetrisbug {
                             type: e.type
                         })
                     };
-                var gridrouter = new cola.GridRouter(g.nodes,{
+                var gridrouter = new cola.GridRouter(g.nodes, {
                     getChildren: function(v:any) {
                         return v.children;
                     },
@@ -184,8 +184,6 @@ module tetrisbug {
                         return v.bounds;
                     }
                 });
-
-                gridrouter.groupPadding = 5;
 
                 var gs = gridrouter.backToFront.filter(v=>!v.leaf);
                 var group = svg.selectAll(".group")
