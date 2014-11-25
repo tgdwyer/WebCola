@@ -25,7 +25,7 @@ module.exports = function (grunt) {
         options: {
           module: 'amd',
           target: 'es5',
-          sourcemap: false
+          sourceMap: true
         }
       },
       examples: {
@@ -33,7 +33,7 @@ module.exports = function (grunt) {
         options: {
           module: 'amd',
           target: 'es5',
-          sourcemap: false
+          sourceMap: false
         }
       }
     },
