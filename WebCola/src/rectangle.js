@@ -4,7 +4,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var RBTree = require('bintrees/RBTree');
+var RBTree = require('bintrees/lib/rbtree');
 var vpsc = require('./vpsc');
 function computeGroupBounds(g) {
     g.bounds = typeof g.leaves !== "undefined" ? g.leaves.reduce(function (r, c) { return c.bounds.union(r); }, Rectangle.empty()) : Rectangle.empty();
