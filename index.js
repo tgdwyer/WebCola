@@ -1,18 +1,17 @@
 var extend = require('xtend');
-var linkLengths = require('./lib/linklengths');
+var linklengths = require('./lib/linklengths');
 var rectangle = require('./lib/rectangle');
-var vspc = require('./lib/vspc');
-
+var vpsc = require('./lib/vpsc');
 
 var cola = {
-	Locks: require('lib/locks'),
-	Descent: require('./lib/descent'),
+	Locks: require('./lib/locks').Locks,
+	Descent: require('./lib/descent').Descent,
 	geom: require('./lib/geom'),
-	GridRouter: require('./gridrouter'),
-	LongestCommonSubsequence: require('longest-common-subsequence'),
+	GridRouter: require('./lib/gridrouter').GridRouter,
+	LongestCommonSubsequence: require('./lib/longest-common-subsequence').LongestCommonSubsequence,
 	powergraph: require('./lib/powergraph'),
-	PseudoRandom: require('./pseudo-random'),
-	vspc: extend(vspc, rectangle),
+	PseudoRandom: require('./lib/pseudo-random').PseudoRandom,
+	vpsc: extend(vpsc, rectangle),
 	shortestpaths: require('./lib/shortestpaths')
 }
 
