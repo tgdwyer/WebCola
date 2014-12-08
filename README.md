@@ -1,74 +1,47 @@
+WebCola
+=======
 
-##Introduction
+Javascript constraint based layout for high-quality graph visualization and exploration 
+using D3.js and other web-based graphics libraries.  
+[Homepage with examples](http://marvl.infotech.monash.edu/webcola)
 
-Connecting apps to other apps 
+Building
+--------
 
-This document discusses four different strategies for integrating apps with other apps and building app 'ecosystems':
- 1. 'Piecemeal Integration',
- 2. 'Central Hub',
- 3. 'Intergration as a Service', and
- 4. 'Open Vocab'
+*Linux/Mac/Windows Command Line:*
 
-We argue that 'Open Vocab' Strategy promotes more democratic and scalable app 'ecosystems', compared to the other options.
+ - install [node.js](http://nodejs.org)
+ - install grunt from the command line using npm (comes with node.js):
 
-Next we discuss how app developers can progresively implement the Open Vocab strategy. 
+> npm install -g grunt-cli
 
-Finally, we make specific API reccomendations for app's that wish to integrate using Loomio, Cobudget and DemcracyOS as examples.  
+ - from the WebCola directory:
 
+> npm install grunt
 
-##Strategies for App Ecosystems
+> npm install
 
-###Piecemeal Integration
+ - build, minify and test:
 
-The main problem for any integration strategy is that developers inevitably represent the same or similar data in their apps in different ways. These representations are known as 'models'. Apps that follow a piecemeal integration strategy connect the data of one app provider to another *one at a time*, through specific *translation layers* that transform models in one app into models in another. 
+> grunt
 
-For example, user account in Loomio is stored in a model known as a 'User', but in DemocracyOS the same concept is known as a ['Citizen'](https://github.com/DemocracyOS/app/blob/development/lib/models/citizen.js). Further, these models have similar properties but are specified with slightly different terminology. In DemocracyOS a 'Citizen' includes the following properties:
+This creates the cola.v3.min.js file in the WebCola directory.
 
-```Citizen:
-	firstName:
-	lastName:
-	username:
-	avatar:
-	createdAt:
-	updatedAt:
-	profilePictureUrl:
-	disabledAt:
-	... 
-```
+*Visual Studio:*
 
-While in Loomio a 'User' includes the following:
+ - get the [typescript plugin](http://www.typescriptlang.org/#Download)
+ - open webcola.sln
 
-```User:
-	name:
-	username:
-	avatar_initials:
-	avatar_kind:
-	avatar_url:
-	profile_url:
-	... 
+Running
+-------
 
-```
+*Linux/Mac/Windows Command Line:*
 
-Both of these include the term 'username' which is undoubtedly the same concept, but other properties use different terms e.g. ```profile_url``` is the same concept as ```profilePictureUrl``` while the 'name' concept is specified as ```name``` in Loomio but split accross ```firstName``` and ```lastName``` in DemocracyOS. If these apps followed a Piecemeal Integration strategy and wished to allow users to share their personal data accross apps, i.e. an 'Import your account details from Loomio/DemocracyOS' the developers would have to write a specific 'translation layer' for transforming one of these models into another, *in addition* to the 'Import account' feature. 
+Install the Node.js http-server module:
 
-###Central Hub
+> npm install -g http-server
 
-The central
+After installing http-server, we can serve out the example content in the WebCola directory.
+> http-server WebCola
 
-###Integration as a Service
-
-###Open Vocab
-
-
-## Linked Data and Open Vocab Implemention Strategies
-
-
-##User
-
-##Group
-
-##Membership
-
-##Motion 
-
-##Vote
+The default configuration of http-server will serve the exampes on [http://localhost:8080](http://localhost:8080).
