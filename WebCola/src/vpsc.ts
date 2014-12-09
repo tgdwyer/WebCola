@@ -1,6 +1,6 @@
 import Variable = require('./variable');
 
-
+export class Variable = Variable;
 export class PositionStats {
     AB: number = 0;
     AD: number = 0;

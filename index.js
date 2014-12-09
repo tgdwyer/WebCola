@@ -1,7 +1,8 @@
-var extend = require('xtend');
-var linklengths = require('./lib/linklengths');
-var rectangle = require('./lib/rectangle');
-var vpsc = require('./lib/vpsc');
+var extend 							= require('xtend');
+var linklengths 				= require('./lib/linklengths');
+var handleDisconnected 	= require('./lib/handle_disconnected');
+var rectangle 					= require('./lib/rectangle');
+var vpsc 								= require('./lib/vpsc');
 
 var cola = {
 	Locks: require('./lib/locks').Locks,
@@ -15,5 +16,5 @@ var cola = {
 	shortestpaths: require('./lib/shortestpaths')
 }
 
-cola = module.exports = extend(cola, linklengths);
+cola = module.exports = extend(cola, linklengths, handleDisconnected);
 
