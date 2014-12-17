@@ -7,6 +7,7 @@ var buffer 			= require('vinyl-buffer');
 var uglify 			= require('gulp-uglify');
 var sourcemaps 	= require('gulp-sourcemaps');
 var qunit       = require('gulp-qunit');
+var serve       = require('gulp-serve');
 
 var getBundleName = function () {
   var version = 'v'+require('./package.json').version.split('.')[0];
@@ -43,7 +44,7 @@ gulp.task('browserify', function () {
       .pipe(source(getBundleName() + '.js'))
       .pipe(buffer())
       .pipe(sourcemaps.init({loadMaps: true}))
-      .pipe(uglify())
+      // .pipe(uglify())
       .pipe(sourcemaps.write('./'))
       .pipe(gulp.dest('./WebCola/'));
   }
@@ -55,4 +56,6 @@ gulp.task('test', function() {
     return gulp.src('./test/test.html')
         .pipe(qunit());
 });
+
+
 

@@ -17,6 +17,8 @@ function approxEquals(actual, expected, threshold) {
     return Math.abs(actual - expected) <= threshold;
 }
 
+console.log('d3', d3)
+
 asyncTest("small power-graph", function () {
     d3.json("../examples/graphdata/n7e23.json", function (error, graph) {
         var n = graph.nodes.length;
