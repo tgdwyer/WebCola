@@ -6,6 +6,7 @@ var transform 	= require('vinyl-transform');
 var buffer 			= require('vinyl-buffer');
 var uglify 			= require('gulp-uglify');
 var sourcemaps 	= require('gulp-sourcemaps');
+var qunit       = require('gulp-qunit');
 
 var getBundleName = function () {
   var version = 'v'+require('./package.json').version.split('.')[0];
@@ -30,14 +31,9 @@ gulp.task('copy', function () {
     .pipe(gulp.dest('./lib'))
 })
 
-gulp.task('module', function () {
-  
-
-})
-
 gulp.task('browserify', function () {
   var bundler = browserify({
-    entries: ['./lib/adaptor.js'],
+    entries: ['./browser.js'],
     debug: true
   });
 
@@ -55,7 +51,8 @@ gulp.task('browserify', function () {
   return bundle();
 });
 
+gulp.task('test', function() {
+    return gulp.src('./test/test.html')
+        .pipe(qunit());
+});
 
-gulp.task('browserify-adaptor')
-
-// gulp.task('cncat')

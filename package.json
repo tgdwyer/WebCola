@@ -28,6 +28,8 @@
   "main": "index.js",
   "dependencies": {
     "bintrees": "~1.0.0",
+    "d3": "^3.5.2",
+    "gulp-qunit": "^1.1.0",
     "xtend": "~4.0.0"
   },
   "scripts": {
