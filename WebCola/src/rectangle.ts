@@ -1,6 +1,6 @@
 import RBTree = require('bintrees/lib/rbtree');
 import vpsc = require('./vpsc');
-import Variable = require('./variable');
+var Variable = vpsc.Variable;
 
 export interface Leaf {
     bounds: Rectangle;

@@ -1,6 +1,5 @@
 var cola  = require('./index');
-var adaptor = require('./lib/adaptor');
 
-cola.d3adaptor = adaptor;
+cola.d3adaptor = require('./lib/d3Adaptor');
 
 window.cola = cola;

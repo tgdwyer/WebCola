@@ -15,6 +15,7 @@
     "gulp": "~3.8.10",
     "gulp-serve": "^0.3.0",
     "gulp-sourcemaps": "~1.2.8",
+    "gulp-tsc": "^0.9.2",
     "gulp-typescript": "~2.3.0",
     "gulp-typescript-compiler": "~1.0.1",
     "gulp-uglify": "~1.0.2",

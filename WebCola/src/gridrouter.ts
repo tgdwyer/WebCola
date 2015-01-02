@@ -1,3 +1,4 @@
+declare function require(name:string);
 import vpsc = require('./vpsc');
 import shortestpaths = require('./shortestpaths');
 import geom = require('./geom');
@@ -56,7 +57,13 @@ export class GridRouter<Node> {
     }
 
       constructor(public originalnodes: Node[], accessor: NodeAccessor<Node>, public groupPadding: number = 12) {
-		this.nodes = originalnodes.map((v,i)=> new NodeWrapper(i, accessor.getBounds(v), accessor.getChildren(v)));
+		this.nodes = originalnodes.map((v,i)=> 
+      new NodeWrapper(
+        i, 
+        accessor.getBounds(v), 
+        accessor.getChildren(v)
+      )
+    );
         this.leaves = this.nodes.filter(v=>v.leaf);
         this.groups = this.nodes.filter(g=>!g.leaf);
         this.cols = this.getGridDim('x');

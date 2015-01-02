@@ -1,4 +1,5 @@
 import PriorityQueue = require('./pqueue');
+var PriorityQueue = PriorityQueue.PriorityQueue;
 
 class Neighbour {
     constructor(public id: number, public distance: number) { }

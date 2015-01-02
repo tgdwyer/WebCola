@@ -17,7 +17,7 @@ function approxEquals(actual, expected, threshold) {
     return Math.abs(actual - expected) <= threshold;
 }
 
-console.log('d3', d3)
+console.log('adaptor', cola.d3adaptor)
 
 asyncTest("small power-graph", function () {
     d3.json("../examples/graphdata/n7e23.json", function (error, graph) {
@@ -64,6 +64,7 @@ asyncTest("small power-graph", function () {
 
 asyncTest("all-pairs shortest paths", function () {
     var d3cola = cola.d3adaptor();
+    console.log('d3cola', d3cola)
 
     d3.json("../examples/graphdata/triangle.json", function (error, graph) {
         d3cola

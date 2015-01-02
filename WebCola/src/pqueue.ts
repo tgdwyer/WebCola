@@ -1,4 +1,8 @@
+declare function require(name:string);
 import PairingHeap = require('./pairing-heap');
+var PairingHeap = PairingHeap.PairingHeap;
+
+
 
 /**
  * @class PriorityQueue a min priority queue backed by a pairing heap
