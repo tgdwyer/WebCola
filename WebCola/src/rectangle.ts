@@ -1,6 +1,7 @@
 import RBTree = require('bintrees/lib/rbtree');
 import vpsc = require('./vpsc');
 var Variable = vpsc.Variable;
+var Constraint = vpsc.Constraint;
 
 export interface Leaf {
     bounds: Rectangle;
@@ -419,11 +420,11 @@ export class Projection {
 				if (!v.width || !v.height)
 				{
 					//If undefined, default to nothing
-					v.bounds = new vpsc.Rectangle(v.x, v.x, v.y, v.y);
+					v.bounds = new Rectangle(v.x, v.x, v.y, v.y);
 					return;
 				}
                 var w2 = v.width / 2, h2 = v.height / 2;
-                v.bounds = new vpsc.Rectangle(v.x - w2, v.x + w2, v.y - h2, v.y + h2);
+                v.bounds = new Rectangle(v.x - w2, v.x + w2, v.y - h2, v.y + h2);
             });
             computeGroupBounds(rootGroup);
             var i = nodes.length;

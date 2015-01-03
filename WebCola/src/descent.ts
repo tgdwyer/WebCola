@@ -1,6 +1,9 @@
 import PseudoRandom = require('./pseudo-random');
 import Locks = require('./locks');
 
+var PseudoRandom = PseudoRandom.PseudoRandom;
+var Locks = Locks.Locks;
+
 export class Descent {
     public threshold: number = 0.0001;
     /** Hessian Matrix
