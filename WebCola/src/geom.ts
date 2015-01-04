@@ -1,4 +1,7 @@
 import vpsc = require('./vpsc');
+import Rectangle = require('./rectangle');
+
+var Rectangle = Rectangle.Rectangle;
 
 export class Point {
     x: number;
@@ -345,7 +348,7 @@ export class TangentVisibilityGraph {
                 var Pi = P[i];
                 for (var j = i + 1; j < n; j++) {
                     var Pj = P[j],
-                        t = geom.tangents(Pi, Pj);
+                        t = tangents(Pi, Pj);
                     for (var q in t) {
                         var c = t[q],
                             source = Pi[c.t1], target = Pj[c.t2];
@@ -388,7 +391,7 @@ export class TangentVisibilityGraph {
 function intersects(l: LineSegment, P: Point[]) {
     var ints = [];
     for (var i = 1, n = P.length; i < n; ++i) {
-        var int = cola.vpsc.Rectangle.lineIntersection(
+        var int = Rectangle.lineIntersection(
             l.x1, l.y1,
             l.x2, l.y2,
             P[i - 1].x, P[i - 1].y,

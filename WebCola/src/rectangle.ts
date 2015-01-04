@@ -369,14 +369,14 @@ export function generateYGroupConstraints(root: Group): Constraint[] {
 
 export function removeOverlaps(rs: Rectangle[]): void {
     var vs = rs.map(r => new Variable(r.cx()));
-    var cs = vpsc.generateXConstraints(rs, vs);
+    var cs = generateXConstraints(rs, vs);
     var solver = new vpsc.Solver(vs, cs);
     solver.solve();
     vs.forEach((v, i) => rs[i].setXCentre(v.position()));
     vs = rs.map(function (r) {
         return new Variable(r.cy());
     });
-    cs = vpsc.generateYConstraints(rs, vs);
+    cs = generateYConstraints(rs, vs);
     solver = new vpsc.Solver(vs, cs);
     solver.solve();
     vs.forEach((v, i) => rs[i].setYCentre(v.position()));

@@ -7,6 +7,10 @@ import NodeWrapper = require('./node-wrapper');
 import NodeAccessor = require('./node-accessor');
 import Vert = require('./vert');
 
+var LongestCommonSubsequence = LongestCommonSubsequence.LongestCommonSubsequence;
+var NodeWrapper = NodeWrapper.NodeWrapper;
+var NodeAccessor = NodeAccessor.NodeAccessor;
+var Vert = Vert.Vert;
 
 export class GridRouter<Node> {
 	leaves:any[] = null;
