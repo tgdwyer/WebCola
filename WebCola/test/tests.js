@@ -525,6 +525,7 @@ test('metro crossing min', function () {
 asyncTest('grid router', function() {
     var draw = true;
     d3.json("../examples/graphdata/tetrisbugmultiedgeslayout.json", function (error, graph) {
+        console.log('gridrouter test fired')
         var gridrouter = new cola.GridRouter(graph.nodes,{
             getChildren: function(v) {
                 return v.children;

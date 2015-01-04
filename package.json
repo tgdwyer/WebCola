@@ -20,18 +20,20 @@
     "gulp-typescript-compiler": "~1.0.1",
     "gulp-uglify": "~1.0.2",
     "load-grunt-tasks": "~0.4.0",
+    "node-qunit-phantomjs": "^1.1.1",
     "typescript": "~1.1.0",
     "uglifyjs": "~2.3.6",
     "vinyl-buffer": "~1.0.0",
     "vinyl-source-stream": "~1.0.0",
-    "vinyl-transform": "~1.0.0"
+    "vinyl-transform": "~1.0.0",
+    "gulp-if-else": "~1.0.3",
+    "gulp-util": "~3.0.1"
   },
   "description": "WebCola =======",
   "main": "index.js",
   "dependencies": {
     "bintrees": "~1.0.0",
     "d3": "^3.5.2",
-    "gulp-qunit": "^1.1.0",
     "simple-server": "^1.0.1",
     "xtend": "~4.0.0"
   },

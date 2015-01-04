@@ -38,7 +38,7 @@
 
     var color = d3.scale.category20();
 
-    var cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor()
         .linkDistance(120)
         .avoidOverlaps(true)
         .size([width, height]);
@@ -48,7 +48,7 @@
         .attr("height", height);
 
     d3.json("graphdata/fivenodesdisconnected.json", function (error, graph) {
-        cola
+        d3cola
             .nodes(graph.nodes)
             .links(graph.links)
             .start();
@@ -66,19 +66,19 @@
             .attr("height", function (d) { return d.height; })
             .attr("rx", 5).attr("ry", 5)
             .style("fill", function (d) { return color(1); })
-            .call(cola.drag);
+            .call(d3cola.drag);
 
         var label = svg.selectAll(".label")
             .data(graph.nodes)
            .enter().append("text")
             .attr("class", "label")
             .text(function (d) { return d.name; })
-            .call(cola.drag);
+            .call(d3cola.drag);
 
         node.append("title")
             .text(function (d) { return d.name; });
 
-        cola.on("tick", function () {
+        d3cola.on("tick", function () {
             link.attr("x1", function (d) { return d.source.x; })
                 .attr("y1", function (d) { return d.source.y; })
                 .attr("x2", function (d) { return d.target.x; })

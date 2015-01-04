@@ -1,6 +1,7 @@
 var d3 = require('d3');
 
-var Adaptor = require('./adaptor')
+var Adaptor = require('./adaptor');
+var dragHelper = require('./drag');
 
 module.exports = function () {
   var event = d3.dispatch("start", "tick", "end");
@@ -22,12 +23,12 @@ module.exports = function () {
     drag: function () {
         var drag = d3.behavior.drag()
             .origin(function(d){ return d; })
-            .on("dragstart.d3adaptor", colaDragstart)
+            .on("dragstart.d3adaptor", dragHelper.dragstart)
             .on("drag.d3adaptor", function (d) {
                 d.px = d3.event.x, d.py = d3.event.y;
                 adaptor.resume(); // restart annealing
             })
-            .on("dragend.d3adaptor", colaDragend);
+            .on("dragend.d3adaptor", dragHelper.dragend);
 
         if (!arguments.length) return drag;
 

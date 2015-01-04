@@ -6,11 +6,13 @@ import LongestCommonSubsequence = require('./longest-common-subsequence');
 import NodeWrapper = require('./node-wrapper');
 import NodeAccessor = require('./node-accessor');
 import Vert = require('./vert');
+import Rectangle = require('./rectangle')
 
 var LongestCommonSubsequence = LongestCommonSubsequence.LongestCommonSubsequence;
 var NodeWrapper = NodeWrapper.NodeWrapper;
 var NodeAccessor = NodeAccessor.NodeAccessor;
 var Vert = Vert.Vert;
+var Rectangle = Rectangle.Rectangle;
 
 export class GridRouter<Node> {
 	leaves:any[] = null;
@@ -102,7 +104,7 @@ export class GridRouter<Node> {
         // such that each can be made large enough to enclose its interior
         var frontToBackGroups = this.backToFront.slice(0).reverse().filter(g=>!g.leaf);
         frontToBackGroups.forEach(v=> {
-            var r = vpsc.Rectangle.empty();
+            var r = Rectangle.empty();
             v.children.forEach(c=> r = r.union(this.nodes[c].rect));
             v.rect = r.inflate(this.groupPadding);
         });

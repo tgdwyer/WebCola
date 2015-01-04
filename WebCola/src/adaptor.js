@@ -11,8 +11,10 @@ var handleDisconnected = require('./handle_disconnected');
 var applyPacking = handleDisconnected.applyPacking;
 var separateGraphs = handleDisconnected.separateGraphs;
 var geom = require('./geom');
+var dragHelper = require('./drag');
 
-console.log('handle_disconnected', handleDisconnected)
+
+
 /**
 * @class adaptor
 */
@@ -47,8 +49,16 @@ function adaptor (options) {
     adaptor.drag = options.drag; // a function to allow for dragging of nodes
 
     // give external access to drag-related helper functions
-    adaptor.dragstart = colaDragstart;
-    adaptor.dragend = colaDragend;
+    adaptor.dragstart = dragHelper.dragstart;
+
+    adaptor.dragend = dragHelper.dragend;
+
+
+
+
+
+
+
     adaptor.mouseover = colaMouseover;
     adaptor.mouseout = colaMouseout;
 
@@ -527,15 +537,6 @@ function adaptor (options) {
 // Bit 3 stores the hover state, from mouseover to mouseout.
 // Dragend is a special case: it also clears the hover state.
 
-function colaDragstart(d) {
-d.fixed |= 2; // set bit 2
-d.px = d.x, d.py = d.y; // set velocity to zero
-}
-
-function colaDragend(d) {
-d.fixed &= ~6; // unset bits 2 and 3
-//d.fixed = 0;
-}
 
 function colaMouseover(d) {
 d.fixed |= 4; // set bit 3
