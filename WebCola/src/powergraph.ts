@@ -20,14 +20,18 @@ module cola.powergraph {
         // Modules created through merges are appended to the end of this.
         modules: Module[];
         // top level modules and candidates for merges
-        roots: ModuleSet;
+        roots: ModuleSet[];
         // remaining edge count
         R: number;
-        constructor(n: number, edges: Link[], private linkAccessor: LinkAccessor<Link>) {
+        constructor(n: number, edges: Link[], private linkAccessor: LinkAccessor<Link>, rootGroup?: any[]) {
             this.modules = new Array(n);
-            this.roots = new ModuleSet();
-            for (var i = 0; i < n; ++i) {
-                this.roots.add(this.modules[i] = new Module(i));
+            this.roots = [];
+            if (rootGroup) {
+                this.initModulesFromGroup(rootGroup);
+            } else {
+                this.roots.push(new ModuleSet());
+                for (var i = 0; i < n; ++i)
+                    this.roots[0].add(this.modules[i] = new Module(i));
             }
             this.R = edges.length;
             edges.forEach(e => {
@@ -39,8 +43,22 @@ module cola.powergraph {
             });
         }
 
+        private initModulesFromGroup(group) {
+            var moduleSet = new ModuleSet();
+            this.roots.push(moduleSet);
+            for (var i = 0; i < group.leaves.length; ++i) {
+                var node = group.leaves[i];
+                var module = new Module(node.id);
+                this.modules[node.id] = module;
+                moduleSet.add(module);
+            }
+            if (group.groups)
+                for (var j = 0; j < group.groups.length; ++j)
+                    this.initModulesFromGroup(group.groups[j]);
+         }
+
         // merge modules a and b keeping track of their power edges and removing the from roots
-        merge(a: Module, b: Module): Module {
+        merge(a: Module, b: Module, k: number = 0): Module {
             var inInt = a.incoming.intersection(b.incoming),
                 outInt = a.outgoing.intersection(b.outgoing);
             var children = new ModuleSet();
@@ -63,18 +81,18 @@ module cola.powergraph {
             update(outInt, "incoming", "outgoing");
             update(inInt, "outgoing", "incoming");
             this.R -= inInt.count() + outInt.count();
-            this.roots.remove(a);
-            this.roots.remove(b);
-            this.roots.add(m);
+            this.roots[k].remove(a);
+            this.roots[k].remove(b);
+            this.roots[k].add(m);
             return m;
         }
 
-        private rootMerges(): {
+        private rootMerges(k: number = 0): {
             nEdges: number;
             a: Module;
             b: Module;
         }[] {
-            var rs = this.roots.modules();
+            var rs = this.roots[k].modules();
             var n = rs.length;
             var merges = new Array(n * (n - 1));
             var ctr = 0;
@@ -88,11 +106,15 @@ module cola.powergraph {
         }
 
         greedyMerge(): boolean {
-            var ms = this.rootMerges().sort((a, b) => a.nEdges - b.nEdges);
-            var m = ms[0];
-            if (m.nEdges >= this.R) return false;
-            this.merge(m.a, m.b);
-            return true;
+            for (var i = 0; i < this.roots.length; ++i) {
+                // Handle single nested module case
+                if (this.roots[i].modules().length < 2) continue;
+                var ms = this.rootMerges(i).sort((a, b) => a.nEdges - b.nEdges);
+                var m = ms[0];
+                if (m.nEdges >= this.R) continue;
+                this.merge(m.a, m.b, i);
+                return true;
+            }
         }
 
         private nEdges(a: Module, b: Module): number {
@@ -104,7 +126,12 @@ module cola.powergraph {
         getGroupHierarchy(retargetedEdges: PowerEdge[]): any[]{
             var groups = [];
             var root = {};
-            toGroups(this.roots, root, groups);
+            toGroups(this.roots[0], root, groups);
+            for (var i = 1; i < this.roots.length; ++i) {
+                var group = {id: groups.length};
+                groups.push(group);
+                toGroups(this.roots[i], group, groups);
+            }
             var es = this.allEdges();
             es.forEach(e => {
                 var a = this.modules[e.source];
@@ -120,7 +147,8 @@ module cola.powergraph {
 
         allEdges(): PowerEdge[] {
             var es = [];
-            Configuration.getEdges(this.roots, es);
+            for (var i = 0; i < this.roots.length; ++i)
+                Configuration.getEdges(this.roots[i], es);
             return es;
         }
 
@@ -132,7 +160,7 @@ module cola.powergraph {
         }
     }
 
-    function toGroups(modules, group, groups) {
+    function toGroups(modules: ModuleSet, group, groups) {
         modules.forAll(m => {
             if (m.isLeaf()) {
                 if (!group.leaves) group.leaves = [];
@@ -273,9 +301,9 @@ module cola.powergraph {
         return Object.keys(intersection(m, n)).length
     }
 
-    export function getGroups<Link>(nodes: any[], links: Link[], la: LinkAccessor<Link>): { groups: any[]; powerEdges: PowerEdge[] } {
+    export function getGroups<Link>(nodes: any[], links: Link[], la: LinkAccessor<Link>, rootGroup?: any[]): { groups: any[]; powerEdges: PowerEdge[] } {
         var n = nodes.length,
-            c = new powergraph.Configuration(n, links, la);
+            c = new powergraph.Configuration(n, links, la, rootGroup);
         while (c.greedyMerge());
         var powerEdges: PowerEdge[] = [];
         var g = c.getGroupHierarchy(powerEdges);
@@ -283,7 +311,7 @@ module cola.powergraph {
             var f = (end) => {
                 var g = e[end];
                 if (typeof g == "number") e[end] = nodes[g];
-            }
+            };
             f("source");
             f("target");
         });
