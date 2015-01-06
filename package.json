@@ -27,7 +27,9 @@
     "vinyl-source-stream": "~1.0.0",
     "vinyl-transform": "~1.0.0",
     "gulp-if-else": "~1.0.3",
-    "gulp-util": "~3.0.1"
+    "gulp-util": "~3.0.1",
+    "highland": "~2.2.0",
+    "phantomjs": "~1.9.13"
   },
   "description": "WebCola =======",
   "main": "index.js",
