@@ -179,7 +179,7 @@ var cola;
         };
 
         adaptor.powerGraphGroups = function (f) {
-            var g = cola.powergraph.getGroups(nodes, links, linkAccessor);
+            var g = cola.powergraph.getGroups(nodes, links, linkAccessor, rootGroup);
             this.groups(g.groups);
             f(g);
             return adaptor;
