@@ -17,8 +17,6 @@ function approxEquals(actual, expected, threshold) {
     return Math.abs(actual - expected) <= threshold;
 }
 
-console.log('adaptor', cola.d3adaptor)
-
 asyncTest("small power-graph", function () {
     d3.json("../examples/graphdata/n7e23.json", function (error, graph) {
         var n = graph.nodes.length;
@@ -64,7 +62,6 @@ asyncTest("small power-graph", function () {
 
 asyncTest("all-pairs shortest paths", function () {
     var d3cola = cola.d3adaptor();
-    console.log('d3cola', d3cola)
 
     d3.json("../examples/graphdata/triangle.json", function (error, graph) {
         d3cola
@@ -525,7 +522,6 @@ test('metro crossing min', function () {
 asyncTest('grid router', function() {
     var draw = true;
     d3.json("../examples/graphdata/tetrisbugmultiedgeslayout.json", function (error, graph) {
-        console.log('gridrouter test fired')
         var gridrouter = new cola.GridRouter(graph.nodes,{
             getChildren: function(v) {
                 return v.children;

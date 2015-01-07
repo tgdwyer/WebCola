@@ -1,4 +1,3 @@
-declare function require(name:string);
 import PairingHeap = require('./pairing-heap');
 var PairingHeap = PairingHeap.PairingHeap;
 

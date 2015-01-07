@@ -76,7 +76,7 @@
         .attr('stroke-width', '0px')
         .attr('fill', '#000');
 
-    d3.json("graphdata/tetriscodemap.json", function (error, graph) {
+    d3.json("graphdata/tetrisbug.json", function (error, graph) {
         d3cola
             .avoidOverlaps(true)
             .flowLayout('x', 150)

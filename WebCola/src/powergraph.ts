@@ -275,7 +275,7 @@ function intersectionCount(m: any, n: any): number {
 
 export function getGroups<Link>(nodes: any[], links: Link[], la: LinkAccessor<Link>): { groups: any[]; powerEdges: PowerEdge[] } {
     var n = nodes.length,
-        c = new powergraph.Configuration(n, links, la);
+        c = new Configuration(n, links, la);
     while (c.greedyMerge());
     var powerEdges: PowerEdge[] = [];
     var g = c.getGroupHierarchy(powerEdges);
