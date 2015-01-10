@@ -16,7 +16,7 @@
     "async": "~0.6.2"
   },
   "description": "WebCola =======",
-  "main": "Gruntfile.js",
+  "main": "WebCola/cola.v3.min.js",
   "dependencies": {},
   "scripts": {
     "test": "grunt full"
