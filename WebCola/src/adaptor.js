@@ -96,7 +96,7 @@ var cola;
                 o;
 
             descent.locks.clear();
-            for (i = 0; i < n; ++i) {
+            for (var i = 0; i < n; ++i) {
                 o = nodes[i];
                 if (o.fixed) {
                     if (typeof o.px === 'undefined' || typeof o.py === 'undefined') {
@@ -117,7 +117,7 @@ var cola;
             }
             lastStress = s1;
 
-            for (i = 0; i < n; ++i) {
+            for (var i = 0; i < n; ++i) {
                 o = nodes[i];
                 if (o.fixed) {
                     o.x = o.px;
@@ -427,8 +427,8 @@ var cola;
             descent = new cola.Descent([x, y], D);
 
             descent.locks.clear();
-            for (i = 0; i < n; ++i) {
-                o = nodes[i];
+            for (var i = 0; i < n; ++i) {
+                var o = nodes[i];
                 if (o.fixed) {
                     o.px = o.x;
                     o.py = o.y;
