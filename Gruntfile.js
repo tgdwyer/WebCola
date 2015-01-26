@@ -63,9 +63,8 @@ module.exports = function (grunt) {
     uglify: {
       dist: {
         options: {
-          sourceMap: 'WebCola/cola.v3.min.map',
-          sourceMapIn: 'WebCola/compiledtypescript.js.map',
-          sourceMapRoot: 'WebCola'
+          sourceMap: true,
+          sourceMapIn: 'WebCola/compiledtypescript.js.map'
         },
         files: {
           'WebCola/cola.v3.min.js': [

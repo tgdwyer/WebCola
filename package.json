@@ -1,19 +1,19 @@
 {
   "name": "webcola",
-  "version": "0.1.0",
+  "version": "3.0.1",
   "devDependencies": {
+    "async": "~0.6.2",
     "grunt": "~0.4.2",
     "grunt-contrib-concat": "~0.3.0",
     "grunt-contrib-qunit": "~0.3.0",
-    "grunt-contrib-uglify": "~0.2.2",
+    "grunt-contrib-uglify": "^0.7.0",
     "grunt-contrib-watch": "~0.6.1",
     "grunt-contrib-yuidoc": "~0.5.0",
     "grunt-typescript": "~0.2.7",
     "grunt-umd": "~1.7.3",
     "load-grunt-tasks": "~0.4.0",
     "typescript": "~1.1.0",
-    "uglifyjs": "~2.3.6",
-    "async": "~0.6.2"
+    "uglifyjs": "~2.3.6"
   },
   "description": "WebCola =======",
   "main": "WebCola/cola.v3.min.js",
