@@ -262,7 +262,7 @@ var handleDisconnected = {
   separateGraphs: function(nodes, links){
       var marks = {};
       var ways = {};
-      graphs = [];
+      var graphs = [];
       var clusters = 0;
 
       for (var i = 0; i < links.length; i++){

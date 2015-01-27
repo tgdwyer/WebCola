@@ -75,8 +75,8 @@ function adaptor (options) {
             o;
 
         descent.locks.clear();
-        for (i = 0; i < n; ++i) {
-            o = nodes[i];
+        for (var i = 0; i < n; ++i) {
+            var o = nodes[i];
             if (o.fixed) {
                 if (typeof o.px === 'undefined' || typeof o.py === 'undefined') {
                     o.px = o.x;
@@ -96,8 +96,8 @@ function adaptor (options) {
         }
         lastStress = s1;
 
-        for (i = 0; i < n; ++i) {
-            o = nodes[i];
+        for (var i = 0; i < n; ++i) {
+            var o = nodes[i];
             if (o.fixed) {
                 o.x = o.px;
                 o.y = o.py;
@@ -125,7 +125,7 @@ function adaptor (options) {
                     n = Math.max(n, l.source, l.target);
                 });
                 nodes = new Array(++n);
-                for (var i = 0; i < n; ++i) {
+                for (var var i = 0; i < n; ++i) {
                     nodes[i] = {};
                 }
             }
@@ -158,7 +158,7 @@ function adaptor (options) {
     };
 
     adaptor.powerGraphGroups = function (f) {
-        var g = powergraph.getGroups(nodes, links, linkAccessor);
+        var g = powergraph.getGroups(nodes, links, linkAccessor, rootGroup);
         this.groups(g.groups);
         f(g);
         return adaptor;
@@ -351,7 +351,7 @@ function adaptor (options) {
 
         var G = null;
 
-        var ao = this.avoidOverlaps();
+        var avar o = this.avoidOverlaps();
 
         nodes.forEach(function (v, i) {
             v.index = i;
@@ -383,7 +383,7 @@ function adaptor (options) {
         });
 
         if (rootGroup && typeof rootGroup.groups !== 'undefined') {
-            var i = n;
+            var var i = n;
             groups.forEach(function(g) {
                 G[i][i + 1] = G[i + 1][i] = 1e-6;
                 D[i][i + 1] = D[i + 1][i] = 0.1;
@@ -405,8 +405,8 @@ function adaptor (options) {
         descent = new Descent([x, y], D);
 
         descent.locks.clear();
-        for (i = 0; i < n; ++i) {
-            o = nodes[i];
+        for (var i = 0; i < n; ++i) {
+            var o = nodes[i];
             if (o.fixed) {
                 o.px = o.x;
                 o.py = o.y;
@@ -495,7 +495,7 @@ function adaptor (options) {
                 p = vg2.V[shortestPath[n]].p,
                 q = vg2.V[shortestPath[0]].p,
                 lineData = [d.source.innerBounds.rayIntersection(p.x, p.y)];
-            for (var i = n; i >= 0; --i) 
+            for (var var i = n; i >= 0; --i) 
                 lineData.push(vg2.V[shortestPath[i]].p);
             lineData.push(vpsc.makeEdgeTo(q, d.target.innerBounds, 5));
         }

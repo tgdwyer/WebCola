@@ -1,3 +1,4 @@
+///<reference path="../extern/jquery.d.ts"/>
 var tmdb;
 (function (tmdb) {
     var NodeType = (function () {
@@ -10,21 +11,17 @@ var tmdb;
         NodeType.prototype.toString = function () {
             return this.type;
         };
-
         NodeType.prototype.next = function () {
             return this === tmdb.Movie ? tmdb.Person : tmdb.Movie;
         };
-
         NodeType.prototype.makeEdge = function (thisName, otherName) {
             return this === tmdb.Movie ? new Edge(thisName, otherName) : new Edge(otherName, thisName);
         };
         return NodeType;
     })();
     tmdb.NodeType = NodeType;
-
     tmdb.Movie = new NodeType("movie", "credits", "title", "posters");
     tmdb.Person = new NodeType("person", "movie_credits", "name", "profiles");
-
     var Node = (function () {
         function Node(type, id) {
             this.type = type;
@@ -48,7 +45,6 @@ var tmdb;
         return Node;
     })();
     tmdb.Node = Node;
-
     var Edge = (function () {
         function Edge(source, target) {
             this.source = source;
@@ -61,8 +57,8 @@ var tmdb;
     })();
     tmdb.Edge = Edge;
     function request(type, id, content, append) {
-        if (typeof content === "undefined") { content = null; }
-        if (typeof append === "undefined") { append = null; }
+        if (content === void 0) { content = null; }
+        if (append === void 0) { append = null; }
         var query = "https://api.themoviedb.org/3/" + type + "/" + id;
         if (content) {
             query += "/" + content;
@@ -80,13 +76,11 @@ var tmdb;
         }
         Graph.prototype.expandNeighbours = function (node, f) {
             var _this = this;
-            var dn = node.cast.map(function (c) {
-                return _this.getNode(node.type.next(), c.id, function (v) {
-                    v.label = c[v.type.label];
-                    _this.addEdge(node, v);
-                    f(v);
-                });
-            });
+            var dn = node.cast.map(function (c) { return _this.getNode(node.type.next(), c.id, function (v) {
+                v.label = c[v.type.label];
+                _this.addEdge(node, v);
+                f(v);
+            }); });
             var d = $.Deferred();
             $.when.apply($, dn).then(function () {
                 var neighbours = Array.prototype.slice.call(arguments);
@@ -96,9 +90,7 @@ var tmdb;
         };
         Graph.prototype.fullyExpanded = function (node) {
             var _this = this;
-            return node.cast && node.cast.every(function (v) {
-                return (node.type.next() + v.id) in _this.nodes;
-            });
+            return node.cast && node.cast.every(function (v) { return (node.type.next() + v.id) in _this.nodes; });
         };
         Graph.prototype.addNode = function (type, id) {
             var node = new Node(type, id);
