@@ -188,7 +188,10 @@ DEBUG */
                 for (i = 0; i < this.k; ++i) Huu[i] = this.g[i][u] = 0;
                 for (var v = 0; v < n; ++v) {
                     if (u === v) continue;
-                    while (true) {
+
+                    // The following loop randomly displaces nodes that are at identical positions
+                    var maxDisplaces = n; // avoid infinite loop in the case of numerical issues, such as huge values
+                    while (maxDisplaces--) {
                         var sd2 = 0;
                         for (i = 0; i < this.k; ++i) {
                             var dx = d[i] = x[i][u] - x[i][v];
