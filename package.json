@@ -1,6 +1,6 @@
 {
   "name": "webcola",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "devDependencies": {
     "async": "~0.6.2",
     "browserify": "~7.0.0",
