@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -7,40 +7,59 @@
     <style>
         @import url(../style.css);
 
-.node {
-  stroke: #fff;
-  stroke-width: 1.5px;
-    cursor: move;
-}
+        .node {
+            stroke: #fff;
+            stroke-width: 1.5px;
+            cursor: move;
+        }
 
-.group {
-  stroke: #fff;
-  stroke-width: 1.5px;
-  cursor: move;
-  opacity: 0.7;
-}
+        .group {
+            stroke: #fff;
+            stroke-width: 1.5px;
+            cursor: move;
+            opacity: 0.7;
+        }
 
-.link {
-  stroke: #7a4e4e;
-  stroke-width: 3px;
-  stroke-opacity: 1;
-}
+        .link {
+            stroke: #7a4e4e;
+            stroke-width: 3px;
+            stroke-opacity: 1;
+        }
 
-.label {
-    fill: white;
-    font-family: Verdana;
-    font-size: 25px;
-    text-anchor: middle;
-    cursor: move;
-}
-
-</style>
+        .label {
+            fill: white;
+            font-family: Verdana;
+            font-size: 25px;
+            text-anchor: middle;
+            cursor: move;
+        }
+    </style>
 </head>
 <body>
     <h1>Layout with hierarchical grouping</h1>
-<script src="../extern/d3.v3.js"></script>
+    <script src="../extern/d3.v3.js"></script>
     <script src="../cola.v3.min.js"></script>
-<script>
+    <script>
+
+    Array.prototype.in_array_position = function (e) {
+        for (i = 0; i < this.length; i++) {
+            if (this[i] == e)
+                return i;
+        }
+        return -1;
+    }
+
+    Array.prototype.move = function (old_index, new_index) {
+        if (new_index >= this.length) {
+            var k = new_index - this.length;
+            while ((k--) + 1) {
+                this.push(undefined);
+            }
+        }
+        this.splice(new_index, 0, this.splice(old_index, 1)[0]);
+        return this; 
+    };
+
     var width = 960,
         height = 500;
 
@@ -56,29 +75,34 @@
         .attr("width", width)
         .attr("height", height);
 
-    d3.json("graphdata/smallgrouped.json", function (error, graph) {
+    //draw all the graph
+    var drawPicture = function (graph) {
         cola
             .nodes(graph.nodes)
             .links(graph.links)
             .groups(graph.groups)
             .start();
-
-        var group = svg.selectAll(".group")
+        var group = null;
+        var link = null;
+        var node = null;
+        var pad = 3;
+        var label = null;
+        group = svg.selectAll(".group")
             .data(graph.groups)
-          .enter().append("rect")
+            .enter().append("rect")
             .attr("rx", 8).attr("ry", 8)
             .attr("class", "group")
             .style("fill", function (d, i) { return color(i); });
 
-        var link = svg.selectAll(".link")
+        link = svg.selectAll(".link")
             .data(graph.links)
-          .enter().append("line")
+            .enter().append("line")
             .attr("class", "link");
 
-        var pad = 3;
-        var node = svg.selectAll(".node")
+        
+        node = svg.selectAll(".node")
             .data(graph.nodes)
-          .enter().append("rect")
+            .enter().append("rect")
             .attr("class", "node")
             .attr("width", function (d) { return d.width - 2 * pad; })
             .attr("height", function (d) { return d.height - 2 * pad; })
@@ -86,9 +110,9 @@
             .style("fill", function (d) { return color(graph.groups.length); })
             .call(cola.drag);
 
-        var label = svg.selectAll(".label")
+        label = svg.selectAll(".label")
             .data(graph.nodes)
-           .enter().append("text")
+            .enter().append("text")
             .attr("class", "label")
             .text(function (d) { return d.name; })
             .call(cola.drag);
@@ -104,7 +128,7 @@
 
             node.attr("x", function (d) { return d.x - d.width / 2 + pad; })
                 .attr("y", function (d) { return d.y - d.height / 2 + pad; });
-            
+
             group.attr("x", function (d) { return d.bounds.x; })
                  .attr("y", function (d) { return d.bounds.y; })
                 .attr("width", function (d) { return d.bounds.width(); })
@@ -113,15 +137,667 @@
             label.attr("x", function (d) { return d.x; })
                  .attr("y", function (d) {
                      var h = this.getBBox().height;
-                     return d.y + h/4;
+                     return d.y + h / 4;
                  });
         });
+
+        node.on("click", function () {
+            console.log("click node");
+            var e = d3.event,
+                isSelected = d3.select(this).classed("selected");
+            console.log(d3.select(this));
+            if (e.ctrlKey) {
+                d3.select(this).classed("selected", !isSelected);
+                if (!isSelected) {
+                    d3.select(this).style("fill", "teal");
+                } else {
+                    d3.select(this).style("fill", function (d) { return color(graph.groups.length); });
+                }
+            } else {
+                d3.selectAll(".selected").classed("selected", false);
+                d3.select(this).style("fill", function (d) { return color(graph.groups.length); });
+            }
+        });
+
+        label.on("click", function () {
+            console.log("click label");
+            var e = d3.event;
+            var currLabelNode = d3.select(this).data();
+            var currLabelRect = d3.select(d3.selectAll(".node")[0][currLabelNode[0].index]);
+            console.log(currLabelRect);
+            var isSelected = currLabelRect.classed("selected");
+
+            if (e.ctrlKey) {
+                currLabelRect.classed("selected", !isSelected);
+                if (!isSelected) {
+                    currLabelRect.style("fill", "teal");
+                } else {
+                    currLabelRect.style("fill", function (d) { return color(graph.groups.length); });
+                }
+            } else {
+                d3.selectAll(".selected").classed("selected", false);
+                currLabelRect.style("fill", function (d) { return color(graph.groups.length); });
+            }
+            
+        });
+
+        group.on("click", function (d, i) {
+            var e = d3.event,
+                isSelected = d3.select(this).classed("selectedgroup");
+
+            if (e.ctrlKey) {
+                d3.select(this).classed("selectedgroup", !isSelected);
+                if (!isSelected) {
+                    d3.select(this).style("fill", "teal");
+                } else {
+                    d3.select(this).style("fill", function (d) { return color(i); });
+                }
+
+            } else {
+
+                d3.selectAll(".selectedgroup").classed("selectedgroup", false);
+                d3.select(this).style("fill", function (d) { return color(i); });
+
+            }
+        });
+
+        //when click on any place of svg clear the class of selected group/node
+        svg.on("mousedown", function () {
+            if (!d3.event.ctrlKey) {
+                d3.selectAll(".selected").classed("selected", false).style("fill", function (d) { return color(graph.groups.length); })
+                d3.selectAll(".selectedgroup").classed("selectedgroup", false);
+                group.style("fill", function (d, i) { return color(i); });
+            }
+        });
+
+        //grag group
+        var inGroupNodes = [];
+        var getParent = function (p, currentGroup) {
+            while (typeof p.parent != "undefined") {
+                p = p.parent;
+                if (p == currentGroup) {
+                    break;
+                }
+            }
+            return p;
+        };
+        var dragGroup = d3.behavior.drag()
+            .origin(function (d) { return d; })
+            .on("dragstart.d3adaptor", function (d, i) {
+
+                inGroupNodes = d3.selectAll(".node").data().filter(function (v) {
+                    return getParent(v, d) == d;
+                });
+
+                for (var index = 0; index < inGroupNodes.length; index++) {
+                    inGroupNodes[index].fixed |= 2;
+                    inGroupNodes[index].px = inGroupNodes[index].x;
+                    inGroupNodes[index].py = inGroupNodes[index].y;
+                }
+            })
+            .on("drag.d3adaptor", function (d, i) {
+
+                for (var index = 0; index < inGroupNodes.length; index++) {
+                    inGroupNodes[index].px += d3.event.dx;
+                    inGroupNodes[index].py += d3.event.dy;
+                }
+                cola.resume();
+            })
+            .on("dragend.d3adaptor", function (d, i) {
+                for (var index = 0; index < inGroupNodes.length; index++) {
+                    inGroupNodes[index].fixed &= ~6;
+                }
+            });
+        group.call(dragGroup);
+
+        document.onkeyup = function (e) {
+            if (!e.shiftKey) {
+                node.call(cola.drag);
+                label.call(cola.drag);
+                group.call(dragGroup);
+            }
+        };
+
+        document.onkeydown = function (e) {
+            var ghost = null;
+            var nodex = -1, nodey = -1;
+            var nodeDropgroup = -1;
+            var shiftDragNode = d3.behavior.drag()
+                            .origin(function (d) { return d; })
+                            .on("dragstart.d3adaptor", function (d) {
+                                //console.log(d);
+                                ghost = svg.selectAll(".ghost")
+                                    .data([d])//need to pass a data set not a single object so need []
+                                    .enter().append("rect")
+                                    .attr("class", "ghost")
+                                    .attr("width", function (d) { return d.width - 2 * pad; })
+                                    .attr("height", function (d) { return d.height - 2 * pad; })
+                                    .attr("rx", 5).attr("ry", 5)
+                                    .style("fill", "green")
+                                    .style("opacity", 0.3)
+                                    .attr("x", function (d) { return d.x - d.width / 2 + pad; })
+                                    .attr("y", function (d) { return d.y - d.height / 2 + pad; });
+                            })
+                            .on("drag.d3adaptor", function (d) {
+                                
+                                nodex = d3.event.x - d.width / 2 + pad;
+                                nodey = d3.event.y - d.height / 2 + pad;
+                                ghost.attr("x", function (d) { return nodex; })
+                                     .attr("y", function (d) { return nodey; });
+                                console.log("=====on drag=====");
+                                //console.log(d);
+                                //console.log(this);
+                                if (d3.select(this).classed("node") == true) {
+                                    d3.select(this).style("fill", "green");
+                                    console.log(d3.select(this));
+                                } else if (d3.select(this).classed("label") == true) {
+                                    console.log("=====label=====");
+                                    //console.log();
+                                    d3.select(d3.selectAll(".node")[0][d.index]).style("fill", "green");
+                                }
+                                var groupStrokeColor = ["red", "green", "teal", "blue", "yellow", "purple", "pink", "khaki", "beige", "ponceau"];
+
+                                var inOneGroup = false;
+                                graph.groups.forEach(function (e, i) {
+                                    if (d3.event.x > e.bounds.x &&
+                                        d3.event.x < (e.bounds.x + e.bounds.width()) &&
+                                        d3.event.y > e.bounds.y &&
+                                        d3.event.y < (e.bounds.y + e.bounds.height())) {
+                                        group.style("stroke", function (d, vi) { if (vi == i) { return groupStrokeColor[i]; } });
+                                        nodeDropgroup = i;
+                                        inOneGroup = true;
+                                    }
+                                });
+
+                                if (!inOneGroup) {
+                                    group.style("stroke", "#fff");
+                                    nodeDropgroup = -1;
+                                }
+
+                            })
+                            .on("dragend.d3adaptor", function (d) {
+                                d.fixed |= 4;
+                                ghost.remove();
+                                d.x = d.px = nodex;
+                                d.y = d.py = nodey;
+                                
+                                //if drag label, link the label to the node
+                                if (d3.select(this).classed("node") == true) {
+                                    d3.select(this).style("fill", function (d) { return color(graph.groups.length); });
+                                } else if (d3.select(this).classed("label") == true) {
+                                    console.log("=====drag end label=====");
+                                    d3.select(d3.selectAll(".node")[0][d.index]).style("fill", function (d) { return color(graph.groups.length); });
+                                }
+
+                                //delete the same node index in other group
+                                //traverse each group of allGroup
+                                var deleteSameNode = function (allGroup, currNode) {
+                                    allGroup.forEach(function (e, i) {
+                                        if (typeof e.leaves != "undefined") {
+                                            var inArrayPosition = e.leaves.in_array_position(currNode);
+                                            if (inArrayPosition != -1) {
+                                                e.leaves.splice(inArrayPosition, 1);
+                                            }
+                                        }
+                                    });
+                                }
+
+                                var groupChanged = false;
+                                graph.groups.forEach(function (e, i) {
+                                    if (nodeDropgroup == i) {
+                                        deleteSameNode(graph.groups, d);
+                                        if (typeof e.leaves == "undefined") {
+                                            e.leaves = [];//add attribute "leaves"
+                                        }
+                                        e.leaves.push(d);
+                                        groupChanged = true;
+                                    } else if (nodeDropgroup == -1) {
+
+                                        //when nodeDropgroup == -1, group may be changed or not be changed
+                                        if (typeof d.parent != "undefined" && d.parent == e) {
+                                            console.log("=====e.leaves=====");
+                                            console.log(e.leaves);
+                                            e.leaves.splice(e.leaves.in_array_position(d), 1);
+                                            delete d.parent;//clear parent attribute.
+                                            groupChanged = true;
+                                        }
+                                    }
+                                });
+                                
+                                //check and delete empty group
+                                if (groupChanged) {
+                                    for (var index = graph.groups.length - 1; index >= 0; index--) {
+                                        if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
+                                            (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
+                                            graph.groups.splice(index, 1);
+                                            console.log("=====exist empty group, delete empty group=====");
+                                        } else {
+                                            if (typeof graph.groups[index].groups != "undefined") {
+                                                console.log("=====graph.groups[" + index + "].groups=====");
+                                                console.log(graph.groups[index].groups);
+
+                                                var grouplength = graph.groups[index].groups.length;
+                                                for (var i = grouplength - 1; i >= 0; i--) {
+                                                    if ((typeof graph.groups[index].groups[i].leaves == "undefined" || graph.groups[index].groups[i].leaves.length == 0) &&
+                                                        (typeof graph.groups[index].groups[i].groups == "undefined" || graph.groups[index].groups[i].groups.length == 0)) {
+                                                        graph.groups[index].groups.splice(i, 1);
+                                                        console.log("=====exist empty reference, delete empty reference=====");
+                                                    }
+                                                }
+                                            }
+                                            if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
+                                                (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
+                                                graph.groups.splice(index, 1);
+                                                console.log("=====after delete empty reference, create new empty group, delete this group=====");
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                //must wait till the layout is done. If do not want to wait, how?
+                                cola.on("end", function () {
+                                    console.log("layout is done!");
+                                    node.each(function (d) {
+                                        d.fixed &= ~4;
+                                    });
+                                    cola.on("end", null);
+                                });
+                                console.log("===========graph============");
+                                console.log(graph);
+
+                                if (groupChanged) {
+                                    d3.selectAll("rect").remove();
+                                    d3.selectAll("line").remove();
+                                    d3.selectAll("text").remove();
+                                    drawPicture(graph);
+                                } else {
+                                    cola.start();
+                                }
+                                
+                            });
+
+            var groupGhost = null;
+            var groupx = -1, groupy = -1;
+            var groupDropgroup = -1;
+            var shiftDragGroup = d3.behavior.drag()
+                              //.origin(function (d) { console.log(d); return d; })
+                              .on("dragstart.d3adaptor", function (d) {
+                                  groupGhost = svg.selectAll(".ghostgroup")
+                                    .data([d])
+                                    .enter().append("rect")
+                                    .attr("class", "ghostgroup")
+                                    .attr("width", function (d) { return d.bounds.width(); })
+                                    .attr("height", function (d) { return d.bounds.height(); })
+                                    .attr("rx", 8).attr("ry", 8)
+                                    .style("fill", "green")
+                                    .style("opacity", 0.3)
+                                    .attr("x", function (d) { return d.bounds.x; })
+                                    .attr("y", function (d) { return d.bounds.y; });
+                                  groupx = d.bounds.x;
+                                  groupy = d.bounds.y
+                              })
+                              .on("drag.d3adaptor", function (d) {
+                                  groupx += d3.event.dx;
+                                  groupy += d3.event.dy;
+                                  groupGhost.attr("x", function (d) { return groupx; })
+                                            .attr("y", function (d) { return groupy; });
+                                    
+                                  d3.select(this).style("fill", "green");
+                                  var groupStrokeColor = ["red", "green", "teal", "blue", "yellow", "purple", "pink", "khaki", "beige", "ponceau"];
+
+                                  var inOneGroup = false;
+                                  dragGroupSecondCox = groupx + d.bounds.width()/2;
+                                  graph.groups.forEach(function (e, i) {
+                                      //groupSecondCox = e.bounds.x + e.bounds.width();
+                                      //groupSecondCoy = e.bounds.y + e.bounds.height();
+                                      if (i != d.gid) {
+                                          if (typeof e.parent != "undefined" && e.parent.gid != d.gid) {
+                                              if ((Math.abs((groupx + d.bounds.width() / 2) - (e.bounds.x + e.bounds.width() / 2)) < (d.bounds.width() + e.bounds.width()) / 2) &&
+                                                  (Math.abs((groupy + d.bounds.height() / 2) - (e.bounds.y + e.bounds.height() / 2)) < (d.bounds.height() + e.bounds.height()) / 2)) {
+                                                  group.style("stroke", function (d, vi) { if (vi == i) { return groupStrokeColor[i]; } });
+                                                  groupDropgroup = i;
+                                                  inOneGroup = true;
+                                              }
+                                          } else {
+                                              if ((Math.abs((groupx + d.bounds.width() / 2) - (e.bounds.x + e.bounds.width() / 2)) < (d.bounds.width() + e.bounds.width()) / 2) &&
+                                                  (Math.abs((groupy + d.bounds.height() / 2) - (e.bounds.y + e.bounds.height() / 2)) < (d.bounds.height() + e.bounds.height()) / 2)) {
+                                                  group.style("stroke", function (d, vi) { if (vi == i) { return groupStrokeColor[i]; } });
+                                                  groupDropgroup = i;
+                                                  inOneGroup = true;
+                                              }
+                                          }
+                                      }
+                                  });
+
+                                  if (!inOneGroup) {
+                                      group.style("stroke", "#fff");
+                                      groupDropgroup = -1;
+                                  }
+                              })
+                              .on("dragend.d3adaptor", function (d) {
+
+                                  groupGhost.remove();
+                                  d3.select(this).style("fill", function (d, i) { return color(d.gid); });
+
+                                  //delete the same group index in other groups
+                                  //traverse each group of allGroup
+                                  var deleteSameGroup = function (allGroup, currGroup) {
+                                      allGroup.forEach(function (e, i) {
+                                          if (typeof e.groups != "undefined") {
+                                              var inArrayPosition = e.groups.in_array_position(currGroup);
+                                              if (inArrayPosition != -1) {
+                                                  e.groups.splice(inArrayPosition, 1);
+                                              }
+                                          }
+                                      });
+                                  }
+
+                                  var groupChanged = false;
+                                  graph.groups.forEach(function (e, i) {
+                                      if (groupDropgroup == i) {
+                                          deleteSameGroup(graph.groups, d);
+                                          if (typeof e.groups == "undefined") {
+                                              e.groups = [];
+                                          }
+                                          e.groups.push(d);
+                                          if (e.gid > d.gid) {
+                                              if (typeof d.groups != "undefined" && d.groups.length != 0) {
+                                                  graph.groups.move(d.gid, e.gid);
+                                                  for (var index = d.groups.length - 1; index >= 0; index--) {
+                                                      //allGids.push(e.gid);
+                                                      graph.groups.move(d.gid, e.gid);
+                                                  }
+                                              } else {
+                                                  graph.groups.move(d.gid, e.gid);
+                                              }
+                                          }
+                                          groupChanged = true;
+                                      } else if (groupDropgroup == -1) {
+                                          if (typeof d.parent != "undefined" && d.parent == e) {
+                                              e.groups.splice(e.groups.in_array_position(d), 1);
+                                              delete d.parent;
+                                              groupChanged = true;
+                                          }
+                                      }
+                                  });
+
+                                  if (groupChanged) {
+                                      for (var index = graph.groups.length - 1; index >= 0; index--) {
+                                          if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
+                                              (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
+                                              graph.groups.splice(index, 1);
+                                              console.log("=====exist empty group, delete empty group=====");
+                                          } else {
+                                              if (typeof graph.groups[index].groups != "undefined") {
+                                                  console.log("=====graph.groups[" + index + "].groups=====");
+                                                  console.log(graph.groups[index].groups);
+
+                                                  var grouplength = graph.groups[index].groups.length;
+                                                  for (var i = grouplength - 1; i >= 0; i--) {
+                                                      if ((typeof graph.groups[index].groups[i].leaves == "undefined" || graph.groups[index].groups[i].leaves.length == 0) &&
+                                                          (typeof graph.groups[index].groups[i].groups == "undefined" || graph.groups[index].groups[i].groups.length == 0)) {
+                                                          graph.groups[index].groups.splice(i, 1);
+                                                          console.log("=====exist empty reference, delete empty reference=====");
+                                                      }
+                                                  }
+                                              }
+                                              if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
+                                                  (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
+                                                  graph.groups.splice(index, 1);
+                                                  console.log("=====after delete empty reference, create new empty group, delete this group=====");
+                                              }
+                                          }
+                                      }
+                                  }
+
+                                  cola.on("end", function () {
+                                      console.log("layout is done!");
+                                      node.each(function (d) {
+                                          d.fixed &= ~4;
+                                      });
+                                      cola.on("end", null);
+                                  });
+                                  console.log("===========graph============");
+                                  console.log(graph);
+
+                                  if (groupChanged) {
+                                      d3.selectAll("rect").remove();
+                                      d3.selectAll("line").remove();
+                                      d3.selectAll("text").remove();
+                                      drawPicture(graph);
+                                  } else {
+                                      cola.start();
+                                  }
+
+                              });
+
+            if (e.shiftKey) {
+                
+                label.call(function () {
+                    this.call(shiftDragNode);
+                });
+                
+                node.call(function () {
+                    this.call(shiftDragNode);
+                });
+
+                //drag group
+                group.call(function () {
+                    this.call(shiftDragGroup);
+                });
+            }
+        };
+    };
+
+    d3.json("graphdata\smallgrouped.json", function (error, graph) {
+        drawPicture(graph);
+
+        //add a new node 
+        d3.selectAll(".addnode")
+				.on("click", function () {
+				    var newnodename = "NaN";
+				    var frominput = document.getElementById("addnodename").value;
+
+				    if (frominput.trim() != "") {
+				        newnodename = frominput.trim();
+				    }
+
+				    var newnode1 = { "name": newnodename, "width": 60, "height": 40 };
+				    graph.nodes.push(newnode1);
+
+				    d3.selectAll("rect").remove();
+				    d3.selectAll("line").remove();
+				    d3.selectAll("text").remove();
+
+				    drawPicture(graph);				    
+				});
+
+        //add selected node/group into a new group
+        d3.selectAll(".addgroup")
+				.on("click", function () {
+				    var selectedGroups = d3.selectAll(".selectedgroup").data();
+				    var selectedNodes = d3.selectAll(".selected").data();
+				    var newgroup = { "leaves": [], "groups": [] };
+
+				    //delete the same group index in other groups
+				    //traverse each group of allGroup
+				    var deleteSameGroup = function (allGroup, currGroup) {
+				        allGroup.forEach(function (e, i) {
+				            if (typeof e.groups != "undefined") {
+				                var inArrayPosition = e.groups.in_array_position(currGroup);
+				                if (inArrayPosition != -1) {
+				                    e.groups.splice(inArrayPosition, 1);
+				                }
+				            }
+				        });
+				    }
+
+				    //delete the same node index in other group
+				    //traverse each group of allGroup
+				    var deleteSameNode = function (allGroup, currNode) {
+				        allGroup.forEach(function (e, i) {
+				            if (typeof e.leaves != "undefined") {
+				                var inArrayPosition = e.leaves.in_array_position(currNode);
+				                if (inArrayPosition != -1) {
+				                    e.leaves.splice(inArrayPosition, 1);
+				                }
+				            }
+				        });
+				    }
+
+				    //check whether all the selected group have same parent
+				    var sameParentForGroup = false;
+				    if (selectedGroups.length != 0) {
+				        sameParentForGroup = true;
+				        selectedGroups.forEach(function (e) {
+				            if (typeof selectedGroups[0].parent == "undefined" ||
+                                selectedGroups[0].parent != e.parent) {
+				                sameParentForGroup = false;
+				            }
+				        });
+				    }
+				    //check whether all the selected node have same parent
+				    var sameParentForNode = false;
+				    if (selectedNodes.length != 0) {
+				        sameParentForNode = true;
+				        selectedNodes.forEach(function (e) {
+				            if (typeof selectedNodes[0].parent == "undefined" ||
+                                selectedNodes[0].parent != e.parent) {
+				                sameParentForNode = false;
+				            }
+				        });
+				    }
+
+				    
+				    if (sameParentForGroup && sameParentForNode &&
+                        selectedNodes[0].parent == selectedGroups[0].parent) {
+
+				        selectedGroups.forEach(function (e) {
+				            newgroup.groups.push(e);
+				            deleteSameGroup(graph.groups, e);
+				        });
+				        selectedNodes.forEach(function (e) {
+				            newgroup.leaves.push(e);
+				            deleteSameNode(graph.groups, e);
+				        });
+				        if (typeof selectedGroups[0].parent.groups == "undefined") {
+				            selectedGroups[0].parent.groups = [];
+				        }
+				        selectedGroups[0].parent.groups.push(newgroup);
+				        graph.groups.splice(selectedGroups[0].parent.gid + 1, 0, newgroup);
+				    } else if (sameParentForGroup && !sameParentForNode &&
+                        selectedNodes.length == 0) {
+				    
+				        selectedGroups.forEach(function (e) {
+				            newgroup.groups.push(e);
+				            deleteSameGroup(graph.groups, e);
+				        });
+				        if (typeof selectedGroups[0].parent.groups == "undefined") {
+				            selectedGroups[0].parent.groups = [];
+				        }
+                        //update reference of parent group
+				        selectedGroups[0].parent.groups.push(newgroup);
+                        //insert newgroup after parent group
+				        graph.groups.splice(selectedGroups[0].parent.gid + 1, 0, newgroup);
+
+				    } else if (!sameParentForGroup && sameParentForNode &&
+                        selectedGroups.length == 0) {
+
+				        selectedNodes.forEach(function (e) {
+				            newgroup.leaves.push(e);
+				            deleteSameNode(graph.groups, e);
+				        });
+				        if (typeof selectedNodes[0].parent.groups == "undefined") {
+				            selectedNodes[0].parent.groups = [];
+				        }
+                        //update reference of parent group
+				        selectedNodes[0].parent.groups.push(newgroup);
+				        //insert newgroup after parent group
+				        graph.groups.splice(selectedNodes[0].parent.gid + 1, 0, newgroup);
+				    } else {
+
+				        //add selected groups into newgroup.groups and delete same group index in other groups
+				        selectedGroups.forEach(function (e) {
+				            newgroup.groups.push(e);
+				            deleteSameGroup(graph.groups, e);
+				        });
+
+				        //add selected nodes into newgroup.leaves and delete same node index in other groups
+				        selectedNodes.forEach(function (e) {
+				            newgroup.leaves.push(e);
+				            deleteSameNode(graph.groups, e);
+				        });
+				        var newgroupGids = [];//decide insert location
+				        newgroup.groups.forEach(function (e) {
+				            newgroupGids.push(e.gid);
+				        });
+				        //if newgroupGids is empty insertLocation is infinity.
+				        var insertLocation = Math.min.apply(Math, newgroupGids);
+				        graph.groups.splice(insertLocation, 0, newgroup);
+				    }
+				    
+				    
+				    //console.log("=====insertLocation=====");
+				    //console.log(insertLocation);
+				    //insert newgroup into a location that is smallest in the group indexes it contains
+				    
+				    //console.log("=====graph.groups=====");
+				    //console.log(graph.groups);
+   
+				    for (var index = graph.groups.length - 1; index >= 0; index--) {
+				        if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
+                            (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
+				            graph.groups.splice(index, 1);
+				            console.log("=====exist empty group, delete empty group=====");   
+				        } else {
+				            if (typeof graph.groups[index].groups != "undefined") {
+				                console.log("=====graph.groups[" + index + "].groups=====");
+				                console.log(graph.groups[index].groups);
+
+				                var grouplength = graph.groups[index].groups.length;
+				                for (var i = grouplength - 1; i >= 0; i--) {
+				                    if ((typeof graph.groups[index].groups[i].leaves == "undefined" || graph.groups[index].groups[i].leaves.length == 0) &&
+                                        (typeof graph.groups[index].groups[i].groups == "undefined" || graph.groups[index].groups[i].groups.length == 0)) {
+				                        graph.groups[index].groups.splice(i, 1);
+				                        console.log("=====exist empty reference, delete empty reference=====");
+				                    }
+				                }
+                            //cannot use forEach because when delete element, forEach cannot traverse all the group
+				                /*graph.groups[index].groups.forEach(function (e, i) {// e is each real group
+				                    if ((typeof e.leaves == "undefined" || e.leaves.length == 0) &&
+                                        (typeof e.groups == "undefined" || e.groups.length == 0)) {
+				                        graph.groups[index].groups.splice(i, 1);
+				                        console.log("=====exist empty reference, delete empty reference=====");
+				                    }
+				                });*/
+				            }
+				            if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
+                                (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
+				                graph.groups.splice(index, 1);
+				                console.log("=====after delete empty reference, create new empty group, delete this group=====");
+				            }
+				        }
+				    }
+				    console.log("=====graph=====");
+				    console.log(graph);
+				    d3.selectAll("rect").remove();
+				    d3.selectAll("line").remove();
+				    d3.selectAll("text").remove();
+				    drawPicture(graph);
+				});
+
+        
     });
 
-</script>
-    <p>This graph has a hierarchical grouping defined over the nodes.  We generate constraints to keep the bounding boxes of
+    </script>
+    <p>
+        This graph has a hierarchical grouping defined over the nodes.  We generate constraints to keep the bounding boxes of
         disjoint groups from overlapping and to keep nested groups fully contained within their parents' bounding boxes.
-    Try dragging the nodes so that they bump into other nodes and groups.
+        Try dragging the nodes so that they bump into other nodes and groups.
     </p>
+    <input type="text" id="addnodename" />
+    <input type="button" value="add node" class="addnode" onclick="javascript:void(0)" />
+
+    <input type="button" value="add group" class="addgroup" onclick="javascript:void(0)" />
 </body>
 </html>
