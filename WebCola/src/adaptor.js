@@ -157,7 +157,16 @@ var cola;
         };
 
         /**
-         * a list of hierarchical groups defined over nodes
+         * A list of hierarchical groups defined over nodes.
+         * Each group node can have (optionally) a list of 
+         * (nonempty) child groups (called .groups)
+         * and (optionally) a non-empty list of leaf nodes.
+         * The leaf nodes can be specified either as indices
+         * to the nodes array (defined elsewhere) or references
+         * to the nodes themselves.
+         * Similarly, the child-groups can either be specified
+         * as indicies to other groups in the specified groups array
+         * or references to the groups themselves.
          * @property groups {Array}
          * @default empty list
          */
@@ -165,13 +174,24 @@ var cola;
             if (!arguments.length) return groups;
             groups = x;
             rootGroup = {};
-            groups.forEach(function (g) {
+            groups.forEach(function (g, i) {
+                g.gid = i;
                 if (typeof g.padding === "undefined")
                     g.padding = 1;
                 if (typeof g.leaves !== "undefined")
-                    g.leaves.forEach(function (v, i) { (g.leaves[i] = nodes[v]).parent = g });
+                    g.leaves.forEach(function (v, i) {
+                        if (typeof g.leaves[i] === "number") {
+                            g.leaves[i] = nodes[v];
+                        }
+                        g.leaves[i].parent = g;
+                    });
                 if (typeof g.groups !== "undefined")
-                    g.groups.forEach(function (gi, i) { (g.groups[i] = groups[gi]).parent = g });
+                    g.groups.forEach(function (gi, i) {
+                        if (typeof g.groups[i] === "number") {
+                            g.groups[i] = groups[gi];
+                        }
+                        g.groups[i].parent = g;
+                    });
             });
             rootGroup.leaves = nodes.filter(function (v) { return typeof v.parent === 'undefined'; });
             rootGroup.groups = groups.filter(function (g) { return typeof g.parent === 'undefined'; });
