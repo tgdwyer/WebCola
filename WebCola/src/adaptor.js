@@ -85,9 +85,9 @@ var cola;
 
         adaptor.tick = function () {
             if (alpha < threshold) {
-                trigger({ type: "end", alpha: alpha = 0 });
-                delete lastStress;
                 running = false;
+                trigger({ type: "end", alpha: alpha = 0, stress: lastStress });
+                delete lastStress;
                 return true;
             }
 
@@ -128,7 +128,7 @@ var cola;
                 }
             }
 
-            trigger({ type: "tick", alpha: alpha });
+            trigger({ type: "tick", alpha: alpha, stress: lastStress });
         };
 
         /**
