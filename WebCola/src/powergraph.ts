@@ -43,7 +43,7 @@ module cola.powergraph {
             });
         }
 
-        private initModulesFromGroup(group) {
+        private initModulesFromGroup(group): ModuleSet {
             var moduleSet = new ModuleSet();
             this.roots.push(moduleSet);
             for (var i = 0; i < group.leaves.length; ++i) {
@@ -52,9 +52,14 @@ module cola.powergraph {
                 this.modules[node.id] = module;
                 moduleSet.add(module);
             }
-            if (group.groups)
-                for (var j = 0; j < group.groups.length; ++j)
-                    this.initModulesFromGroup(group.groups[j]);
+            if (group.groups) {
+                for (var j = 0; j < group.groups.length; ++j) {
+                    var child = group.groups[j];
+                    // Use negative module id to avoid clashes between predefined and generated modules
+                    moduleSet.add(new Module(-1-j, new LinkSets(), new LinkSets(), this.initModulesFromGroup(child), true));
+                }
+            }
+            return moduleSet;
          }
 
         // merge modules a and b keeping track of their power edges and removing the from roots
@@ -127,11 +132,6 @@ module cola.powergraph {
             var groups = [];
             var root = {};
             toGroups(this.roots[0], root, groups);
-            for (var i = 1; i < this.roots.length; ++i) {
-                var group = {id: groups.length};
-                groups.push(group);
-                toGroups(this.roots[i], group, groups);
-            }
             var es = this.allEdges();
             es.forEach(e => {
                 var a = this.modules[e.source];
@@ -147,8 +147,7 @@ module cola.powergraph {
 
         allEdges(): PowerEdge[] {
             var es = [];
-            for (var i = 0; i < this.roots.length; ++i)
-                Configuration.getEdges(this.roots[i], es);
+            Configuration.getEdges(this.roots[0], es);
             return es;
         }
 
@@ -168,7 +167,7 @@ module cola.powergraph {
             } else {
                 var g = group;
                 m.gid = groups.length;
-                if (!m.isIsland()) {
+                if (!m.isIsland() || m.predefined) {
                     g = { id: m.gid };
                     if (!group.groups) group.groups = [];
                     group.groups.push(m.gid);
@@ -186,7 +185,8 @@ module cola.powergraph {
             public id: number,
             public outgoing: LinkSets = new LinkSets(),
             public incoming: LinkSets = new LinkSets(),
-            public children: ModuleSet = new ModuleSet()) { }
+            public children: ModuleSet = new ModuleSet(),
+            public predefined: boolean = false) { }
 
         getEdges(es: PowerEdge[]) {
             this.outgoing.forAll((ms, edgetype) => {
@@ -240,7 +240,10 @@ module cola.powergraph {
         }
         modules(): Module[] {
             var vs = [];
-            this.forAll(m => vs.push(m));
+            this.forAll(m => {
+                if (!m.predefined)
+                    vs.push(m);
+            });
             return vs;
         }
     }
