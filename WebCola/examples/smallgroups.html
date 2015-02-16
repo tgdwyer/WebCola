@@ -107,7 +107,7 @@
             .attr("width", function (d) { return d.width - 2 * pad; })
             .attr("height", function (d) { return d.height - 2 * pad; })
             .attr("rx", 5).attr("ry", 5)
-            .style("fill", function (d) { return color(graph.groups.length); })
+            .style("fill", function (d) { return color(3); })
             .call(cola.drag);
 
         label = svg.selectAll(".label")
@@ -151,11 +151,11 @@
                 if (!isSelected) {
                     d3.select(this).style("fill", "teal");
                 } else {
-                    d3.select(this).style("fill", function (d) { return color(graph.groups.length); });
+                    d3.select(this).style("fill", function (d) { return color(3); });
                 }
             } else {
                 d3.selectAll(".selected").classed("selected", false);
-                d3.select(this).style("fill", function (d) { return color(graph.groups.length); });
+                d3.select(this).style("fill", function (d) { return color(3); });
             }
         });
 
@@ -172,11 +172,11 @@
                 if (!isSelected) {
                     currLabelRect.style("fill", "teal");
                 } else {
-                    currLabelRect.style("fill", function (d) { return color(graph.groups.length); });
+                    currLabelRect.style("fill", function (d) { return color(3); });
                 }
             } else {
                 d3.selectAll(".selected").classed("selected", false);
-                currLabelRect.style("fill", function (d) { return color(graph.groups.length); });
+                currLabelRect.style("fill", function (d) { return color(3); });
             }
             
         });
@@ -204,7 +204,7 @@
         //when click on any place of svg clear the class of selected group/node
         svg.on("mousedown", function () {
             if (!d3.event.ctrlKey) {
-                d3.selectAll(".selected").classed("selected", false).style("fill", function (d) { return color(graph.groups.length); })
+                d3.selectAll(".selected").classed("selected", false).style("fill", function (d) { return color(3); })
                 d3.selectAll(".selectedgroup").classed("selectedgroup", false);
                 group.style("fill", function (d, i) { return color(i); });
             }
@@ -323,10 +323,10 @@
                                 
                                 //if drag label, link the label to the node
                                 if (d3.select(this).classed("node") == true) {
-                                    d3.select(this).style("fill", function (d) { return color(graph.groups.length); });
+                                    d3.select(this).style("fill", function (d) { return color(3); });
                                 } else if (d3.select(this).classed("label") == true) {
                                     console.log("=====drag end label=====");
-                                    d3.select(d3.selectAll(".node")[0][d.index]).style("fill", function (d) { return color(graph.groups.length); });
+                                    d3.select(d3.selectAll(".node")[0][d.index]).style("fill", function (d) { return color(3); });
                                 }
 
                                 //delete the same node index in other group
@@ -589,7 +589,7 @@
         };
     };
 
-    d3.json("graphdata\smallgrouped.json", function (error, graph) {
+    d3.json("graphdata/smallgrouped.json", function (error, graph) {
         drawPicture(graph);
 
         //add a new node 
