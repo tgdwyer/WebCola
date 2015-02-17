@@ -15,8 +15,9 @@ var cola;
                 event[e.type](e); // via d3 dispatcher, e.g. event.start(e);
             },
 
-            on: function(type, listener){
-                return event.on(type, listener);
+            on: function(type, listener) {
+                event.on(type, listener);
+                return adaptor;
             },
 
             kick: function (tick) {
