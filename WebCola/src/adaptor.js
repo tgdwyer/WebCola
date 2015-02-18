@@ -337,12 +337,32 @@ var cola;
 
         var linkAccessor = { getSourceIndex: getSourceIndex, getTargetIndex: getTargetIndex, setLength: setLinkLength, getType: getLinkType };
 
+        /**
+         * compute an ideal length for each link based on the graph structure around that link.
+         * you can use this (for example) to create extra space around hub-nodes in dense graphs.
+         * In particular this calculation is based on the "symmetric difference" in the neighbour sets of the source and target:
+         * i.e. if neighbours of source is a and neighbours of target are b then calculation is: sqrt(|a union b| - |a intersection b|)
+         * Actual computation based on inspection of link structure occurs in start(), so links themselves
+         * don't have to have been assigned before invoking this function.
+         * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
+         * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
+         */
         adaptor.symmetricDiffLinkLengths = function (idealLength, w) {
             this.linkDistance(function (l) { return idealLength * l.length });
             linkLengthCalculator = function () { cola.symmetricDiffLinkLengths(links, linkAccessor, w) };
             return adaptor;
         }
 
+        /**
+         * compute an ideal length for each link based on the graph structure around that link.
+         * you can use this (for example) to create extra space around hub-nodes in dense graphs.
+         * In particular this calculation is based on the "symmetric difference" in the neighbour sets of the source and target:
+         * i.e. if neighbours of source is a and neighbours of target are b then calculation is: |a intersection b|/|a union b|
+         * Actual computation based on inspection of link structure occurs in start(), so links themselves
+         * don't have to have been assigned before invoking this function.
+         * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
+         * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
+         */
         adaptor.jaccardLinkLengths = function (idealLength, w) {
             this.linkDistance(function (l) { return idealLength * l.length });
             linkLengthCalculator = function () { cola.jaccardLinkLengths(links, linkAccessor, w) };
