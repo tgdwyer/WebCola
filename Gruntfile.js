@@ -21,11 +21,11 @@ module.exports = function (grunt) {
     typescript: {
       base: {
         src: ['WebCola/src/*.ts'],
-        dest: 'WebCola/compiledtypescript.js',
+        dest: 'WebCola/cola.js',
         options: {
           module: 'amd',
           target: 'es5',
-          sourceMap: true
+          sourceMap: false
         }
       },
       examples: {
@@ -41,13 +41,13 @@ module.exports = function (grunt) {
       options: {},
       dist: {
         src: [
-          'WebCola/compiledtypescript.js',
+          'WebCola/cola.js',
           'WebCola/src/adaptor.js',
           'WebCola/src/rbtree.js',
           'WebCola/src/scc.js',
           'WebCola/src/handle_disconnected.js'
         ],
-        dest: 'WebCola/cola.v3.min.js'
+        dest: 'WebCola/cola.js'
       }
     },
     umd: {
@@ -62,12 +62,8 @@ module.exports = function (grunt) {
     },
     uglify: {
       dist: {
-        options: {
-          sourceMap: true,
-          sourceMapIn: 'WebCola/compiledtypescript.js.map'
-        },
         files: {
-          'WebCola/cola.v3.min.js': [
+          'WebCola/cola.min.js': [
             '<%= concat.dist.dest %>'
           ]
         }
