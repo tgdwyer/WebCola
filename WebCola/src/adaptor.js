@@ -55,6 +55,7 @@ var cola;
             kick = options.kick, // a function that kicks off the simulation tick loop
             size = [1, 1],
             linkDistance = 20,
+            linkLengthCalculator = null,
             linkType = null,
             avoidOverlaps = false,
             handleDisconnected = true,
@@ -289,6 +290,7 @@ var cola;
             if (!arguments.length) 
                 return typeof linkDistance === "function" ? linkDistance() : linkDistance;
             linkDistance = typeof x === "function" ? x : +x;
+            linkLengthCalculator = null;
             return adaptor;
         };
 
@@ -336,14 +338,14 @@ var cola;
         var linkAccessor = { getSourceIndex: getSourceIndex, getTargetIndex: getTargetIndex, setLength: setLinkLength, getType: getLinkType };
 
         adaptor.symmetricDiffLinkLengths = function (idealLength, w) {
-            cola.symmetricDiffLinkLengths(links, linkAccessor, w);
             this.linkDistance(function (l) { return idealLength * l.length });
+            linkLengthCalculator = function () { cola.symmetricDiffLinkLengths(links, linkAccessor, w) };
             return adaptor;
         }
 
         adaptor.jaccardLinkLengths = function (idealLength, w) {
-            cola.jaccardLinkLengths(links, linkAccessor, w);
             this.linkDistance(function (l) { return idealLength * l.length });
+            linkLengthCalculator = function () { cola.jaccardLinkLengths(links, linkAccessor, w) };
             return adaptor;
         }
 
@@ -362,6 +364,8 @@ var cola;
                 m = links.length,
                 w = size[0],
                 h = size[1];
+
+            if (linkLengthCalculator) linkLengthCalculator();
 
             var x = new Array(N), y = new Array(N);
             variables = new Array(N);
