@@ -1,25 +1,46 @@
+/**
+ * @module cola
+ */
 var cola;
 (function (cola) {
+    /**
+     * Descent respects a collection of locks over nodes that should not move
+     * @class Locks
+     */
     var Locks = (function () {
         function Locks() {
             this.locks = {};
         }
+        /**
+         * add a lock on the node at index id
+         * @method add
+         * @param id index of node to be locked
+         * @param x required position for node
+         */
         Locks.prototype.add = function (id, x) {
             if (isNaN(x[0]) || isNaN(x[1]))
                 debugger;
             this.locks[id] = x;
         };
-
+        /**
+         * @method clear clear all locks
+         */
         Locks.prototype.clear = function () {
             this.locks = {};
         };
-
+        /**
+         * @isEmpty
+         * @returns false if no locks exist
+         */
         Locks.prototype.isEmpty = function () {
             for (var l in this.locks)
                 return false;
             return true;
         };
-
+        /**
+         * perform an operation on each lock
+         * @apply
+         */
         Locks.prototype.apply = function (f) {
             for (var l in this.locks) {
                 f(l, this.locks[l]);
@@ -28,18 +49,30 @@ var cola;
         return Locks;
     })();
     cola.Locks = Locks;
-
+    /**
+     * Uses a gradient descent approach to reduce a stress or p-stress goal function over a graph with specified ideal edge lengths or a square matrix of dissimilarities.
+     *
+     * @class Descent
+     */
     var Descent = (function () {
+        /**
+         * @method constructor
+         * @param x {number[][]} initial coordinates for nodes
+         * @param D {number[][]} matrix of desired distances between pairs of nodes
+         * @param G {number[][]} [default=null] if specified, G is a matrix of weights for goal terms between pairs of nodes.
+         * If G[i][j] > 1 and the separation between nodes i and j is greater than their ideal distance, then there is no contribution for this pair to the goal
+         * If G[i][j] <= 1 then it is used as a weighting on the contribution of the variance between ideal and actual separation between i and j to the goal function
+         */
         function Descent(x, D, G) {
-            if (typeof G === "undefined") { G = null; }
+            if (G === void 0) { G = null; }
             this.D = D;
             this.G = G;
             this.threshold = 0.0001;
             this.random = new PseudoRandom();
             this.project = null;
             this.x = x;
-            this.k = x.length;
-            var n = this.n = x[0].length;
+            this.k = x.length; // dimensionality
+            var n = this.n = x[0].length; // number of nodes
             this.H = new Array(this.k);
             this.g = new Array(this.k);
             this.Hd = new Array(this.k);
@@ -94,7 +127,6 @@ var cola;
             }
             return M;
         };
-
         Descent.prototype.offsetDir = function () {
             var _this = this;
             var u = new Array(this.k);
@@ -104,18 +136,20 @@ var cola;
                 l += x * x;
             }
             l = Math.sqrt(l);
-            return u.map(function (x) {
-                return x *= _this.minD / l;
-            });
+            return u.map(function (x) { return x *= _this.minD / l; });
         };
-
+        // compute first and second derivative information storing results in this.g and this.H
         Descent.prototype.computeDerivatives = function (x) {
             var _this = this;
             var n = this.n;
             if (n < 1)
                 return;
             var i;
-
+            /* DEBUG
+                        for (var u: number = 0; u < n; ++u)
+                            for (i = 0; i < this.k; ++i)
+                                if (isNaN(x[i][u])) debugger;
+            DEBUG */
             var d = new Array(this.k);
             var d2 = new Array(this.k);
             var Huu = new Array(this.k);
@@ -126,8 +160,8 @@ var cola;
                 for (var v = 0; v < n; ++v) {
                     if (u === v)
                         continue;
-
-                    var maxDisplaces = n;
+                    // The following loop randomly displaces nodes that are at identical positions
+                    var maxDisplaces = n; // avoid infinite loop in the case of numerical issues, such as huge values
                     while (maxDisplaces--) {
                         var sd2 = 0;
                         for (i = 0; i < this.k; ++i) {
@@ -172,21 +206,30 @@ var cola;
                     }
                 });
             }
+            /* DEBUG
+                        for (var u: number = 0; u < n; ++u)
+                            for (i = 0; i < this.k; ++i) {
+                                if (isNaN(this.g[i][u])) debugger;
+                                for (var v: number = 0; v < n; ++v)
+                                    if (isNaN(this.H[i][u][v])) debugger;
+                            }
+            DEBUG */
         };
-
         Descent.dotProd = function (a, b) {
             var x = 0, i = a.length;
             while (i--)
                 x += a[i] * b[i];
             return x;
         };
-
+        // result r = matrix m * vector v
         Descent.rightMultiply = function (m, v, r) {
             var i = m.length;
             while (i--)
                 r[i] = Descent.dotProd(m[i], v);
         };
-
+        // computes the optimal step size to take in direction d using the
+        // derivative information in this.g and this.H
+        // returns the scalar multiplier to apply to d to get the optimal step
         Descent.prototype.computeStepSize = function (d) {
             var numerator = 0, denominator = 0;
             for (var i = 0; i < 2; ++i) {
@@ -198,7 +241,6 @@ var cola;
                 return 0;
             return numerator / denominator;
         };
-
         Descent.prototype.reduceStress = function () {
             this.computeDerivatives(this.x);
             var alpha = this.computeStepSize(this.g);
@@ -207,7 +249,6 @@ var cola;
             }
             return this.computeStress();
         };
-
         Descent.copy = function (a, b) {
             var m = a.length, n = b[0].length;
             for (var i = 0; i < m; ++i) {
@@ -216,7 +257,12 @@ var cola;
                 }
             }
         };
-
+        // takes a step of stepSize * d from x0, and then project against any constraints.
+        // result is returned in r.
+        // x0: starting positions
+        // r: result positions will be returned here
+        // d: unconstrained descent vector
+        // stepSize: amount to step along d
         Descent.prototype.stepAndProject = function (x0, r, d, stepSize) {
             Descent.copy(x0, r);
             this.takeDescentStep(r[0], d[0], stepSize);
@@ -226,7 +272,6 @@ var cola;
             if (this.project)
                 this.project[1](r[0], x0[1], r[1]);
         };
-
         Descent.mApply = function (m, n, f) {
             var i = m;
             while (i-- > 0) {
@@ -238,28 +283,22 @@ var cola;
         Descent.prototype.matrixApply = function (f) {
             Descent.mApply(this.k, this.n, f);
         };
-
         Descent.prototype.computeNextPosition = function (x0, r) {
             var _this = this;
             this.computeDerivatives(x0);
             var alpha = this.computeStepSize(this.g);
             this.stepAndProject(x0, r, this.g, alpha);
-
             for (var u = 0; u < this.n; ++u)
                 for (var i = 0; i < this.k; ++i)
                     if (isNaN(r[i][u]))
                         debugger;
-
             if (this.project) {
-                this.matrixApply(function (i, j) {
-                    return _this.e[i][j] = x0[i][j] - r[i][j];
-                });
+                this.matrixApply(function (i, j) { return _this.e[i][j] = x0[i][j] - r[i][j]; });
                 var beta = this.computeStepSize(this.e);
                 beta = Math.max(0.2, Math.min(beta, 1));
                 this.stepAndProject(x0, r, this.e, beta);
             }
         };
-
         Descent.prototype.run = function (iterations) {
             var stress = Number.MAX_VALUE, converged = false;
             while (!converged && iterations-- > 0) {
@@ -269,7 +308,6 @@ var cola;
             }
             return stress;
         };
-
         Descent.prototype.rungeKutta = function () {
             var _this = this;
             this.computeNextPosition(this.x, this.a);
@@ -286,19 +324,14 @@ var cola;
             });
             return disp;
         };
-
         Descent.mid = function (a, b, m) {
-            Descent.mApply(a.length, a[0].length, function (i, j) {
-                return m[i][j] = a[i][j] + (b[i][j] - a[i][j]) / 2.0;
-            });
+            Descent.mApply(a.length, a[0].length, function (i, j) { return m[i][j] = a[i][j] + (b[i][j] - a[i][j]) / 2.0; });
         };
-
         Descent.prototype.takeDescentStep = function (x, d, stepSize) {
             for (var i = 0; i < this.n; ++i) {
                 x[i] = x[i] - stepSize * d[i];
             }
         };
-
         Descent.prototype.computeStress = function () {
             var stress = 0;
             for (var u = 0, nMinus1 = this.n - 1; u < nMinus1; ++u) {
@@ -323,21 +356,22 @@ var cola;
         return Descent;
     })();
     cola.Descent = Descent;
-
+    // Linear congruential pseudo random number generator
     var PseudoRandom = (function () {
         function PseudoRandom(seed) {
-            if (typeof seed === "undefined") { seed = 1; }
+            if (seed === void 0) { seed = 1; }
             this.seed = seed;
             this.a = 214013;
             this.c = 2531011;
             this.m = 2147483648;
             this.range = 32767;
         }
+        // random real between 0 and 1
         PseudoRandom.prototype.getNext = function () {
             this.seed = (this.seed * this.a + this.c) % this.m;
             return (this.seed >> 16) / this.range;
         };
-
+        // random real between min and max
         PseudoRandom.prototype.getNextBetween = function (min, max) {
             return min + this.getNext() * (max - min);
         };
@@ -353,6 +387,7 @@ var __extends = this.__extends || function (d, b) {
 };
 var cola;
 (function (cola) {
+    var geom;
     (function (geom) {
         var Point = (function () {
             function Point() {
@@ -360,7 +395,6 @@ var cola;
             return Point;
         })();
         geom.Point = Point;
-
         var LineSegment = (function () {
             function LineSegment(x1, y1, x2, y2) {
                 this.x1 = x1;
@@ -371,7 +405,6 @@ var cola;
             return LineSegment;
         })();
         geom.LineSegment = LineSegment;
-
         var PolyPoint = (function (_super) {
             __extends(PolyPoint, _super);
             function PolyPoint() {
@@ -380,24 +413,30 @@ var cola;
             return PolyPoint;
         })(Point);
         geom.PolyPoint = PolyPoint;
-
+        /** tests if a point is Left|On|Right of an infinite line.
+         * @param points P0, P1, and P2
+         * @return >0 for P2 left of the line through P0 and P1
+         *            =0 for P2 on the line
+         *            <0 for P2 right of the line
+         */
         function isLeft(P0, P1, P2) {
             return (P1.x - P0.x) * (P2.y - P0.y) - (P2.x - P0.x) * (P1.y - P0.y);
         }
         geom.isLeft = isLeft;
-
         function above(p, vi, vj) {
             return isLeft(p, vi, vj) > 0;
         }
-
         function below(p, vi, vj) {
             return isLeft(p, vi, vj) < 0;
         }
-
+        /**
+         * returns the convex hull of a set of points using Andrew's monotone chain algorithm
+         * see: http://geomalgorithms.com/a10-_hull-1.html#Monotone%20Chain
+         * @param S array of points
+         * @return the convex hull as an array of points
+         */
         function ConvexHull(S) {
-            var P = S.slice(0).sort(function (a, b) {
-                return a.x !== b.x ? b.x - a.x : b.y - a.y;
-            });
+            var P = S.slice(0).sort(function (a, b) { return a.x !== b.x ? b.x - a.x : b.y - a.y; });
             var n = S.length, i;
             var minmin = 0;
             var xmin = P[0].x;
@@ -407,216 +446,232 @@ var cola;
             }
             var minmax = i - 1;
             var H = [];
-            H.push(P[minmin]);
+            H.push(P[minmin]); // push minmin point onto stack
             if (minmax === n - 1) {
                 if (P[minmax].y !== P[minmin].y)
                     H.push(P[minmax]);
-            } else {
+            }
+            else {
+                // Get the indices of points with max x-coord and min|max y-coord
                 var maxmin, maxmax = n - 1;
                 var xmax = P[n - 1].x;
                 for (i = n - 2; i >= 0; i--)
                     if (P[i].x !== xmax)
                         break;
                 maxmin = i + 1;
-
+                // Compute the lower hull on the stack H
                 i = minmax;
                 while (++i <= maxmin) {
+                    // the lower line joins P[minmin]  with P[maxmin]
                     if (isLeft(P[minmin], P[maxmin], P[i]) >= 0 && i < maxmin)
-                        continue;
-
+                        continue; // ignore P[i] above or on the lower line
                     while (H.length > 1) {
+                        // test if  P[i] is left of the line at the stack top
                         if (isLeft(H[H.length - 2], H[H.length - 1], P[i]) > 0)
                             break;
                         else
-                            H.length -= 1;
+                            H.length -= 1; // pop top point off  stack
                     }
                     if (i != minmin)
                         H.push(P[i]);
                 }
-
+                // Next, compute the upper hull on the stack H above the bottom hull
                 if (maxmax != maxmin)
-                    H.push(P[maxmax]);
-                var bot = H.length;
+                    H.push(P[maxmax]); // push maxmax point onto stack
+                var bot = H.length; // the bottom point of the upper hull stack
                 i = maxmin;
                 while (--i >= minmax) {
+                    // the upper line joins P[maxmax]  with P[minmax]
                     if (isLeft(P[maxmax], P[minmax], P[i]) >= 0 && i > minmax)
-                        continue;
-
+                        continue; // ignore P[i] below or on the upper line
                     while (H.length > bot) {
+                        // test if  P[i] is left of the line at the stack top
                         if (isLeft(H[H.length - 2], H[H.length - 1], P[i]) > 0)
                             break;
                         else
-                            H.length -= 1;
+                            H.length -= 1; // pop top point off  stack
                     }
                     if (i != minmin)
-                        H.push(P[i]);
+                        H.push(P[i]); // push P[i] onto stack
                 }
             }
             return H;
         }
         geom.ConvexHull = ConvexHull;
-
+        // apply f to the points in P in clockwise order around the point p
         function clockwiseRadialSweep(p, P, f) {
-            P.slice(0).sort(function (a, b) {
-                return Math.atan2(a.y - p.y, a.x - p.x) - Math.atan2(b.y - p.y, b.x - p.x);
-            }).forEach(f);
+            P.slice(0).sort(function (a, b) { return Math.atan2(a.y - p.y, a.x - p.x) - Math.atan2(b.y - p.y, b.x - p.x); }).forEach(f);
         }
         geom.clockwiseRadialSweep = clockwiseRadialSweep;
-
         function nextPolyPoint(p, ps) {
             if (p.polyIndex === ps.length - 1)
                 return ps[0];
             return ps[p.polyIndex + 1];
         }
-
         function prevPolyPoint(p, ps) {
             if (p.polyIndex === 0)
                 return ps[ps.length - 1];
             return ps[p.polyIndex - 1];
         }
-
+        // tangent_PointPolyC(): fast binary search for tangents to a convex polygon
+        //    Input:  P = a 2D point (exterior to the polygon)
+        //            n = number of polygon vertices
+        //            V = array of vertices for a 2D convex polygon with V[n] = V[0]
+        //    Output: rtan = index of rightmost tangent point V[rtan]
+        //            ltan = index of leftmost tangent point V[ltan]
         function tangent_PointPolyC(P, V) {
             return { rtan: Rtangent_PointPolyC(P, V), ltan: Ltangent_PointPolyC(P, V) };
         }
-
+        // Rtangent_PointPolyC(): binary search for convex polygon right tangent
+        //    Input:  P = a 2D point (exterior to the polygon)
+        //            n = number of polygon vertices
+        //            V = array of vertices for a 2D convex polygon with V[n] = V[0]
+        //    Return: index "i" of rightmost tangent point V[i]
         function Rtangent_PointPolyC(P, V) {
             var n = V.length - 1;
-
-            var a, b, c;
-            var upA, dnC;
-
+            // use binary search for large convex polygons
+            var a, b, c; // indices for edge chain endpoints
+            var upA, dnC; // test for up direction of edges a and c
+            // rightmost tangent = maximum for the isLeft() ordering
+            // test if V[0] is a local maximum
             if (below(P, V[1], V[0]) && !above(P, V[n - 1], V[0]))
-                return 0;
-
-            for (a = 0, b = n; ;) {
+                return 0; // V[0] is the maximum tangent point
+            for (a = 0, b = n;;) {
                 if (b - a === 1)
                     if (above(P, V[a], V[b]))
                         return a;
                     else
                         return b;
-
-                c = Math.floor((a + b) / 2);
+                c = Math.floor((a + b) / 2); // midpoint of [a,b], and 0<c<n
                 dnC = below(P, V[c + 1], V[c]);
                 if (dnC && !above(P, V[c - 1], V[c]))
-                    return c;
-
+                    return c; // V[c] is the maximum tangent point
+                // no max yet, so continue with the binary search
+                // pick one of the two subchains [a,c] or [c,b]
                 upA = above(P, V[a + 1], V[a]);
                 if (upA) {
                     if (dnC)
-                        b = c;
+                        b = c; // select [a,c]
                     else {
                         if (above(P, V[a], V[c]))
-                            b = c;
+                            b = c; // select [a,c]
                         else
-                            a = c;
+                            a = c; // select [c,b]
                     }
-                } else {
+                }
+                else {
                     if (!dnC)
-                        a = c;
+                        a = c; // select [c,b]
                     else {
                         if (below(P, V[a], V[c]))
-                            b = c;
+                            b = c; // select [a,c]
                         else
-                            a = c;
+                            a = c; // select [c,b]
                     }
                 }
             }
         }
-
+        // Ltangent_PointPolyC(): binary search for convex polygon left tangent
+        //    Input:  P = a 2D point (exterior to the polygon)
+        //            n = number of polygon vertices
+        //            V = array of vertices for a 2D convex polygon with V[n]=V[0]
+        //    Return: index "i" of leftmost tangent point V[i]
         function Ltangent_PointPolyC(P, V) {
             var n = V.length - 1;
-
-            var a, b, c;
-            var dnA, dnC;
-
+            // use binary search for large convex polygons
+            var a, b, c; // indices for edge chain endpoints
+            var dnA, dnC; // test for down direction of edges a and c
+            // leftmost tangent = minimum for the isLeft() ordering
+            // test if V[0] is a local minimum
             if (above(P, V[n - 1], V[0]) && !below(P, V[1], V[0]))
-                return 0;
-
-            for (a = 0, b = n; ;) {
+                return 0; // V[0] is the minimum tangent point
+            for (a = 0, b = n;;) {
                 if (b - a === 1)
                     if (below(P, V[a], V[b]))
                         return a;
                     else
                         return b;
-
-                c = Math.floor((a + b) / 2);
+                c = Math.floor((a + b) / 2); // midpoint of [a,b], and 0<c<n
                 dnC = below(P, V[c + 1], V[c]);
                 if (above(P, V[c - 1], V[c]) && !dnC)
-                    return c;
-
+                    return c; // V[c] is the minimum tangent point
+                // no min yet, so continue with the binary search
+                // pick one of the two subchains [a,c] or [c,b]
                 dnA = below(P, V[a + 1], V[a]);
                 if (dnA) {
                     if (!dnC)
-                        b = c;
+                        b = c; // select [a,c]
                     else {
                         if (below(P, V[a], V[c]))
-                            b = c;
+                            b = c; // select [a,c]
                         else
-                            a = c;
+                            a = c; // select [c,b]
                     }
-                } else {
+                }
+                else {
                     if (dnC)
-                        a = c;
+                        a = c; // select [c,b]
                     else {
                         if (above(P, V[a], V[c]))
-                            b = c;
+                            b = c; // select [a,c]
                         else
-                            a = c;
+                            a = c; // select [c,b]
                     }
                 }
             }
         }
-
+        // RLtangent_PolyPolyC(): get the RL tangent between two convex polygons
+        //    Input:  m = number of vertices in polygon 1
+        //            V = array of vertices for convex polygon 1 with V[m]=V[0]
+        //            n = number of vertices in polygon 2
+        //            W = array of vertices for convex polygon 2 with W[n]=W[0]
+        //    Output: *t1 = index of tangent point V[t1] for polygon 1
+        //            *t2 = index of tangent point W[t2] for polygon 2
         function tangent_PolyPolyC(V, W, t1, t2, cmp1, cmp2) {
-            var ix1, ix2;
-
-            ix1 = t1(W[0], V);
-            ix2 = t2(V[ix1], W);
-
-            var done = false;
+            var ix1, ix2; // search indices for polygons 1 and 2
+            // first get the initial vertex on each polygon
+            ix1 = t1(W[0], V); // right tangent from W[0] to V
+            ix2 = t2(V[ix1], W); // left tangent from V[ix1] to W
+            // ping-pong linear search until it stabilizes
+            var done = false; // flag when done
             while (!done) {
-                done = true;
+                done = true; // assume done until...
                 while (true) {
                     if (ix1 === V.length - 1)
                         ix1 = 0;
                     if (cmp1(W[ix2], V[ix1], V[ix1 + 1]))
                         break;
-                    ++ix1;
+                    ++ix1; // get Rtangent from W[ix2] to V
                 }
                 while (true) {
                     if (ix2 === 0)
                         ix2 = W.length - 1;
                     if (cmp2(V[ix1], W[ix2], W[ix2 - 1]))
                         break;
-                    --ix2;
-                    done = false;
+                    --ix2; // get Ltangent from V[ix1] to W
+                    done = false; // not done if had to adjust this
                 }
             }
             return { t1: ix1, t2: ix2 };
         }
         geom.tangent_PolyPolyC = tangent_PolyPolyC;
-
         function LRtangent_PolyPolyC(V, W) {
             var rl = RLtangent_PolyPolyC(W, V);
             return { t1: rl.t2, t2: rl.t1 };
         }
         geom.LRtangent_PolyPolyC = LRtangent_PolyPolyC;
-
         function RLtangent_PolyPolyC(V, W) {
             return tangent_PolyPolyC(V, W, Rtangent_PointPolyC, Ltangent_PointPolyC, above, below);
         }
         geom.RLtangent_PolyPolyC = RLtangent_PolyPolyC;
-
         function LLtangent_PolyPolyC(V, W) {
             return tangent_PolyPolyC(V, W, Ltangent_PointPolyC, Ltangent_PointPolyC, below, below);
         }
         geom.LLtangent_PolyPolyC = LLtangent_PolyPolyC;
-
         function RRtangent_PolyPolyC(V, W) {
             return tangent_PolyPolyC(V, W, Rtangent_PointPolyC, Rtangent_PointPolyC, above, above);
         }
         geom.RRtangent_PolyPolyC = RRtangent_PolyPolyC;
-
         var BiTangent = (function () {
             function BiTangent(t1, t2) {
                 this.t1 = t1;
@@ -625,14 +680,12 @@ var cola;
             return BiTangent;
         })();
         geom.BiTangent = BiTangent;
-
         var BiTangents = (function () {
             function BiTangents() {
             }
             return BiTangents;
         })();
         geom.BiTangents = BiTangents;
-
         var TVGPoint = (function (_super) {
             __extends(TVGPoint, _super);
             function TVGPoint() {
@@ -641,7 +694,6 @@ var cola;
             return TVGPoint;
         })(Point);
         geom.TVGPoint = TVGPoint;
-
         var VisibilityVertex = (function () {
             function VisibilityVertex(id, polyid, polyvertid, p) {
                 this.id = id;
@@ -653,7 +705,6 @@ var cola;
             return VisibilityVertex;
         })();
         geom.VisibilityVertex = VisibilityVertex;
-
         var VisibilityEdge = (function () {
             function VisibilityEdge(source, target) {
                 this.source = source;
@@ -667,7 +718,6 @@ var cola;
             return VisibilityEdge;
         })();
         geom.VisibilityEdge = VisibilityEdge;
-
         var TangentVisibilityGraph = (function () {
             function TangentVisibilityGraph(P, g0) {
                 this.P = P;
@@ -694,7 +744,8 @@ var cola;
                             }
                         }
                     }
-                } else {
+                }
+                else {
                     this.V = g0.V.slice(0);
                     this.E = g0.E.slice(0);
                 }
@@ -727,7 +778,6 @@ var cola;
             return TangentVisibilityGraph;
         })();
         geom.TangentVisibilityGraph = TangentVisibilityGraph;
-
         function intersects(l, P) {
             var ints = [];
             for (var i = 1, n = P.length; i < n; ++i) {
@@ -737,7 +787,6 @@ var cola;
             }
             return ints;
         }
-
         function tangents(V, W) {
             var m = V.length - 1, n = W.length - 1;
             var bt = new BiTangents();
@@ -757,11 +806,14 @@ var cola;
                     var w2v2v3 = isLeft(w2, v2, v3);
                     if (v1v2w2 >= 0 && v2w1w2 >= 0 && v2w2w3 < 0 && w1w2v2 >= 0 && w2v1v2 >= 0 && w2v2v3 < 0) {
                         bt.ll = new BiTangent(i, j);
-                    } else if (v1v2w2 <= 0 && v2w1w2 <= 0 && v2w2w3 > 0 && w1w2v2 <= 0 && w2v1v2 <= 0 && w2v2v3 > 0) {
+                    }
+                    else if (v1v2w2 <= 0 && v2w1w2 <= 0 && v2w2w3 > 0 && w1w2v2 <= 0 && w2v1v2 <= 0 && w2v2v3 > 0) {
                         bt.rr = new BiTangent(i, j);
-                    } else if (v1v2w2 <= 0 && v2w1w2 > 0 && v2w2w3 <= 0 && w1w2v2 >= 0 && w2v1v2 < 0 && w2v2v3 >= 0) {
+                    }
+                    else if (v1v2w2 <= 0 && v2w1w2 > 0 && v2w2w3 <= 0 && w1w2v2 >= 0 && w2v1v2 < 0 && w2v2v3 >= 0) {
                         bt.rl = new BiTangent(i, j);
-                    } else if (v1v2w2 >= 0 && v2w1w2 < 0 && v2w2w3 >= 0 && w1w2v2 <= 0 && w2v1v2 > 0 && w2v2v3 <= 0) {
+                    }
+                    else if (v1v2w2 >= 0 && v2w1w2 < 0 && v2w2w3 >= 0 && w1w2v2 <= 0 && w2v1v2 > 0 && w2v2v3 <= 0) {
                         bt.lr = new BiTangent(i, j);
                     }
                 }
@@ -769,20 +821,15 @@ var cola;
             return bt;
         }
         geom.tangents = tangents;
-
         function isPointInsidePoly(p, poly) {
             for (var i = 1, n = poly.length; i < n; ++i)
                 if (below(poly[i - 1], poly[i], p))
                     return false;
             return true;
         }
-
         function isAnyPInQ(p, q) {
-            return !p.every(function (v) {
-                return !isPointInsidePoly(v, q);
-            });
+            return !p.every(function (v) { return !isPointInsidePoly(v, q); });
         }
-
         function polysOverlap(p, q) {
             if (isAnyPInQ(p, q))
                 return true;
@@ -796,11 +843,11 @@ var cola;
             return false;
         }
         geom.polysOverlap = polysOverlap;
-    })(cola.geom || (cola.geom = {}));
-    var geom = cola.geom;
+    })(geom = cola.geom || (cola.geom = {}));
 })(cola || (cola = {}));
 var cola;
 (function (cola) {
+    var vpsc;
     (function (vpsc) {
         var PositionStats = (function () {
             function PositionStats(scale) {
@@ -817,17 +864,15 @@ var cola;
                 this.AD += wi * ai * v.desiredPosition;
                 this.A2 += wi * ai * ai;
             };
-
             PositionStats.prototype.getPosn = function () {
                 return (this.AD - this.AB) / this.A2;
             };
             return PositionStats;
         })();
         vpsc.PositionStats = PositionStats;
-
         var Constraint = (function () {
             function Constraint(left, right, gap, equality) {
-                if (typeof equality === "undefined") { equality = false; }
+                if (equality === void 0) { equality = false; }
                 this.left = left;
                 this.right = right;
                 this.gap = gap;
@@ -845,11 +890,10 @@ var cola;
             return Constraint;
         })();
         vpsc.Constraint = Constraint;
-
         var Variable = (function () {
             function Variable(desiredPosition, weight, scale) {
-                if (typeof weight === "undefined") { weight = 1; }
-                if (typeof scale === "undefined") { scale = 1; }
+                if (weight === void 0) { weight = 1; }
+                if (scale === void 0) { scale = 1; }
                 this.desiredPosition = desiredPosition;
                 this.weight = weight;
                 this.scale = scale;
@@ -858,26 +902,18 @@ var cola;
             Variable.prototype.dfdv = function () {
                 return 2.0 * this.weight * (this.position() - this.desiredPosition);
             };
-
             Variable.prototype.position = function () {
                 return (this.block.ps.scale * this.block.posn + this.offset) / this.scale;
             };
-
+            // visit neighbours by active constraints within the same block
             Variable.prototype.visitNeighbours = function (prev, f) {
-                var ff = function (c, next) {
-                    return c.active && prev !== next && f(c, next);
-                };
-                this.cOut.forEach(function (c) {
-                    return ff(c, c.right);
-                });
-                this.cIn.forEach(function (c) {
-                    return ff(c, c.left);
-                });
+                var ff = function (c, next) { return c.active && prev !== next && f(c, next); };
+                this.cOut.forEach(function (c) { return ff(c, c.right); });
+                this.cIn.forEach(function (c) { return ff(c, c.left); });
             };
             return Variable;
         })();
         vpsc.Variable = Variable;
-
         var Block = (function () {
             function Block(v) {
                 this.vars = [];
@@ -891,14 +927,13 @@ var cola;
                 this.ps.addVariable(v);
                 this.posn = this.ps.getPosn();
             };
-
+            // move the block where it needs to be to minimize cost
             Block.prototype.updateWeightedPosition = function () {
                 this.ps.AB = this.ps.AD = this.ps.A2 = 0;
                 for (var i = 0, n = this.vars.length; i < n; ++i)
                     this.ps.addVariable(this.vars[i]);
                 this.posn = this.ps.getPosn();
             };
-
             Block.prototype.compute_lm = function (v, u, postAction) {
                 var _this = this;
                 var dfdv = v.dfdv();
@@ -907,7 +942,8 @@ var cola;
                     if (next === c.right) {
                         dfdv += _dfdv * c.left.scale;
                         c.lm = _dfdv;
-                    } else {
+                    }
+                    else {
                         dfdv += _dfdv * c.right.scale;
                         c.lm = -_dfdv;
                     }
@@ -915,7 +951,6 @@ var cola;
                 });
                 return dfdv / v.scale;
             };
-
             Block.prototype.populateSplitBlock = function (v, prev) {
                 var _this = this;
                 v.visitNeighbours(prev, function (c, next) {
@@ -924,17 +959,19 @@ var cola;
                     _this.populateSplitBlock(next, v);
                 });
             };
-
+            // traverse the active constraint tree applying visit to each active constraint
             Block.prototype.traverse = function (visit, acc, v, prev) {
                 var _this = this;
-                if (typeof v === "undefined") { v = this.vars[0]; }
-                if (typeof prev === "undefined") { prev = null; }
+                if (v === void 0) { v = this.vars[0]; }
+                if (prev === void 0) { prev = null; }
                 v.visitNeighbours(prev, function (c, next) {
                     acc.push(visit(c));
                     _this.traverse(visit, acc, next, v);
                 });
             };
-
+            // calculate lagrangian multipliers on constraints and
+            // find the active constraint in this block with the smallest lagrangian.
+            // if the lagrangian is negative, then the constraint is a split candidate.  
             Block.prototype.findMinLM = function () {
                 var m = null;
                 this.compute_lm(this.vars[0], null, function (c) {
@@ -943,7 +980,6 @@ var cola;
                 });
                 return m;
             };
-
             Block.prototype.findMinLMBetween = function (lv, rv) {
                 this.compute_lm(lv, null, function () {
                 });
@@ -954,7 +990,6 @@ var cola;
                 });
                 return m;
             };
-
             Block.prototype.findPath = function (v, prev, to, visit) {
                 var _this = this;
                 var endFound = false;
@@ -966,7 +1001,8 @@ var cola;
                 });
                 return endFound;
             };
-
+            // Search active constraint tree from u to see if there is a directed path to v.
+            // Returns true if path is found.
             Block.prototype.isActiveDirectedPathBetween = function (u, v) {
                 if (u === v)
                     return true;
@@ -978,28 +1014,34 @@ var cola;
                 }
                 return false;
             };
-
+            // split the block into two by deactivating the specified constraint
             Block.split = function (c) {
+                /* DEBUG
+                            console.log("split on " + c);
+                            console.assert(c.active, "attempt to split on inactive constraint");
+                DEBUG */
                 c.active = false;
                 return [Block.createSplitBlock(c.left), Block.createSplitBlock(c.right)];
             };
-
             Block.createSplitBlock = function (startVar) {
                 var b = new Block(startVar);
                 b.populateSplitBlock(startVar, null);
                 return b;
             };
-
+            // find a split point somewhere between the specified variables
             Block.prototype.splitBetween = function (vl, vr) {
+                /* DEBUG
+                            console.assert(vl.block === this);
+                            console.assert(vr.block === this);
+                DEBUG */
                 var c = this.findMinLMBetween(vl, vr);
                 if (c !== null) {
                     var bs = Block.split(c);
                     return { constraint: c, lb: bs[0], rb: bs[1] };
                 }
-
+                // couldn't find a split point - for example the active path is all equality constraints
                 return null;
             };
-
             Block.prototype.mergeAcross = function (b, c, dist) {
                 c.active = true;
                 for (var i = 0, n = b.vars.length; i < n; ++i) {
@@ -1009,7 +1051,6 @@ var cola;
                 }
                 this.posn = this.ps.getPosn();
             };
-
             Block.prototype.cost = function () {
                 var sum = 0, i = this.vars.length;
                 while (i--) {
@@ -1021,7 +1062,6 @@ var cola;
             return Block;
         })();
         vpsc.Block = Block;
-
         var Blocks = (function () {
             function Blocks(vs) {
                 this.vs = vs;
@@ -1039,13 +1079,22 @@ var cola;
                     sum += this.list[i].cost();
                 return sum;
             };
-
             Blocks.prototype.insert = function (b) {
+                /* DEBUG
+                            console.assert(!this.contains(b), "blocks error: tried to reinsert block " + b.blockInd)
+                DEBUG */
                 b.blockInd = this.list.length;
                 this.list.push(b);
+                /* DEBUG
+                            console.log("insert block: " + b.blockInd);
+                            this.contains(b);
+                DEBUG */
             };
-
             Blocks.prototype.remove = function (b) {
+                /* DEBUG
+                            console.log("remove block: " + b.blockInd);
+                            console.assert(this.contains(b));
+                DEBUG */
                 var last = this.list.length - 1;
                 var swapBlock = this.list[last];
                 this.list.length = last;
@@ -1054,30 +1103,35 @@ var cola;
                     swapBlock.blockInd = b.blockInd;
                 }
             };
-
+            // merge the blocks on either side of the specified constraint, by copying the smaller block into the larger
+            // and deleting the smaller.
             Blocks.prototype.merge = function (c) {
                 var l = c.left.block, r = c.right.block;
-
+                /* DEBUG
+                            console.assert(l!==r, "attempt to merge within the same block");
+                DEBUG */
                 var dist = c.right.offset - c.left.offset - c.gap;
                 if (l.vars.length < r.vars.length) {
                     r.mergeAcross(l, c, dist);
                     this.remove(l);
-                } else {
+                }
+                else {
                     l.mergeAcross(r, c, -dist);
                     this.remove(r);
                 }
+                /* DEBUG
+                            console.assert(Math.abs(c.slack()) < 1e-6, "Error: Constraint should be at equality after merge!");
+                            console.log("merged on " + c);
+                DEBUG */
             };
-
             Blocks.prototype.forEach = function (f) {
                 this.list.forEach(f);
             };
-
+            // useful, for example, after variable desired positions change.
             Blocks.prototype.updateBlockPositions = function () {
-                this.list.forEach(function (b) {
-                    return b.updateWeightedPosition();
-                });
+                this.list.forEach(function (b) { return b.updateWeightedPosition(); });
             };
-
+            // split each block across its constraint with the minimum lagrangian 
             Blocks.prototype.split = function (inactive) {
                 var _this = this;
                 this.updateBlockPositions();
@@ -1085,9 +1139,7 @@ var cola;
                     var v = b.findMinLM();
                     if (v !== null && v.lm < Solver.LAGRANGIAN_TOLERANCE) {
                         b = v.left.block;
-                        Block.split(v).forEach(function (nb) {
-                            return _this.insert(nb);
-                        });
+                        Block.split(v).forEach(function (nb) { return _this.insert(nb); });
                         _this.remove(b);
                         inactive.push(v);
                     }
@@ -1096,7 +1148,6 @@ var cola;
             return Blocks;
         })();
         vpsc.Blocks = Blocks;
-
         var Solver = (function () {
             function Solver(vs, cs) {
                 this.vs = vs;
@@ -1104,11 +1155,17 @@ var cola;
                 this.vs = vs;
                 vs.forEach(function (v) {
                     v.cIn = [], v.cOut = [];
+                    /* DEBUG
+                                    v.toString = () => "v" + vs.indexOf(v);
+                    DEBUG */
                 });
                 this.cs = cs;
                 cs.forEach(function (c) {
                     c.left.cOut.push(c);
                     c.right.cIn.push(c);
+                    /* DEBUG
+                                    c.toString = () => c.left + "+" + c.gap + "<=" + c.right + " slack=" + c.slack() + " active=" + c.active;
+                    DEBUG */
                 });
                 this.inactive = cs.map(function (c) {
                     c.active = false;
@@ -1119,24 +1176,43 @@ var cola;
             Solver.prototype.cost = function () {
                 return this.bs.cost();
             };
-
+            // set starting positions without changing desired positions.
+            // Note: it throws away any previous block structure.
             Solver.prototype.setStartingPositions = function (ps) {
                 this.inactive = this.cs.map(function (c) {
                     c.active = false;
                     return c;
                 });
                 this.bs = new Blocks(this.vs);
-                this.bs.forEach(function (b, i) {
-                    return b.posn = ps[i];
-                });
+                this.bs.forEach(function (b, i) { return b.posn = ps[i]; });
             };
-
             Solver.prototype.setDesiredPositions = function (ps) {
-                this.vs.forEach(function (v, i) {
-                    return v.desiredPosition = ps[i];
-                });
+                this.vs.forEach(function (v, i) { return v.desiredPosition = ps[i]; });
             };
-
+            /* DEBUG
+                    private getId(v: Variable): number {
+                        return this.vs.indexOf(v);
+                    }
+            
+                    // sanity check of the index integrity of the inactive list
+                    checkInactive(): void {
+                        var inactiveCount = 0;
+                        this.cs.forEach(c=> {
+                            var i = this.inactive.indexOf(c);
+                            console.assert(!c.active && i >= 0 || c.active && i < 0, "constraint should be in the inactive list if it is not active: " + c);
+                            if (i >= 0) {
+                                inactiveCount++;
+                            } else {
+                                console.assert(c.active, "inactive constraint not found in inactive list: " + c);
+                            }
+                        });
+                        console.assert(inactiveCount === this.inactive.length, inactiveCount + " inactive constraints found, " + this.inactive.length + "in inactive list");
+                    }
+                    // after every call to satisfy the following should check should pass
+                    checkSatisfied(): void {
+                        this.cs.forEach(c=>console.assert(c.slack() >= vpsc.Solver.ZERO_UPPERBOUND, "Error: Unsatisfied constraint! "+c));
+                    }
+            DEBUG */
             Solver.prototype.mostViolated = function () {
                 var minSlack = Number.MAX_VALUE, v = null, l = this.inactive, n = l.length, deletePoint = n;
                 for (var i = 0; i < n; ++i) {
@@ -1158,44 +1234,68 @@ var cola;
                 }
                 return v;
             };
-
+            // satisfy constraints by building block structure over violated constraints
+            // and moving the blocks to their desired positions
             Solver.prototype.satisfy = function () {
                 if (this.bs == null) {
                     this.bs = new Blocks(this.vs);
                 }
-
+                /* DEBUG
+                            console.log("satisfy: " + this.bs);
+                DEBUG */
                 this.bs.split(this.inactive);
                 var v = null;
                 while ((v = this.mostViolated()) && (v.equality || v.slack() < Solver.ZERO_UPPERBOUND && !v.active)) {
                     var lb = v.left.block, rb = v.right.block;
-
+                    /* DEBUG
+                                    console.log("most violated is: " + v);
+                                    this.bs.contains(lb);
+                                    this.bs.contains(rb);
+                    DEBUG */
                     if (lb !== rb) {
                         this.bs.merge(v);
-                    } else {
+                    }
+                    else {
                         if (lb.isActiveDirectedPathBetween(v.right, v.left)) {
+                            // cycle found!
                             v.unsatisfiable = true;
                             continue;
                         }
-
+                        // constraint is within block, need to split first
                         var split = lb.splitBetween(v.left, v.right);
                         if (split !== null) {
                             this.bs.insert(split.lb);
                             this.bs.insert(split.rb);
                             this.bs.remove(lb);
                             this.inactive.push(split.constraint);
-                        } else {
+                        }
+                        else {
+                            /* DEBUG
+                                                    console.log("unsatisfiable constraint found");
+                            DEBUG */
                             v.unsatisfiable = true;
                             continue;
                         }
                         if (v.slack() >= 0) {
+                            /* DEBUG
+                                                    console.log("violated constraint indirectly satisfied: " + v);
+                            DEBUG */
+                            // v was satisfied by the above split!
                             this.inactive.push(v);
-                        } else {
+                        }
+                        else {
+                            /* DEBUG
+                                                    console.log("merge after split:");
+                            DEBUG */
                             this.bs.merge(v);
                         }
                     }
                 }
+                /* DEBUG
+                            this.checkSatisfied();
+                DEBUG */
             };
-
+            // repeatedly build and split block structure until we converge to an optimal solution
             Solver.prototype.solve = function () {
                 this.satisfy();
                 var lastcost = Number.MAX_VALUE, cost = this.bs.cost();
@@ -1211,25 +1311,22 @@ var cola;
             return Solver;
         })();
         vpsc.Solver = Solver;
-    })(cola.vpsc || (cola.vpsc = {}));
-    var vpsc = cola.vpsc;
+    })(vpsc = cola.vpsc || (cola.vpsc = {}));
 })(cola || (cola = {}));
+///<reference path="vpsc.ts"/>
+///<reference path="rbtree.d.ts"/>
 var cola;
 (function (cola) {
+    var vpsc;
     (function (vpsc) {
         function computeGroupBounds(g) {
-            g.bounds = typeof g.leaves !== "undefined" ? g.leaves.reduce(function (r, c) {
-                return c.bounds.union(r);
-            }, Rectangle.empty()) : Rectangle.empty();
+            g.bounds = typeof g.leaves !== "undefined" ? g.leaves.reduce(function (r, c) { return c.bounds.union(r); }, Rectangle.empty()) : Rectangle.empty();
             if (typeof g.groups !== "undefined")
-                g.bounds = g.groups.reduce(function (r, c) {
-                    return computeGroupBounds(c).union(r);
-                }, g.bounds);
+                g.bounds = g.groups.reduce(function (r, c) { return computeGroupBounds(c).union(r); }, g.bounds);
             g.bounds = g.bounds.inflate(g.padding);
             return g.bounds;
         }
         vpsc.computeGroupBounds = computeGroupBounds;
-
         var Rectangle = (function () {
             function Rectangle(x, X, y, Y) {
                 this.x = x;
@@ -1240,15 +1337,12 @@ var cola;
             Rectangle.empty = function () {
                 return new Rectangle(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY);
             };
-
             Rectangle.prototype.cx = function () {
                 return (this.x + this.X) / 2;
             };
-
             Rectangle.prototype.cy = function () {
                 return (this.y + this.Y) / 2;
             };
-
             Rectangle.prototype.overlapX = function (r) {
                 var ux = this.cx(), vx = r.cx();
                 if (ux <= vx && r.x < this.X)
@@ -1257,7 +1351,6 @@ var cola;
                     return r.X - this.x;
                 return 0;
             };
-
             Rectangle.prototype.overlapY = function (r) {
                 var uy = this.cy(), vy = r.cy();
                 if (uy <= vy && r.y < this.Y)
@@ -1266,37 +1359,36 @@ var cola;
                     return r.Y - this.y;
                 return 0;
             };
-
             Rectangle.prototype.setXCentre = function (cx) {
                 var dx = cx - this.cx();
                 this.x += dx;
                 this.X += dx;
             };
-
             Rectangle.prototype.setYCentre = function (cy) {
                 var dy = cy - this.cy();
                 this.y += dy;
                 this.Y += dy;
             };
-
             Rectangle.prototype.width = function () {
                 return this.X - this.x;
             };
-
             Rectangle.prototype.height = function () {
                 return this.Y - this.y;
             };
-
             Rectangle.prototype.union = function (r) {
                 return new Rectangle(Math.min(this.x, r.x), Math.max(this.X, r.X), Math.min(this.y, r.y), Math.max(this.Y, r.Y));
             };
-
+            /**
+             * return any intersection points between the given line and the sides of this rectangle
+             * @method lineIntersection
+             * @param x1 number first x coord of line
+             * @param y1 number first y coord of line
+             * @param x2 number second x coord of line
+             * @param y2 number second y coord of line
+             * @return any intersection points found
+             */
             Rectangle.prototype.lineIntersections = function (x1, y1, x2, y2) {
-                var sides = [
-                    [this.x, this.y, this.X, this.y],
-                    [this.X, this.y, this.X, this.Y],
-                    [this.X, this.Y, this.x, this.Y],
-                    [this.x, this.Y, this.x, this.y]];
+                var sides = [[this.x, this.y, this.X, this.y], [this.X, this.y, this.X, this.Y], [this.X, this.Y, this.x, this.Y], [this.x, this.Y, this.x, this.y]];
                 var intersections = [];
                 for (var i = 0; i < 4; ++i) {
                     var r = Rectangle.lineIntersection(x1, y1, x2, y2, sides[i][0], sides[i][1], sides[i][2], sides[i][3]);
@@ -1305,21 +1397,27 @@ var cola;
                 }
                 return intersections;
             };
-
+            /**
+             * return any intersection points between a line extending from the centre of this rectangle to the given point,
+             *  and the sides of this rectangle
+             * @method lineIntersection
+             * @param x2 number second x coord of line
+             * @param y2 number second y coord of line
+             * @return any intersection points found
+             */
             Rectangle.prototype.rayIntersection = function (x2, y2) {
                 var ints = this.lineIntersections(this.cx(), this.cy(), x2, y2);
                 return ints.length > 0 ? ints[0] : null;
             };
-
             Rectangle.prototype.vertices = function () {
                 return [
                     { x: this.x, y: this.y },
                     { x: this.X, y: this.y },
                     { x: this.X, y: this.Y },
                     { x: this.x, y: this.Y },
-                    { x: this.x, y: this.y }];
+                    { x: this.x, y: this.y }
+                ];
             };
-
             Rectangle.lineIntersection = function (x1, y1, x2, y2, x3, y3, x4, y4) {
                 var dx12 = x2 - x1, dx34 = x4 - x3, dy12 = y2 - y1, dy34 = y4 - y3, denominator = dy34 * dx12 - dx34 * dy12;
                 if (denominator == 0)
@@ -1333,14 +1431,12 @@ var cola;
                 }
                 return null;
             };
-
             Rectangle.prototype.inflate = function (pad) {
                 return new Rectangle(this.x - pad, this.X + pad, this.y - pad, this.Y + pad);
             };
             return Rectangle;
         })();
         vpsc.Rectangle = Rectangle;
-
         function makeEdgeBetween(link, source, target, ah) {
             var si = source.rayIntersection(target.cx(), target.cy());
             if (!si)
@@ -1354,7 +1450,6 @@ var cola;
             link.arrowStart = { x: si.x + al * dx / l, y: si.y + al * dy / l };
         }
         vpsc.makeEdgeBetween = makeEdgeBetween;
-
         function makeEdgeTo(s, target, ah) {
             var ti = target.rayIntersection(s.x, s.y);
             if (!ti)
@@ -1363,7 +1458,6 @@ var cola;
             return { x: ti.x - ah * dx / l, y: ti.y - ah * dy / l };
         }
         vpsc.makeEdgeTo = makeEdgeTo;
-
         var Node = (function () {
             function Node(v, r, pos) {
                 this.v = v;
@@ -1374,7 +1468,6 @@ var cola;
             }
             return Node;
         })();
-
         var Event = (function () {
             function Event(isOpen, v, pos) {
                 this.isOpen = isOpen;
@@ -1383,7 +1476,6 @@ var cola;
             }
             return Event;
         })();
-
         function compareEvents(a, b) {
             if (a.pos > b.pos) {
                 return 1;
@@ -1392,64 +1484,38 @@ var cola;
                 return -1;
             }
             if (a.isOpen) {
+                // open must come before close
                 return -1;
             }
             return 0;
         }
-
         function makeRBTree() {
-            return new RBTree(function (a, b) {
-                return a.pos - b.pos;
-            });
+            return new RBTree(function (a, b) { return a.pos - b.pos; });
         }
-
         var xRect = {
-            getCentre: function (r) {
-                return r.cx();
-            },
-            getOpen: function (r) {
-                return r.y;
-            },
-            getClose: function (r) {
-                return r.Y;
-            },
-            getSize: function (r) {
-                return r.width();
-            },
-            makeRect: function (open, close, center, size) {
-                return new Rectangle(center - size / 2, center + size / 2, open, close);
-            },
+            getCentre: function (r) { return r.cx(); },
+            getOpen: function (r) { return r.y; },
+            getClose: function (r) { return r.Y; },
+            getSize: function (r) { return r.width(); },
+            makeRect: function (open, close, center, size) { return new Rectangle(center - size / 2, center + size / 2, open, close); },
             findNeighbours: findXNeighbours
         };
-
         var yRect = {
-            getCentre: function (r) {
-                return r.cy();
-            },
-            getOpen: function (r) {
-                return r.x;
-            },
-            getClose: function (r) {
-                return r.X;
-            },
-            getSize: function (r) {
-                return r.height();
-            },
-            makeRect: function (open, close, center, size) {
-                return new Rectangle(open, close, center - size / 2, center + size / 2);
-            },
+            getCentre: function (r) { return r.cy(); },
+            getOpen: function (r) { return r.x; },
+            getClose: function (r) { return r.X; },
+            getSize: function (r) { return r.height(); },
+            makeRect: function (open, close, center, size) { return new Rectangle(open, close, center - size / 2, center + size / 2); },
             findNeighbours: findYNeighbours
         };
-
         function generateGroupConstraints(root, f, minSep, isContained) {
-            if (typeof isContained === "undefined") { isContained = false; }
-            var padding = root.padding, gn = typeof root.groups !== 'undefined' ? root.groups.length : 0, ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0, childConstraints = !gn ? [] : root.groups.reduce(function (ccs, g) {
-                return ccs.concat(generateGroupConstraints(g, f, minSep, true));
-            }, []), n = (isContained ? 2 : 0) + ln + gn, vs = new Array(n), rs = new Array(n), i = 0, add = function (r, v) {
+            if (isContained === void 0) { isContained = false; }
+            var padding = root.padding, gn = typeof root.groups !== 'undefined' ? root.groups.length : 0, ln = typeof root.leaves !== 'undefined' ? root.leaves.length : 0, childConstraints = !gn ? [] : root.groups.reduce(function (ccs, g) { return ccs.concat(generateGroupConstraints(g, f, minSep, true)); }, []), n = (isContained ? 2 : 0) + ln + gn, vs = new Array(n), rs = new Array(n), i = 0, add = function (r, v) {
                 rs[i] = r;
                 vs[i++] = v;
             };
             if (isContained) {
+                // if this group is contained by another, then we add two dummy vars and rectangles for the borders
                 var b = root.bounds, c = f.getCentre(b), s = f.getSize(b) / 2, open = f.getOpen(b), close = f.getClose(b), min = c - s + padding / 2, max = c + s - padding / 2;
                 root.minVar.desiredPosition = min;
                 add(f.makeRect(open, close, min, padding), root.minVar);
@@ -1457,9 +1523,7 @@ var cola;
                 add(f.makeRect(open, close, max, padding), root.maxVar);
             }
             if (ln)
-                root.leaves.forEach(function (l) {
-                    return add(l.bounds, l.variable);
-                });
+                root.leaves.forEach(function (l) { return add(l.bounds, l.variable); });
             if (gn)
                 root.groups.forEach(function (g) {
                     var b = g.bounds;
@@ -1475,9 +1539,7 @@ var cola;
                 });
                 root.groups.forEach(function (g) {
                     var gapAdjustment = (g.padding - f.getSize(g.bounds)) / 2;
-                    g.minVar.cIn.forEach(function (c) {
-                        return c.gap += gapAdjustment;
-                    });
+                    g.minVar.cIn.forEach(function (c) { return c.gap += gapAdjustment; });
                     g.minVar.cOut.forEach(function (c) {
                         c.left = g.maxVar;
                         c.gap += gapAdjustment;
@@ -1486,7 +1548,6 @@ var cola;
             }
             return childConstraints.concat(cs);
         }
-
         function generateConstraints(rs, vars, rect, minSep) {
             var i, n = rs.length;
             var N = 2 * n;
@@ -1507,11 +1568,13 @@ var cola;
                 if (e.isOpen) {
                     scanline.insert(v);
                     rect.findNeighbours(v, scanline);
-                } else {
+                }
+                else {
+                    // close event
                     scanline.remove(v);
                     var makeConstraint = function (l, r) {
                         var sep = (rect.getSize(l.r) + rect.getSize(r.r)) / 2 + minSep;
-                        cs.push(new cola.vpsc.Constraint(l.v, r.v, sep));
+                        cs.push(new vpsc.Constraint(l.v, r.v, sep));
                     };
                     var visitNeighbours = function (forward, reverse, mkcon) {
                         var u, it = v[forward].iterator();
@@ -1520,18 +1583,13 @@ var cola;
                             u[reverse].remove(v);
                         }
                     };
-                    visitNeighbours("prev", "next", function (u, v) {
-                        return makeConstraint(u, v);
-                    });
-                    visitNeighbours("next", "prev", function (u, v) {
-                        return makeConstraint(v, u);
-                    });
+                    visitNeighbours("prev", "next", function (u, v) { return makeConstraint(u, v); });
+                    visitNeighbours("next", "prev", function (u, v) { return makeConstraint(v, u); });
                 }
             }
             console.assert(scanline.size === 0);
             return cs;
         }
-
         function findXNeighbours(v, scanline) {
             var f = function (forward, reverse) {
                 var it = scanline.findIter(v);
@@ -1550,7 +1608,6 @@ var cola;
             f("next", "prev");
             f("prev", "next");
         }
-
         function findYNeighbours(v, scanline) {
             var f = function (forward, reverse) {
                 var u = scanline.findIter(v)[forward]();
@@ -1562,49 +1619,37 @@ var cola;
             f("next", "prev");
             f("prev", "next");
         }
-
         function generateXConstraints(rs, vars) {
             return generateConstraints(rs, vars, xRect, 1e-6);
         }
         vpsc.generateXConstraints = generateXConstraints;
-
         function generateYConstraints(rs, vars) {
             return generateConstraints(rs, vars, yRect, 1e-6);
         }
         vpsc.generateYConstraints = generateYConstraints;
-
         function generateXGroupConstraints(root) {
             return generateGroupConstraints(root, xRect, 1e-6);
         }
         vpsc.generateXGroupConstraints = generateXGroupConstraints;
-
         function generateYGroupConstraints(root) {
             return generateGroupConstraints(root, yRect, 1e-6);
         }
         vpsc.generateYGroupConstraints = generateYGroupConstraints;
-
         function removeOverlaps(rs) {
-            var vs = rs.map(function (r) {
-                return new cola.vpsc.Variable(r.cx());
-            });
-            var cs = cola.vpsc.generateXConstraints(rs, vs);
-            var solver = new cola.vpsc.Solver(vs, cs);
+            var vs = rs.map(function (r) { return new vpsc.Variable(r.cx()); });
+            var cs = vpsc.generateXConstraints(rs, vs);
+            var solver = new vpsc.Solver(vs, cs);
             solver.solve();
-            vs.forEach(function (v, i) {
-                return rs[i].setXCentre(v.position());
-            });
+            vs.forEach(function (v, i) { return rs[i].setXCentre(v.position()); });
             vs = rs.map(function (r) {
-                return new cola.vpsc.Variable(r.cy());
+                return new vpsc.Variable(r.cy());
             });
-            cs = cola.vpsc.generateYConstraints(rs, vs);
-            solver = new cola.vpsc.Solver(vs, cs);
+            cs = vpsc.generateYConstraints(rs, vs);
+            solver = new vpsc.Solver(vs, cs);
             solver.solve();
-            vs.forEach(function (v, i) {
-                return rs[i].setYCentre(v.position());
-            });
+            vs.forEach(function (v, i) { return rs[i].setYCentre(v.position()); });
         }
         vpsc.removeOverlaps = removeOverlaps;
-
         var IndexedVariable = (function (_super) {
             __extends(IndexedVariable, _super);
             function IndexedVariable(index, w) {
@@ -1612,14 +1657,13 @@ var cola;
                 this.index = index;
             }
             return IndexedVariable;
-        })(cola.vpsc.Variable);
-
+        })(vpsc.Variable);
         var Projection = (function () {
             function Projection(nodes, groups, rootGroup, constraints, avoidOverlaps) {
-                if (typeof rootGroup === "undefined") { rootGroup = null; }
-                if (typeof constraints === "undefined") { constraints = null; }
-                if (typeof avoidOverlaps === "undefined") { avoidOverlaps = false; }
                 var _this = this;
+                if (rootGroup === void 0) { rootGroup = null; }
+                if (constraints === void 0) { constraints = null; }
+                if (avoidOverlaps === void 0) { avoidOverlaps = false; }
                 this.nodes = nodes;
                 this.groups = groups;
                 this.rootGroup = rootGroup;
@@ -1627,18 +1671,17 @@ var cola;
                 this.variables = nodes.map(function (v, i) {
                     return v.variable = new IndexedVariable(i, 1);
                 });
-
                 if (constraints)
                     this.createConstraints(constraints);
-
                 if (avoidOverlaps && rootGroup && typeof rootGroup.groups !== 'undefined') {
                     nodes.forEach(function (v) {
                         if (!v.width || !v.height) {
-                            v.bounds = new cola.vpsc.Rectangle(v.x, v.x, v.y, v.y);
+                            //If undefined, default to nothing
+                            v.bounds = new vpsc.Rectangle(v.x, v.x, v.y, v.y);
                             return;
                         }
                         var w2 = v.width / 2, h2 = v.height / 2;
-                        v.bounds = new cola.vpsc.Rectangle(v.x - w2, v.x + w2, v.y - h2, v.y + h2);
+                        v.bounds = new vpsc.Rectangle(v.x - w2, v.x + w2, v.y - h2, v.y + h2);
                     });
                     computeGroupBounds(rootGroup);
                     var i = nodes.length;
@@ -1649,9 +1692,8 @@ var cola;
                 }
             }
             Projection.prototype.createSeparation = function (c) {
-                return new cola.vpsc.Constraint(this.nodes[c.left].variable, this.nodes[c.right].variable, c.gap, typeof c.equality !== "undefined" ? c.equality : false);
+                return new vpsc.Constraint(this.nodes[c.left].variable, this.nodes[c.right].variable, c.gap, typeof c.equality !== "undefined" ? c.equality : false);
             };
-
             Projection.prototype.makeFeasible = function (c) {
                 var _this = this;
                 if (!this.avoidOverlaps)
@@ -1659,11 +1701,7 @@ var cola;
                 var axis = 'x', dim = 'width';
                 if (c.axis === 'x')
                     axis = 'y', dim = 'height';
-                var vs = c.offsets.map(function (o) {
-                    return _this.nodes[o.node];
-                }).sort(function (a, b) {
-                    return a[axis] - b[axis];
-                });
+                var vs = c.offsets.map(function (o) { return _this.nodes[o.node]; }).sort(function (a, b) { return a[axis] - b[axis]; });
                 var p = null;
                 vs.forEach(function (v) {
                     if (p)
@@ -1671,7 +1709,6 @@ var cola;
                     p = v;
                 });
             };
-
             Projection.prototype.createAlignment = function (c) {
                 var _this = this;
                 var u = this.nodes[c.offsets[0].node].variable;
@@ -1679,38 +1716,23 @@ var cola;
                 var cs = c.axis === 'x' ? this.xConstraints : this.yConstraints;
                 c.offsets.slice(1).forEach(function (o) {
                     var v = _this.nodes[o.node].variable;
-                    cs.push(new cola.vpsc.Constraint(u, v, o.offset, true));
+                    cs.push(new vpsc.Constraint(u, v, o.offset, true));
                 });
             };
-
             Projection.prototype.createConstraints = function (constraints) {
                 var _this = this;
-                var isSep = function (c) {
-                    return typeof c.type === 'undefined' || c.type === 'separation';
-                };
-                this.xConstraints = constraints.filter(function (c) {
-                    return c.axis === "x" && isSep(c);
-                }).map(function (c) {
-                    return _this.createSeparation(c);
-                });
-                this.yConstraints = constraints.filter(function (c) {
-                    return c.axis === "y" && isSep(c);
-                }).map(function (c) {
-                    return _this.createSeparation(c);
-                });
-                constraints.filter(function (c) {
-                    return c.type === 'alignment';
-                }).forEach(function (c) {
-                    return _this.createAlignment(c);
-                });
+                var isSep = function (c) { return typeof c.type === 'undefined' || c.type === 'separation'; };
+                this.xConstraints = constraints.filter(function (c) { return c.axis === "x" && isSep(c); }).map(function (c) { return _this.createSeparation(c); });
+                this.yConstraints = constraints.filter(function (c) { return c.axis === "y" && isSep(c); }).map(function (c) { return _this.createSeparation(c); });
+                constraints.filter(function (c) { return c.type === 'alignment'; }).forEach(function (c) { return _this.createAlignment(c); });
             };
-
             Projection.prototype.setupVariablesAndBounds = function (x0, y0, desired, getDesired) {
                 this.nodes.forEach(function (v, i) {
                     if (v.fixed) {
                         v.variable.weight = 1000;
                         desired[i] = getDesired(v);
-                    } else {
+                    }
+                    else {
                         v.variable.weight = 1;
                     }
                     var w = (v.width || 0) / 2, h = (v.height || 0) / 2;
@@ -1718,15 +1740,10 @@ var cola;
                     v.bounds = new Rectangle(ix - w, ix + w, iy - h, iy + h);
                 });
             };
-
             Projection.prototype.xProject = function (x0, y0, x) {
                 if (!this.rootGroup && !(this.avoidOverlaps || this.xConstraints))
                     return;
-                this.project(x0, y0, x0, x, function (v) {
-                    return v.px;
-                }, this.xConstraints, generateXGroupConstraints, function (v) {
-                    return v.bounds.setXCentre(x[v.variable.index] = v.variable.position());
-                }, function (g) {
+                this.project(x0, y0, x0, x, function (v) { return v.px; }, this.xConstraints, generateXGroupConstraints, function (v) { return v.bounds.setXCentre(x[v.variable.index] = v.variable.position()); }, function (g) {
                     var xmin = x[g.minVar.index] = g.minVar.position();
                     var xmax = x[g.maxVar.index] = g.maxVar.position();
                     var p2 = g.padding / 2;
@@ -1734,15 +1751,10 @@ var cola;
                     g.bounds.X = xmax + p2;
                 });
             };
-
             Projection.prototype.yProject = function (x0, y0, y) {
                 if (!this.rootGroup && !this.yConstraints)
                     return;
-                this.project(x0, y0, y0, y, function (v) {
-                    return v.py;
-                }, this.yConstraints, generateYGroupConstraints, function (v) {
-                    return v.bounds.setYCentre(y[v.variable.index] = v.variable.position());
-                }, function (g) {
+                this.project(x0, y0, y0, y, function (v) { return v.py; }, this.yConstraints, generateYGroupConstraints, function (v) { return v.bounds.setYCentre(y[v.variable.index] = v.variable.position()); }, function (g) {
                     var ymin = y[g.minVar.index] = g.minVar.position();
                     var ymax = y[g.maxVar.index] = g.maxVar.position();
                     var p2 = g.padding / 2;
@@ -1751,19 +1763,13 @@ var cola;
                     g.bounds.Y = ymax + p2;
                 });
             };
-
             Projection.prototype.projectFunctions = function () {
                 var _this = this;
                 return [
-                    function (x0, y0, x) {
-                        return _this.xProject(x0, y0, x);
-                    },
-                    function (x0, y0, y) {
-                        return _this.yProject(x0, y0, y);
-                    }
+                    function (x0, y0, x) { return _this.xProject(x0, y0, x); },
+                    function (x0, y0, y) { return _this.yProject(x0, y0, y); }
                 ];
             };
-
             Projection.prototype.project = function (x0, y0, start, desired, getDesired, cs, generateConstraints, updateNodeBounds, updateGroupBounds) {
                 this.setupVariablesAndBounds(x0, y0, desired, getDesired);
                 if (this.rootGroup && this.avoidOverlaps) {
@@ -1776,9 +1782,8 @@ var cola;
                     this.groups.forEach(updateGroupBounds);
                 }
             };
-
             Projection.prototype.solve = function (vs, cs, starting, desired) {
-                var solver = new cola.vpsc.Solver(vs, cs);
+                var solver = new vpsc.Solver(vs, cs);
                 solver.setStartingPositions(starting);
                 solver.setDesiredPositions(desired);
                 solver.solve();
@@ -1786,10 +1791,11 @@ var cola;
             return Projection;
         })();
         vpsc.Projection = Projection;
-    })(cola.vpsc || (cola.vpsc = {}));
-    var vpsc = cola.vpsc;
+    })(vpsc = cola.vpsc || (cola.vpsc = {}));
 })(cola || (cola = {}));
 var PairingHeap = (function () {
+    // from: https://gist.github.com/nervoussystem
+    //{elem:object, subheaps:[array of heaps]}
     function PairingHeap(elem) {
         this.elem = elem;
         this.subheaps = [];
@@ -1813,30 +1819,23 @@ var PairingHeap = (function () {
         }
         return (this.elem ? selector(this.elem) : "") + str;
     };
-
     PairingHeap.prototype.forEach = function (f) {
         if (!this.empty()) {
             f(this.elem, this);
-            this.subheaps.forEach(function (s) {
-                return s.forEach(f);
-            });
+            this.subheaps.forEach(function (s) { return s.forEach(f); });
         }
     };
-
     PairingHeap.prototype.count = function () {
         return this.empty() ? 0 : 1 + this.subheaps.reduce(function (n, h) {
             return n + h.count();
         }, 0);
     };
-
     PairingHeap.prototype.min = function () {
         return this.elem;
     };
-
     PairingHeap.prototype.empty = function () {
         return this.elem == null;
     };
-
     PairingHeap.prototype.contains = function (h) {
         if (this === h)
             return true;
@@ -1846,18 +1845,13 @@ var PairingHeap = (function () {
         }
         return false;
     };
-
     PairingHeap.prototype.isHeap = function (lessThan) {
         var _this = this;
-        return this.subheaps.every(function (h) {
-            return lessThan(_this.elem, h.elem) && h.isHeap(lessThan);
-        });
+        return this.subheaps.every(function (h) { return lessThan(_this.elem, h.elem) && h.isHeap(lessThan); });
     };
-
     PairingHeap.prototype.insert = function (obj, lessThan) {
         return this.merge(new PairingHeap(obj), lessThan);
     };
-
     PairingHeap.prototype.merge = function (heap2, lessThan) {
         if (this.empty())
             return heap2;
@@ -1866,25 +1860,25 @@ var PairingHeap = (function () {
         else if (lessThan(this.elem, heap2.elem)) {
             this.subheaps.push(heap2);
             return this;
-        } else {
+        }
+        else {
             heap2.subheaps.push(this);
             return heap2;
         }
     };
-
     PairingHeap.prototype.removeMin = function (lessThan) {
         if (this.empty())
             return null;
         else
             return this.mergePairs(lessThan);
     };
-
     PairingHeap.prototype.mergePairs = function (lessThan) {
         if (this.subheaps.length == 0)
             return new PairingHeap(null);
         else if (this.subheaps.length == 1) {
             return this.subheaps[0];
-        } else {
+        }
+        else {
             var firstPair = this.subheaps.pop().merge(this.subheaps.pop(), lessThan);
             var remaining = this.mergePairs(lessThan);
             return firstPair.merge(remaining, lessThan);
@@ -1892,7 +1886,7 @@ var PairingHeap = (function () {
     };
     PairingHeap.prototype.decreaseKey = function (subheap, newValue, setHeapNode, lessThan) {
         var newHeap = subheap.removeMin(lessThan);
-
+        //reassign subheap values to preserve tree
         subheap.elem = newHeap.elem;
         subheap.subheaps = newHeap.subheaps;
         if (setHeapNode !== null && newHeap.elem !== null) {
@@ -1906,22 +1900,31 @@ var PairingHeap = (function () {
     };
     return PairingHeap;
 })();
-
+/**
+ * @class PriorityQueue a min priority queue backed by a pairing heap
+ */
 var PriorityQueue = (function () {
     function PriorityQueue(lessThan) {
         this.lessThan = lessThan;
     }
+    /**
+     * @method top
+     * @return the top element (the min element as defined by lessThan)
+     */
     PriorityQueue.prototype.top = function () {
         if (this.empty()) {
             return null;
         }
         return this.root.elem;
     };
-
+    /**
+     * @method push
+     * put things on the heap
+     */
     PriorityQueue.prototype.push = function () {
         var args = [];
-        for (var _i = 0; _i < (arguments.length - 0); _i++) {
-            args[_i] = arguments[_i + 0];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i - 0] = arguments[_i];
         }
         var pairingNode;
         for (var i = 0, arg; arg = args[i]; ++i) {
@@ -1930,19 +1933,30 @@ var PriorityQueue = (function () {
         }
         return pairingNode;
     };
-
+    /**
+     * @method empty
+     * @return true if no more elements in queue
+     */
     PriorityQueue.prototype.empty = function () {
         return !this.root || !this.root.elem;
     };
-
+    /**
+     * @method isHeap check heap condition (for testing)
+     * @return true if queue is in valid state
+     */
     PriorityQueue.prototype.isHeap = function () {
         return this.root.isHeap(this.lessThan);
     };
-
+    /**
+     * @method forEach apply f to each element of the queue
+     * @param f function to apply
+     */
     PriorityQueue.prototype.forEach = function (f) {
         this.root.forEach(f);
     };
-
+    /**
+     * @method pop remove and return the min element from the queue
+     */
     PriorityQueue.prototype.pop = function () {
         if (this.empty()) {
             return null;
@@ -1951,22 +1965,32 @@ var PriorityQueue = (function () {
         this.root = this.root.removeMin(this.lessThan);
         return obj;
     };
-
+    /**
+     * @method reduceKey reduce the key value of the specified heap node
+     */
     PriorityQueue.prototype.reduceKey = function (heapNode, newKey, setHeapNode) {
-        if (typeof setHeapNode === "undefined") { setHeapNode = null; }
+        if (setHeapNode === void 0) { setHeapNode = null; }
         this.root = this.root.decreaseKey(heapNode, newKey, setHeapNode, this.lessThan);
     };
     PriorityQueue.prototype.toString = function (selector) {
         return this.root.toString(selector);
     };
-
+    /**
+     * @method count
+     * @return number of elements in queue
+     */
     PriorityQueue.prototype.count = function () {
         return this.root.count();
     };
     return PriorityQueue;
 })();
+///<reference path="pqueue.ts"/>
+/**
+ * @module shortestpaths
+ */
 var cola;
 (function (cola) {
+    var shortestpaths;
     (function (shortestpaths) {
         var Neighbour = (function () {
             function Neighbour(id, distance) {
@@ -1975,7 +1999,6 @@ var cola;
             }
             return Neighbour;
         })();
-
         var Node = (function () {
             function Node(id) {
                 this.id = id;
@@ -1983,7 +2006,6 @@ var cola;
             }
             return Node;
         })();
-
         var QueueEntry = (function () {
             function QueueEntry(node, prev, d) {
                 this.node = node;
@@ -1992,7 +2014,13 @@ var cola;
             }
             return QueueEntry;
         })();
-
+        /**
+         * calculates all-pairs shortest paths or shortest paths from a single node
+         * @class Calculator
+         * @constructor
+         * @param n {number} number of nodes
+         * @param es {Edge[]} array of edges
+         */
         var Calculator = (function () {
             function Calculator(n, es, getSourceIndex, getTargetIndex, getLength) {
                 this.n = n;
@@ -2001,7 +2029,6 @@ var cola;
                 var i = this.n;
                 while (i--)
                     this.neighbours[i] = new Node(i);
-
                 i = this.es.length;
                 while (i--) {
                     var e = this.es[i];
@@ -2011,6 +2038,14 @@ var cola;
                     this.neighbours[v].neighbours.push(new Neighbour(u, d));
                 }
             }
+            /**
+             * compute shortest paths for graph over n nodes with edges an array of source/target pairs
+             * edges may optionally have a length attribute.  1 is the default.
+             * Uses Johnson's algorithm.
+             *
+             * @method DistanceMatrix
+             * @return the distance matrix
+             */
             Calculator.prototype.DistanceMatrix = function () {
                 var D = new Array(this.n);
                 for (var i = 0; i < this.n; ++i) {
@@ -2018,19 +2053,23 @@ var cola;
                 }
                 return D;
             };
-
+            /**
+             * get shortest paths from a specified start node
+             * @method DistancesFromNode
+             * @param start node index
+             * @return array of path lengths
+             */
             Calculator.prototype.DistancesFromNode = function (start) {
                 return this.dijkstraNeighbours(start);
             };
-
             Calculator.prototype.PathFromNodeToNode = function (start, end) {
                 return this.dijkstraNeighbours(start, end);
             };
-
+            // find shortest path from start to end, with the opportunity at 
+            // each edge traversal to compute a custom cost based on the 
+            // previous edge.  For example, to penalise bends.
             Calculator.prototype.PathFromNodeToNodeWithPrevCost = function (start, end, prevCost) {
-                var q = new PriorityQueue(function (a, b) {
-                    return a.d <= b.d;
-                }), u = this.neighbours[start], qu = new QueueEntry(u, null, 0), visitedFrom = {};
+                var q = new PriorityQueue(function (a, b) { return a.d <= b.d; }), u = this.neighbours[start], qu = new QueueEntry(u, null, 0), visitedFrom = {};
                 q.push(qu);
                 while (!q.empty()) {
                     qu = q.pop();
@@ -2041,16 +2080,16 @@ var cola;
                     var i = u.neighbours.length;
                     while (i--) {
                         var neighbour = u.neighbours[i], v = this.neighbours[neighbour.id];
-
+                        // don't double back
                         if (qu.prev && v.id === qu.prev.node.id)
                             continue;
-
+                        // don't retraverse an edge if it has already been explored
+                        // from a lower cost route
                         var viduid = v.id + ',' + u.id;
                         if (viduid in visitedFrom && visitedFrom[viduid] <= qu.d)
                             continue;
-
                         var cc = qu.prev ? prevCost(qu.prev.node.id, u.id, v.id) : 0, t = qu.d + neighbour.distance + cc;
-
+                        // store cost of this traversal
                         visitedFrom[viduid] = t;
                         q.push(new QueueEntry(v, qu, t));
                     }
@@ -2062,18 +2101,16 @@ var cola;
                 }
                 return path;
             };
-
             Calculator.prototype.dijkstraNeighbours = function (start, dest) {
-                if (typeof dest === "undefined") { dest = -1; }
-                var q = new PriorityQueue(function (a, b) {
-                    return a.d <= b.d;
-                }), i = this.neighbours.length, d = new Array(i);
+                if (dest === void 0) { dest = -1; }
+                var q = new PriorityQueue(function (a, b) { return a.d <= b.d; }), i = this.neighbours.length, d = new Array(i);
                 while (i--) {
                     var node = this.neighbours[i];
                     node.d = i === start ? 0 : Number.POSITIVE_INFINITY;
                     node.q = q.push(node);
                 }
                 while (!q.empty()) {
+                    // console.log(q.toString(function (u) { return u.id + "=" + (u.d === Number.POSITIVE_INFINITY ? "\u221E" : u.d.toFixed(2) )}));
                     var u = q.pop();
                     d[u.id] = u.d;
                     if (u.id === dest) {
@@ -2093,9 +2130,7 @@ var cola;
                         if (u.d !== Number.MAX_VALUE && v.d > t) {
                             v.d = t;
                             v.prev = u;
-                            q.reduceKey(v.q, v, function (e, q) {
-                                return e.q = q;
-                            });
+                            q.reduceKey(v.q, v, function (e, q) { return e.q = q; });
                         }
                     }
                 }
@@ -2104,9 +2139,12 @@ var cola;
             return Calculator;
         })();
         shortestpaths.Calculator = Calculator;
-    })(cola.shortestpaths || (cola.shortestpaths = {}));
-    var shortestpaths = cola.shortestpaths;
+    })(shortestpaths = cola.shortestpaths || (cola.shortestpaths = {}));
 })(cola || (cola = {}));
+/// <reference path="rectangle.ts"/>
+/// <reference path="shortestpaths.ts"/>
+/// <reference path="geom.ts"/>
+/// <reference path="vpsc.ts"/>
 var cola;
 (function (cola) {
     var NodeWrapper = (function () {
@@ -2121,8 +2159,8 @@ var cola;
     cola.NodeWrapper = NodeWrapper;
     var Vert = (function () {
         function Vert(id, x, y, node, line) {
-            if (typeof node === "undefined") { node = null; }
-            if (typeof line === "undefined") { line = null; }
+            if (node === void 0) { node = null; }
+            if (line === void 0) { line = null; }
             this.id = id;
             this.x = x;
             this.y = y;
@@ -2132,7 +2170,6 @@ var cola;
         return Vert;
     })();
     cola.Vert = Vert;
-
     var LongestCommonSubsequence = (function () {
         function LongestCommonSubsequence(s, t) {
             this.s = s;
@@ -2145,7 +2182,8 @@ var cola;
                 this.si = mf.si;
                 this.ti = mf.ti;
                 this.reversed = false;
-            } else {
+            }
+            else {
                 this.length = mr.length;
                 this.si = mr.si;
                 this.ti = t.length - mr.ti - mr.length;
@@ -2168,7 +2206,8 @@ var cola;
                             match.ti = j - v + 1;
                         }
                         ;
-                    } else
+                    }
+                    else
                         l[i][j] = 0;
             }
             return match;
@@ -2181,119 +2220,91 @@ var cola;
     cola.LongestCommonSubsequence = LongestCommonSubsequence;
     var GridRouter = (function () {
         function GridRouter(originalnodes, accessor, groupPadding) {
-            if (typeof groupPadding === "undefined") { groupPadding = 12; }
             var _this = this;
+            if (groupPadding === void 0) { groupPadding = 12; }
             this.originalnodes = originalnodes;
             this.groupPadding = groupPadding;
             this.leaves = null;
-            this.nodes = originalnodes.map(function (v, i) {
-                return new NodeWrapper(i, accessor.getBounds(v), accessor.getChildren(v));
-            });
-            this.leaves = this.nodes.filter(function (v) {
-                return v.leaf;
-            });
-            this.groups = this.nodes.filter(function (g) {
-                return !g.leaf;
-            });
+            this.nodes = originalnodes.map(function (v, i) { return new NodeWrapper(i, accessor.getBounds(v), accessor.getChildren(v)); });
+            this.leaves = this.nodes.filter(function (v) { return v.leaf; });
+            this.groups = this.nodes.filter(function (g) { return !g.leaf; });
             this.cols = this.getGridDim('x');
             this.rows = this.getGridDim('y');
-
-            this.groups.forEach(function (v) {
-                return v.children.forEach(function (c) {
-                    return _this.nodes[c].parent = v;
-                });
-            });
-
+            // create parents for each node or group that is a member of another's children 
+            this.groups.forEach(function (v) { return v.children.forEach(function (c) { return _this.nodes[c].parent = v; }); });
+            // root claims the remaining orphans
             this.root = { children: [] };
             this.nodes.forEach(function (v) {
                 if (typeof v.parent === 'undefined') {
                     v.parent = _this.root;
                     _this.root.children.push(v.id);
                 }
-
+                // each node will have grid vertices associated with it,
+                // some inside the node and some on the boundary
+                // leaf nodes will have exactly one internal node at the center
+                // and four boundary nodes
+                // groups will have potentially many of each
                 v.ports = [];
             });
-
+            // nodes ordered by their position in the group hierarchy
             this.backToFront = this.nodes.slice(0);
-            this.backToFront.sort(function (x, y) {
-                return _this.getDepth(x) - _this.getDepth(y);
-            });
-
-            var frontToBackGroups = this.backToFront.slice(0).reverse().filter(function (g) {
-                return !g.leaf;
-            });
+            this.backToFront.sort(function (x, y) { return _this.getDepth(x) - _this.getDepth(y); });
+            // compute boundary rectangles for each group
+            // has to be done from front to back, i.e. inside groups to outside groups
+            // such that each can be made large enough to enclose its interior
+            var frontToBackGroups = this.backToFront.slice(0).reverse().filter(function (g) { return !g.leaf; });
             frontToBackGroups.forEach(function (v) {
                 var r = cola.vpsc.Rectangle.empty();
-                v.children.forEach(function (c) {
-                    return r = r.union(_this.nodes[c].rect);
-                });
+                v.children.forEach(function (c) { return r = r.union(_this.nodes[c].rect); });
                 v.rect = r.inflate(_this.groupPadding);
             });
-
-            var colMids = this.midPoints(this.cols.map(function (r) {
-                return r.x;
-            }));
-            var rowMids = this.midPoints(this.rows.map(function (r) {
-                return r.y;
-            }));
-
+            var colMids = this.midPoints(this.cols.map(function (r) { return r.x; }));
+            var rowMids = this.midPoints(this.rows.map(function (r) { return r.y; }));
+            // setup extents of lines
             var rowx = colMids[0], rowX = colMids[colMids.length - 1];
             var coly = rowMids[0], colY = rowMids[rowMids.length - 1];
-
-            var hlines = this.rows.map(function (r) {
-                return { x1: rowx, x2: rowX, y1: r.y, y2: r.y };
-            }).concat(rowMids.map(function (m) {
-                return { x1: rowx, x2: rowX, y1: m, y2: m };
-            }));
-
-            var vlines = this.cols.map(function (c) {
-                return { x1: c.x, x2: c.x, y1: coly, y2: colY };
-            }).concat(colMids.map(function (m) {
-                return { x1: m, x2: m, y1: coly, y2: colY };
-            }));
-
+            // horizontal lines
+            var hlines = this.rows.map(function (r) { return { x1: rowx, x2: rowX, y1: r.y, y2: r.y }; }).concat(rowMids.map(function (m) { return { x1: rowx, x2: rowX, y1: m, y2: m }; }));
+            // vertical lines
+            var vlines = this.cols.map(function (c) { return { x1: c.x, x2: c.x, y1: coly, y2: colY }; }).concat(colMids.map(function (m) { return { x1: m, x2: m, y1: coly, y2: colY }; }));
+            // the full set of lines
             var lines = hlines.concat(vlines);
-
-            lines.forEach(function (l) {
-                return l.verts = [];
-            });
-
+            // we record the vertices associated with each line
+            lines.forEach(function (l) { return l.verts = []; });
+            // the routing graph
             this.verts = [];
             this.edges = [];
-
-            hlines.forEach(function (h) {
-                return vlines.forEach(function (v) {
-                    var p = new Vert(_this.verts.length, v.x1, h.y1);
-                    h.verts.push(p);
-                    v.verts.push(p);
-                    _this.verts.push(p);
-
-                    var i = _this.backToFront.length;
-                    while (i-- > 0) {
-                        var node = _this.backToFront[i], r = node.rect;
-                        var dx = Math.abs(p.x - r.cx()), dy = Math.abs(p.y - r.cy());
-                        if (dx < r.width() / 2 && dy < r.height() / 2) {
-                            p.node = node;
-                            break;
-                        }
+            // create vertices at the crossings of horizontal and vertical grid-lines
+            hlines.forEach(function (h) { return vlines.forEach(function (v) {
+                var p = new Vert(_this.verts.length, v.x1, h.y1);
+                h.verts.push(p);
+                v.verts.push(p);
+                _this.verts.push(p);
+                // assign vertices to the nodes immediately under them
+                var i = _this.backToFront.length;
+                while (i-- > 0) {
+                    var node = _this.backToFront[i], r = node.rect;
+                    var dx = Math.abs(p.x - r.cx()), dy = Math.abs(p.y - r.cy());
+                    if (dx < r.width() / 2 && dy < r.height() / 2) {
+                        p.node = node;
+                        break;
                     }
-                });
-            });
-
+                }
+            }); });
             lines.forEach(function (l, li) {
+                // create vertices at the intersections of nodes and lines
                 _this.nodes.forEach(function (v, i) {
                     v.rect.lineIntersections(l.x1, l.y1, l.x2, l.y2).forEach(function (intersect, j) {
+                        //console.log(li+','+i+','+j+':'+intersect.x + ',' + intersect.y);
                         var p = new Vert(_this.verts.length, intersect.x, intersect.y, v, l);
                         _this.verts.push(p);
                         l.verts.push(p);
                         v.ports.push(p);
                     });
                 });
-
+                // split lines into edges joining vertices
                 var isHoriz = Math.abs(l.y1 - l.y2) < 0.1;
-                var delta = function (a, b) {
-                    return isHoriz ? b.x - a.x : b.y - a.y;
-                };
+                var delta = function (a, b) { return isHoriz ? b.x - a.x : b.y - a.y; };
                 l.verts.sort(delta);
                 for (var i = 1; i < l.verts.length; i++) {
                     var u = l.verts[i - 1], v = l.verts[i];
@@ -2304,32 +2315,22 @@ var cola;
             });
         }
         GridRouter.prototype.avg = function (a) {
-            return a.reduce(function (x, y) {
-                return x + y;
-            }) / a.length;
+            return a.reduce(function (x, y) { return x + y; }) / a.length;
         };
         GridRouter.prototype.getGridDim = function (axis) {
             var columns = [];
             var ls = this.leaves.slice(0, this.leaves.length);
             while (ls.length > 0) {
                 var r = ls[0].rect;
-                var col = ls.filter(function (v) {
-                    return v.rect['overlap' + axis.toUpperCase()](r);
-                });
+                var col = ls.filter(function (v) { return v.rect['overlap' + axis.toUpperCase()](r); });
                 columns.push(col);
-                col.forEach(function (v) {
-                    return ls.splice(ls.indexOf(v), 1);
-                });
-                col[axis] = this.avg(col.map(function (v) {
-                    return v.rect['c' + axis]();
-                }));
+                col.forEach(function (v) { return ls.splice(ls.indexOf(v), 1); });
+                col[axis] = this.avg(col.map(function (v) { return v.rect['c' + axis](); }));
             }
-            columns.sort(function (x, y) {
-                return x[axis] - y[axis];
-            });
+            columns.sort(function (x, y) { return x[axis] - y[axis]; });
             return columns;
         };
-
+        // get the depth of the given node in the group hierarchy
         GridRouter.prototype.getDepth = function (v) {
             var depth = 0;
             while (v.parent !== this.root) {
@@ -2338,7 +2339,7 @@ var cola;
             }
             return depth;
         };
-
+        // medial axes between node centres and also boundary lines for the grid
         GridRouter.prototype.midPoints = function (a) {
             var gap = a[1] - a[0];
             var mids = [a[0] - gap / 2];
@@ -2348,49 +2349,38 @@ var cola;
             mids.push(a[a.length - 1] + gap / 2);
             return mids;
         };
-
+        // find path from v to root including both v and root
         GridRouter.prototype.findLineage = function (v) {
             var lineage = [v];
             do {
                 v = v.parent;
                 lineage.push(v);
-            } while(v !== this.root);
+            } while (v !== this.root);
             return lineage.reverse();
         };
-
+        // find path connecting a and b through their lowest common ancestor
         GridRouter.prototype.findAncestorPathBetween = function (a, b) {
             var aa = this.findLineage(a), ba = this.findLineage(b), i = 0;
             while (aa[i] === ba[i])
                 i++;
-
+            // i-1 to include common ancestor only once (as first element)
             return { commonAncestor: aa[i - 1], lineages: aa.slice(i).concat(ba.slice(i)) };
         };
-
+        // when finding a path between two nodes a and b, siblings of a and b on the
+        // paths from a and b to their least common ancestor are obstacles
         GridRouter.prototype.siblingObstacles = function (a, b) {
             var _this = this;
             var path = this.findAncestorPathBetween(a, b);
             var lineageLookup = {};
-            path.lineages.forEach(function (v) {
-                return lineageLookup[v.id] = {};
-            });
-            var obstacles = path.commonAncestor.children.filter(function (v) {
-                return !(v in lineageLookup);
-            });
-
-            path.lineages.filter(function (v) {
-                return v.parent !== path.commonAncestor;
-            }).forEach(function (v) {
-                return obstacles = obstacles.concat(v.parent.children.filter(function (c) {
-                    return c !== v.id;
-                }));
-            });
-
-            return obstacles.map(function (v) {
-                return _this.nodes[v];
-            });
+            path.lineages.forEach(function (v) { return lineageLookup[v.id] = {}; });
+            var obstacles = path.commonAncestor.children.filter(function (v) { return !(v in lineageLookup); });
+            path.lineages.filter(function (v) { return v.parent !== path.commonAncestor; }).forEach(function (v) { return obstacles = obstacles.concat(v.parent.children.filter(function (c) { return c !== v.id; })); });
+            return obstacles.map(function (v) { return _this.nodes[v]; });
         };
-
+        // for the given routes, extract all the segments orthogonal to the axis x
+        // and return all them grouped by x position
         GridRouter.getSegmentSets = function (routes, x, y) {
+            // vsegments is a list of vertical segments sorted by x position
             var vsegments = [];
             for (var ei = 0; ei < routes.length; ei++) {
                 var route = routes[ei];
@@ -2404,10 +2394,8 @@ var cola;
                     }
                 }
             }
-            vsegments.sort(function (a, b) {
-                return a[0][x] - b[0][x];
-            });
-
+            vsegments.sort(function (a, b) { return a[0][x] - b[0][x]; });
+            // vsegmentsets is a set of sets of segments grouped by x position
             var vsegmentsets = [];
             var segmentset = null;
             for (var i = 0; i < vsegments.length; i++) {
@@ -2420,39 +2408,52 @@ var cola;
             }
             return vsegmentsets;
         };
-
+        // for all segments in this bundle create a vpsc problem such that
+        // each segment's x position is a variable and separation constraints 
+        // are given by the partial order over the edges to which the segments belong
+        // for each pair s1,s2 of segments in the open set:
+        //   e1 = edge of s1, e2 = edge of s2
+        //   if leftOf(e1,e2) create constraint s1.x + gap <= s2.x
+        //   else if leftOf(e2,e1) create cons. s2.x + gap <= s1.x
         GridRouter.nudgeSegs = function (x, y, routes, segments, leftOf, gap) {
             var n = segments.length;
             if (n <= 1)
                 return;
-            var vs = segments.map(function (s) {
-                return new cola.vpsc.Variable(s[0][x]);
-            });
+            var vs = segments.map(function (s) { return new cola.vpsc.Variable(s[0][x]); });
             var cs = [];
             for (var i = 0; i < n; i++) {
                 for (var j = 0; j < n; j++) {
                     if (i === j)
                         continue;
                     var s1 = segments[i], s2 = segments[j], e1 = s1.edgeid, e2 = s2.edgeid, lind = -1, rind = -1;
-
+                    // in page coordinates (not cartesian) the notion of 'leftof' is flipped in the horizontal axis from the vertical axis
+                    // that is, when nudging vertical segments, if they increase in the y(conj) direction the segment belonging to the
+                    // 'left' edge actually needs to be nudged to the right
+                    // when nudging horizontal segments, if the segments increase in the x direction
+                    // then the 'left' segment needs to go higher, i.e. to have y pos less than that of the right
                     if (x == 'x') {
                         if (leftOf(e1, e2)) {
+                            //console.log('s1: ' + s1[0][x] + ',' + s1[0][y] + '-' + s1[1][x] + ',' + s1[1][y]);
                             if (s1[0][y] < s1[1][y]) {
                                 lind = j, rind = i;
-                            } else {
+                            }
+                            else {
                                 lind = i, rind = j;
                             }
                         }
-                    } else {
+                    }
+                    else {
                         if (leftOf(e1, e2)) {
                             if (s1[0][y] < s1[1][y]) {
                                 lind = i, rind = j;
-                            } else {
+                            }
+                            else {
                                 lind = j, rind = i;
                             }
                         }
                     }
                     if (lind >= 0) {
+                        //console.log(x+' constraint: ' + lind + '<' + rind);
                         cs.push(new cola.vpsc.Constraint(vs[lind], vs[rind], gap));
                     }
                 }
@@ -2470,10 +2471,8 @@ var cola;
                     route[s.i + 1][0][x] = pos;
             });
         };
-
         GridRouter.nudgeSegments = function (routes, x, y, leftOf, gap) {
             var vsegmentsets = GridRouter.getSegmentSets(routes, x, y);
-
             for (var i = 0; i < vsegmentsets.length; i++) {
                 var ss = vsegmentsets[i];
                 var events = [];
@@ -2482,16 +2481,15 @@ var cola;
                     events.push({ type: 0, s: s, pos: Math.min(s[0][y], s[1][y]) });
                     events.push({ type: 1, s: s, pos: Math.max(s[0][y], s[1][y]) });
                 }
-                events.sort(function (a, b) {
-                    return a.pos - b.pos + a.type - b.type;
-                });
+                events.sort(function (a, b) { return a.pos - b.pos + a.type - b.type; });
                 var open = [];
                 var openCount = 0;
                 events.forEach(function (e) {
                     if (e.type === 0) {
                         open.push(e.s);
                         openCount++;
-                    } else {
+                    }
+                    else {
                         openCount--;
                     }
                     if (openCount == 0) {
@@ -2501,12 +2499,11 @@ var cola;
                 });
             }
         };
-
+        // obtain routes for the specified edges, nicely nudged apart
+        // warning: edge paths may be reversed such that common paths are ordered consistently within bundles!
         GridRouter.prototype.routeEdges = function (edges, gap, source, target) {
             var _this = this;
-            var routePaths = edges.map(function (e) {
-                return _this.route(source(e), target(e));
-            });
+            var routePaths = edges.map(function (e) { return _this.route(source(e), target(e)); });
             var order = cola.GridRouter.orderEdges(routePaths);
             var routes = routePaths.map(function (e) {
                 return cola.GridRouter.makeSegments(e);
@@ -2515,7 +2512,6 @@ var cola;
             cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, gap);
             return routes;
         };
-
         GridRouter.angleBetween2Lines = function (line1, line2) {
             var angle1 = Math.atan2(line1[0].y - line1[1].y, line1[0].x - line1[1].x);
             var angle2 = Math.atan2(line2[0].y - line2[1].y, line2[0].x - line2[1].x);
@@ -2525,11 +2521,12 @@ var cola;
             }
             return diff;
         };
-
+        // does the path a-b-c describe a left turn?
         GridRouter.isLeft = function (a, b, c) {
             return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) <= 0;
         };
-
+        // for the given list of ordered pairs, returns a function that (efficiently) looks-up a specific pair to
+        // see if it exists in the list
         GridRouter.getOrder = function (pairs) {
             var outgoing = {};
             for (var i = 0; i < pairs.length; i++) {
@@ -2538,11 +2535,10 @@ var cola;
                     outgoing[p.l] = {};
                 outgoing[p.l][p.r] = true;
             }
-            return function (l, r) {
-                return typeof outgoing[l] !== 'undefined' && outgoing[l][r];
-            };
+            return function (l, r) { return typeof outgoing[l] !== 'undefined' && outgoing[l][r]; };
         };
-
+        // returns an ordering (a lookup function) that determines the correct order to nudge the
+        // edge paths apart to minimize crossings
         GridRouter.orderEdges = function (edges) {
             var edgeOrder = [];
             for (var i = 0; i < edges.length - 1; i++) {
@@ -2550,43 +2546,53 @@ var cola;
                     var e = edges[i], f = edges[j], lcs = new cola.LongestCommonSubsequence(e, f);
                     var u, vi, vj;
                     if (lcs.length === 0)
-                        continue;
+                        continue; // no common subpath
                     if (lcs.reversed) {
+                        // if we found a common subpath but one of the edges runs the wrong way, 
+                        // then reverse f.
                         f.reverse();
                         f.reversed = true;
                         lcs = new cola.LongestCommonSubsequence(e, f);
                     }
                     if (lcs.length === e.length || lcs.length === f.length) {
+                        // the edges are completely co-linear so make an arbitrary ordering decision
                         edgeOrder.push({ l: i, r: j });
                         continue;
                     }
                     if (lcs.si + lcs.length >= e.length || lcs.ti + lcs.length >= f.length) {
+                        // if the common subsequence of the
+                        // two edges being considered goes all the way to the
+                        // end of one (or both) of the lines then we have to 
+                        // base our ordering decision on the other end of the
+                        // common subsequence
                         u = e[lcs.si + 1];
                         vj = e[lcs.si - 1];
                         vi = f[lcs.ti - 1];
-                    } else {
+                    }
+                    else {
                         u = e[lcs.si + lcs.length - 2];
                         vi = e[lcs.si + lcs.length];
                         vj = f[lcs.ti + lcs.length];
                     }
                     if (GridRouter.isLeft(u, vi, vj)) {
                         edgeOrder.push({ l: j, r: i });
-                    } else {
+                    }
+                    else {
                         edgeOrder.push({ l: i, r: j });
                     }
                 }
             }
-
+            //edgeOrder.forEach(function (e) { console.log('l:' + e.l + ',r:' + e.r) });
             return cola.GridRouter.getOrder(edgeOrder);
         };
-
+        // for an orthogonal path described by a sequence of points, create a list of segments
+        // if consecutive segments would make a straight line they are merged into a single segment
+        // segments are over cloned points, not the original vertices
         GridRouter.makeSegments = function (path) {
             function copyPoint(p) {
                 return { x: p.x, y: p.y };
             }
-            var isStraight = function (a, b, c) {
-                return Math.abs((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) < 0.001;
-            };
+            var isStraight = function (a, b, c) { return Math.abs((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) < 0.001; };
             var segments = [];
             var a = copyPoint(path[0]);
             for (var i = 1; i < path.length; i++) {
@@ -2598,21 +2604,18 @@ var cola;
             }
             return segments;
         };
-
+        // find a route between node s and node t
+        // returns an array of indices to verts
         GridRouter.prototype.route = function (s, t) {
             var _this = this;
             var source = this.nodes[s], target = this.nodes[t];
             this.obstacles = this.siblingObstacles(source, target);
-
             var obstacleLookup = {};
-            this.obstacles.forEach(function (o) {
-                return obstacleLookup[o.id] = o;
-            });
+            this.obstacles.forEach(function (o) { return obstacleLookup[o.id] = o; });
             this.passableEdges = this.edges.filter(function (e) {
                 var u = _this.verts[e.source], v = _this.verts[e.target];
                 return !(u.node && u.node.id in obstacleLookup || v.node && v.node.id in obstacleLookup);
             });
-
             for (var i = 1; i < source.ports.length; i++) {
                 var u = source.ports[0].id;
                 var v = source.ports[i].id;
@@ -2631,42 +2634,34 @@ var cola;
                     length: 0
                 });
             }
-
-            var getSource = function (e) {
-                return e.source;
-            }, getTarget = function (e) {
-                return e.target;
-            }, getLength = function (e) {
-                return e.length;
-            };
-
+            var getSource = function (e) { return e.source; }, getTarget = function (e) { return e.target; }, getLength = function (e) { return e.length; };
             var shortestPathCalculator = new cola.shortestpaths.Calculator(this.verts.length, this.passableEdges, getSource, getTarget, getLength);
             var bendPenalty = function (u, v, w) {
                 var a = _this.verts[u], b = _this.verts[v], c = _this.verts[w];
                 var dx = Math.abs(c.x - a.x), dy = Math.abs(c.y - a.y);
-
+                // don't count bends from internal node edges
                 if (a.node === source && a.node === b.node || b.node === target && b.node === c.node)
                     return 0;
                 return dx > 1 && dy > 1 ? 1000 : 0;
             };
-
+            // get shortest path
             var shortestPath = shortestPathCalculator.PathFromNodeToNodeWithPrevCost(source.ports[0].id, target.ports[0].id, bendPenalty);
-
-            var pathPoints = shortestPath.reverse().map(function (vi) {
-                return _this.verts[vi];
-            });
+            // shortest path is reversed and does not include the target port
+            var pathPoints = shortestPath.reverse().map(function (vi) { return _this.verts[vi]; });
             pathPoints.push(this.nodes[target.id].ports[0]);
-
-            return pathPoints.filter(function (v, i) {
-                return !(i < pathPoints.length - 1 && pathPoints[i + 1].node === source && v.node === source || i > 0 && v.node === target && pathPoints[i - 1].node === target);
-            });
+            // filter out any extra end points that are inside the source or target (i.e. the dummy segments above)
+            return pathPoints.filter(function (v, i) { return !(i < pathPoints.length - 1 && pathPoints[i + 1].node === source && v.node === source || i > 0 && v.node === target && pathPoints[i - 1].node === target); });
         };
         return GridRouter;
     })();
     cola.GridRouter = GridRouter;
 })(cola || (cola = {}));
+/**
+ * @module cola
+ */
 var cola;
 (function (cola) {
+    // compute the size of the union of two sets a and b
     function unionCount(a, b) {
         var u = {};
         for (var i in a)
@@ -2675,7 +2670,7 @@ var cola;
             u[i] = {};
         return Object.keys(u).length;
     }
-
+    // compute the size of the intersection of two sets a and b
     function intersectionCount(a, b) {
         var n = 0;
         for (var i in a)
@@ -2683,7 +2678,6 @@ var cola;
                 ++n;
         return n;
     }
-
     function getNeighbours(links, la) {
         var neighbours = {};
         var addNeighbours = function (u, v) {
@@ -2698,7 +2692,7 @@ var cola;
         });
         return neighbours;
     }
-
+    // modify the lengths of the specified links by the result of function f weighted by w
     function computeLinkLengths(links, w, f, la) {
         var neighbours = getNeighbours(links, la);
         links.forEach(function (l) {
@@ -2707,33 +2701,29 @@ var cola;
             la.setLength(l, 1 + w * f(a, b));
         });
     }
-
+    /** modify the specified link lengths based on the symmetric difference of their neighbours
+     * @class symmetricDiffLinkLengths
+     */
     function symmetricDiffLinkLengths(links, la, w) {
-        if (typeof w === "undefined") { w = 1; }
-        computeLinkLengths(links, w, function (a, b) {
-            return Math.sqrt(unionCount(a, b) - intersectionCount(a, b));
-        }, la);
+        if (w === void 0) { w = 1; }
+        computeLinkLengths(links, w, function (a, b) { return Math.sqrt(unionCount(a, b) - intersectionCount(a, b)); }, la);
     }
     cola.symmetricDiffLinkLengths = symmetricDiffLinkLengths;
-
+    /** modify the specified links lengths based on the jaccard difference between their neighbours
+     * @class jaccardLinkLengths
+     */
     function jaccardLinkLengths(links, la, w) {
-        if (typeof w === "undefined") { w = 1; }
-        computeLinkLengths(links, w, function (a, b) {
-            return Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1 ? 0 : intersectionCount(a, b) / unionCount(a, b);
-        }, la);
+        if (w === void 0) { w = 1; }
+        computeLinkLengths(links, w, function (a, b) { return Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1 ? 0 : intersectionCount(a, b) / unionCount(a, b); }, la);
     }
     cola.jaccardLinkLengths = jaccardLinkLengths;
-
+    /** generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
+     * @class generateDirectedEdgeConstraints
+     */
     function generateDirectedEdgeConstraints(n, links, axis, la) {
         var components = stronglyConnectedComponents(n, links, la);
         var nodes = {};
-        components.filter(function (c) {
-            return c.length > 1;
-        }).forEach(function (c) {
-            return c.forEach(function (v) {
-                return nodes[v] = c;
-            });
-        });
+        components.filter(function (c) { return c.length > 1; }).forEach(function (c) { return c.forEach(function (v) { return nodes[v] = c; }); });
         var constraints = [];
         links.forEach(function (l) {
             var ui = la.getSourceIndex(l), vi = la.getTargetIndex(l), u = nodes[ui], v = nodes[vi];
@@ -2749,28 +2739,48 @@ var cola;
         return constraints;
     }
     cola.generateDirectedEdgeConstraints = generateDirectedEdgeConstraints;
+    /*
+    Following function based on: https://github.com/mikolalysenko/strongly-connected-components
 
+    The MIT License (MIT)
+
+    Copyright (c) 2013 Mikola Lysenko
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+    */
     function stronglyConnectedComponents(numVertices, edges, la) {
         var adjList = new Array(numVertices);
         var index = new Array(numVertices);
         var lowValue = new Array(numVertices);
         var active = new Array(numVertices);
-
         for (var i = 0; i < numVertices; ++i) {
             adjList[i] = [];
             index[i] = -1;
             lowValue[i] = 0;
             active[i] = false;
         }
-
         for (var i = 0; i < edges.length; ++i) {
             adjList[la.getSourceIndex(edges[i])].push(la.getTargetIndex(edges[i]));
         }
-
         var count = 0;
         var S = [];
         var components = [];
-
         function strongConnect(v) {
             index[v] = count;
             lowValue[v] = count;
@@ -2783,7 +2793,8 @@ var cola;
                 if (index[u] < 0) {
                     strongConnect(u);
                     lowValue[v] = Math.min(lowValue[v], lowValue[u]) | 0;
-                } else if (active[u]) {
+                }
+                else if (active[u]) {
                     lowValue[v] = Math.min(lowValue[v], lowValue[u]);
                 }
             }
@@ -2801,18 +2812,17 @@ var cola;
                 components.push(component);
             }
         }
-
         for (var i = 0; i < numVertices; ++i) {
             if (index[i] < 0) {
                 strongConnect(i);
             }
         }
-
         return components;
     }
 })(cola || (cola = {}));
 var cola;
 (function (cola) {
+    var powergraph;
     (function (powergraph) {
         var PowerEdge = (function () {
             function PowerEdge(source, target, type) {
@@ -2823,7 +2833,6 @@ var cola;
             return PowerEdge;
         })();
         powergraph.PowerEdge = PowerEdge;
-
         var Configuration = (function () {
             function Configuration(n, edges, linkAccessor, rootGroup) {
                 var _this = this;
@@ -2832,7 +2841,8 @@ var cola;
                 this.roots = [];
                 if (rootGroup) {
                     this.initModulesFromGroup(rootGroup);
-                } else {
+                }
+                else {
                     this.roots.push(new ModuleSet());
                     for (var i = 0; i < n; ++i)
                         this.roots[0].add(this.modules[i] = new Module(i));
@@ -2856,15 +2866,15 @@ var cola;
                 if (group.groups) {
                     for (var j = 0; j < group.groups.length; ++j) {
                         var child = group.groups[j];
-
+                        // Use negative module id to avoid clashes between predefined and generated modules
                         moduleSet.add(new Module(-1 - j, new LinkSets(), new LinkSets(), this.initModulesFromGroup(child), true));
                     }
                 }
                 return moduleSet;
             };
-
+            // merge modules a and b keeping track of their power edges and removing the from roots
             Configuration.prototype.merge = function (a, b, k) {
-                if (typeof k === "undefined") { k = 0; }
+                if (k === void 0) { k = 0; }
                 var inInt = a.incoming.intersection(b.incoming), outInt = a.outgoing.intersection(b.outgoing);
                 var children = new ModuleSet();
                 children.add(a);
@@ -2891,9 +2901,8 @@ var cola;
                 this.roots[k].add(m);
                 return m;
             };
-
             Configuration.prototype.rootMerges = function (k) {
-                if (typeof k === "undefined") { k = 0; }
+                if (k === void 0) { k = 0; }
                 var rs = this.roots[k].modules();
                 var n = rs.length;
                 var merges = new Array(n * (n - 1));
@@ -2906,14 +2915,12 @@ var cola;
                 }
                 return merges;
             };
-
             Configuration.prototype.greedyMerge = function () {
                 for (var i = 0; i < this.roots.length; ++i) {
+                    // Handle single nested module case
                     if (this.roots[i].modules().length < 2)
                         continue;
-                    var ms = this.rootMerges(i).sort(function (a, b) {
-                        return a.nEdges - b.nEdges;
-                    });
+                    var ms = this.rootMerges(i).sort(function (a, b) { return a.nEdges - b.nEdges; });
                     var m = ms[0];
                     if (m.nEdges >= this.R)
                         continue;
@@ -2921,12 +2928,10 @@ var cola;
                     return true;
                 }
             };
-
             Configuration.prototype.nEdges = function (a, b) {
                 var inInt = a.incoming.intersection(b.incoming), outInt = a.outgoing.intersection(b.outgoing);
                 return this.R - inInt.count() - outInt.count();
             };
-
             Configuration.prototype.getGroupHierarchy = function (retargetedEdges) {
                 var _this = this;
                 var groups = [];
@@ -2940,13 +2945,11 @@ var cola;
                 });
                 return groups;
             };
-
             Configuration.prototype.allEdges = function () {
                 var es = [];
                 Configuration.getEdges(this.roots[0], es);
                 return es;
             };
-
             Configuration.getEdges = function (modules, es) {
                 modules.forAll(function (m) {
                     m.getEdges(es);
@@ -2956,14 +2959,14 @@ var cola;
             return Configuration;
         })();
         powergraph.Configuration = Configuration;
-
         function toGroups(modules, group, groups) {
             modules.forAll(function (m) {
                 if (m.isLeaf()) {
                     if (!group.leaves)
                         group.leaves = [];
                     group.leaves.push(m.id);
-                } else {
+                }
+                else {
                     var g = group;
                     m.gid = groups.length;
                     if (!m.isIsland() || m.predefined) {
@@ -2977,13 +2980,12 @@ var cola;
                 }
             });
         }
-
         var Module = (function () {
             function Module(id, outgoing, incoming, children, predefined) {
-                if (typeof outgoing === "undefined") { outgoing = new LinkSets(); }
-                if (typeof incoming === "undefined") { incoming = new LinkSets(); }
-                if (typeof children === "undefined") { children = new ModuleSet(); }
-                if (typeof predefined === "undefined") { predefined = false; }
+                if (outgoing === void 0) { outgoing = new LinkSets(); }
+                if (incoming === void 0) { incoming = new LinkSets(); }
+                if (children === void 0) { children = new ModuleSet(); }
+                if (predefined === void 0) { predefined = false; }
                 this.id = id;
                 this.outgoing = outgoing;
                 this.incoming = incoming;
@@ -2998,18 +3000,15 @@ var cola;
                     });
                 });
             };
-
             Module.prototype.isLeaf = function () {
                 return this.children.count() === 0;
             };
-
             Module.prototype.isIsland = function () {
                 return this.outgoing.count() === 0 && this.incoming.count() === 0;
             };
             return Module;
         })();
         powergraph.Module = Module;
-
         function intersection(m, n) {
             var i = {};
             for (var v in m)
@@ -3017,7 +3016,6 @@ var cola;
                     i[v] = m[v];
             return i;
         }
-
         var ModuleSet = (function () {
             function ModuleSet() {
                 this.table = {};
@@ -3058,7 +3056,6 @@ var cola;
             return ModuleSet;
         })();
         powergraph.ModuleSet = ModuleSet;
-
         var LinkSets = (function () {
             function LinkSets() {
                 this.sets = {};
@@ -3095,9 +3092,7 @@ var cola;
                 }
             };
             LinkSets.prototype.forAllModules = function (f) {
-                this.forAll(function (ms, lt) {
-                    return ms.forAll(f);
-                });
+                this.forAll(function (ms, lt) { return ms.forAll(f); });
             };
             LinkSets.prototype.intersection = function (other) {
                 var result = new LinkSets();
@@ -3115,11 +3110,9 @@ var cola;
             return LinkSets;
         })();
         powergraph.LinkSets = LinkSets;
-
         function intersectionCount(m, n) {
             return Object.keys(intersection(m, n)).length;
         }
-
         function getGroups(nodes, links, la, rootGroup) {
             var n = nodes.length, c = new powergraph.Configuration(n, links, la, rootGroup);
             while (c.greedyMerge())
@@ -3138,8 +3131,7 @@ var cola;
             return { groups: g, powerEdges: powerEdges };
         }
         powergraph.getGroups = getGroups;
-    })(cola.powergraph || (cola.powergraph = {}));
-    var powergraph = cola.powergraph;
+    })(powergraph = cola.powergraph || (cola.powergraph = {}));
 })(cola || (cola = {}));
 
 /**
@@ -3199,6 +3191,7 @@ var cola;
             kick = options.kick, // a function that kicks off the simulation tick loop
             size = [1, 1],
             linkDistance = 20,
+            linkLengthCalculator = null,
             linkType = null,
             avoidOverlaps = false,
             handleDisconnected = true,
@@ -3433,6 +3426,7 @@ var cola;
             if (!arguments.length) 
                 return typeof linkDistance === "function" ? linkDistance() : linkDistance;
             linkDistance = typeof x === "function" ? x : +x;
+            linkLengthCalculator = null;
             return adaptor;
         };
 
@@ -3479,15 +3473,35 @@ var cola;
 
         var linkAccessor = { getSourceIndex: getSourceIndex, getTargetIndex: getTargetIndex, setLength: setLinkLength, getType: getLinkType };
 
+        /**
+         * compute an ideal length for each link based on the graph structure around that link.
+         * you can use this (for example) to create extra space around hub-nodes in dense graphs.
+         * In particular this calculation is based on the "symmetric difference" in the neighbour sets of the source and target:
+         * i.e. if neighbours of source is a and neighbours of target are b then calculation is: sqrt(|a union b| - |a intersection b|)
+         * Actual computation based on inspection of link structure occurs in start(), so links themselves
+         * don't have to have been assigned before invoking this function.
+         * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
+         * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
+         */
         adaptor.symmetricDiffLinkLengths = function (idealLength, w) {
-            cola.symmetricDiffLinkLengths(links, linkAccessor, w);
             this.linkDistance(function (l) { return idealLength * l.length });
+            linkLengthCalculator = function () { cola.symmetricDiffLinkLengths(links, linkAccessor, w) };
             return adaptor;
         }
 
+        /**
+         * compute an ideal length for each link based on the graph structure around that link.
+         * you can use this (for example) to create extra space around hub-nodes in dense graphs.
+         * In particular this calculation is based on the "symmetric difference" in the neighbour sets of the source and target:
+         * i.e. if neighbours of source is a and neighbours of target are b then calculation is: |a intersection b|/|a union b|
+         * Actual computation based on inspection of link structure occurs in start(), so links themselves
+         * don't have to have been assigned before invoking this function.
+         * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
+         * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
+         */
         adaptor.jaccardLinkLengths = function (idealLength, w) {
-            cola.jaccardLinkLengths(links, linkAccessor, w);
             this.linkDistance(function (l) { return idealLength * l.length });
+            linkLengthCalculator = function () { cola.jaccardLinkLengths(links, linkAccessor, w) };
             return adaptor;
         }
 
@@ -3506,6 +3520,8 @@ var cola;
                 m = links.length,
                 w = size[0],
                 h = size[1];
+
+            if (linkLengthCalculator) linkLengthCalculator();
 
             var x = new Array(N), y = new Array(N);
             variables = new Array(N);
