@@ -44,7 +44,6 @@
     <Content Include="examples\adam.html" />
     <Content Include="examples\unix.html" />
     <Content Include="examples\unix.png" />
-    <Content Include="src\adaptor.js" />
     <Content Include="examples\smallgroups.html" />
     <Content Include="examples\graphdata\biological_images\C00002.gif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -157,7 +156,6 @@
     <None Include="examples\graphdata\chris.json" />
     <Content Include="examples\rectangletest.js" />
     <Content Include="examples\smallnonoverlappinggraph.png" />
-    <Content Include="src\handle_disconnected.js" />
     <Content Include="style.css" />
     <Content Include="examples\sucrosebreakdown.png" />
     <Content Include="examples\nonoverlapping.html" />
@@ -168,11 +166,14 @@
     <TypeScriptCompile Include="examples\pretrip.ts" />
     <TypeScriptCompile Include="examples\tetrisbug.ts" />
     <TypeScriptCompile Include="examples\tmdbgraph.ts" />
+    <TypeScriptCompile Include="src\adaptor.ts" />
+    <TypeScriptCompile Include="src\d3adaptor.ts" />
     <TypeScriptCompile Include="src\geom.ts" />
     <Content Include="src\geom.js">
       <DependentUpon>geom.ts</DependentUpon>
     </Content>
     <TypeScriptCompile Include="src\gridrouter.ts" />
+    <TypeScriptCompile Include="src\handledisconnected.ts" />
     <TypeScriptCompile Include="src\linklengths.ts" />
     <TypeScriptCompile Include="src\powergraph.ts" />
     <Content Include="src\powergraph.js">

@@ -112,7 +112,7 @@ asyncTest("edge lengths", function () {
 
     d3.json("../examples/graphdata/triangle.json", function (error, graph) {
         var length = function (l) {
-            return d3cola.linkId(l) == "2-3" ? 2 : 1;
+            return cola.adaptor.linkId(l) == "2-3" ? 2 : 1;
         }
         d3cola
             .linkDistance(length)

@@ -390,7 +390,7 @@ module cola.vpsc {
         py: number;
     }
 
-    class IndexedVariable extends Variable {
+    export class IndexedVariable extends Variable {
         constructor(public index: number, w: number) {
             super(0, w);
         }

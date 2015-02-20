@@ -42,10 +42,8 @@ module.exports = function (grunt) {
       dist: {
         src: [
           'WebCola/cola.js',
-          'WebCola/src/adaptor.js',
           'WebCola/src/rbtree.js',
           'WebCola/src/scc.js',
-          'WebCola/src/handle_disconnected.js'
         ],
         dest: 'WebCola/cola.js'
       }
