@@ -1,8 +1,6 @@
 ﻿///<reference path="handledisconnected.ts"/>
 module cola {
-    export class adaptor {
-        trigger: any;
-        kick: any;
+    export class Layout {
         private _canvasSize = [1, 1];
         private _linkDistance: number | ((any) => number) = 20;
         private _defaultNodeSize: number = 10;
@@ -10,8 +8,6 @@ module cola {
         private _linkType = null;
         private _avoidOverlaps = false;
         private _handleDisconnected = true;
-        drag;
-        on;
         private _alpha;
         private _lastStress;
         private _running = false;
@@ -26,13 +22,12 @@ module cola {
         private _directedLinkConstraints = null;
         private _threshold = 0.01;
         private _visibilityGraph = null;
-        constructor(options: any) {
-            this.trigger = options.trigger; // a function that is notified of events like "tick"
-            this.kick = options.kick; // a function that kicks off the iteration tick loop
-
-            this.on = options.on; // a function for binding to events on the adapter
-            this.drag = options.drag; // a function to allow for dragging of nodes
-        }
+        constructor(
+            public trigger, // a function that is notified of events like "tick"
+            public on, // a function for binding to events on the adapter
+            public kick, // a function that kicks off the iteration tick loop
+            public drag // a function to allow for dragging of nodes
+        ) { }
         tick() {
             if (this._alpha < this._threshold) {
                 this._running = false;
@@ -87,7 +82,7 @@ module cola {
          * @property nodes {Array}
          * @default empty list
          */
-        nodes(v: Array<any> = null): Array<any> | adaptor {
+        nodes(v: Array<any> = null): Array<any> | Layout {
             if (!v) {
                 if (this._nodes.length === 0 && this._links.length > 0) {
                     // if we have links but no nodes, create the nodes array now with empty objects for the links to point at.
@@ -111,7 +106,7 @@ module cola {
          * @property groups {Array}
          * @default empty list
          */
-        groups(x: Array<any> = null): Array<any> | adaptor {
+        groups(x: Array<any> = null): Array<any> | Layout {
             if (!x) return this._groups;
             this._groups = x;
             this._rootGroup = {};
@@ -128,7 +123,7 @@ module cola {
             return this;
         }
 
-        powerGraphGroups(f: Function): adaptor {
+        powerGraphGroups(f: Function): Layout {
             var g = cola.powergraph.getGroups(this._nodes, this._links, this.linkAccessor, this._rootGroup);
             this.groups(g.groups);
             f(g);
@@ -141,7 +136,7 @@ module cola {
          * @type bool
          * @default false
          */
-        avoidOverlaps(v: boolean): boolean | adaptor {
+        avoidOverlaps(v: boolean): boolean | Layout {
             if (!arguments.length) return this._avoidOverlaps;
             this._avoidOverlaps = v;
             return this;
@@ -153,7 +148,7 @@ module cola {
          * @type bool
          * @default false
          */
-        handleDisconnected(v: boolean): boolean | adaptor {
+        handleDisconnected(v: boolean): boolean | Layout {
             if (!arguments.length) return this._handleDisconnected;
             this._handleDisconnected = v;
             return this;
@@ -165,7 +160,7 @@ module cola {
          * @param axis {string} 'x' for left-to-right, 'y' for top-to-bottom
          * @param minSeparation {number|link=>number} either a number specifying a minimum spacing required across all links or a function to return the minimum spacing for each link
          */
-        flowLayout(axis: string, minSeparation: number): adaptor {
+        flowLayout(axis: string, minSeparation: number): Layout {
             if (!arguments.length) axis = 'y';
             this._directedLinkConstraints = {
                 axis: axis,
@@ -179,7 +174,7 @@ module cola {
          * @property links {array}
          * @default empty list
          */
-        links(x: Array<any>): Array<any>|adaptor {
+        links(x: Array<any>): Array<any>|Layout {
             if (!arguments.length) return this._links;
             this._links = x;
             return this;
@@ -191,7 +186,7 @@ module cola {
          * @type {array} 
          * @default empty list
          */
-        constraints(c: Array<any>): Array<any>|adaptor {
+        constraints(c: Array<any>): Array<any>|Layout {
             if (!arguments.length) return this._constraints;
             this._constraints = c;
             return this;
@@ -204,7 +199,7 @@ module cola {
          * @type {Array of Array of Number}
          * @default null
          */
-        distanceMatrix(d: Array<Array<number>>): Array<Array<number>>|adaptor {
+        distanceMatrix(d: Array<Array<number>>): Array<Array<number>>|Layout {
             if (!arguments.length) return this._distanceMatrix;
             this._distanceMatrix = d;
             return this;
@@ -216,7 +211,7 @@ module cola {
          * @property size
          * @type {Array of Number}
          */
-        size(x: Array<number> = null): adaptor | Array<number> {
+        size(x: Array<number> = null): Layout | Array<number> {
             if (!x) return this._canvasSize;
             this._canvasSize = x;
             return this;
@@ -227,7 +222,7 @@ module cola {
          * @property defaultNodeSize
          * @type {Number}
          */
-        defaultNodeSize(x: number = null): number | adaptor {
+        defaultNodeSize(x: number = null): number | Layout {
             if (!x) return this._defaultNodeSize;
             this._defaultNodeSize = x;
             return this;
@@ -236,7 +231,7 @@ module cola {
         /**
          * links have an ideal distance, The automatic layout will compute layout that tries to keep links (AKA edges) as close as possible to this length.
          */
-        linkDistance(x: number | ((any) => number) = null): number | ((any) => number) | adaptor {
+        linkDistance(x: number | ((any) => number) = null): number | ((any) => number) | Layout {
             if (!x) {
                 return this._linkDistance;
             }
@@ -245,18 +240,18 @@ module cola {
             return this;
         }
 
-        linkType(f: Function | number): adaptor {
+        linkType(f: Function | number): Layout {
             this._linkType = f;
             return this;
         }
 
-        convergenceThreshold(x: number = null): number|adaptor {
+        convergenceThreshold(x: number = null): number|Layout {
             if (!x) return this._threshold;
             this._threshold = typeof x === "function" ? x : +x;
             return this;
         }
 
-        alpha(x: number): number|adaptor {
+        alpha(x: number): number|Layout {
             if (!arguments.length) return this._alpha;
             else {
                 x = +x;
@@ -286,7 +281,7 @@ module cola {
             return typeof this._linkType === "function" ? this._linkType(link) : 0;
         }
 
-        linkAccessor = { getSourceIndex: adaptor.getSourceIndex, getTargetIndex: adaptor.getTargetIndex, setLength: adaptor.setLinkLength, getType: this.getLinkType };
+        linkAccessor = { getSourceIndex: Layout.getSourceIndex, getTargetIndex: Layout.getTargetIndex, setLength: Layout.setLinkLength, getType: this.getLinkType };
 
         /**
          * compute an ideal length for each link based on the graph structure around that link.
@@ -298,9 +293,9 @@ module cola {
          * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
          * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
          */
-        symmetricDiffLinkLengths(idealLength: number, w: number): adaptor {
+        symmetricDiffLinkLengths(idealLength: number, w: number): Layout {
             this.linkDistance(l => idealLength * l.length);
-            this._linkLengthCalculator = ()=>cola.symmetricDiffLinkLengths(this._links, this.linkAccessor, w);
+            this._linkLengthCalculator = () => cola.symmetricDiffLinkLengths(this._links, this.linkAccessor, w);
             return this;
         }
 
@@ -314,7 +309,7 @@ module cola {
          * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
          * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
          */
-        jaccardLinkLengths(idealLength: number, w: number): adaptor {
+        jaccardLinkLengths(idealLength: number, w: number): Layout {
             this.linkDistance(l => idealLength * l.length);
             this._linkLengthCalculator = () => cola.jaccardLinkLengths(this._links, this.linkAccessor, w);
             return this;
@@ -361,13 +356,13 @@ module cola {
                 distances = this._distanceMatrix;
             } else {
                 // construct an n X n distance matrix based on shortest paths through graph (with respect to edge.length).
-                distances = (new cola.shortestpaths.Calculator(N, this._links, adaptor.getSourceIndex, adaptor.getTargetIndex, l=> this.getLinkLength(l) )).DistanceMatrix();
+                distances = (new cola.shortestpaths.Calculator(N, this._links, Layout.getSourceIndex, Layout.getTargetIndex, l=> this.getLinkLength(l))).DistanceMatrix();
 
                 // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
                 // otherwise 2. (
-                G = cola.Descent.createSquareMatrix(N, ()=>2);
+                G = cola.Descent.createSquareMatrix(N,() => 2);
                 this._links.forEach(e => {
-                    var u = adaptor.getSourceIndex(e), v = adaptor.getTargetIndex(e);
+                    var u = Layout.getSourceIndex(e), v = Layout.getTargetIndex(e);
                     G[u][v] = G[v][u] = 1;
                 });
             }
@@ -442,7 +437,7 @@ module cola {
                 var graphs = cola.separateGraphs(this._nodes, this._links);
                 cola.applyPacking(graphs, w, h, this._defaultNodeSize);
 
-                this._nodes.forEach((v, i)=> {
+                this._nodes.forEach((v, i) => {
                     this._descent.x[0][i] = v.x, this._descent.x[1][i] = v.y;
                 });
             }
@@ -450,12 +445,12 @@ module cola {
             return this.resume();
         }
 
-        resume(): adaptor {
-            return <adaptor>(this.alpha(0.1));
+        resume(): Layout {
+            return <Layout>(this.alpha(0.1));
         }
 
-        stop(): adaptor {
-            return <adaptor>(this.alpha(0));
+        stop(): Layout {
+            return <Layout>(this.alpha(0));
         }
 
         prepareEdgeRouting(nodeMargin) {
@@ -520,32 +515,32 @@ module cola {
         }
         // Get a string ID for a given link.
         static linkId(e) {
-            return adaptor.getSourceIndex(e) + "-" + adaptor.getTargetIndex(e);
+            return Layout.getSourceIndex(e) + "-" + Layout.getTargetIndex(e);
         }
-    }
 
-    // The fixed property has three bits:
-    // Bit 1 can be set externally (e.g., d.fixed = true) and show persist.
-    // Bit 2 stores the dragging state, from mousedown to mouseup.
-    // Bit 3 stores the hover state, from mouseover to mouseout.
-    // Dragend is a special case: it also clears the hover state.
+        // The fixed property has three bits:
+        // Bit 1 can be set externally (e.g., d.fixed = true) and show persist.
+        // Bit 2 stores the dragging state, from mousedown to mouseup.
+        // Bit 3 stores the hover state, from mouseover to mouseout.
+        // Dragend is a special case: it also clears the hover state.
 
-    export function colaDragstart(d) {
-        d.fixed |= 2; // set bit 2
-        d.px = d.x, d.py = d.y; // set velocity to zero
-    }
+        static dragStart(d) {
+            d.fixed |= 2; // set bit 2
+            d.px = d.x, d.py = d.y; // set velocity to zero
+        }
 
-    export function colaDragend(d) {
-        d.fixed &= ~6; // unset bits 2 and 3
-        //d.fixed = 0;
-    }
+        static dragEnd(d) {
+            d.fixed &= ~6; // unset bits 2 and 3
+            //d.fixed = 0;
+        }
 
-    export function colaMouseover(d) {
-        d.fixed |= 4; // set bit 3
-        d.px = d.x, d.py = d.y; // set velocity to zero
-    }
+        static mouseOver(d) {
+            d.fixed |= 4; // set bit 3
+            d.px = d.x, d.py = d.y; // set velocity to zero
+        }
 
-    export function colaMouseout(d) {
-        d.fixed &= ~4; // unset bit 3
+        static mouseOut(d) {
+            d.fixed &= ~4; // unset bit 3
+        }
     }
 }

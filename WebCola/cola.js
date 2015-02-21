@@ -246,8 +246,16 @@ var cola;
 ///<reference path="handledisconnected.ts"/>
 var cola;
 (function (cola) {
-    var adaptor = (function () {
-        function adaptor(options) {
+    var Layout = (function () {
+        function Layout(trigger, // a function that is notified of events like "tick"
+            on, // a function for binding to events on the adapter
+            kick, // a function that kicks off the iteration tick loop
+            drag // a function to allow for dragging of nodes
+            ) {
+            this.trigger = trigger;
+            this.on = on;
+            this.kick = kick;
+            this.drag = drag;
             this._canvasSize = [1, 1];
             this._linkDistance = 20;
             this._defaultNodeSize = 10;
@@ -267,13 +275,9 @@ var cola;
             this._directedLinkConstraints = null;
             this._threshold = 0.01;
             this._visibilityGraph = null;
-            this.linkAccessor = { getSourceIndex: adaptor.getSourceIndex, getTargetIndex: adaptor.getTargetIndex, setLength: adaptor.setLinkLength, getType: this.getLinkType };
-            this.trigger = options.trigger; // a function that is notified of events like "tick"
-            this.kick = options.kick; // a function that kicks off the iteration tick loop
-            this.on = options.on; // a function for binding to events on the adapter
-            this.drag = options.drag; // a function to allow for dragging of nodes
+            this.linkAccessor = { getSourceIndex: Layout.getSourceIndex, getTargetIndex: Layout.getTargetIndex, setLength: Layout.setLinkLength, getType: this.getLinkType };
         }
-        adaptor.prototype.tick = function () {
+        Layout.prototype.tick = function () {
             if (this._alpha < this._threshold) {
                 this._running = false;
                 this.trigger({ type: "end", alpha: this._alpha = 0, stress: this._lastStress });
@@ -321,7 +325,7 @@ var cola;
          * @property nodes {Array}
          * @default empty list
          */
-        adaptor.prototype.nodes = function (v) {
+        Layout.prototype.nodes = function (v) {
             if (v === void 0) { v = null; }
             if (!v) {
                 if (this._nodes.length === 0 && this._links.length > 0) {
@@ -345,7 +349,7 @@ var cola;
          * @property groups {Array}
          * @default empty list
          */
-        adaptor.prototype.groups = function (x) {
+        Layout.prototype.groups = function (x) {
             var _this = this;
             if (x === void 0) { x = null; }
             if (!x)
@@ -368,7 +372,7 @@ var cola;
             this._rootGroup.groups = this._groups.filter(function (g) { return typeof g.parent === 'undefined'; });
             return this;
         };
-        adaptor.prototype.powerGraphGroups = function (f) {
+        Layout.prototype.powerGraphGroups = function (f) {
             var g = cola.powergraph.getGroups(this._nodes, this._links, this.linkAccessor, this._rootGroup);
             this.groups(g.groups);
             f(g);
@@ -380,7 +384,7 @@ var cola;
          * @type bool
          * @default false
          */
-        adaptor.prototype.avoidOverlaps = function (v) {
+        Layout.prototype.avoidOverlaps = function (v) {
             if (!arguments.length)
                 return this._avoidOverlaps;
             this._avoidOverlaps = v;
@@ -392,7 +396,7 @@ var cola;
          * @type bool
          * @default false
          */
-        adaptor.prototype.handleDisconnected = function (v) {
+        Layout.prototype.handleDisconnected = function (v) {
             if (!arguments.length)
                 return this._handleDisconnected;
             this._handleDisconnected = v;
@@ -404,7 +408,7 @@ var cola;
          * @param axis {string} 'x' for left-to-right, 'y' for top-to-bottom
          * @param minSeparation {number|link=>number} either a number specifying a minimum spacing required across all links or a function to return the minimum spacing for each link
          */
-        adaptor.prototype.flowLayout = function (axis, minSeparation) {
+        Layout.prototype.flowLayout = function (axis, minSeparation) {
             if (!arguments.length)
                 axis = 'y';
             this._directedLinkConstraints = {
@@ -420,7 +424,7 @@ var cola;
          * @property links {array}
          * @default empty list
          */
-        adaptor.prototype.links = function (x) {
+        Layout.prototype.links = function (x) {
             if (!arguments.length)
                 return this._links;
             this._links = x;
@@ -432,7 +436,7 @@ var cola;
          * @type {array}
          * @default empty list
          */
-        adaptor.prototype.constraints = function (c) {
+        Layout.prototype.constraints = function (c) {
             if (!arguments.length)
                 return this._constraints;
             this._constraints = c;
@@ -445,7 +449,7 @@ var cola;
          * @type {Array of Array of Number}
          * @default null
          */
-        adaptor.prototype.distanceMatrix = function (d) {
+        Layout.prototype.distanceMatrix = function (d) {
             if (!arguments.length)
                 return this._distanceMatrix;
             this._distanceMatrix = d;
@@ -457,7 +461,7 @@ var cola;
          * @property size
          * @type {Array of Number}
          */
-        adaptor.prototype.size = function (x) {
+        Layout.prototype.size = function (x) {
             if (x === void 0) { x = null; }
             if (!x)
                 return this._canvasSize;
@@ -469,7 +473,7 @@ var cola;
          * @property defaultNodeSize
          * @type {Number}
          */
-        adaptor.prototype.defaultNodeSize = function (x) {
+        Layout.prototype.defaultNodeSize = function (x) {
             if (x === void 0) { x = null; }
             if (!x)
                 return this._defaultNodeSize;
@@ -479,7 +483,7 @@ var cola;
         /**
          * links have an ideal distance, The automatic layout will compute layout that tries to keep links (AKA edges) as close as possible to this length.
          */
-        adaptor.prototype.linkDistance = function (x) {
+        Layout.prototype.linkDistance = function (x) {
             if (x === void 0) { x = null; }
             if (!x) {
                 return this._linkDistance;
@@ -488,18 +492,18 @@ var cola;
             this._linkLengthCalculator = null;
             return this;
         };
-        adaptor.prototype.linkType = function (f) {
+        Layout.prototype.linkType = function (f) {
             this._linkType = f;
             return this;
         };
-        adaptor.prototype.convergenceThreshold = function (x) {
+        Layout.prototype.convergenceThreshold = function (x) {
             if (x === void 0) { x = null; }
             if (!x)
                 return this._threshold;
             this._threshold = typeof x === "function" ? x : +x;
             return this;
         };
-        adaptor.prototype.alpha = function (x) {
+        Layout.prototype.alpha = function (x) {
             if (!arguments.length)
                 return this._alpha;
             else {
@@ -520,13 +524,13 @@ var cola;
                 return this;
             }
         };
-        adaptor.prototype.getLinkLength = function (link) {
+        Layout.prototype.getLinkLength = function (link) {
             return typeof this._linkDistance === "function" ? +(this._linkDistance(link)) : this._linkDistance;
         };
-        adaptor.setLinkLength = function (link, length) {
+        Layout.setLinkLength = function (link, length) {
             link.length = length;
         };
-        adaptor.prototype.getLinkType = function (link) {
+        Layout.prototype.getLinkType = function (link) {
             return typeof this._linkType === "function" ? this._linkType(link) : 0;
         };
         /**
@@ -539,7 +543,7 @@ var cola;
          * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
          * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
          */
-        adaptor.prototype.symmetricDiffLinkLengths = function (idealLength, w) {
+        Layout.prototype.symmetricDiffLinkLengths = function (idealLength, w) {
             var _this = this;
             this.linkDistance(function (l) { return idealLength * l.length; });
             this._linkLengthCalculator = function () { return cola.symmetricDiffLinkLengths(_this._links, _this.linkAccessor, w); };
@@ -555,7 +559,7 @@ var cola;
          * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
          * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
          */
-        adaptor.prototype.jaccardLinkLengths = function (idealLength, w) {
+        Layout.prototype.jaccardLinkLengths = function (idealLength, w) {
             var _this = this;
             this.linkDistance(function (l) { return idealLength * l.length; });
             this._linkLengthCalculator = function () { return cola.jaccardLinkLengths(_this._links, _this.linkAccessor, w); };
@@ -568,7 +572,7 @@ var cola;
          * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
          * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
          */
-        adaptor.prototype.start = function () {
+        Layout.prototype.start = function () {
             var _this = this;
             var i, j, n = this.nodes().length, N = n + 2 * this._groups.length, m = this._links.length, w = this._canvasSize[0], h = this._canvasSize[1];
             if (this._linkLengthCalculator)
@@ -592,12 +596,12 @@ var cola;
             }
             else {
                 // construct an n X n distance matrix based on shortest paths through graph (with respect to edge.length).
-                distances = (new cola.shortestpaths.Calculator(N, this._links, adaptor.getSourceIndex, adaptor.getTargetIndex, function (l) { return _this.getLinkLength(l); })).DistanceMatrix();
+                distances = (new cola.shortestpaths.Calculator(N, this._links, Layout.getSourceIndex, Layout.getTargetIndex, function (l) { return _this.getLinkLength(l); })).DistanceMatrix();
                 // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
                 // otherwise 2. (
                 G = cola.Descent.createSquareMatrix(N, function () { return 2; });
                 this._links.forEach(function (e) {
-                    var u = adaptor.getSourceIndex(e), v = adaptor.getTargetIndex(e);
+                    var u = Layout.getSourceIndex(e), v = Layout.getTargetIndex(e);
                     G[u][v] = G[v][u] = 1;
                 });
             }
@@ -675,18 +679,18 @@ var cola;
             }
             return this.resume();
         };
-        adaptor.prototype.resume = function () {
+        Layout.prototype.resume = function () {
             return (this.alpha(0.1));
         };
-        adaptor.prototype.stop = function () {
+        Layout.prototype.stop = function () {
             return (this.alpha(0));
         };
-        adaptor.prototype.prepareEdgeRouting = function (nodeMargin) {
+        Layout.prototype.prepareEdgeRouting = function (nodeMargin) {
             this._visibilityGraph = new cola.geom.TangentVisibilityGraph(this._nodes.map(function (v) {
                 return v.bounds.inflate(-nodeMargin).vertices();
             }));
         };
-        adaptor.prototype.routeEdge = function (d, draw) {
+        Layout.prototype.routeEdge = function (d, draw) {
             var lineData = [];
             //if (d.source.id === 10 && d.target.id === 11) {
             //    debugger;
@@ -722,81 +726,86 @@ var cola;
             return lineData;
         };
         //The link source and target may be just a node index, or they may be references to nodes themselves.
-        adaptor.getSourceIndex = function (e) {
+        Layout.getSourceIndex = function (e) {
             return typeof e.source === 'number' ? e.source : e.source.index;
         };
         //The link source and target may be just a node index, or they may be references to nodes themselves.
-        adaptor.getTargetIndex = function (e) {
+        Layout.getTargetIndex = function (e) {
             return typeof e.target === 'number' ? e.target : e.target.index;
         };
         // Get a string ID for a given link.
-        adaptor.linkId = function (e) {
-            return adaptor.getSourceIndex(e) + "-" + adaptor.getTargetIndex(e);
+        Layout.linkId = function (e) {
+            return Layout.getSourceIndex(e) + "-" + Layout.getTargetIndex(e);
         };
-        return adaptor;
+        // The fixed property has three bits:
+        // Bit 1 can be set externally (e.g., d.fixed = true) and show persist.
+        // Bit 2 stores the dragging state, from mousedown to mouseup.
+        // Bit 3 stores the hover state, from mouseover to mouseout.
+        // Dragend is a special case: it also clears the hover state.
+        Layout.dragStart = function (d) {
+            d.fixed |= 2; // set bit 2
+            d.px = d.x, d.py = d.y; // set velocity to zero
+        };
+        Layout.dragEnd = function (d) {
+            d.fixed &= ~6; // unset bits 2 and 3
+            //d.fixed = 0;
+        };
+        Layout.mouseOver = function (d) {
+            d.fixed |= 4; // set bit 3
+            d.px = d.x, d.py = d.y; // set velocity to zero
+        };
+        Layout.mouseOut = function (d) {
+            d.fixed &= ~4; // unset bit 3
+        };
+        return Layout;
     })();
-    cola.adaptor = adaptor;
-    // The fixed property has three bits:
-    // Bit 1 can be set externally (e.g., d.fixed = true) and show persist.
-    // Bit 2 stores the dragging state, from mousedown to mouseup.
-    // Bit 3 stores the hover state, from mouseover to mouseout.
-    // Dragend is a special case: it also clears the hover state.
-    function colaDragstart(d) {
-        d.fixed |= 2; // set bit 2
-        d.px = d.x, d.py = d.y; // set velocity to zero
-    }
-    cola.colaDragstart = colaDragstart;
-    function colaDragend(d) {
-        d.fixed &= ~6; // unset bits 2 and 3
-        //d.fixed = 0;
-    }
-    cola.colaDragend = colaDragend;
-    function colaMouseover(d) {
-        d.fixed |= 4; // set bit 3
-        d.px = d.x, d.py = d.y; // set velocity to zero
-    }
-    cola.colaMouseover = colaMouseover;
-    function colaMouseout(d) {
-        d.fixed &= ~4; // unset bit 3
-    }
-    cola.colaMouseout = colaMouseout;
+    cola.Layout = Layout;
 })(cola || (cola = {}));
 ///<reference path="../extern/d3.d.ts"/>
-///<reference path="adaptor.ts"/>
+///<reference path="layout.ts"/>
 var cola;
 (function (cola) {
+    /**
+     * provides an interface for use with d3:
+     * - uses the d3 event system to dispatch layout events such as:
+     *   o "start" (start layout process)
+     *   o "tick" (after each layout iteration)
+     *   o "end" (layout converged and complete).
+     * - uses the d3 timer to queue layout iterations.
+     * - sets up d3.behavior.drag to drag nodes
+     *   o use `node.call(<the returned instance of Layout>.drag)` to make nodes draggable
+     * returns an instance of the cola.Layout itself with which the user
+     * can interact directly.
+     */
     function d3adaptor() {
         var event = d3.dispatch("start", "tick", "end");
-        var adaptor = new cola.adaptor({
-            trigger: function (e) {
-                event[e.type](e); // via d3 dispatcher, e.g. event.start(e);
-            },
-            on: function (type, listener) {
-                event.on(type, listener);
-                return adaptor;
-            },
-            kick: function (tick) {
-                d3.timer(function () {
-                    return adaptor.tick();
-                });
-            },
-            // use `node.call(adaptor.drag)` to make nodes draggable
-            drag: function () {
-                var drag = d3.behavior.drag().origin(function (d) {
-                    return d;
-                }).on("dragstart.d3adaptor", cola.colaDragstart).on("drag.d3adaptor", function (d) {
-                    d.px = d3.event.x, d.py = d3.event.y;
-                    adaptor.resume(); // restart annealing
-                }).on("dragend.d3adaptor", cola.colaDragend);
-                if (!arguments.length)
-                    return drag;
-                this.call(drag);
-            }
-        });
-        return adaptor;
+        var layout;
+        var trigger = function (e) {
+            event[e.type](e); // via d3 dispatcher, e.g. event.start(e);
+        };
+        var on = function (eventType, listener) {
+            event.on(eventType, listener);
+            return layout;
+        };
+        var kick = function (tick) {
+            d3.timer(function () {
+                return layout.tick();
+            });
+        };
+        var drag = function () {
+            var drag = d3.behavior.drag().origin(function (d) {
+                return d;
+            }).on("dragstart.d3adaptor", cola.Layout.dragStart).on("drag.d3adaptor", function (d) {
+                d.px = d3.event.x, d.py = d3.event.y;
+                layout.resume(); // restart annealing
+            }).on("dragend.d3adaptor", cola.Layout.dragEnd);
+            if (!arguments.length)
+                return drag;
+            this.call(drag);
+        };
+        return layout = new cola.Layout(trigger, on, kick, drag);
     }
     cola.d3adaptor = d3adaptor;
-    ;
 })(cola || (cola = {}));
 /**
  * @module cola

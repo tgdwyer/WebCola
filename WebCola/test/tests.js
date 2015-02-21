@@ -1,5 +1,6 @@
 ﻿/// <reference path="d3.v3.min.js"/>
-/// <reference path="../src/adaptor.js"/>
+/// <reference path="../src/layout.js"/>
+/// <reference path="../src/d3adaptor.js"/>
 /// <reference path="../src/shortestpaths.js"/>
 /// <reference path="../src/descent.js"/>
 /// <reference path="../src/cola.vpsc.js"/>
@@ -112,7 +113,7 @@ asyncTest("edge lengths", function () {
 
     d3.json("../examples/graphdata/triangle.json", function (error, graph) {
         var length = function (l) {
-            return cola.adaptor.linkId(l) == "2-3" ? 2 : 1;
+            return cola.Layout.linkId(l) == "2-3" ? 2 : 1;
         }
         d3cola
             .linkDistance(length)

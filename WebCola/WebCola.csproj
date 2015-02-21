@@ -166,7 +166,7 @@
     <TypeScriptCompile Include="examples\pretrip.ts" />
     <TypeScriptCompile Include="examples\tetrisbug.ts" />
     <TypeScriptCompile Include="examples\tmdbgraph.ts" />
-    <TypeScriptCompile Include="src\adaptor.ts" />
+    <TypeScriptCompile Include="src\layout.ts" />
     <TypeScriptCompile Include="src\d3adaptor.ts" />
     <TypeScriptCompile Include="src\geom.ts" />
     <Content Include="src\geom.js">
