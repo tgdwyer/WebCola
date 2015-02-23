@@ -57,7 +57,7 @@ module cola {
             if (s1 === 0) {
                 this._alpha = 0;
             } else if (typeof this._lastStress !== 'undefined') {
-                this._alpha = s1; //Math.abs(Math.abs(this._lastStress / s1) - 1);
+                this._alpha = Math.abs(Math.abs(this._lastStress / s1) - 1);
             }
             this._lastStress = s1;
 
