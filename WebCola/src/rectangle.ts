@@ -9,6 +9,7 @@ module cola.vpsc {
     export interface Group {
         bounds: Rectangle;
         padding: number;
+        stiffness: number;
         leaves: Leaf[];
         groups: Group[];
         minVar: Variable;
@@ -427,8 +428,8 @@ module cola.vpsc {
                 computeGroupBounds(rootGroup);
                 var i = nodes.length;
                 groups.forEach(g => {
-                    this.variables[i] = g.minVar = new IndexedVariable(i++, 0.01);
-                    this.variables[i] = g.maxVar = new IndexedVariable(i++, 0.01);
+                    this.variables[i] = g.minVar = new IndexedVariable(i++, typeof g.stiffness !== "undefined" ? g.stiffness : 0.01);
+                    this.variables[i] = g.maxVar = new IndexedVariable(i++, typeof g.stiffness !== "undefined" ? g.stiffness : 0.01);
                 });
             }
         }
