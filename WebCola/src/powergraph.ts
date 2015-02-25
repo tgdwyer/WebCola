@@ -55,8 +55,13 @@ module cola.powergraph {
             if (group.groups) {
                 for (var j = 0; j < group.groups.length; ++j) {
                     var child = group.groups[j];
+                    // Propagate group properties (like padding, stiffness, ...) as module definition so that the generated power graph group will inherit it
+                    var definition = {};
+                    for (var prop in child)
+                        if (prop !== "leaves" && prop !== "groups" && child.hasOwnProperty(prop))
+                            definition[prop] = child[prop];
                     // Use negative module id to avoid clashes between predefined and generated modules
-                    moduleSet.add(new Module(-1-j, new LinkSets(), new LinkSets(), this.initModulesFromGroup(child), true));
+                    moduleSet.add(new Module(-1-j, new LinkSets(), new LinkSets(), this.initModulesFromGroup(child), definition));
                 }
             }
             return moduleSet;
@@ -167,8 +172,12 @@ module cola.powergraph {
             } else {
                 var g = group;
                 m.gid = groups.length;
-                if (!m.isIsland() || m.predefined) {
+                if (!m.isIsland() || m.isPredefined()) {
                     g = { id: m.gid };
+                    if (m.isPredefined())
+                        // Apply original group properties
+                        for (var prop in m.definition)
+                            g[prop] = m.definition[prop];
                     if (!group.groups) group.groups = [];
                     group.groups.push(m.gid);
                     groups.push(g);
@@ -186,7 +195,7 @@ module cola.powergraph {
             public outgoing: LinkSets = new LinkSets(),
             public incoming: LinkSets = new LinkSets(),
             public children: ModuleSet = new ModuleSet(),
-            public predefined: boolean = false) { }
+            public definition?: any) { }
 
         getEdges(es: PowerEdge[]) {
             this.outgoing.forAll((ms, edgetype) => {
@@ -202,6 +211,10 @@ module cola.powergraph {
 
         isIsland() {
             return this.outgoing.count() === 0 && this.incoming.count() === 0;
+        }
+
+        isPredefined(): boolean {
+            return typeof this.definition !== "undefined";
         }
     }
 
@@ -241,7 +254,7 @@ module cola.powergraph {
         modules(): Module[] {
             var vs = [];
             this.forAll(m => {
-                if (!m.predefined)
+                if (!m.isPredefined())
                     vs.push(m);
             });
             return vs;
