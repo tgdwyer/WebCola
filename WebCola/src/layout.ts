@@ -193,7 +193,7 @@ module cola {
          * @param axis {string} 'x' for left-to-right, 'y' for top-to-bottom
          * @param minSeparation {number|link=>number} either a number specifying a minimum spacing required across all links or a function to return the minimum spacing for each link
          */
-        flowLayout(axis: string, minSeparation: number): Layout {
+        flowLayout(axis: string, minSeparation: number|((any)=>number)): Layout {
             if (!arguments.length) axis = 'y';
             this._directedLinkConstraints = {
                 axis: axis,
