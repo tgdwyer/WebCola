@@ -34,7 +34,7 @@ module cola {
         }
 
         // a function for binding to events on the adapter
-        on(eventType: EventType | string, listener): D3StyleLayoutAdaptor {
+        on(eventType: EventType | string, listener: () => void): D3StyleLayoutAdaptor {
             if (typeof eventType === 'string') {
                 this.event.on(eventType, listener);
             } else {
