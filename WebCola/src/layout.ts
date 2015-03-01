@@ -4,7 +4,7 @@ module cola {
     export interface Event {
         type: EventType;
         alpha: number;
-        stress: number;
+        stress?: number;
     }
     export interface Node {
         x: number;
@@ -44,7 +44,8 @@ module cola {
         }
 
         // a function that kicks off the iteration tick loop
-        // it should call our tick() function repeatedly until tick returns true (is converged)
+        // it calls tick() repeatedly until tick returns true (is converged)
+        // override it with something fancier (e.g. dispatch tick on a timer)
         public kick() {
             while (!this.tick());
         }
@@ -52,7 +53,7 @@ module cola {
         /**
          * iterate the layout.  Returns true when layout converged.
          */
-        tick(): boolean {
+        protected tick(): boolean {
             if (this._alpha < this._threshold) {
                 this._running = false;
                 this.trigger({ type: EventType.end, alpha: this._alpha = 0, stress: this._lastStress });
@@ -312,7 +313,7 @@ module cola {
                 } else if (x > 0) { // otherwise, fire it up!
                     if (!this._running) {
                         this._running = true;
-                        this.trigger({ type: EventType.start, alpha: this._alpha = x, stress: Number.MAX_VALUE });
+                        this.trigger({ type: EventType.start, alpha: this._alpha = x});
                         this.kick();
                     }
                 }

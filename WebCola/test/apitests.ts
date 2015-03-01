@@ -13,9 +13,9 @@ test("Basic headless layout", () => {
     equal(vs.length, 3, 'node array created');
     ok(layout.alpha() <= 0.01, 'converged');
     var checkLengths = idealLength =>
-        layout.links().forEach(e=> {
-            var dx = (<cola.Node>e.source).x - (<cola.Node>e.target).x,
-                dy = (<cola.Node>e.source).y - (<cola.Node>e.target).y;
+        layout.links().forEach(function(e: cola.Link<cola.Node>) {
+            var dx = e.source.x - e.target.x,
+                dy = e.source.y - e.target.y;
             var length = Math.sqrt(dx * dx + dy * dy);
             ok(Math.abs(length - idealLength) < 0.01, 'correct link length: '+length);
         });
