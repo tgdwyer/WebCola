@@ -246,16 +246,21 @@ var cola;
 ///<reference path="handledisconnected.ts"/>
 var cola;
 (function (cola) {
+    (function (EventType) {
+        EventType[EventType["start"] = 0] = "start";
+        EventType[EventType["tick"] = 1] = "tick";
+        EventType[EventType["end"] = 2] = "end";
+    })(cola.EventType || (cola.EventType = {}));
+    var EventType = cola.EventType;
+    ;
+    var Event = (function () {
+        function Event() {
+        }
+        return Event;
+    })();
+    cola.Event = Event;
     var Layout = (function () {
-        function Layout(trigger, // a function that is notified of events like "tick"
-            on, // a function for binding to events on the adapter
-            kick, // a function that kicks off the iteration tick loop
-            drag // a function to allow for dragging of nodes
-            ) {
-            this.trigger = trigger;
-            this.on = on;
-            this.kick = kick;
-            this.drag = drag;
+        function Layout() {
             this._canvasSize = [1, 1];
             this._linkDistance = 20;
             this._defaultNodeSize = 10;
@@ -277,10 +282,23 @@ var cola;
             this._visibilityGraph = null;
             this.linkAccessor = { getSourceIndex: Layout.getSourceIndex, getTargetIndex: Layout.getTargetIndex, setLength: Layout.setLinkLength, getType: this.getLinkType };
         }
+        // a function that is notified of events like "tick"
+        Layout.prototype.trigger = function (e) {
+            // override me! 
+        };
+        // a function that kicks off the iteration tick loop
+        // it should call our tick() function repeatedly until tick returns true (is converged)
+        Layout.prototype.kick = function () {
+            while (this.tick())
+                ;
+        };
+        /**
+         * iterate the layout.  Returns true when layout converged.
+         */
         Layout.prototype.tick = function () {
             if (this._alpha < this._threshold) {
                 this._running = false;
-                this.trigger({ type: "end", alpha: this._alpha = 0, stress: this._lastStress });
+                this.trigger({ type: 2 /* end */, alpha: this._alpha = 0, stress: this._lastStress });
                 return true;
             }
             var n = this._nodes.length, m = this._links.length, o;
@@ -316,17 +334,10 @@ var cola;
                     o.y = this._descent.x[1][i];
                 }
             }
-            this.trigger({ type: "tick", alpha: this._alpha, stress: this._lastStress });
+            this.trigger({ type: 1 /* tick */, alpha: this._alpha, stress: this._lastStress });
+            return false;
         };
-        /**
-         * the list of nodes.
-         * If nodes has not been set, but links has, then we instantiate a nodes list here, of the correct size,
-         * before returning it.
-         * @property nodes {Array}
-         * @default empty list
-         */
         Layout.prototype.nodes = function (v) {
-            if (v === void 0) { v = null; }
             if (!v) {
                 if (this._nodes.length === 0 && this._links.length > 0) {
                     // if we have links but no nodes, create the nodes array now with empty objects for the links to point at.
@@ -344,14 +355,8 @@ var cola;
             this._nodes = v;
             return this;
         };
-        /**
-         * a list of hierarchical groups defined over nodes
-         * @property groups {Array}
-         * @default empty list
-         */
         Layout.prototype.groups = function (x) {
             var _this = this;
-            if (x === void 0) { x = null; }
             if (!x)
                 return this._groups;
             this._groups = x;
@@ -378,12 +383,6 @@ var cola;
             f(g);
             return this;
         };
-        /**
-         * if true, the layout will not permit overlaps of the node bounding boxes (defined by the width and height properties on nodes)
-         * @property avoidOverlaps
-         * @type bool
-         * @default false
-         */
         Layout.prototype.avoidOverlaps = function (v) {
             if (!arguments.length)
                 return this._avoidOverlaps;
@@ -419,11 +418,6 @@ var cola;
             };
             return this;
         };
-        /**
-         * links defined as source, target pairs over nodes
-         * @property links {array}
-         * @default empty list
-         */
         Layout.prototype.links = function (x) {
             if (!arguments.length)
                 return this._links;
@@ -517,8 +511,8 @@ var cola;
                 else if (x > 0) {
                     if (!this._running) {
                         this._running = true;
-                        this.trigger({ type: "start", alpha: this._alpha = x });
-                        this.kick(this.tick);
+                        this.trigger({ type: 0 /* start */, alpha: this._alpha = x, stress: Number.MAX_VALUE });
+                        this.kick();
                     }
                 }
                 return this;
@@ -763,8 +757,54 @@ var cola;
 })(cola || (cola = {}));
 ///<reference path="../extern/d3.d.ts"/>
 ///<reference path="layout.ts"/>
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 var cola;
 (function (cola) {
+    var D3StyleLayout = (function (_super) {
+        __extends(D3StyleLayout, _super);
+        function D3StyleLayout() {
+            _super.apply(this, arguments);
+            this.event = d3.dispatch(cola.EventType[0 /* start */], cola.EventType[1 /* tick */], cola.EventType[2 /* end */]);
+            // a function to allow for dragging of nodes
+            this.drag = function () {
+                var drag = d3.behavior.drag().origin(function (d) {
+                    return d;
+                }).on("dragstart.d3adaptor", cola.Layout.dragStart).on("drag.d3adaptor", function (d) {
+                    d.px = d3.event.x, d.py = d3.event.y;
+                    this.resume(); // restart annealing
+                }).on("dragend.d3adaptor", cola.Layout.dragEnd);
+                if (!arguments.length)
+                    return drag;
+                this.call(drag);
+            };
+        }
+        D3StyleLayout.prototype.trigger = function (e) {
+            var d3event = { type: cola.EventType[e.type], alpha: e.alpha, stress: e.stress };
+            this.event[d3event.type](d3event); // via d3 dispatcher, e.g. event.start(e);
+        };
+        // iterate layout using a d3.timer, which queues calls to tick repeatedly until tick returns true
+        D3StyleLayout.prototype.kick = function () {
+            var _this = this;
+            d3.timer(function () { return _this.tick(); });
+        };
+        // a function for binding to events on the adapter
+        D3StyleLayout.prototype.on = function (eventType, listener) {
+            if (typeof eventType === 'string') {
+                this.event.on(eventType, listener);
+            }
+            else {
+                this.event.on(cola.EventType[eventType], listener);
+            }
+            return this;
+        };
+        return D3StyleLayout;
+    })(cola.Layout);
+    cola.D3StyleLayout = D3StyleLayout;
     /**
      * provides an interface for use with d3:
      * - uses the d3 event system to dispatch layout events such as:
@@ -778,32 +818,7 @@ var cola;
      * can interact directly.
      */
     function d3adaptor() {
-        var event = d3.dispatch("start", "tick", "end");
-        var layout;
-        var trigger = function (e) {
-            event[e.type](e); // via d3 dispatcher, e.g. event.start(e);
-        };
-        var on = function (eventType, listener) {
-            event.on(eventType, listener);
-            return layout;
-        };
-        var kick = function (tick) {
-            d3.timer(function () {
-                return layout.tick();
-            });
-        };
-        var drag = function () {
-            var drag = d3.behavior.drag().origin(function (d) {
-                return d;
-            }).on("dragstart.d3adaptor", cola.Layout.dragStart).on("drag.d3adaptor", function (d) {
-                d.px = d3.event.x, d.py = d3.event.y;
-                layout.resume(); // restart annealing
-            }).on("dragend.d3adaptor", cola.Layout.dragEnd);
-            if (!arguments.length)
-                return drag;
-            this.call(drag);
-        };
-        return layout = new cola.Layout(trigger, on, kick, drag);
+        return new D3StyleLayout();
     }
     cola.d3adaptor = d3adaptor;
 })(cola || (cola = {}));
@@ -1188,12 +1203,6 @@ var cola;
     })();
     cola.PseudoRandom = PseudoRandom;
 })(cola || (cola = {}));
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
 var cola;
 (function (cola) {
     var geom;
@@ -2496,8 +2505,8 @@ var cola;
                     computeGroupBounds(rootGroup);
                     var i = nodes.length;
                     groups.forEach(function (g) {
-                        _this.variables[i] = g.minVar = new IndexedVariable(i++, 0.01);
-                        _this.variables[i] = g.maxVar = new IndexedVariable(i++, 0.01);
+                        _this.variables[i] = g.minVar = new IndexedVariable(i++, typeof g.stiffness !== "undefined" ? g.stiffness : 0.01);
+                        _this.variables[i] = g.maxVar = new IndexedVariable(i++, typeof g.stiffness !== "undefined" ? g.stiffness : 0.01);
                     });
                 }
             }
@@ -3676,8 +3685,13 @@ var cola;
                 if (group.groups) {
                     for (var j = 0; j < group.groups.length; ++j) {
                         var child = group.groups[j];
+                        // Propagate group properties (like padding, stiffness, ...) as module definition so that the generated power graph group will inherit it
+                        var definition = {};
+                        for (var prop in child)
+                            if (prop !== "leaves" && prop !== "groups" && child.hasOwnProperty(prop))
+                                definition[prop] = child[prop];
                         // Use negative module id to avoid clashes between predefined and generated modules
-                        moduleSet.add(new Module(-1 - j, new LinkSets(), new LinkSets(), this.initModulesFromGroup(child), true));
+                        moduleSet.add(new Module(-1 - j, new LinkSets(), new LinkSets(), this.initModulesFromGroup(child), definition));
                     }
                 }
                 return moduleSet;
@@ -3779,8 +3793,11 @@ var cola;
                 else {
                     var g = group;
                     m.gid = groups.length;
-                    if (!m.isIsland() || m.predefined) {
+                    if (!m.isIsland() || m.isPredefined()) {
                         g = { id: m.gid };
+                        if (m.isPredefined())
+                            for (var prop in m.definition)
+                                g[prop] = m.definition[prop];
                         if (!group.groups)
                             group.groups = [];
                         group.groups.push(m.gid);
@@ -3791,16 +3808,15 @@ var cola;
             });
         }
         var Module = (function () {
-            function Module(id, outgoing, incoming, children, predefined) {
+            function Module(id, outgoing, incoming, children, definition) {
                 if (outgoing === void 0) { outgoing = new LinkSets(); }
                 if (incoming === void 0) { incoming = new LinkSets(); }
                 if (children === void 0) { children = new ModuleSet(); }
-                if (predefined === void 0) { predefined = false; }
                 this.id = id;
                 this.outgoing = outgoing;
                 this.incoming = incoming;
                 this.children = children;
-                this.predefined = predefined;
+                this.definition = definition;
             }
             Module.prototype.getEdges = function (es) {
                 var _this = this;
@@ -3815,6 +3831,9 @@ var cola;
             };
             Module.prototype.isIsland = function () {
                 return this.outgoing.count() === 0 && this.incoming.count() === 0;
+            };
+            Module.prototype.isPredefined = function () {
+                return typeof this.definition !== "undefined";
             };
             return Module;
         })();
@@ -3858,7 +3877,7 @@ var cola;
             ModuleSet.prototype.modules = function () {
                 var vs = [];
                 this.forAll(function (m) {
-                    if (!m.predefined)
+                    if (!m.isPredefined())
                         vs.push(m);
                 });
                 return vs;

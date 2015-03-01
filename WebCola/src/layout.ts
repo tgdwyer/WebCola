@@ -1,5 +1,11 @@
 ﻿///<reference path="handledisconnected.ts"/>
 module cola {
+    export enum EventType { start, tick, end };
+    export class Event {
+        type: EventType;
+        alpha: number;
+        stress: number;
+    }
     export class Layout {
         private _canvasSize = [1, 1];
         private _linkDistance: number | ((any) => number) = 20;
@@ -22,16 +28,25 @@ module cola {
         private _directedLinkConstraints = null;
         private _threshold = 0.01;
         private _visibilityGraph = null;
-        constructor(
-            public trigger, // a function that is notified of events like "tick"
-            public on, // a function for binding to events on the adapter
-            public kick, // a function that kicks off the iteration tick loop
-            public drag // a function to allow for dragging of nodes
-        ) { }
-        tick() {
+
+        // a function that is notified of events like "tick"
+        public trigger(e: Event) { 
+            // override me! 
+        }
+
+        // a function that kicks off the iteration tick loop
+        // it should call our tick() function repeatedly until tick returns true (is converged)
+        public kick() {
+            while (!this.tick());
+        }
+
+        /**
+         * iterate the layout.  Returns true when layout converged.
+         */
+        tick(): boolean {
             if (this._alpha < this._threshold) {
                 this._running = false;
-                this.trigger({ type: "end", alpha: this._alpha = 0, stress: this._lastStress });
+                this.trigger({ type: EventType.end, alpha: this._alpha = 0, stress: this._lastStress });
                 return true;
             }
 
@@ -72,7 +87,8 @@ module cola {
                 }
             }
 
-            this.trigger({ type: "tick", alpha: this._alpha, stress: this._lastStress });
+            this.trigger({ type: EventType.tick, alpha: this._alpha, stress: this._lastStress });
+            return false;
         }
 
         /**
@@ -82,7 +98,9 @@ module cola {
          * @property nodes {Array}
          * @default empty list
          */
-        nodes(v: Array<any> = null): Array<any> | Layout {
+        nodes(): Array<any>
+        nodes(v: Array<any>): Layout
+        nodes(v?: any): any {
             if (!v) {
                 if (this._nodes.length === 0 && this._links.length > 0) {
                     // if we have links but no nodes, create the nodes array now with empty objects for the links to point at.
@@ -106,7 +124,9 @@ module cola {
          * @property groups {Array}
          * @default empty list
          */
-        groups(x: Array<any> = null): Array<any> | Layout {
+        groups(): Array<any>
+        groups(x: Array<any>): Layout
+        groups(x?: Array<any>): any {
             if (!x) return this._groups;
             this._groups = x;
             this._rootGroup = {};
@@ -136,7 +156,9 @@ module cola {
          * @type bool
          * @default false
          */
-        avoidOverlaps(v: boolean): boolean | Layout {
+        avoidOverlaps(): boolean
+        avoidOverlaps(v: boolean): Layout
+        avoidOverlaps(v?: boolean): any {
             if (!arguments.length) return this._avoidOverlaps;
             this._avoidOverlaps = v;
             return this;
@@ -174,7 +196,9 @@ module cola {
          * @property links {array}
          * @default empty list
          */
-        links(x: Array<any>): Array<any>|Layout {
+        links(): Array<any>
+        links(x: Array<any>): Layout
+        links(x?: Array<any>): any {
             if (!arguments.length) return this._links;
             this._links = x;
             return this;
@@ -231,7 +255,11 @@ module cola {
         /**
          * links have an ideal distance, The automatic layout will compute layout that tries to keep links (AKA edges) as close as possible to this length.
          */
-        linkDistance(x: number | ((any) => number) = null): number | ((any) => number) | Layout {
+        linkDistance(): number
+        linkDistance(): (any) => number
+        linkDistance(x: number): Layout
+        linkDistance(x: (any) => number): Layout
+        linkDistance(x?: any): any {
             if (!x) {
                 return this._linkDistance;
             }
@@ -251,7 +279,7 @@ module cola {
             return this;
         }
 
-        alpha(x: number): number|Layout {
+        alpha(x?: number): number|Layout {
             if (!arguments.length) return this._alpha;
             else {
                 x = +x;
@@ -261,8 +289,8 @@ module cola {
                 } else if (x > 0) { // otherwise, fire it up!
                     if (!this._running) {
                         this._running = true;
-                        this.trigger({ type: "start", alpha: this._alpha = x });
-                        this.kick(this.tick);
+                        this.trigger({ type: EventType.start, alpha: this._alpha = x, stress: Number.MAX_VALUE });
+                        this.kick();
                     }
                 }
                 return this;

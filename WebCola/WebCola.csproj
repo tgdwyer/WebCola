@@ -221,6 +221,8 @@
     <Content Include="test\tests.js" />
     <Content Include="examples\graphdata\pre_trip.json" />
     <None Include="examples\graphdata\test1.json" />
+    <TypeScriptCompile Include="test\apitests.ts" />
+    <TypeScriptCompile Include="test\qunit.d.ts" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="web.config" />
