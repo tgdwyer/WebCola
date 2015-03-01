@@ -12,7 +12,7 @@ module cola {
 
         // iterate layout using a d3.timer, which queues calls to tick repeatedly until tick returns true
         kick() {
-            d3.timer(() => this.tick());
+            d3.timer(() => super.tick());
         }
 
         // a function to allow for dragging of nodes

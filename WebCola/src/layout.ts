@@ -1,10 +1,19 @@
 ﻿///<reference path="handledisconnected.ts"/>
 module cola {
     export enum EventType { start, tick, end };
-    export class Event {
+    export interface Event {
         type: EventType;
         alpha: number;
         stress: number;
+    }
+    export interface Node {
+        x: number;
+        y: number;
+    }
+    export interface Link<NodeType> {
+        source: NodeType;
+        target: NodeType;
+        length?: number;
     }
     export class Layout {
         private _canvasSize = [1, 1];
@@ -98,8 +107,8 @@ module cola {
          * @property nodes {Array}
          * @default empty list
          */
-        nodes(): Array<any>
-        nodes(v: Array<any>): Layout
+        nodes(): Array<Node>
+        nodes(v: Array<Node>): Layout
         nodes(v?: any): any {
             if (!v) {
                 if (this._nodes.length === 0 && this._links.length > 0) {
@@ -170,7 +179,9 @@ module cola {
          * @type bool
          * @default false
          */
-        handleDisconnected(v: boolean): boolean | Layout {
+        handleDisconnected(): boolean
+        handleDisconnected(v: boolean): Layout 
+        handleDisconnected(v?: boolean): any {
             if (!arguments.length) return this._handleDisconnected;
             this._handleDisconnected = v;
             return this;
@@ -196,9 +207,9 @@ module cola {
          * @property links {array}
          * @default empty list
          */
-        links(): Array<any>
-        links(x: Array<any>): Layout
-        links(x?: Array<any>): any {
+        links(): Array<Link<Node|number>>
+        links(x: Array<Link<Node|number>>): Layout
+        links(x?: Array<Link<Node|number>>): any {
             if (!arguments.length) return this._links;
             this._links = x;
             return this;
@@ -210,7 +221,9 @@ module cola {
          * @type {array} 
          * @default empty list
          */
-        constraints(c: Array<any>): Array<any>|Layout {
+        constraints(): Array<any>
+        constraints(c: Array<any>): Layout
+        constraints(c?: Array<any>): any {
             if (!arguments.length) return this._constraints;
             this._constraints = c;
             return this;
@@ -223,7 +236,9 @@ module cola {
          * @type {Array of Array of Number}
          * @default null
          */
-        distanceMatrix(d: Array<Array<number>>): Array<Array<number>>|Layout {
+        distanceMatrix(): Array<Array<number>>
+        distanceMatrix(d: Array<Array<number>>): Layout
+        distanceMatrix(d?: any): any {
             if (!arguments.length) return this._distanceMatrix;
             this._distanceMatrix = d;
             return this;
@@ -235,7 +250,9 @@ module cola {
          * @property size
          * @type {Array of Number}
          */
-        size(x: Array<number> = null): Layout | Array<number> {
+        size(): Array<number>
+        size(x: Array<number>): Layout
+        size(x?: Array<number>): any {
             if (!x) return this._canvasSize;
             this._canvasSize = x;
             return this;
@@ -246,7 +263,9 @@ module cola {
          * @property defaultNodeSize
          * @type {Number}
          */
-        defaultNodeSize(x: number = null): number | Layout {
+        defaultNodeSize(): number
+        defaultNodeSize(x: number): Layout
+        defaultNodeSize(x?: any): any {
             if (!x) return this._defaultNodeSize;
             this._defaultNodeSize = x;
             return this;
@@ -273,13 +292,17 @@ module cola {
             return this;
         }
 
-        convergenceThreshold(x: number = null): number|Layout {
+        convergenceThreshold(): number
+        convergenceThreshold(x: number): Layout 
+        convergenceThreshold(x?: number): any {
             if (!x) return this._threshold;
             this._threshold = typeof x === "function" ? x : +x;
             return this;
         }
 
-        alpha(x?: number): number|Layout {
+        alpha(): number
+        alpha(x: number): Layout
+        alpha(x?: number): any {
             if (!arguments.length) return this._alpha;
             else {
                 x = +x;
@@ -350,7 +373,7 @@ module cola {
          * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
          * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
          */
-        start() {
+        start(): Layout {
             var i: number,
                 j: number,
                 n = (<Array<any>>this.nodes()).length,
@@ -474,11 +497,11 @@ module cola {
         }
 
         resume(): Layout {
-            return <Layout>(this.alpha(0.1));
+            return this.alpha(0.1);
         }
 
         stop(): Layout {
-            return <Layout>(this.alpha(0));
+            return this.alpha(0);
         }
 
         prepareEdgeRouting(nodeMargin) {

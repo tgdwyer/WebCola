@@ -253,12 +253,6 @@ var cola;
     })(cola.EventType || (cola.EventType = {}));
     var EventType = cola.EventType;
     ;
-    var Event = (function () {
-        function Event() {
-        }
-        return Event;
-    })();
-    cola.Event = Event;
     var Layout = (function () {
         function Layout() {
             this._canvasSize = [1, 1];
@@ -289,7 +283,7 @@ var cola;
         // a function that kicks off the iteration tick loop
         // it should call our tick() function repeatedly until tick returns true (is converged)
         Layout.prototype.kick = function () {
-            while (this.tick())
+            while (!this.tick())
                 ;
         };
         /**
@@ -389,12 +383,6 @@ var cola;
             this._avoidOverlaps = v;
             return this;
         };
-        /**
-         * if true, the layout will not permit overlaps of the node bounding boxes (defined by the width and height properties on nodes)
-         * @property avoidOverlaps
-         * @type bool
-         * @default false
-         */
         Layout.prototype.handleDisconnected = function (v) {
             if (!arguments.length)
                 return this._handleDisconnected;
@@ -424,61 +412,31 @@ var cola;
             this._links = x;
             return this;
         };
-        /**
-         * list of constraints of various types
-         * @property constraints
-         * @type {array}
-         * @default empty list
-         */
         Layout.prototype.constraints = function (c) {
             if (!arguments.length)
                 return this._constraints;
             this._constraints = c;
             return this;
         };
-        /**
-         * Matrix of ideal distances between all pairs of nodes.
-         * If unspecified, the ideal distances for pairs of nodes will be based on the shortest path distance between them.
-         * @property distanceMatrix
-         * @type {Array of Array of Number}
-         * @default null
-         */
         Layout.prototype.distanceMatrix = function (d) {
             if (!arguments.length)
                 return this._distanceMatrix;
             this._distanceMatrix = d;
             return this;
         };
-        /**
-         * Size of the layout canvas dimensions [x,y]. Currently only used to determine the midpoint which is taken as the starting position
-         * for nodes with no preassigned x and y.
-         * @property size
-         * @type {Array of Number}
-         */
         Layout.prototype.size = function (x) {
-            if (x === void 0) { x = null; }
             if (!x)
                 return this._canvasSize;
             this._canvasSize = x;
             return this;
         };
-        /**
-         * Default size (assume nodes are square so both width and height) to use in packing if node width/height are not specified.
-         * @property defaultNodeSize
-         * @type {Number}
-         */
         Layout.prototype.defaultNodeSize = function (x) {
-            if (x === void 0) { x = null; }
             if (!x)
                 return this._defaultNodeSize;
             this._defaultNodeSize = x;
             return this;
         };
-        /**
-         * links have an ideal distance, The automatic layout will compute layout that tries to keep links (AKA edges) as close as possible to this length.
-         */
         Layout.prototype.linkDistance = function (x) {
-            if (x === void 0) { x = null; }
             if (!x) {
                 return this._linkDistance;
             }
@@ -491,7 +449,6 @@ var cola;
             return this;
         };
         Layout.prototype.convergenceThreshold = function (x) {
-            if (x === void 0) { x = null; }
             if (!x)
                 return this._threshold;
             this._threshold = typeof x === "function" ? x : +x;
@@ -674,10 +631,10 @@ var cola;
             return this.resume();
         };
         Layout.prototype.resume = function () {
-            return (this.alpha(0.1));
+            return this.alpha(0.1);
         };
         Layout.prototype.stop = function () {
-            return (this.alpha(0));
+            return this.alpha(0);
         };
         Layout.prototype.prepareEdgeRouting = function (nodeMargin) {
             this._visibilityGraph = new cola.geom.TangentVisibilityGraph(this._nodes.map(function (v) {
@@ -765,9 +722,9 @@ var __extends = this.__extends || function (d, b) {
 };
 var cola;
 (function (cola) {
-    var D3StyleLayout = (function (_super) {
-        __extends(D3StyleLayout, _super);
-        function D3StyleLayout() {
+    var D3StyleLayoutAdaptor = (function (_super) {
+        __extends(D3StyleLayoutAdaptor, _super);
+        function D3StyleLayoutAdaptor() {
             _super.apply(this, arguments);
             this.event = d3.dispatch(cola.EventType[0 /* start */], cola.EventType[1 /* tick */], cola.EventType[2 /* end */]);
             // a function to allow for dragging of nodes
@@ -783,17 +740,17 @@ var cola;
                 this.call(drag);
             };
         }
-        D3StyleLayout.prototype.trigger = function (e) {
+        D3StyleLayoutAdaptor.prototype.trigger = function (e) {
             var d3event = { type: cola.EventType[e.type], alpha: e.alpha, stress: e.stress };
             this.event[d3event.type](d3event); // via d3 dispatcher, e.g. event.start(e);
         };
         // iterate layout using a d3.timer, which queues calls to tick repeatedly until tick returns true
-        D3StyleLayout.prototype.kick = function () {
+        D3StyleLayoutAdaptor.prototype.kick = function () {
             var _this = this;
-            d3.timer(function () { return _this.tick(); });
+            d3.timer(function () { return _super.prototype.tick.call(_this); });
         };
         // a function for binding to events on the adapter
-        D3StyleLayout.prototype.on = function (eventType, listener) {
+        D3StyleLayoutAdaptor.prototype.on = function (eventType, listener) {
             if (typeof eventType === 'string') {
                 this.event.on(eventType, listener);
             }
@@ -802,9 +759,9 @@ var cola;
             }
             return this;
         };
-        return D3StyleLayout;
+        return D3StyleLayoutAdaptor;
     })(cola.Layout);
-    cola.D3StyleLayout = D3StyleLayout;
+    cola.D3StyleLayoutAdaptor = D3StyleLayoutAdaptor;
     /**
      * provides an interface for use with d3:
      * - uses the d3 event system to dispatch layout events such as:
@@ -818,7 +775,7 @@ var cola;
      * can interact directly.
      */
     function d3adaptor() {
-        return new D3StyleLayout();
+        return new D3StyleLayoutAdaptor();
     }
     cola.d3adaptor = d3adaptor;
 })(cola || (cola = {}));
