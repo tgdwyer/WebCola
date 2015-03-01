@@ -5,6 +5,7 @@ module cola {
         type: EventType;
         alpha: number;
         stress?: number;
+        listener?: () => void;
     }
     export interface Node {
         x: number;
@@ -37,16 +38,31 @@ module cola {
         private _directedLinkConstraints = null;
         private _threshold = 0.01;
         private _visibilityGraph = null;
+        
+        // sub-class and override this property to replace with a more sophisticated eventing mechanism
+        protected event = null;
+
+        // subscribe a listener to an event
+        // sub-class and override this method to replace with a more sophisticated eventing mechanism
+        public on(e: EventType, listener: (Event) => void): Layout {
+            // override me!
+            if (!this.event) this.event = {};
+            this.event[e] = listener;
+            return this;
+        }
 
         // a function that is notified of events like "tick"
-        public trigger(e: Event) { 
-            // override me! 
+        // sub-class and override this method to replace with a more sophisticated eventing mechanism
+        protected trigger(e: Event) { 
+            if (this.event && typeof this.event[e.type] !== 'undefined') {
+                this.event[e.type](e);
+            }
         }
 
         // a function that kicks off the iteration tick loop
         // it calls tick() repeatedly until tick returns true (is converged)
-        // override it with something fancier (e.g. dispatch tick on a timer)
-        public kick() {
+        // subclass and override it with something fancier (e.g. dispatch tick on a timer)
+        protected kick() {
             while (!this.tick());
         }
 
