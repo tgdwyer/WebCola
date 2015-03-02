@@ -274,14 +274,29 @@ var cola;
             this._directedLinkConstraints = null;
             this._threshold = 0.01;
             this._visibilityGraph = null;
+            // sub-class and override this property to replace with a more sophisticated eventing mechanism
+            this.event = null;
             this.linkAccessor = { getSourceIndex: Layout.getSourceIndex, getTargetIndex: Layout.getTargetIndex, setLength: Layout.setLinkLength, getType: this.getLinkType };
         }
+        // subscribe a listener to an event
+        // sub-class and override this method to replace with a more sophisticated eventing mechanism
+        Layout.prototype.on = function (e, listener) {
+            // override me!
+            if (!this.event)
+                this.event = {};
+            this.event[e] = listener;
+            return this;
+        };
         // a function that is notified of events like "tick"
+        // sub-class and override this method to replace with a more sophisticated eventing mechanism
         Layout.prototype.trigger = function (e) {
-            // override me! 
+            if (this.event && typeof this.event[e.type] !== 'undefined') {
+                this.event[e.type](e);
+            }
         };
         // a function that kicks off the iteration tick loop
-        // it should call our tick() function repeatedly until tick returns true (is converged)
+        // it calls tick() repeatedly until tick returns true (is converged)
+        // subclass and override it with something fancier (e.g. dispatch tick on a timer)
         Layout.prototype.kick = function () {
             while (!this.tick())
                 ;
@@ -468,7 +483,7 @@ var cola;
                 else if (x > 0) {
                     if (!this._running) {
                         this._running = true;
-                        this.trigger({ type: 0 /* start */, alpha: this._alpha = x, stress: Number.MAX_VALUE });
+                        this.trigger({ type: 0 /* start */, alpha: this._alpha = x });
                         this.kick();
                     }
                 }

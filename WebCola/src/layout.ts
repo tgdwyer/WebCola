@@ -390,7 +390,11 @@ module cola {
          * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
          * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
          */
-        start(): Layout {
+        start(
+            initialUnconstrainedIterations = 0,
+            initialUserConstraintIterations = 0,
+            initialAllConstraintsIterations = 0
+        ): Layout {
             var i: number,
                 j: number,
                 n = (<Array<any>>this.nodes()).length,
@@ -455,9 +459,6 @@ module cola {
                 curConstraints = curConstraints.concat(cola.generateDirectedEdgeConstraints(n, this._links, this._directedLinkConstraints.axis, <any>(this.linkAccessor)));
             }
 
-            var initialUnconstrainedIterations = arguments.length > 0 ? arguments[0] : 0;
-            var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;
-            var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;
             this.avoidOverlaps(false);
             this._descent = new cola.Descent([x, y], D);
 
