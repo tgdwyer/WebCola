@@ -284,7 +284,12 @@ var cola;
             // override me!
             if (!this.event)
                 this.event = {};
-            this.event[e] = listener;
+            if (typeof e === 'string') {
+                this.event[EventType[e]] = listener;
+            }
+            else {
+                this.event[e] = listener;
+            }
             return this;
         };
         // a function that is notified of events like "tick"
@@ -538,8 +543,11 @@ var cola;
          * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
          * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
          */
-        Layout.prototype.start = function () {
+        Layout.prototype.start = function (initialUnconstrainedIterations, initialUserConstraintIterations, initialAllConstraintsIterations) {
             var _this = this;
+            if (initialUnconstrainedIterations === void 0) { initialUnconstrainedIterations = 0; }
+            if (initialUserConstraintIterations === void 0) { initialUserConstraintIterations = 0; }
+            if (initialAllConstraintsIterations === void 0) { initialAllConstraintsIterations = 0; }
             var i, j, n = this.nodes().length, N = n + 2 * this._groups.length, m = this._links.length, w = this._canvasSize[0], h = this._canvasSize[1];
             if (this._linkLengthCalculator)
                 this._linkLengthCalculator();
@@ -590,9 +598,6 @@ var cola;
                 this.linkAccessor.getMinSeparation = this._directedLinkConstraints.getMinSeparation;
                 curConstraints = curConstraints.concat(cola.generateDirectedEdgeConstraints(n, this._links, this._directedLinkConstraints.axis, (this.linkAccessor)));
             }
-            var initialUnconstrainedIterations = arguments.length > 0 ? arguments[0] : 0;
-            var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;
-            var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;
             this.avoidOverlaps(false);
             this._descent = new cola.Descent([x, y], D);
             this._descent.locks.clear();
@@ -740,18 +745,20 @@ var cola;
     var D3StyleLayoutAdaptor = (function (_super) {
         __extends(D3StyleLayoutAdaptor, _super);
         function D3StyleLayoutAdaptor() {
-            _super.apply(this, arguments);
+            _super.call(this);
             this.event = d3.dispatch(cola.EventType[0 /* start */], cola.EventType[1 /* tick */], cola.EventType[2 /* end */]);
-            // a function to allow for dragging of nodes
+            // bit of trickyness remapping 'this' so we can reference it in the function body.
+            var d3layout = this;
             this.drag = function () {
                 var drag = d3.behavior.drag().origin(function (d) {
                     return d;
                 }).on("dragstart.d3adaptor", cola.Layout.dragStart).on("drag.d3adaptor", function (d) {
                     d.px = d3.event.x, d.py = d3.event.y;
-                    this.resume(); // restart annealing
+                    d3layout.resume(); // restart annealing
                 }).on("dragend.d3adaptor", cola.Layout.dragEnd);
                 if (!arguments.length)
                     return drag;
+                // this is the context of the function, i.e. the d3 selection
                 this.call(drag);
             };
         }

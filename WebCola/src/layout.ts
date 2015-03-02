@@ -44,10 +44,14 @@ module cola {
 
         // subscribe a listener to an event
         // sub-class and override this method to replace with a more sophisticated eventing mechanism
-        public on(e: EventType, listener: (Event) => void): Layout {
+        public on(e: EventType | string, listener: (Event) => void): Layout {
             // override me!
             if (!this.event) this.event = {};
-            this.event[e] = listener;
+            if (typeof e === 'string') {
+                this.event[EventType[e]] = listener;
+            } else {
+                this.event[e] = listener;
+            }
             return this;
         }
 
@@ -391,9 +395,9 @@ module cola {
          * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
          */
         start(
-            initialUnconstrainedIterations = 0,
-            initialUserConstraintIterations = 0,
-            initialAllConstraintsIterations = 0
+            initialUnconstrainedIterations: number = 0,
+            initialUserConstraintIterations: number = 0,
+            initialAllConstraintsIterations: number = 0
         ): Layout {
             var i: number,
                 j: number,
