@@ -1,5 +1,19 @@
 ﻿///<reference path="handledisconnected.ts"/>
+///<reference path="geom.ts"/>
+///<reference path="descent.ts"/>
+///<reference path="powergraph.ts"/>
+///<reference path="linklengths.ts"/>
+///<reference path="shortestpaths.ts"/>
+/**
+ * @module cola
+ */
 module cola {
+    /**
+     * The layout process fires three events:
+     *  - start: layout iterations started
+     *  - tick: fired once per iteration, listen to this to animate
+     *  - end: layout converged, you might like to zoom-to-fit or something at notification of this event
+     */
     export enum EventType { start, tick, end };
     export interface Event {
         type: EventType;
@@ -16,6 +30,11 @@ module cola {
         target: NodeType;
         length?: number;
     }
+    
+    /**
+     * Main interface to cola layout.  
+     * @class Layout
+     */
     export class Layout {
         private _canvasSize = [1, 1];
         private _linkDistance: number | ((any) => number) = 20;
@@ -397,7 +416,8 @@ module cola {
         start(
             initialUnconstrainedIterations: number = 0,
             initialUserConstraintIterations: number = 0,
-            initialAllConstraintsIterations: number = 0
+            initialAllConstraintsIterations: number = 0,
+            gridifyIterations: number = 0
         ): Layout {
             var i: number,
                 j: number,

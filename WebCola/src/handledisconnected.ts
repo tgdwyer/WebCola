@@ -67,41 +67,41 @@
             }
         }
 
-        function plot(data, left, right, opt_x, opt_y) {
-            // plot the cost function
-            var plot_svg = d3.select("body").append("svg")
-                .attr("width", function () { return 2 * (right - left); })
-                .attr("height", 200);
+        //function plot(data, left, right, opt_x, opt_y) {
+        //    // plot the cost function
+        //    var plot_svg = d3.select("body").append("svg")
+        //        .attr("width", function () { return 2 * (right - left); })
+        //        .attr("height", 200);
 
 
-            var x = d3.time.scale().range([0, 2 * (right - left)]);
+        //    var x = d3.time.scale().range([0, 2 * (right - left)]);
 
-            var xAxis = d3.svg.axis().scale(x).orient("bottom");
-            plot_svg.append("g").attr("class", "x axis")
-                .attr("transform", "translate(0, 199)")
-                .call(xAxis);
+        //    var xAxis = d3.svg.axis().scale(x).orient("bottom");
+        //    plot_svg.append("g").attr("class", "x axis")
+        //        .attr("transform", "translate(0, 199)")
+        //        .call(xAxis);
 
-            var lastX = 0;
-            var lastY = 0;
-            var value = 0;
-            for (var r = left; r < right; r += 1) {
-                value = step(data, r);
-                // value = 1;
+        //    var lastX = 0;
+        //    var lastY = 0;
+        //    var value = 0;
+        //    for (var r = left; r < right; r += 1) {
+        //        value = step(data, r);
+        //        // value = 1;
 
-                plot_svg.append("line").attr("x1", 2 * (lastX - left))
-                    .attr("y1", 200 - 30 * lastY)
-                    .attr("x2", 2 * r - 2 * left)
-                    .attr("y2", 200 - 30 * value)
-                    .style("stroke", "rgb(6,120,155)");
+        //        plot_svg.append("line").attr("x1", 2 * (lastX - left))
+        //            .attr("y1", 200 - 30 * lastY)
+        //            .attr("x2", 2 * r - 2 * left)
+        //            .attr("y2", 200 - 30 * value)
+        //            .style("stroke", "rgb(6,120,155)");
 
-                lastX = r;
-                lastY = value;
-            }
+        //        lastX = r;
+        //        lastY = value;
+        //    }
 
-            plot_svg.append("circle").attr("cx", 2 * opt_x - 2 * left).attr("cy", 200 - 30 * opt_y)
-                .attr("r", 5).style('fill', "rgba(0,0,0,0.5)");
+        //    plot_svg.append("circle").attr("cx", 2 * opt_x - 2 * left).attr("cy", 200 - 30 * opt_y)
+        //        .attr("r", 5).style('fill', "rgba(0,0,0,0.5)");
 
-        }
+        //}
 
         // actual assigning of position to nodes
         function put_nodes_to_right_positions(graphs) {

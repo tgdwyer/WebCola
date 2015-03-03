@@ -1,3 +1,5 @@
+///<reference path="vpsc.ts"/>
+///<reference path="rectangle.ts"/>
 module cola.geom {
     export class Point {
         x: number;

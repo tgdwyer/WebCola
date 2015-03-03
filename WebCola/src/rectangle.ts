@@ -401,12 +401,15 @@ module cola.vpsc {
         private xConstraints: Constraint[];
         private yConstraints: Constraint[];
         private variables: Variable[];
+        public gridSnapStrength = 1; // between 0 and 1: 0 - 100% gridSnap if gridSnapSize specified
 
         constructor(private nodes: GraphNode[],
             private groups: Group[],
             private rootGroup: Group = null,
             constraints: any[]= null,
-            private avoidOverlaps: boolean = false)
+            private avoidOverlaps: boolean = false,
+            private gridSnapSize: number = 0 // a non-zero value here means that nodes should snap to a grid of the given cell-size
+            )
         {
             this.variables = nodes.map((v, i) => {
                 return v.variable = new IndexedVariable(i, 1);
@@ -432,6 +435,26 @@ module cola.vpsc {
                     this.variables[i] = g.maxVar = new IndexedVariable(i++, typeof g.stiffness !== "undefined" ? g.stiffness : 0.01);
                 });
             }
+        }
+
+        // project nodes towards grid positions
+        //  node rectangles used in overlap removal will have dimensions
+        //  degree*gridSize
+        // nodes are moved towards grid cells by degree*distanceToGrid
+        private gridSnap(x: number): number {
+            var g = this.gridSnapSize; 
+            var r = g / 2; 
+            var w = this.gridSnapStrength; 
+            var m = x / g; 
+            var f = m % 1; 
+            var q = m - f; 
+            var a = Math.abs(f);
+            var dx = (a <= 0.5) ? x - q * g :
+                (x > 0) ? x - (q + 1) * g : x - (q - 1) * g;
+            if (-r <= dx && dx <= r) {
+                return x - w * dx;
+            }
+            return x;
         }
 
         private createSeparation(c: any) : Constraint {
@@ -477,7 +500,8 @@ module cola.vpsc {
                 .forEach(c => this.createAlignment(c));
         }
 
-        private setupVariablesAndBounds(x0: number[], y0: number[], desired: number[], getDesired: (v:GraphNode) => number) {
+        private setupVariablesAndBounds(x0: number[], y0: number[], desired: number[], getDesired: (v: GraphNode) => number) {
+            var gsSize = this.gridSnapStrength * this.gridSnapSize;
             this.nodes.forEach((v, i) => {
                 if (v.fixed) {
                     v.variable.weight = 1000;
@@ -485,8 +509,12 @@ module cola.vpsc {
                 } else {
                     v.variable.weight = 1;
                 }
-                var w = (v.width || 0) / 2, h = (v.height || 0) / 2;
+                var w = (gsSize || v.width || 0) / 2, h = (gsSize || v.height || 0) / 2;
                 var ix = x0[i], iy = y0[i];
+                if (gsSize) {
+                    ix = this.gridSnap(ix);
+                    iy = this.gridSnap(iy);
+                }
                 v.bounds = new Rectangle(ix - w, ix + w, iy - h, iy + h);
             });
         }
