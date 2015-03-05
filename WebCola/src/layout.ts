@@ -57,6 +57,7 @@ module cola {
         private _directedLinkConstraints = null;
         private _threshold = 0.01;
         private _visibilityGraph = null;
+        private _groupCompactness = 1e-6;
         
         // sub-class and override this property to replace with a more sophisticated eventing mechanism
         protected event = null;
@@ -312,6 +313,19 @@ module cola {
         }
 
         /**
+         * The strength of attraction between the group boundaries to each other.
+         * @property defaultNodeSize
+         * @type {Number}
+         */
+        groupCompactness(): number
+        groupCompactness(x: number): Layout
+        groupCompactness(x?: any): any {
+            if (!x) return this._groupCompactness;
+            this._groupCompactness = x;
+            return this;
+        }
+
+        /**
          * links have an ideal distance, The automatic layout will compute layout that tries to keep links (AKA edges) as close as possible to this length.
          */
         linkDistance(): number
@@ -412,12 +426,13 @@ module cola {
          * @param {number} [initialUnconstrainedIterations=0] unconstrained initial layout iterations 
          * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
          * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
+         * @param {number} [gridSnapIterations=0] iterations of "grid snap", which pulls nodes towards grid cell centers - grid of size node[0].width - only really makes sense if all nodes have the same width and height
          */
         start(
             initialUnconstrainedIterations: number = 0,
             initialUserConstraintIterations: number = 0,
             initialAllConstraintsIterations: number = 0,
-            gridifyIterations: number = 0
+            gridSnapIterations: number = 0
         ): Layout {
             var i: number,
                 j: number,
@@ -445,6 +460,8 @@ module cola {
                 }
                 x[i] = v.x, y[i] = v.y;
             });
+            //should we do this to clearly label groups?
+            //this._groups.forEach((g, i) => g.groupIndex = i);
 
             var distances;
             if (this._distanceMatrix) {
@@ -469,9 +486,28 @@ module cola {
 
             if (this._rootGroup && typeof this._rootGroup.groups !== 'undefined') {
                 var i = n;
-                this._groups.forEach(function (g) {
-                    G[i][i + 1] = G[i + 1][i] = 1e-6;
-                    D[i][i + 1] = D[i + 1][i] = 0.1;
+                var addAttraction = (i, j, strength, idealDistance) => {
+                    G[i][j] = G[j][i] = strength;
+                    D[i][j] = D[j][i] = idealDistance;
+                };
+                this._groups.forEach(g => {
+                    addAttraction(i, i + 1, this._groupCompactness, 0.1);
+
+                    // todo: add terms here attracting children of the group to the group dummy nodes
+                    //if (typeof g.leaves !== 'undefined')
+                    //    g.leaves.forEach(l => {
+                    //        addAttraction(l.index, i, 1e-4, 0.1);
+                    //        addAttraction(l.index, i + 1, 1e-4, 0.1);
+                    //    });
+                    //if (typeof g.groups !== 'undefined')
+                    //    g.groups.forEach(g => {
+                    //        var gid = n + g.groupIndex * 2;
+                    //        addAttraction(gid, i, 0.1, 0.1);
+                    //        addAttraction(gid + 1, i, 0.1, 0.1);
+                    //        addAttraction(gid, i + 1, 0.1, 0.1);
+                    //        addAttraction(gid + 1, i + 1, 0.1, 0.1);
+                    //    });
+                    
                     x[i] = 0, y[i++] = 0;
                     x[i] = 0, y[i++] = 0;
                 });
@@ -481,6 +517,8 @@ module cola {
             if (this._directedLinkConstraints) {
                 (<any>this.linkAccessor).getMinSeparation = this._directedLinkConstraints.getMinSeparation;
                 curConstraints = curConstraints.concat(cola.generateDirectedEdgeConstraints(n, this._links, this._directedLinkConstraints.axis, <any>(this.linkAccessor)));
+                
+                // todo: add containment constraints between group dummy nodes and their children
             }
 
             this.avoidOverlaps(false);
@@ -501,7 +539,7 @@ module cola {
             // apply initialIterations without user constraints or nonoverlap constraints
             this._descent.run(initialUnconstrainedIterations);
 
-            // apply initialIterations with user constraints but no noverlap constraints
+            // apply initialIterations with user constraints but no nonoverlap constraints
             if (curConstraints.length > 0) this._descent.project = new cola.vpsc.Projection(this._nodes, this._groups, this._rootGroup, curConstraints).projectFunctions();
             this._descent.run(initialUserConstraintIterations);
 
@@ -516,6 +554,19 @@ module cola {
             // allow not immediately connected nodes to relax apart (p-stress)
             this._descent.G = G;
             this._descent.run(initialAllConstraintsIterations);
+
+            if (gridSnapIterations) {
+                this._descent.snapStrength = 1000;
+                this._descent.snapGridSize = this._nodes[0].width;
+                this._descent.numGridSnapNodes = n;
+                this._descent.scaleSnapByMaxH = true;
+                var G0 = cola.Descent.createSquareMatrix(N,(i, j) => {
+                    if (i >= n || j >= n) return G[i][j];
+                    return 0
+                });
+                this._descent.G = G0;
+                this._descent.run(gridSnapIterations);
+            }
 
             this._links.forEach(l => {
                 if (typeof l.source == "number") l.source = this._nodes[l.source];

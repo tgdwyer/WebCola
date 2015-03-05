@@ -88,6 +88,15 @@ module cola {
         private ib: number[][];
         private xtmp: number[][];
 
+
+        // Parameters for grid snap stress.
+        // TODO: Make a pluggable "StressTerm" class instead of this
+        // mess.
+        public numGridSnapNodes: number = 0;
+        public snapGridSize: number = 100;
+        public snapStrength: number = 1000;
+        public scaleSnapByMaxH: boolean = false;
+
         private random = new PseudoRandom();
 
         public project: { (x0: number[], y0: number[], r: number[]): void }[] = null;
@@ -222,6 +231,33 @@ DEBUG */
                     }
                 }
                 for (i = 0; i < this.k; ++i) maxH = Math.max(maxH, this.H[i][u][u] = Huu[i]);
+            }
+            // Grid snap forces
+            var r = this.snapGridSize/2;
+            var g = this.snapGridSize;
+            var w = this.snapStrength;
+            var k = w / (r * r);
+            var numNodes = this.numGridSnapNodes;
+            //var numNodes = n;
+            for (var u: number = 0; u < numNodes; ++u) {
+                for (i = 0; i < this.k; ++i) {
+                    var xiu = this.x[i][u];
+                    var m = xiu / g;
+                    var f = m % 1;
+                    var q = m - f;
+                    var a = Math.abs(f);
+                    var dx = (a <= 0.5) ? xiu - q * g :
+                        (xiu > 0) ? xiu - (q + 1) * g : xiu - (q - 1) * g;
+                    if (-r < dx && dx <= r) {
+                        if (this.scaleSnapByMaxH) {
+                            this.g[i][u] += maxH * k * dx;
+                            this.H[i][u][u] += maxH * k;
+                        } else {
+                            this.g[i][u] += k * dx;
+                            this.H[i][u][u] += k;
+                        }
+                    }
+                }
             }
             if (!this.locks.isEmpty()) {
                 this.locks.apply((u, p) => {

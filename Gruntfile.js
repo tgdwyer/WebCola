@@ -10,7 +10,7 @@ module.exports = function (grunt) {
         tasks: ["default"]
       },
       typescript: {
-        files: ["<%= typescript.base.src %>"],
+        files: ["<%= typescript.base.src %>","<%= typescript.examples.src %>"],
         tasks: ["typescript"]
       },
       test: {
