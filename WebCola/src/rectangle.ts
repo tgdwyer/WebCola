@@ -434,6 +434,7 @@ module cola.vpsc {
             }
         }
 
+
         private createSeparation(c: any) : Constraint {
             return new Constraint(
                 this.nodes[c.left].variable,
@@ -477,7 +478,7 @@ module cola.vpsc {
                 .forEach(c => this.createAlignment(c));
         }
 
-        private setupVariablesAndBounds(x0: number[], y0: number[], desired: number[], getDesired: (v:GraphNode) => number) {
+        private setupVariablesAndBounds(x0: number[], y0: number[], desired: number[], getDesired: (v: GraphNode) => number) {
             this.nodes.forEach((v, i) => {
                 if (v.fixed) {
                     v.variable.weight = 1000;

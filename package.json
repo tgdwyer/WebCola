@@ -5,18 +5,19 @@
     "async": "~0.6.2",
     "grunt": "~0.4.2",
     "grunt-contrib-concat": "~0.3.0",
-    "grunt-contrib-qunit": "~0.3.0",
+    "grunt-contrib-qunit": "^0.5.2",
     "grunt-contrib-uglify": "^0.7.0",
     "grunt-contrib-watch": "~0.6.1",
-    "grunt-contrib-yuidoc": "~0.5.0",
+    "grunt-typedoc": "^0.2.1",
     "grunt-typescript": "^0.6.1",
     "grunt-umd": "~1.7.3",
     "load-grunt-tasks": "~0.4.0",
+    "typedoc": "^0.2.3",
     "typescript": "~1.4.1",
     "uglify-js": "^2.4.16"
   },
   "description": "WebCola =======",
-  "main": "WebCola/cola.v3.min.js",
+  "main": "WebCola/cola.min.js",
   "scripts": {
     "test": "grunt full"
   },

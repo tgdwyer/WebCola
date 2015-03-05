@@ -1,7 +1,7 @@
 module.exports = function (grunt) {
   require('load-grunt-tasks')(grunt);
   require('./tasks/examples')(grunt);
-
+  grunt.loadNpmTasks('grunt-typedoc');
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     watch: {
@@ -10,7 +10,7 @@ module.exports = function (grunt) {
         tasks: ["default"]
       },
       typescript: {
-        files: ["<%= typescript.base.src %>"],
+        files: ["<%= typescript.base.src %>","<%= typescript.examples.src %>"],
         tasks: ["typescript"]
       },
       test: {
@@ -73,23 +73,22 @@ module.exports = function (grunt) {
     examples: {
       all: ["WebCola/examples/*.html"]
     },
-    yuidoc: {
-      compile: {
-        name: 'cola.js',
-        description: 'Javascript constraint based layout for high-quality graph visualization and exploration using D3.js and other web-based graphics libraries.',
-        version: '1',
-        url: 'http://marvl.infotech.monash.edu/webcola',
-        options: {
-          paths: 'WebCola/src',
-          outdir: 'WebCola/doc'
-        }
-      }
+    typedoc: {
+      build: {
+          options: {
+              module: 'amd',
+              target: 'es5',
+              out: 'doc/',
+              name: 'WebCoLa AKA cola.js'
+          },
+          src: ["<%= typescript.base.src %>"],
+      },
     }
   });
  
   grunt.registerTask('default', ['typescript:base', 'concat', 'uglify', 'qunit']);
   grunt.registerTask('nougly', ['typescript:base', 'concat', 'qunit']);
   grunt.registerTask('nougly-notest', ['typescript', 'concat']);
-  grunt.registerTask('docs', ['yuidoc', 'typescript:examples']);
+  grunt.registerTask('docs', ['typedoc', 'typescript:examples']);
   grunt.registerTask('full', ['default', 'typescript:examples', 'examples']);
 };

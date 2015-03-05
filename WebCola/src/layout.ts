@@ -1,5 +1,40 @@
 ﻿///<reference path="handledisconnected.ts"/>
+///<reference path="geom.ts"/>
+///<reference path="descent.ts"/>
+///<reference path="powergraph.ts"/>
+///<reference path="linklengths.ts"/>
+///<reference path="shortestpaths.ts"/>
+/**
+ * @module cola
+ */
 module cola {
+    /**
+     * The layout process fires three events:
+     *  - start: layout iterations started
+     *  - tick: fired once per iteration, listen to this to animate
+     *  - end: layout converged, you might like to zoom-to-fit or something at notification of this event
+     */
+    export enum EventType { start, tick, end };
+    export interface Event {
+        type: EventType;
+        alpha: number;
+        stress?: number;
+        listener?: () => void;
+    }
+    export interface Node {
+        x: number;
+        y: number;
+    }
+    export interface Link<NodeType> {
+        source: NodeType;
+        target: NodeType;
+        length?: number;
+    }
+    
+    /**
+     * Main interface to cola layout.  
+     * @class Layout
+     */
     export class Layout {
         private _canvasSize = [1, 1];
         private _linkDistance: number | ((any) => number) = 20;
@@ -22,16 +57,46 @@ module cola {
         private _directedLinkConstraints = null;
         private _threshold = 0.01;
         private _visibilityGraph = null;
-        constructor(
-            public trigger, // a function that is notified of events like "tick"
-            public on, // a function for binding to events on the adapter
-            public kick, // a function that kicks off the iteration tick loop
-            public drag // a function to allow for dragging of nodes
-        ) { }
-        tick() {
+        private _groupCompactness = 1e-6;
+        
+        // sub-class and override this property to replace with a more sophisticated eventing mechanism
+        protected event = null;
+
+        // subscribe a listener to an event
+        // sub-class and override this method to replace with a more sophisticated eventing mechanism
+        public on(e: EventType | string, listener: (Event) => void): Layout {
+            // override me!
+            if (!this.event) this.event = {};
+            if (typeof e === 'string') {
+                this.event[EventType[e]] = listener;
+            } else {
+                this.event[e] = listener;
+            }
+            return this;
+        }
+
+        // a function that is notified of events like "tick"
+        // sub-class and override this method to replace with a more sophisticated eventing mechanism
+        protected trigger(e: Event) { 
+            if (this.event && typeof this.event[e.type] !== 'undefined') {
+                this.event[e.type](e);
+            }
+        }
+
+        // a function that kicks off the iteration tick loop
+        // it calls tick() repeatedly until tick returns true (is converged)
+        // subclass and override it with something fancier (e.g. dispatch tick on a timer)
+        protected kick() {
+            while (!this.tick());
+        }
+
+        /**
+         * iterate the layout.  Returns true when layout converged.
+         */
+        protected tick(): boolean {
             if (this._alpha < this._threshold) {
                 this._running = false;
-                this.trigger({ type: "end", alpha: this._alpha = 0, stress: this._lastStress });
+                this.trigger({ type: EventType.end, alpha: this._alpha = 0, stress: this._lastStress });
                 return true;
             }
 
@@ -72,7 +137,8 @@ module cola {
                 }
             }
 
-            this.trigger({ type: "tick", alpha: this._alpha, stress: this._lastStress });
+            this.trigger({ type: EventType.tick, alpha: this._alpha, stress: this._lastStress });
+            return false;
         }
 
         /**
@@ -82,7 +148,9 @@ module cola {
          * @property nodes {Array}
          * @default empty list
          */
-        nodes(v: Array<any> = null): Array<any> | Layout {
+        nodes(): Array<Node>
+        nodes(v: Array<Node>): Layout
+        nodes(v?: any): any {
             if (!v) {
                 if (this._nodes.length === 0 && this._links.length > 0) {
                     // if we have links but no nodes, create the nodes array now with empty objects for the links to point at.
@@ -106,7 +174,9 @@ module cola {
          * @property groups {Array}
          * @default empty list
          */
-        groups(x: Array<any> = null): Array<any> | Layout {
+        groups(): Array<any>
+        groups(x: Array<any>): Layout
+        groups(x?: Array<any>): any {
             if (!x) return this._groups;
             this._groups = x;
             this._rootGroup = {};
@@ -136,7 +206,9 @@ module cola {
          * @type bool
          * @default false
          */
-        avoidOverlaps(v: boolean): boolean | Layout {
+        avoidOverlaps(): boolean
+        avoidOverlaps(v: boolean): Layout
+        avoidOverlaps(v?: boolean): any {
             if (!arguments.length) return this._avoidOverlaps;
             this._avoidOverlaps = v;
             return this;
@@ -148,7 +220,9 @@ module cola {
          * @type bool
          * @default false
          */
-        handleDisconnected(v: boolean): boolean | Layout {
+        handleDisconnected(): boolean
+        handleDisconnected(v: boolean): Layout 
+        handleDisconnected(v?: boolean): any {
             if (!arguments.length) return this._handleDisconnected;
             this._handleDisconnected = v;
             return this;
@@ -160,7 +234,7 @@ module cola {
          * @param axis {string} 'x' for left-to-right, 'y' for top-to-bottom
          * @param minSeparation {number|link=>number} either a number specifying a minimum spacing required across all links or a function to return the minimum spacing for each link
          */
-        flowLayout(axis: string, minSeparation: number): Layout {
+        flowLayout(axis: string, minSeparation: number|((any)=>number)): Layout {
             if (!arguments.length) axis = 'y';
             this._directedLinkConstraints = {
                 axis: axis,
@@ -174,7 +248,9 @@ module cola {
          * @property links {array}
          * @default empty list
          */
-        links(x: Array<any>): Array<any>|Layout {
+        links(): Array<Link<Node|number>>
+        links(x: Array<Link<Node|number>>): Layout
+        links(x?: Array<Link<Node|number>>): any {
             if (!arguments.length) return this._links;
             this._links = x;
             return this;
@@ -186,7 +262,9 @@ module cola {
          * @type {array} 
          * @default empty list
          */
-        constraints(c: Array<any>): Array<any>|Layout {
+        constraints(): Array<any>
+        constraints(c: Array<any>): Layout
+        constraints(c?: Array<any>): any {
             if (!arguments.length) return this._constraints;
             this._constraints = c;
             return this;
@@ -199,7 +277,9 @@ module cola {
          * @type {Array of Array of Number}
          * @default null
          */
-        distanceMatrix(d: Array<Array<number>>): Array<Array<number>>|Layout {
+        distanceMatrix(): Array<Array<number>>
+        distanceMatrix(d: Array<Array<number>>): Layout
+        distanceMatrix(d?: any): any {
             if (!arguments.length) return this._distanceMatrix;
             this._distanceMatrix = d;
             return this;
@@ -211,7 +291,9 @@ module cola {
          * @property size
          * @type {Array of Number}
          */
-        size(x: Array<number> = null): Layout | Array<number> {
+        size(): Array<number>
+        size(x: Array<number>): Layout
+        size(x?: Array<number>): any {
             if (!x) return this._canvasSize;
             this._canvasSize = x;
             return this;
@@ -222,16 +304,35 @@ module cola {
          * @property defaultNodeSize
          * @type {Number}
          */
-        defaultNodeSize(x: number = null): number | Layout {
+        defaultNodeSize(): number
+        defaultNodeSize(x: number): Layout
+        defaultNodeSize(x?: any): any {
             if (!x) return this._defaultNodeSize;
             this._defaultNodeSize = x;
             return this;
         }
 
         /**
+         * The strength of attraction between the group boundaries to each other.
+         * @property defaultNodeSize
+         * @type {Number}
+         */
+        groupCompactness(): number
+        groupCompactness(x: number): Layout
+        groupCompactness(x?: any): any {
+            if (!x) return this._groupCompactness;
+            this._groupCompactness = x;
+            return this;
+        }
+
+        /**
          * links have an ideal distance, The automatic layout will compute layout that tries to keep links (AKA edges) as close as possible to this length.
          */
-        linkDistance(x: number | ((any) => number) = null): number | ((any) => number) | Layout {
+        linkDistance(): number
+        linkDistance(): (any) => number
+        linkDistance(x: number): Layout
+        linkDistance(x: (any) => number): Layout
+        linkDistance(x?: any): any {
             if (!x) {
                 return this._linkDistance;
             }
@@ -245,13 +346,17 @@ module cola {
             return this;
         }
 
-        convergenceThreshold(x: number = null): number|Layout {
+        convergenceThreshold(): number
+        convergenceThreshold(x: number): Layout 
+        convergenceThreshold(x?: number): any {
             if (!x) return this._threshold;
             this._threshold = typeof x === "function" ? x : +x;
             return this;
         }
 
-        alpha(x: number): number|Layout {
+        alpha(): number
+        alpha(x: number): Layout
+        alpha(x?: number): any {
             if (!arguments.length) return this._alpha;
             else {
                 x = +x;
@@ -261,8 +366,8 @@ module cola {
                 } else if (x > 0) { // otherwise, fire it up!
                     if (!this._running) {
                         this._running = true;
-                        this.trigger({ type: "start", alpha: this._alpha = x });
-                        this.kick(this.tick);
+                        this.trigger({ type: EventType.start, alpha: this._alpha = x});
+                        this.kick();
                     }
                 }
                 return this;
@@ -321,8 +426,14 @@ module cola {
          * @param {number} [initialUnconstrainedIterations=0] unconstrained initial layout iterations 
          * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
          * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
+         * @param {number} [gridSnapIterations=0] iterations of "grid snap", which pulls nodes towards grid cell centers - grid of size node[0].width - only really makes sense if all nodes have the same width and height
          */
-        start() {
+        start(
+            initialUnconstrainedIterations: number = 0,
+            initialUserConstraintIterations: number = 0,
+            initialAllConstraintsIterations: number = 0,
+            gridSnapIterations: number = 0
+        ): Layout {
             var i: number,
                 j: number,
                 n = (<Array<any>>this.nodes()).length,
@@ -349,6 +460,8 @@ module cola {
                 }
                 x[i] = v.x, y[i] = v.y;
             });
+            //should we do this to clearly label groups?
+            //this._groups.forEach((g, i) => g.groupIndex = i);
 
             var distances;
             if (this._distanceMatrix) {
@@ -373,9 +486,28 @@ module cola {
 
             if (this._rootGroup && typeof this._rootGroup.groups !== 'undefined') {
                 var i = n;
-                this._groups.forEach(function (g) {
-                    G[i][i + 1] = G[i + 1][i] = 1e-6;
-                    D[i][i + 1] = D[i + 1][i] = 0.1;
+                var addAttraction = (i, j, strength, idealDistance) => {
+                    G[i][j] = G[j][i] = strength;
+                    D[i][j] = D[j][i] = idealDistance;
+                };
+                this._groups.forEach(g => {
+                    addAttraction(i, i + 1, this._groupCompactness, 0.1);
+
+                    // todo: add terms here attracting children of the group to the group dummy nodes
+                    //if (typeof g.leaves !== 'undefined')
+                    //    g.leaves.forEach(l => {
+                    //        addAttraction(l.index, i, 1e-4, 0.1);
+                    //        addAttraction(l.index, i + 1, 1e-4, 0.1);
+                    //    });
+                    //if (typeof g.groups !== 'undefined')
+                    //    g.groups.forEach(g => {
+                    //        var gid = n + g.groupIndex * 2;
+                    //        addAttraction(gid, i, 0.1, 0.1);
+                    //        addAttraction(gid + 1, i, 0.1, 0.1);
+                    //        addAttraction(gid, i + 1, 0.1, 0.1);
+                    //        addAttraction(gid + 1, i + 1, 0.1, 0.1);
+                    //    });
+                    
                     x[i] = 0, y[i++] = 0;
                     x[i] = 0, y[i++] = 0;
                 });
@@ -385,11 +517,10 @@ module cola {
             if (this._directedLinkConstraints) {
                 (<any>this.linkAccessor).getMinSeparation = this._directedLinkConstraints.getMinSeparation;
                 curConstraints = curConstraints.concat(cola.generateDirectedEdgeConstraints(n, this._links, this._directedLinkConstraints.axis, <any>(this.linkAccessor)));
+                
+                // todo: add containment constraints between group dummy nodes and their children
             }
 
-            var initialUnconstrainedIterations = arguments.length > 0 ? arguments[0] : 0;
-            var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;
-            var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;
             this.avoidOverlaps(false);
             this._descent = new cola.Descent([x, y], D);
 
@@ -408,7 +539,7 @@ module cola {
             // apply initialIterations without user constraints or nonoverlap constraints
             this._descent.run(initialUnconstrainedIterations);
 
-            // apply initialIterations with user constraints but no noverlap constraints
+            // apply initialIterations with user constraints but no nonoverlap constraints
             if (curConstraints.length > 0) this._descent.project = new cola.vpsc.Projection(this._nodes, this._groups, this._rootGroup, curConstraints).projectFunctions();
             this._descent.run(initialUserConstraintIterations);
 
@@ -423,6 +554,19 @@ module cola {
             // allow not immediately connected nodes to relax apart (p-stress)
             this._descent.G = G;
             this._descent.run(initialAllConstraintsIterations);
+
+            if (gridSnapIterations) {
+                this._descent.snapStrength = 1000;
+                this._descent.snapGridSize = this._nodes[0].width;
+                this._descent.numGridSnapNodes = n;
+                this._descent.scaleSnapByMaxH = true;
+                var G0 = cola.Descent.createSquareMatrix(N,(i, j) => {
+                    if (i >= n || j >= n) return G[i][j];
+                    return 0
+                });
+                this._descent.G = G0;
+                this._descent.run(gridSnapIterations);
+            }
 
             this._links.forEach(l => {
                 if (typeof l.source == "number") l.source = this._nodes[l.source];
@@ -446,11 +590,11 @@ module cola {
         }
 
         resume(): Layout {
-            return <Layout>(this.alpha(0.1));
+            return this.alpha(0.1);
         }
 
         stop(): Layout {
-            return <Layout>(this.alpha(0));
+            return this.alpha(0);
         }
 
         prepareEdgeRouting(nodeMargin) {

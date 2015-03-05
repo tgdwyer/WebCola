@@ -31,6 +31,9 @@
     <Content Include="examples\graphdata\SucroseBreakdownDicots-flowlayout.svg" />
     <Content Include="examples\movies.html" />
     <Content Include="examples\browsemovies.html" />
+    <Content Include="examples\gridifiedSmallGroups.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="examples\statemachinepowergraph.html" />
     <Content Include="examples\pretrippowergraph.html" />
     <Content Include="examples\tetrisbugpowergraph.html" />
@@ -44,7 +47,9 @@
     <Content Include="examples\adam.html" />
     <Content Include="examples\unix.html" />
     <Content Include="examples\unix.png" />
-    <Content Include="examples\smallgroups.html" />
+    <Content Include="examples\smallgroups.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="examples\graphdata\biological_images\C00002.gif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -138,6 +143,7 @@
     <Content Include="examples\graphdata\labels.txt" />
     <Content Include="examples\graphdata\signed_weighted.txt" />
     <Content Include="examples\graphdata\signed_weighted_affil.txt" />
+    <Content Include="examples\vhybridize.html" />
     <Content Include="index.html" />
     <Content Include="examples\modifyinggraph.html" />
     <Content Include="examples\modifyinggraph.png" />
@@ -166,6 +172,7 @@
     <TypeScriptCompile Include="examples\pretrip.ts" />
     <TypeScriptCompile Include="examples\tetrisbug.ts" />
     <TypeScriptCompile Include="examples\tmdbgraph.ts" />
+    <TypeScriptCompile Include="examples\vhybridize.ts" />
     <TypeScriptCompile Include="src\layout.ts" />
     <TypeScriptCompile Include="src\d3adaptor.ts" />
     <TypeScriptCompile Include="src\geom.ts" />
@@ -221,6 +228,8 @@
     <Content Include="test\tests.js" />
     <Content Include="examples\graphdata\pre_trip.json" />
     <None Include="examples\graphdata\test1.json" />
+    <TypeScriptCompile Include="test\apitests.ts" />
+    <TypeScriptCompile Include="test\qunit.d.ts" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="web.config" />

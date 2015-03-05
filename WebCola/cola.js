@@ -43,26 +43,33 @@ var cola;
                 graph.height = max_y - min_y;
             }
         }
-        function plot(data, left, right, opt_x, opt_y) {
-            // plot the cost function
-            var plot_svg = d3.select("body").append("svg").attr("width", function () {
-                return 2 * (right - left);
-            }).attr("height", 200);
-            var x = d3.time.scale().range([0, 2 * (right - left)]);
-            var xAxis = d3.svg.axis().scale(x).orient("bottom");
-            plot_svg.append("g").attr("class", "x axis").attr("transform", "translate(0, 199)").call(xAxis);
-            var lastX = 0;
-            var lastY = 0;
-            var value = 0;
-            for (var r = left; r < right; r += 1) {
-                value = step(data, r);
-                // value = 1;
-                plot_svg.append("line").attr("x1", 2 * (lastX - left)).attr("y1", 200 - 30 * lastY).attr("x2", 2 * r - 2 * left).attr("y2", 200 - 30 * value).style("stroke", "rgb(6,120,155)");
-                lastX = r;
-                lastY = value;
-            }
-            plot_svg.append("circle").attr("cx", 2 * opt_x - 2 * left).attr("cy", 200 - 30 * opt_y).attr("r", 5).style('fill', "rgba(0,0,0,0.5)");
-        }
+        //function plot(data, left, right, opt_x, opt_y) {
+        //    // plot the cost function
+        //    var plot_svg = d3.select("body").append("svg")
+        //        .attr("width", function () { return 2 * (right - left); })
+        //        .attr("height", 200);
+        //    var x = d3.time.scale().range([0, 2 * (right - left)]);
+        //    var xAxis = d3.svg.axis().scale(x).orient("bottom");
+        //    plot_svg.append("g").attr("class", "x axis")
+        //        .attr("transform", "translate(0, 199)")
+        //        .call(xAxis);
+        //    var lastX = 0;
+        //    var lastY = 0;
+        //    var value = 0;
+        //    for (var r = left; r < right; r += 1) {
+        //        value = step(data, r);
+        //        // value = 1;
+        //        plot_svg.append("line").attr("x1", 2 * (lastX - left))
+        //            .attr("y1", 200 - 30 * lastY)
+        //            .attr("x2", 2 * r - 2 * left)
+        //            .attr("y2", 200 - 30 * value)
+        //            .style("stroke", "rgb(6,120,155)");
+        //        lastX = r;
+        //        lastY = value;
+        //    }
+        //    plot_svg.append("circle").attr("cx", 2 * opt_x - 2 * left).attr("cy", 200 - 30 * opt_y)
+        //        .attr("r", 5).style('fill', "rgba(0,0,0,0.5)");
+        //}
         // actual assigning of position to nodes
         function put_nodes_to_right_positions(graphs) {
             graphs.forEach(function (g) {
@@ -242,1417 +249,6 @@ var cola;
         return graphs;
     }
     cola.separateGraphs = separateGraphs;
-})(cola || (cola = {}));
-///<reference path="handledisconnected.ts"/>
-var cola;
-(function (cola) {
-    var Layout = (function () {
-        function Layout(trigger, // a function that is notified of events like "tick"
-            on, // a function for binding to events on the adapter
-            kick, // a function that kicks off the iteration tick loop
-            drag // a function to allow for dragging of nodes
-            ) {
-            this.trigger = trigger;
-            this.on = on;
-            this.kick = kick;
-            this.drag = drag;
-            this._canvasSize = [1, 1];
-            this._linkDistance = 20;
-            this._defaultNodeSize = 10;
-            this._linkLengthCalculator = null;
-            this._linkType = null;
-            this._avoidOverlaps = false;
-            this._handleDisconnected = true;
-            this._running = false;
-            this._nodes = [];
-            this._groups = [];
-            this._variables = [];
-            this._rootGroup = null;
-            this._links = [];
-            this._constraints = [];
-            this._distanceMatrix = null;
-            this._descent = null;
-            this._directedLinkConstraints = null;
-            this._threshold = 0.01;
-            this._visibilityGraph = null;
-            this.linkAccessor = { getSourceIndex: Layout.getSourceIndex, getTargetIndex: Layout.getTargetIndex, setLength: Layout.setLinkLength, getType: this.getLinkType };
-        }
-        Layout.prototype.tick = function () {
-            if (this._alpha < this._threshold) {
-                this._running = false;
-                this.trigger({ type: "end", alpha: this._alpha = 0, stress: this._lastStress });
-                return true;
-            }
-            var n = this._nodes.length, m = this._links.length, o;
-            this._descent.locks.clear();
-            for (var i = 0; i < n; ++i) {
-                o = this._nodes[i];
-                if (o.fixed) {
-                    if (typeof o.px === 'undefined' || typeof o.py === 'undefined') {
-                        o.px = o.x;
-                        o.py = o.y;
-                    }
-                    var p = [o.px, o.py];
-                    this._descent.locks.add(i, p);
-                }
-            }
-            var s1 = this._descent.rungeKutta();
-            //var s1 = descent.reduceStress();
-            if (s1 === 0) {
-                this._alpha = 0;
-            }
-            else if (typeof this._lastStress !== 'undefined') {
-                this._alpha = s1; //Math.abs(Math.abs(this._lastStress / s1) - 1);
-            }
-            this._lastStress = s1;
-            for (var i = 0; i < n; ++i) {
-                o = this._nodes[i];
-                if (o.fixed) {
-                    o.x = o.px;
-                    o.y = o.py;
-                }
-                else {
-                    o.x = this._descent.x[0][i];
-                    o.y = this._descent.x[1][i];
-                }
-            }
-            this.trigger({ type: "tick", alpha: this._alpha, stress: this._lastStress });
-        };
-        /**
-         * the list of nodes.
-         * If nodes has not been set, but links has, then we instantiate a nodes list here, of the correct size,
-         * before returning it.
-         * @property nodes {Array}
-         * @default empty list
-         */
-        Layout.prototype.nodes = function (v) {
-            if (v === void 0) { v = null; }
-            if (!v) {
-                if (this._nodes.length === 0 && this._links.length > 0) {
-                    // if we have links but no nodes, create the nodes array now with empty objects for the links to point at.
-                    var n = 0;
-                    this._links.forEach(function (l) {
-                        n = Math.max(n, l.source, l.target);
-                    });
-                    this._nodes = new Array(++n);
-                    for (var i = 0; i < n; ++i) {
-                        this._nodes[i] = {};
-                    }
-                }
-                return this._nodes;
-            }
-            this._nodes = v;
-            return this;
-        };
-        /**
-         * a list of hierarchical groups defined over nodes
-         * @property groups {Array}
-         * @default empty list
-         */
-        Layout.prototype.groups = function (x) {
-            var _this = this;
-            if (x === void 0) { x = null; }
-            if (!x)
-                return this._groups;
-            this._groups = x;
-            this._rootGroup = {};
-            this._groups.forEach(function (g) {
-                if (typeof g.padding === "undefined")
-                    g.padding = 1;
-                if (typeof g.leaves !== "undefined")
-                    g.leaves.forEach(function (v, i) {
-                        (g.leaves[i] = _this._nodes[v]).parent = g;
-                    });
-                if (typeof g.groups !== "undefined")
-                    g.groups.forEach(function (gi, i) {
-                        (g.groups[i] = _this._groups[gi]).parent = g;
-                    });
-            });
-            this._rootGroup.leaves = this._nodes.filter(function (v) { return typeof v.parent === 'undefined'; });
-            this._rootGroup.groups = this._groups.filter(function (g) { return typeof g.parent === 'undefined'; });
-            return this;
-        };
-        Layout.prototype.powerGraphGroups = function (f) {
-            var g = cola.powergraph.getGroups(this._nodes, this._links, this.linkAccessor, this._rootGroup);
-            this.groups(g.groups);
-            f(g);
-            return this;
-        };
-        /**
-         * if true, the layout will not permit overlaps of the node bounding boxes (defined by the width and height properties on nodes)
-         * @property avoidOverlaps
-         * @type bool
-         * @default false
-         */
-        Layout.prototype.avoidOverlaps = function (v) {
-            if (!arguments.length)
-                return this._avoidOverlaps;
-            this._avoidOverlaps = v;
-            return this;
-        };
-        /**
-         * if true, the layout will not permit overlaps of the node bounding boxes (defined by the width and height properties on nodes)
-         * @property avoidOverlaps
-         * @type bool
-         * @default false
-         */
-        Layout.prototype.handleDisconnected = function (v) {
-            if (!arguments.length)
-                return this._handleDisconnected;
-            this._handleDisconnected = v;
-            return this;
-        };
-        /**
-         * causes constraints to be generated such that directed graphs are laid out either from left-to-right or top-to-bottom.
-         * a separation constraint is generated in the selected axis for each edge that is not involved in a cycle (part of a strongly connected component)
-         * @param axis {string} 'x' for left-to-right, 'y' for top-to-bottom
-         * @param minSeparation {number|link=>number} either a number specifying a minimum spacing required across all links or a function to return the minimum spacing for each link
-         */
-        Layout.prototype.flowLayout = function (axis, minSeparation) {
-            if (!arguments.length)
-                axis = 'y';
-            this._directedLinkConstraints = {
-                axis: axis,
-                getMinSeparation: typeof minSeparation === 'number' ? function () {
-                    return minSeparation;
-                } : minSeparation
-            };
-            return this;
-        };
-        /**
-         * links defined as source, target pairs over nodes
-         * @property links {array}
-         * @default empty list
-         */
-        Layout.prototype.links = function (x) {
-            if (!arguments.length)
-                return this._links;
-            this._links = x;
-            return this;
-        };
-        /**
-         * list of constraints of various types
-         * @property constraints
-         * @type {array}
-         * @default empty list
-         */
-        Layout.prototype.constraints = function (c) {
-            if (!arguments.length)
-                return this._constraints;
-            this._constraints = c;
-            return this;
-        };
-        /**
-         * Matrix of ideal distances between all pairs of nodes.
-         * If unspecified, the ideal distances for pairs of nodes will be based on the shortest path distance between them.
-         * @property distanceMatrix
-         * @type {Array of Array of Number}
-         * @default null
-         */
-        Layout.prototype.distanceMatrix = function (d) {
-            if (!arguments.length)
-                return this._distanceMatrix;
-            this._distanceMatrix = d;
-            return this;
-        };
-        /**
-         * Size of the layout canvas dimensions [x,y]. Currently only used to determine the midpoint which is taken as the starting position
-         * for nodes with no preassigned x and y.
-         * @property size
-         * @type {Array of Number}
-         */
-        Layout.prototype.size = function (x) {
-            if (x === void 0) { x = null; }
-            if (!x)
-                return this._canvasSize;
-            this._canvasSize = x;
-            return this;
-        };
-        /**
-         * Default size (assume nodes are square so both width and height) to use in packing if node width/height are not specified.
-         * @property defaultNodeSize
-         * @type {Number}
-         */
-        Layout.prototype.defaultNodeSize = function (x) {
-            if (x === void 0) { x = null; }
-            if (!x)
-                return this._defaultNodeSize;
-            this._defaultNodeSize = x;
-            return this;
-        };
-        /**
-         * links have an ideal distance, The automatic layout will compute layout that tries to keep links (AKA edges) as close as possible to this length.
-         */
-        Layout.prototype.linkDistance = function (x) {
-            if (x === void 0) { x = null; }
-            if (!x) {
-                return this._linkDistance;
-            }
-            this._linkDistance = typeof x === "function" ? x : +x;
-            this._linkLengthCalculator = null;
-            return this;
-        };
-        Layout.prototype.linkType = function (f) {
-            this._linkType = f;
-            return this;
-        };
-        Layout.prototype.convergenceThreshold = function (x) {
-            if (x === void 0) { x = null; }
-            if (!x)
-                return this._threshold;
-            this._threshold = typeof x === "function" ? x : +x;
-            return this;
-        };
-        Layout.prototype.alpha = function (x) {
-            if (!arguments.length)
-                return this._alpha;
-            else {
-                x = +x;
-                if (this._alpha) {
-                    if (x > 0)
-                        this._alpha = x; // we might keep it hot
-                    else
-                        this._alpha = 0; // or, next tick will dispatch "end"
-                }
-                else if (x > 0) {
-                    if (!this._running) {
-                        this._running = true;
-                        this.trigger({ type: "start", alpha: this._alpha = x });
-                        this.kick(this.tick);
-                    }
-                }
-                return this;
-            }
-        };
-        Layout.prototype.getLinkLength = function (link) {
-            return typeof this._linkDistance === "function" ? +(this._linkDistance(link)) : this._linkDistance;
-        };
-        Layout.setLinkLength = function (link, length) {
-            link.length = length;
-        };
-        Layout.prototype.getLinkType = function (link) {
-            return typeof this._linkType === "function" ? this._linkType(link) : 0;
-        };
-        /**
-         * compute an ideal length for each link based on the graph structure around that link.
-         * you can use this (for example) to create extra space around hub-nodes in dense graphs.
-         * In particular this calculation is based on the "symmetric difference" in the neighbour sets of the source and target:
-         * i.e. if neighbours of source is a and neighbours of target are b then calculation is: sqrt(|a union b| - |a intersection b|)
-         * Actual computation based on inspection of link structure occurs in start(), so links themselves
-         * don't have to have been assigned before invoking this function.
-         * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
-         * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
-         */
-        Layout.prototype.symmetricDiffLinkLengths = function (idealLength, w) {
-            var _this = this;
-            this.linkDistance(function (l) { return idealLength * l.length; });
-            this._linkLengthCalculator = function () { return cola.symmetricDiffLinkLengths(_this._links, _this.linkAccessor, w); };
-            return this;
-        };
-        /**
-         * compute an ideal length for each link based on the graph structure around that link.
-         * you can use this (for example) to create extra space around hub-nodes in dense graphs.
-         * In particular this calculation is based on the "symmetric difference" in the neighbour sets of the source and target:
-         * i.e. if neighbours of source is a and neighbours of target are b then calculation is: |a intersection b|/|a union b|
-         * Actual computation based on inspection of link structure occurs in start(), so links themselves
-         * don't have to have been assigned before invoking this function.
-         * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
-         * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
-         */
-        Layout.prototype.jaccardLinkLengths = function (idealLength, w) {
-            var _this = this;
-            this.linkDistance(function (l) { return idealLength * l.length; });
-            this._linkLengthCalculator = function () { return cola.jaccardLinkLengths(_this._links, _this.linkAccessor, w); };
-            return this;
-        };
-        /**
-         * start the layout process
-         * @method start
-         * @param {number} [initialUnconstrainedIterations=0] unconstrained initial layout iterations
-         * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
-         * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
-         */
-        Layout.prototype.start = function () {
-            var _this = this;
-            var i, j, n = this.nodes().length, N = n + 2 * this._groups.length, m = this._links.length, w = this._canvasSize[0], h = this._canvasSize[1];
-            if (this._linkLengthCalculator)
-                this._linkLengthCalculator();
-            var x = new Array(N), y = new Array(N);
-            this._variables = new Array(N);
-            var makeVariable = function (i, w) { return _this._variables[i] = new cola.vpsc.IndexedVariable(i, w); };
-            var G = null;
-            var ao = this._avoidOverlaps;
-            this._nodes.forEach(function (v, i) {
-                v.index = i;
-                if (typeof v.x === 'undefined') {
-                    v.x = w / 2, v.y = h / 2;
-                }
-                x[i] = v.x, y[i] = v.y;
-            });
-            var distances;
-            if (this._distanceMatrix) {
-                // use the user specified distanceMatrix
-                distances = this._distanceMatrix;
-            }
-            else {
-                // construct an n X n distance matrix based on shortest paths through graph (with respect to edge.length).
-                distances = (new cola.shortestpaths.Calculator(N, this._links, Layout.getSourceIndex, Layout.getTargetIndex, function (l) { return _this.getLinkLength(l); })).DistanceMatrix();
-                // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
-                // otherwise 2. (
-                G = cola.Descent.createSquareMatrix(N, function () { return 2; });
-                this._links.forEach(function (e) {
-                    var u = Layout.getSourceIndex(e), v = Layout.getTargetIndex(e);
-                    G[u][v] = G[v][u] = 1;
-                });
-            }
-            var D = cola.Descent.createSquareMatrix(N, function (i, j) {
-                return distances[i][j];
-            });
-            if (this._rootGroup && typeof this._rootGroup.groups !== 'undefined') {
-                var i = n;
-                this._groups.forEach(function (g) {
-                    G[i][i + 1] = G[i + 1][i] = 1e-6;
-                    D[i][i + 1] = D[i + 1][i] = 0.1;
-                    x[i] = 0, y[i++] = 0;
-                    x[i] = 0, y[i++] = 0;
-                });
-            }
-            else
-                this._rootGroup = { leaves: this._nodes, groups: [] };
-            var curConstraints = this._constraints || [];
-            if (this._directedLinkConstraints) {
-                this.linkAccessor.getMinSeparation = this._directedLinkConstraints.getMinSeparation;
-                curConstraints = curConstraints.concat(cola.generateDirectedEdgeConstraints(n, this._links, this._directedLinkConstraints.axis, (this.linkAccessor)));
-            }
-            var initialUnconstrainedIterations = arguments.length > 0 ? arguments[0] : 0;
-            var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;
-            var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;
-            this.avoidOverlaps(false);
-            this._descent = new cola.Descent([x, y], D);
-            this._descent.locks.clear();
-            for (var i = 0; i < n; ++i) {
-                var o = this._nodes[i];
-                if (o.fixed) {
-                    o.px = o.x;
-                    o.py = o.y;
-                    var p = [o.x, o.y];
-                    this._descent.locks.add(i, p);
-                }
-            }
-            this._descent.threshold = this._threshold;
-            // apply initialIterations without user constraints or nonoverlap constraints
-            this._descent.run(initialUnconstrainedIterations);
-            // apply initialIterations with user constraints but no noverlap constraints
-            if (curConstraints.length > 0)
-                this._descent.project = new cola.vpsc.Projection(this._nodes, this._groups, this._rootGroup, curConstraints).projectFunctions();
-            this._descent.run(initialUserConstraintIterations);
-            // subsequent iterations will apply all constraints
-            this.avoidOverlaps(ao);
-            if (ao) {
-                this._nodes.forEach(function (v, i) {
-                    v.x = x[i], v.y = y[i];
-                });
-                this._descent.project = new cola.vpsc.Projection(this._nodes, this._groups, this._rootGroup, curConstraints, true).projectFunctions();
-                this._nodes.forEach(function (v, i) {
-                    x[i] = v.x, y[i] = v.y;
-                });
-            }
-            // allow not immediately connected nodes to relax apart (p-stress)
-            this._descent.G = G;
-            this._descent.run(initialAllConstraintsIterations);
-            this._links.forEach(function (l) {
-                if (typeof l.source == "number")
-                    l.source = _this._nodes[l.source];
-                if (typeof l.target == "number")
-                    l.target = _this._nodes[l.target];
-            });
-            this._nodes.forEach(function (v, i) {
-                v.x = x[i], v.y = y[i];
-            });
-            // recalculate nodes position for disconnected graphs
-            if (!this._distanceMatrix && this._handleDisconnected) {
-                var graphs = cola.separateGraphs(this._nodes, this._links);
-                cola.applyPacking(graphs, w, h, this._defaultNodeSize);
-                this._nodes.forEach(function (v, i) {
-                    _this._descent.x[0][i] = v.x, _this._descent.x[1][i] = v.y;
-                });
-            }
-            return this.resume();
-        };
-        Layout.prototype.resume = function () {
-            return (this.alpha(0.1));
-        };
-        Layout.prototype.stop = function () {
-            return (this.alpha(0));
-        };
-        Layout.prototype.prepareEdgeRouting = function (nodeMargin) {
-            this._visibilityGraph = new cola.geom.TangentVisibilityGraph(this._nodes.map(function (v) {
-                return v.bounds.inflate(-nodeMargin).vertices();
-            }));
-        };
-        Layout.prototype.routeEdge = function (d, draw) {
-            var lineData = [];
-            //if (d.source.id === 10 && d.target.id === 11) {
-            //    debugger;
-            //}
-            var vg2 = new cola.geom.TangentVisibilityGraph(this._visibilityGraph.P, { V: this._visibilityGraph.V, E: this._visibilityGraph.E }), port1 = { x: d.source.x, y: d.source.y }, port2 = { x: d.target.x, y: d.target.y }, start = vg2.addPoint(port1, d.source.id), end = vg2.addPoint(port2, d.target.id);
-            vg2.addEdgeIfVisible(port1, port2, d.source.id, d.target.id);
-            if (typeof draw !== 'undefined') {
-                draw(vg2);
-            }
-            var sourceInd = function (e) { return e.source.id; }, targetInd = function (e) { return e.target.id; }, length = function (e) { return e.length(); }, spCalc = new cola.shortestpaths.Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length), shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
-            if (shortestPath.length === 1 || shortestPath.length === vg2.V.length) {
-                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
-                lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
-            }
-            else {
-                var n = shortestPath.length - 2, p = vg2.V[shortestPath[n]].p, q = vg2.V[shortestPath[0]].p, lineData = [d.source.innerBounds.rayIntersection(p.x, p.y)];
-                for (var i = n; i >= 0; --i)
-                    lineData.push(vg2.V[shortestPath[i]].p);
-                lineData.push(cola.vpsc.makeEdgeTo(q, d.target.innerBounds, 5));
-            }
-            //lineData.forEach((v, i) => {
-            //    if (i > 0) {
-            //        var u = lineData[i - 1];
-            //        this._nodes.forEach(function (node) {
-            //            if (node.id === getSourceIndex(d) || node.id === getTargetIndex(d)) return;
-            //            var ints = node.innerBounds.lineIntersections(u.x, u.y, v.x, v.y);
-            //            if (ints.length > 0) {
-            //                debugger;
-            //            }
-            //        })
-            //    }
-            //})
-            return lineData;
-        };
-        //The link source and target may be just a node index, or they may be references to nodes themselves.
-        Layout.getSourceIndex = function (e) {
-            return typeof e.source === 'number' ? e.source : e.source.index;
-        };
-        //The link source and target may be just a node index, or they may be references to nodes themselves.
-        Layout.getTargetIndex = function (e) {
-            return typeof e.target === 'number' ? e.target : e.target.index;
-        };
-        // Get a string ID for a given link.
-        Layout.linkId = function (e) {
-            return Layout.getSourceIndex(e) + "-" + Layout.getTargetIndex(e);
-        };
-        // The fixed property has three bits:
-        // Bit 1 can be set externally (e.g., d.fixed = true) and show persist.
-        // Bit 2 stores the dragging state, from mousedown to mouseup.
-        // Bit 3 stores the hover state, from mouseover to mouseout.
-        // Dragend is a special case: it also clears the hover state.
-        Layout.dragStart = function (d) {
-            d.fixed |= 2; // set bit 2
-            d.px = d.x, d.py = d.y; // set velocity to zero
-        };
-        Layout.dragEnd = function (d) {
-            d.fixed &= ~6; // unset bits 2 and 3
-            //d.fixed = 0;
-        };
-        Layout.mouseOver = function (d) {
-            d.fixed |= 4; // set bit 3
-            d.px = d.x, d.py = d.y; // set velocity to zero
-        };
-        Layout.mouseOut = function (d) {
-            d.fixed &= ~4; // unset bit 3
-        };
-        return Layout;
-    })();
-    cola.Layout = Layout;
-})(cola || (cola = {}));
-///<reference path="../extern/d3.d.ts"/>
-///<reference path="layout.ts"/>
-var cola;
-(function (cola) {
-    /**
-     * provides an interface for use with d3:
-     * - uses the d3 event system to dispatch layout events such as:
-     *   o "start" (start layout process)
-     *   o "tick" (after each layout iteration)
-     *   o "end" (layout converged and complete).
-     * - uses the d3 timer to queue layout iterations.
-     * - sets up d3.behavior.drag to drag nodes
-     *   o use `node.call(<the returned instance of Layout>.drag)` to make nodes draggable
-     * returns an instance of the cola.Layout itself with which the user
-     * can interact directly.
-     */
-    function d3adaptor() {
-        var event = d3.dispatch("start", "tick", "end");
-        var layout;
-        var trigger = function (e) {
-            event[e.type](e); // via d3 dispatcher, e.g. event.start(e);
-        };
-        var on = function (eventType, listener) {
-            event.on(eventType, listener);
-            return layout;
-        };
-        var kick = function (tick) {
-            d3.timer(function () {
-                return layout.tick();
-            });
-        };
-        var drag = function () {
-            var drag = d3.behavior.drag().origin(function (d) {
-                return d;
-            }).on("dragstart.d3adaptor", cola.Layout.dragStart).on("drag.d3adaptor", function (d) {
-                d.px = d3.event.x, d.py = d3.event.y;
-                layout.resume(); // restart annealing
-            }).on("dragend.d3adaptor", cola.Layout.dragEnd);
-            if (!arguments.length)
-                return drag;
-            this.call(drag);
-        };
-        return layout = new cola.Layout(trigger, on, kick, drag);
-    }
-    cola.d3adaptor = d3adaptor;
-})(cola || (cola = {}));
-/**
- * @module cola
- */
-var cola;
-(function (cola) {
-    /**
-     * Descent respects a collection of locks over nodes that should not move
-     * @class Locks
-     */
-    var Locks = (function () {
-        function Locks() {
-            this.locks = {};
-        }
-        /**
-         * add a lock on the node at index id
-         * @method add
-         * @param id index of node to be locked
-         * @param x required position for node
-         */
-        Locks.prototype.add = function (id, x) {
-            if (isNaN(x[0]) || isNaN(x[1]))
-                debugger;
-            this.locks[id] = x;
-        };
-        /**
-         * @method clear clear all locks
-         */
-        Locks.prototype.clear = function () {
-            this.locks = {};
-        };
-        /**
-         * @isEmpty
-         * @returns false if no locks exist
-         */
-        Locks.prototype.isEmpty = function () {
-            for (var l in this.locks)
-                return false;
-            return true;
-        };
-        /**
-         * perform an operation on each lock
-         * @apply
-         */
-        Locks.prototype.apply = function (f) {
-            for (var l in this.locks) {
-                f(l, this.locks[l]);
-            }
-        };
-        return Locks;
-    })();
-    cola.Locks = Locks;
-    /**
-     * Uses a gradient descent approach to reduce a stress or p-stress goal function over a graph with specified ideal edge lengths or a square matrix of dissimilarities.
-     *
-     * @class Descent
-     */
-    var Descent = (function () {
-        /**
-         * @method constructor
-         * @param x {number[][]} initial coordinates for nodes
-         * @param D {number[][]} matrix of desired distances between pairs of nodes
-         * @param G {number[][]} [default=null] if specified, G is a matrix of weights for goal terms between pairs of nodes.
-         * If G[i][j] > 1 and the separation between nodes i and j is greater than their ideal distance, then there is no contribution for this pair to the goal
-         * If G[i][j] <= 1 then it is used as a weighting on the contribution of the variance between ideal and actual separation between i and j to the goal function
-         */
-        function Descent(x, D, G) {
-            if (G === void 0) { G = null; }
-            this.D = D;
-            this.G = G;
-            this.threshold = 0.0001;
-            this.random = new PseudoRandom();
-            this.project = null;
-            this.x = x;
-            this.k = x.length; // dimensionality
-            var n = this.n = x[0].length; // number of nodes
-            this.H = new Array(this.k);
-            this.g = new Array(this.k);
-            this.Hd = new Array(this.k);
-            this.a = new Array(this.k);
-            this.b = new Array(this.k);
-            this.c = new Array(this.k);
-            this.d = new Array(this.k);
-            this.e = new Array(this.k);
-            this.ia = new Array(this.k);
-            this.ib = new Array(this.k);
-            this.xtmp = new Array(this.k);
-            this.locks = new Locks();
-            this.minD = Number.MAX_VALUE;
-            var i = n, j;
-            while (i--) {
-                j = n;
-                while (--j > i) {
-                    var d = D[i][j];
-                    if (d > 0 && d < this.minD) {
-                        this.minD = d;
-                    }
-                }
-            }
-            if (this.minD === Number.MAX_VALUE)
-                this.minD = 1;
-            i = this.k;
-            while (i--) {
-                this.g[i] = new Array(n);
-                this.H[i] = new Array(n);
-                j = n;
-                while (j--) {
-                    this.H[i][j] = new Array(n);
-                }
-                this.Hd[i] = new Array(n);
-                this.a[i] = new Array(n);
-                this.b[i] = new Array(n);
-                this.c[i] = new Array(n);
-                this.d[i] = new Array(n);
-                this.e[i] = new Array(n);
-                this.ia[i] = new Array(n);
-                this.ib[i] = new Array(n);
-                this.xtmp[i] = new Array(n);
-            }
-        }
-        Descent.createSquareMatrix = function (n, f) {
-            var M = new Array(n);
-            for (var i = 0; i < n; ++i) {
-                M[i] = new Array(n);
-                for (var j = 0; j < n; ++j) {
-                    M[i][j] = f(i, j);
-                }
-            }
-            return M;
-        };
-        Descent.prototype.offsetDir = function () {
-            var _this = this;
-            var u = new Array(this.k);
-            var l = 0;
-            for (var i = 0; i < this.k; ++i) {
-                var x = u[i] = this.random.getNextBetween(0.01, 1) - 0.5;
-                l += x * x;
-            }
-            l = Math.sqrt(l);
-            return u.map(function (x) { return x *= _this.minD / l; });
-        };
-        // compute first and second derivative information storing results in this.g and this.H
-        Descent.prototype.computeDerivatives = function (x) {
-            var _this = this;
-            var n = this.n;
-            if (n < 1)
-                return;
-            var i;
-            /* DEBUG
-                        for (var u: number = 0; u < n; ++u)
-                            for (i = 0; i < this.k; ++i)
-                                if (isNaN(x[i][u])) debugger;
-            DEBUG */
-            var d = new Array(this.k);
-            var d2 = new Array(this.k);
-            var Huu = new Array(this.k);
-            var maxH = 0;
-            for (var u = 0; u < n; ++u) {
-                for (i = 0; i < this.k; ++i)
-                    Huu[i] = this.g[i][u] = 0;
-                for (var v = 0; v < n; ++v) {
-                    if (u === v)
-                        continue;
-                    // The following loop randomly displaces nodes that are at identical positions
-                    var maxDisplaces = n; // avoid infinite loop in the case of numerical issues, such as huge values
-                    while (maxDisplaces--) {
-                        var sd2 = 0;
-                        for (i = 0; i < this.k; ++i) {
-                            var dx = d[i] = x[i][u] - x[i][v];
-                            sd2 += d2[i] = dx * dx;
-                        }
-                        if (sd2 > 1e-9)
-                            break;
-                        var rd = this.offsetDir();
-                        for (i = 0; i < this.k; ++i)
-                            x[i][v] += rd[i];
-                    }
-                    var l = Math.sqrt(sd2);
-                    var D = this.D[u][v];
-                    var weight = this.G != null ? this.G[u][v] : 1;
-                    if (weight > 1 && l > D || !isFinite(D)) {
-                        for (i = 0; i < this.k; ++i)
-                            this.H[i][u][v] = 0;
-                        continue;
-                    }
-                    if (weight > 1) {
-                        weight = 1;
-                    }
-                    var D2 = D * D;
-                    var gs = weight * (l - D) / (D2 * l);
-                    var hs = -weight / (D2 * l * l * l);
-                    if (!isFinite(gs))
-                        console.log(gs);
-                    for (i = 0; i < this.k; ++i) {
-                        this.g[i][u] += d[i] * gs;
-                        Huu[i] -= this.H[i][u][v] = hs * (D * (d2[i] - sd2) + l * sd2);
-                    }
-                }
-                for (i = 0; i < this.k; ++i)
-                    maxH = Math.max(maxH, this.H[i][u][u] = Huu[i]);
-            }
-            if (!this.locks.isEmpty()) {
-                this.locks.apply(function (u, p) {
-                    for (i = 0; i < _this.k; ++i) {
-                        _this.H[i][u][u] += maxH;
-                        _this.g[i][u] -= maxH * (p[i] - x[i][u]);
-                    }
-                });
-            }
-            /* DEBUG
-                        for (var u: number = 0; u < n; ++u)
-                            for (i = 0; i < this.k; ++i) {
-                                if (isNaN(this.g[i][u])) debugger;
-                                for (var v: number = 0; v < n; ++v)
-                                    if (isNaN(this.H[i][u][v])) debugger;
-                            }
-            DEBUG */
-        };
-        Descent.dotProd = function (a, b) {
-            var x = 0, i = a.length;
-            while (i--)
-                x += a[i] * b[i];
-            return x;
-        };
-        // result r = matrix m * vector v
-        Descent.rightMultiply = function (m, v, r) {
-            var i = m.length;
-            while (i--)
-                r[i] = Descent.dotProd(m[i], v);
-        };
-        // computes the optimal step size to take in direction d using the
-        // derivative information in this.g and this.H
-        // returns the scalar multiplier to apply to d to get the optimal step
-        Descent.prototype.computeStepSize = function (d) {
-            var numerator = 0, denominator = 0;
-            for (var i = 0; i < 2; ++i) {
-                numerator += Descent.dotProd(this.g[i], d[i]);
-                Descent.rightMultiply(this.H[i], d[i], this.Hd[i]);
-                denominator += Descent.dotProd(d[i], this.Hd[i]);
-            }
-            if (denominator === 0 || !isFinite(denominator))
-                return 0;
-            return numerator / denominator;
-        };
-        Descent.prototype.reduceStress = function () {
-            this.computeDerivatives(this.x);
-            var alpha = this.computeStepSize(this.g);
-            for (var i = 0; i < this.k; ++i) {
-                this.takeDescentStep(this.x[i], this.g[i], alpha);
-            }
-            return this.computeStress();
-        };
-        Descent.copy = function (a, b) {
-            var m = a.length, n = b[0].length;
-            for (var i = 0; i < m; ++i) {
-                for (var j = 0; j < n; ++j) {
-                    b[i][j] = a[i][j];
-                }
-            }
-        };
-        // takes a step of stepSize * d from x0, and then project against any constraints.
-        // result is returned in r.
-        // x0: starting positions
-        // r: result positions will be returned here
-        // d: unconstrained descent vector
-        // stepSize: amount to step along d
-        Descent.prototype.stepAndProject = function (x0, r, d, stepSize) {
-            Descent.copy(x0, r);
-            this.takeDescentStep(r[0], d[0], stepSize);
-            if (this.project)
-                this.project[0](x0[0], x0[1], r[0]);
-            this.takeDescentStep(r[1], d[1], stepSize);
-            if (this.project)
-                this.project[1](r[0], x0[1], r[1]);
-        };
-        Descent.mApply = function (m, n, f) {
-            var i = m;
-            while (i-- > 0) {
-                var j = n;
-                while (j-- > 0)
-                    f(i, j);
-            }
-        };
-        Descent.prototype.matrixApply = function (f) {
-            Descent.mApply(this.k, this.n, f);
-        };
-        Descent.prototype.computeNextPosition = function (x0, r) {
-            var _this = this;
-            this.computeDerivatives(x0);
-            var alpha = this.computeStepSize(this.g);
-            this.stepAndProject(x0, r, this.g, alpha);
-            for (var u = 0; u < this.n; ++u)
-                for (var i = 0; i < this.k; ++i)
-                    if (isNaN(r[i][u]))
-                        debugger;
-            if (this.project) {
-                this.matrixApply(function (i, j) { return _this.e[i][j] = x0[i][j] - r[i][j]; });
-                var beta = this.computeStepSize(this.e);
-                beta = Math.max(0.2, Math.min(beta, 1));
-                this.stepAndProject(x0, r, this.e, beta);
-            }
-        };
-        Descent.prototype.run = function (iterations) {
-            var stress = Number.MAX_VALUE, converged = false;
-            while (!converged && iterations-- > 0) {
-                var s = this.rungeKutta();
-                converged = Math.abs(stress / s - 1) < this.threshold;
-                stress = s;
-            }
-            return stress;
-        };
-        Descent.prototype.rungeKutta = function () {
-            var _this = this;
-            this.computeNextPosition(this.x, this.a);
-            Descent.mid(this.x, this.a, this.ia);
-            this.computeNextPosition(this.ia, this.b);
-            Descent.mid(this.x, this.b, this.ib);
-            this.computeNextPosition(this.ib, this.c);
-            this.computeNextPosition(this.c, this.d);
-            var disp = 0;
-            this.matrixApply(function (i, j) {
-                var x = (_this.a[i][j] + 2.0 * _this.b[i][j] + 2.0 * _this.c[i][j] + _this.d[i][j]) / 6.0, d = _this.x[i][j] - x;
-                disp += d * d;
-                _this.x[i][j] = x;
-            });
-            return disp;
-        };
-        Descent.mid = function (a, b, m) {
-            Descent.mApply(a.length, a[0].length, function (i, j) { return m[i][j] = a[i][j] + (b[i][j] - a[i][j]) / 2.0; });
-        };
-        Descent.prototype.takeDescentStep = function (x, d, stepSize) {
-            for (var i = 0; i < this.n; ++i) {
-                x[i] = x[i] - stepSize * d[i];
-            }
-        };
-        Descent.prototype.computeStress = function () {
-            var stress = 0;
-            for (var u = 0, nMinus1 = this.n - 1; u < nMinus1; ++u) {
-                for (var v = u + 1, n = this.n; v < n; ++v) {
-                    var l = 0;
-                    for (var i = 0; i < this.k; ++i) {
-                        var dx = this.x[i][u] - this.x[i][v];
-                        l += dx * dx;
-                    }
-                    l = Math.sqrt(l);
-                    var d = this.D[u][v];
-                    if (!isFinite(d))
-                        continue;
-                    var rl = d - l;
-                    var d2 = d * d;
-                    stress += rl * rl / d2;
-                }
-            }
-            return stress;
-        };
-        Descent.zeroDistance = 1e-10;
-        return Descent;
-    })();
-    cola.Descent = Descent;
-    // Linear congruential pseudo random number generator
-    var PseudoRandom = (function () {
-        function PseudoRandom(seed) {
-            if (seed === void 0) { seed = 1; }
-            this.seed = seed;
-            this.a = 214013;
-            this.c = 2531011;
-            this.m = 2147483648;
-            this.range = 32767;
-        }
-        // random real between 0 and 1
-        PseudoRandom.prototype.getNext = function () {
-            this.seed = (this.seed * this.a + this.c) % this.m;
-            return (this.seed >> 16) / this.range;
-        };
-        // random real between min and max
-        PseudoRandom.prototype.getNextBetween = function (min, max) {
-            return min + this.getNext() * (max - min);
-        };
-        return PseudoRandom;
-    })();
-    cola.PseudoRandom = PseudoRandom;
-})(cola || (cola = {}));
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var cola;
-(function (cola) {
-    var geom;
-    (function (geom) {
-        var Point = (function () {
-            function Point() {
-            }
-            return Point;
-        })();
-        geom.Point = Point;
-        var LineSegment = (function () {
-            function LineSegment(x1, y1, x2, y2) {
-                this.x1 = x1;
-                this.y1 = y1;
-                this.x2 = x2;
-                this.y2 = y2;
-            }
-            return LineSegment;
-        })();
-        geom.LineSegment = LineSegment;
-        var PolyPoint = (function (_super) {
-            __extends(PolyPoint, _super);
-            function PolyPoint() {
-                _super.apply(this, arguments);
-            }
-            return PolyPoint;
-        })(Point);
-        geom.PolyPoint = PolyPoint;
-        /** tests if a point is Left|On|Right of an infinite line.
-         * @param points P0, P1, and P2
-         * @return >0 for P2 left of the line through P0 and P1
-         *            =0 for P2 on the line
-         *            <0 for P2 right of the line
-         */
-        function isLeft(P0, P1, P2) {
-            return (P1.x - P0.x) * (P2.y - P0.y) - (P2.x - P0.x) * (P1.y - P0.y);
-        }
-        geom.isLeft = isLeft;
-        function above(p, vi, vj) {
-            return isLeft(p, vi, vj) > 0;
-        }
-        function below(p, vi, vj) {
-            return isLeft(p, vi, vj) < 0;
-        }
-        /**
-         * returns the convex hull of a set of points using Andrew's monotone chain algorithm
-         * see: http://geomalgorithms.com/a10-_hull-1.html#Monotone%20Chain
-         * @param S array of points
-         * @return the convex hull as an array of points
-         */
-        function ConvexHull(S) {
-            var P = S.slice(0).sort(function (a, b) { return a.x !== b.x ? b.x - a.x : b.y - a.y; });
-            var n = S.length, i;
-            var minmin = 0;
-            var xmin = P[0].x;
-            for (i = 1; i < n; ++i) {
-                if (P[i].x !== xmin)
-                    break;
-            }
-            var minmax = i - 1;
-            var H = [];
-            H.push(P[minmin]); // push minmin point onto stack
-            if (minmax === n - 1) {
-                if (P[minmax].y !== P[minmin].y)
-                    H.push(P[minmax]);
-            }
-            else {
-                // Get the indices of points with max x-coord and min|max y-coord
-                var maxmin, maxmax = n - 1;
-                var xmax = P[n - 1].x;
-                for (i = n - 2; i >= 0; i--)
-                    if (P[i].x !== xmax)
-                        break;
-                maxmin = i + 1;
-                // Compute the lower hull on the stack H
-                i = minmax;
-                while (++i <= maxmin) {
-                    // the lower line joins P[minmin]  with P[maxmin]
-                    if (isLeft(P[minmin], P[maxmin], P[i]) >= 0 && i < maxmin)
-                        continue; // ignore P[i] above or on the lower line
-                    while (H.length > 1) {
-                        // test if  P[i] is left of the line at the stack top
-                        if (isLeft(H[H.length - 2], H[H.length - 1], P[i]) > 0)
-                            break;
-                        else
-                            H.length -= 1; // pop top point off  stack
-                    }
-                    if (i != minmin)
-                        H.push(P[i]);
-                }
-                // Next, compute the upper hull on the stack H above the bottom hull
-                if (maxmax != maxmin)
-                    H.push(P[maxmax]); // push maxmax point onto stack
-                var bot = H.length; // the bottom point of the upper hull stack
-                i = maxmin;
-                while (--i >= minmax) {
-                    // the upper line joins P[maxmax]  with P[minmax]
-                    if (isLeft(P[maxmax], P[minmax], P[i]) >= 0 && i > minmax)
-                        continue; // ignore P[i] below or on the upper line
-                    while (H.length > bot) {
-                        // test if  P[i] is left of the line at the stack top
-                        if (isLeft(H[H.length - 2], H[H.length - 1], P[i]) > 0)
-                            break;
-                        else
-                            H.length -= 1; // pop top point off  stack
-                    }
-                    if (i != minmin)
-                        H.push(P[i]); // push P[i] onto stack
-                }
-            }
-            return H;
-        }
-        geom.ConvexHull = ConvexHull;
-        // apply f to the points in P in clockwise order around the point p
-        function clockwiseRadialSweep(p, P, f) {
-            P.slice(0).sort(function (a, b) { return Math.atan2(a.y - p.y, a.x - p.x) - Math.atan2(b.y - p.y, b.x - p.x); }).forEach(f);
-        }
-        geom.clockwiseRadialSweep = clockwiseRadialSweep;
-        function nextPolyPoint(p, ps) {
-            if (p.polyIndex === ps.length - 1)
-                return ps[0];
-            return ps[p.polyIndex + 1];
-        }
-        function prevPolyPoint(p, ps) {
-            if (p.polyIndex === 0)
-                return ps[ps.length - 1];
-            return ps[p.polyIndex - 1];
-        }
-        // tangent_PointPolyC(): fast binary search for tangents to a convex polygon
-        //    Input:  P = a 2D point (exterior to the polygon)
-        //            n = number of polygon vertices
-        //            V = array of vertices for a 2D convex polygon with V[n] = V[0]
-        //    Output: rtan = index of rightmost tangent point V[rtan]
-        //            ltan = index of leftmost tangent point V[ltan]
-        function tangent_PointPolyC(P, V) {
-            return { rtan: Rtangent_PointPolyC(P, V), ltan: Ltangent_PointPolyC(P, V) };
-        }
-        // Rtangent_PointPolyC(): binary search for convex polygon right tangent
-        //    Input:  P = a 2D point (exterior to the polygon)
-        //            n = number of polygon vertices
-        //            V = array of vertices for a 2D convex polygon with V[n] = V[0]
-        //    Return: index "i" of rightmost tangent point V[i]
-        function Rtangent_PointPolyC(P, V) {
-            var n = V.length - 1;
-            // use binary search for large convex polygons
-            var a, b, c; // indices for edge chain endpoints
-            var upA, dnC; // test for up direction of edges a and c
-            // rightmost tangent = maximum for the isLeft() ordering
-            // test if V[0] is a local maximum
-            if (below(P, V[1], V[0]) && !above(P, V[n - 1], V[0]))
-                return 0; // V[0] is the maximum tangent point
-            for (a = 0, b = n;;) {
-                if (b - a === 1)
-                    if (above(P, V[a], V[b]))
-                        return a;
-                    else
-                        return b;
-                c = Math.floor((a + b) / 2); // midpoint of [a,b], and 0<c<n
-                dnC = below(P, V[c + 1], V[c]);
-                if (dnC && !above(P, V[c - 1], V[c]))
-                    return c; // V[c] is the maximum tangent point
-                // no max yet, so continue with the binary search
-                // pick one of the two subchains [a,c] or [c,b]
-                upA = above(P, V[a + 1], V[a]);
-                if (upA) {
-                    if (dnC)
-                        b = c; // select [a,c]
-                    else {
-                        if (above(P, V[a], V[c]))
-                            b = c; // select [a,c]
-                        else
-                            a = c; // select [c,b]
-                    }
-                }
-                else {
-                    if (!dnC)
-                        a = c; // select [c,b]
-                    else {
-                        if (below(P, V[a], V[c]))
-                            b = c; // select [a,c]
-                        else
-                            a = c; // select [c,b]
-                    }
-                }
-            }
-        }
-        // Ltangent_PointPolyC(): binary search for convex polygon left tangent
-        //    Input:  P = a 2D point (exterior to the polygon)
-        //            n = number of polygon vertices
-        //            V = array of vertices for a 2D convex polygon with V[n]=V[0]
-        //    Return: index "i" of leftmost tangent point V[i]
-        function Ltangent_PointPolyC(P, V) {
-            var n = V.length - 1;
-            // use binary search for large convex polygons
-            var a, b, c; // indices for edge chain endpoints
-            var dnA, dnC; // test for down direction of edges a and c
-            // leftmost tangent = minimum for the isLeft() ordering
-            // test if V[0] is a local minimum
-            if (above(P, V[n - 1], V[0]) && !below(P, V[1], V[0]))
-                return 0; // V[0] is the minimum tangent point
-            for (a = 0, b = n;;) {
-                if (b - a === 1)
-                    if (below(P, V[a], V[b]))
-                        return a;
-                    else
-                        return b;
-                c = Math.floor((a + b) / 2); // midpoint of [a,b], and 0<c<n
-                dnC = below(P, V[c + 1], V[c]);
-                if (above(P, V[c - 1], V[c]) && !dnC)
-                    return c; // V[c] is the minimum tangent point
-                // no min yet, so continue with the binary search
-                // pick one of the two subchains [a,c] or [c,b]
-                dnA = below(P, V[a + 1], V[a]);
-                if (dnA) {
-                    if (!dnC)
-                        b = c; // select [a,c]
-                    else {
-                        if (below(P, V[a], V[c]))
-                            b = c; // select [a,c]
-                        else
-                            a = c; // select [c,b]
-                    }
-                }
-                else {
-                    if (dnC)
-                        a = c; // select [c,b]
-                    else {
-                        if (above(P, V[a], V[c]))
-                            b = c; // select [a,c]
-                        else
-                            a = c; // select [c,b]
-                    }
-                }
-            }
-        }
-        // RLtangent_PolyPolyC(): get the RL tangent between two convex polygons
-        //    Input:  m = number of vertices in polygon 1
-        //            V = array of vertices for convex polygon 1 with V[m]=V[0]
-        //            n = number of vertices in polygon 2
-        //            W = array of vertices for convex polygon 2 with W[n]=W[0]
-        //    Output: *t1 = index of tangent point V[t1] for polygon 1
-        //            *t2 = index of tangent point W[t2] for polygon 2
-        function tangent_PolyPolyC(V, W, t1, t2, cmp1, cmp2) {
-            var ix1, ix2; // search indices for polygons 1 and 2
-            // first get the initial vertex on each polygon
-            ix1 = t1(W[0], V); // right tangent from W[0] to V
-            ix2 = t2(V[ix1], W); // left tangent from V[ix1] to W
-            // ping-pong linear search until it stabilizes
-            var done = false; // flag when done
-            while (!done) {
-                done = true; // assume done until...
-                while (true) {
-                    if (ix1 === V.length - 1)
-                        ix1 = 0;
-                    if (cmp1(W[ix2], V[ix1], V[ix1 + 1]))
-                        break;
-                    ++ix1; // get Rtangent from W[ix2] to V
-                }
-                while (true) {
-                    if (ix2 === 0)
-                        ix2 = W.length - 1;
-                    if (cmp2(V[ix1], W[ix2], W[ix2 - 1]))
-                        break;
-                    --ix2; // get Ltangent from V[ix1] to W
-                    done = false; // not done if had to adjust this
-                }
-            }
-            return { t1: ix1, t2: ix2 };
-        }
-        geom.tangent_PolyPolyC = tangent_PolyPolyC;
-        function LRtangent_PolyPolyC(V, W) {
-            var rl = RLtangent_PolyPolyC(W, V);
-            return { t1: rl.t2, t2: rl.t1 };
-        }
-        geom.LRtangent_PolyPolyC = LRtangent_PolyPolyC;
-        function RLtangent_PolyPolyC(V, W) {
-            return tangent_PolyPolyC(V, W, Rtangent_PointPolyC, Ltangent_PointPolyC, above, below);
-        }
-        geom.RLtangent_PolyPolyC = RLtangent_PolyPolyC;
-        function LLtangent_PolyPolyC(V, W) {
-            return tangent_PolyPolyC(V, W, Ltangent_PointPolyC, Ltangent_PointPolyC, below, below);
-        }
-        geom.LLtangent_PolyPolyC = LLtangent_PolyPolyC;
-        function RRtangent_PolyPolyC(V, W) {
-            return tangent_PolyPolyC(V, W, Rtangent_PointPolyC, Rtangent_PointPolyC, above, above);
-        }
-        geom.RRtangent_PolyPolyC = RRtangent_PolyPolyC;
-        var BiTangent = (function () {
-            function BiTangent(t1, t2) {
-                this.t1 = t1;
-                this.t2 = t2;
-            }
-            return BiTangent;
-        })();
-        geom.BiTangent = BiTangent;
-        var BiTangents = (function () {
-            function BiTangents() {
-            }
-            return BiTangents;
-        })();
-        geom.BiTangents = BiTangents;
-        var TVGPoint = (function (_super) {
-            __extends(TVGPoint, _super);
-            function TVGPoint() {
-                _super.apply(this, arguments);
-            }
-            return TVGPoint;
-        })(Point);
-        geom.TVGPoint = TVGPoint;
-        var VisibilityVertex = (function () {
-            function VisibilityVertex(id, polyid, polyvertid, p) {
-                this.id = id;
-                this.polyid = polyid;
-                this.polyvertid = polyvertid;
-                this.p = p;
-                p.vv = this;
-            }
-            return VisibilityVertex;
-        })();
-        geom.VisibilityVertex = VisibilityVertex;
-        var VisibilityEdge = (function () {
-            function VisibilityEdge(source, target) {
-                this.source = source;
-                this.target = target;
-            }
-            VisibilityEdge.prototype.length = function () {
-                var dx = this.source.p.x - this.target.p.x;
-                var dy = this.source.p.y - this.target.p.y;
-                return Math.sqrt(dx * dx + dy * dy);
-            };
-            return VisibilityEdge;
-        })();
-        geom.VisibilityEdge = VisibilityEdge;
-        var TangentVisibilityGraph = (function () {
-            function TangentVisibilityGraph(P, g0) {
-                this.P = P;
-                this.V = [];
-                this.E = [];
-                if (!g0) {
-                    var n = P.length;
-                    for (var i = 0; i < n; i++) {
-                        var p = P[i];
-                        for (var j = 0; j < p.length; ++j) {
-                            var pj = p[j], vv = new VisibilityVertex(this.V.length, i, j, pj);
-                            this.V.push(vv);
-                            if (j > 0)
-                                this.E.push(new VisibilityEdge(p[j - 1].vv, vv));
-                        }
-                    }
-                    for (var i = 0; i < n - 1; i++) {
-                        var Pi = P[i];
-                        for (var j = i + 1; j < n; j++) {
-                            var Pj = P[j], t = geom.tangents(Pi, Pj);
-                            for (var q in t) {
-                                var c = t[q], source = Pi[c.t1], target = Pj[c.t2];
-                                this.addEdgeIfVisible(source, target, i, j);
-                            }
-                        }
-                    }
-                }
-                else {
-                    this.V = g0.V.slice(0);
-                    this.E = g0.E.slice(0);
-                }
-            }
-            TangentVisibilityGraph.prototype.addEdgeIfVisible = function (u, v, i1, i2) {
-                if (!this.intersectsPolys(new LineSegment(u.x, u.y, v.x, v.y), i1, i2)) {
-                    this.E.push(new VisibilityEdge(u.vv, v.vv));
-                }
-            };
-            TangentVisibilityGraph.prototype.addPoint = function (p, i1) {
-                var n = this.P.length;
-                this.V.push(new VisibilityVertex(this.V.length, n, 0, p));
-                for (var i = 0; i < n; ++i) {
-                    if (i === i1)
-                        continue;
-                    var poly = this.P[i], t = tangent_PointPolyC(p, poly);
-                    this.addEdgeIfVisible(p, poly[t.ltan], i1, i);
-                    this.addEdgeIfVisible(p, poly[t.rtan], i1, i);
-                }
-                return p.vv;
-            };
-            TangentVisibilityGraph.prototype.intersectsPolys = function (l, i1, i2) {
-                for (var i = 0, n = this.P.length; i < n; ++i) {
-                    if (i != i1 && i != i2 && intersects(l, this.P[i]).length > 0) {
-                        return true;
-                    }
-                }
-                return false;
-            };
-            return TangentVisibilityGraph;
-        })();
-        geom.TangentVisibilityGraph = TangentVisibilityGraph;
-        function intersects(l, P) {
-            var ints = [];
-            for (var i = 1, n = P.length; i < n; ++i) {
-                var int = cola.vpsc.Rectangle.lineIntersection(l.x1, l.y1, l.x2, l.y2, P[i - 1].x, P[i - 1].y, P[i].x, P[i].y);
-                if (int)
-                    ints.push(int);
-            }
-            return ints;
-        }
-        function tangents(V, W) {
-            var m = V.length - 1, n = W.length - 1;
-            var bt = new BiTangents();
-            for (var i = 0; i < m; ++i) {
-                for (var j = 0; j < n; ++j) {
-                    var v1 = V[i == 0 ? m - 1 : i - 1];
-                    var v2 = V[i];
-                    var v3 = V[i + 1];
-                    var w1 = W[j == 0 ? n - 1 : j - 1];
-                    var w2 = W[j];
-                    var w3 = W[j + 1];
-                    var v1v2w2 = isLeft(v1, v2, w2);
-                    var v2w1w2 = isLeft(v2, w1, w2);
-                    var v2w2w3 = isLeft(v2, w2, w3);
-                    var w1w2v2 = isLeft(w1, w2, v2);
-                    var w2v1v2 = isLeft(w2, v1, v2);
-                    var w2v2v3 = isLeft(w2, v2, v3);
-                    if (v1v2w2 >= 0 && v2w1w2 >= 0 && v2w2w3 < 0 && w1w2v2 >= 0 && w2v1v2 >= 0 && w2v2v3 < 0) {
-                        bt.ll = new BiTangent(i, j);
-                    }
-                    else if (v1v2w2 <= 0 && v2w1w2 <= 0 && v2w2w3 > 0 && w1w2v2 <= 0 && w2v1v2 <= 0 && w2v2v3 > 0) {
-                        bt.rr = new BiTangent(i, j);
-                    }
-                    else if (v1v2w2 <= 0 && v2w1w2 > 0 && v2w2w3 <= 0 && w1w2v2 >= 0 && w2v1v2 < 0 && w2v2v3 >= 0) {
-                        bt.rl = new BiTangent(i, j);
-                    }
-                    else if (v1v2w2 >= 0 && v2w1w2 < 0 && v2w2w3 >= 0 && w1w2v2 <= 0 && w2v1v2 > 0 && w2v2v3 <= 0) {
-                        bt.lr = new BiTangent(i, j);
-                    }
-                }
-            }
-            return bt;
-        }
-        geom.tangents = tangents;
-        function isPointInsidePoly(p, poly) {
-            for (var i = 1, n = poly.length; i < n; ++i)
-                if (below(poly[i - 1], poly[i], p))
-                    return false;
-            return true;
-        }
-        function isAnyPInQ(p, q) {
-            return !p.every(function (v) { return !isPointInsidePoly(v, q); });
-        }
-        function polysOverlap(p, q) {
-            if (isAnyPInQ(p, q))
-                return true;
-            if (isAnyPInQ(q, p))
-                return true;
-            for (var i = 1, n = p.length; i < n; ++i) {
-                var v = p[i], u = p[i - 1];
-                if (intersects(new LineSegment(u.x, u.y, v.x, v.y), q).length > 0)
-                    return true;
-            }
-            return false;
-        }
-        geom.polysOverlap = polysOverlap;
-    })(geom = cola.geom || (cola.geom = {}));
 })(cola || (cola = {}));
 var cola;
 (function (cola) {
@@ -2122,6 +718,12 @@ var cola;
         vpsc.Solver = Solver;
     })(vpsc = cola.vpsc || (cola.vpsc = {}));
 })(cola || (cola = {}));
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 ///<reference path="vpsc.ts"/>
 ///<reference path="rbtree.d.ts"/>
 var cola;
@@ -2496,8 +1098,8 @@ var cola;
                     computeGroupBounds(rootGroup);
                     var i = nodes.length;
                     groups.forEach(function (g) {
-                        _this.variables[i] = g.minVar = new IndexedVariable(i++, 0.01);
-                        _this.variables[i] = g.maxVar = new IndexedVariable(i++, 0.01);
+                        _this.variables[i] = g.minVar = new IndexedVariable(i++, typeof g.stiffness !== "undefined" ? g.stiffness : 0.01);
+                        _this.variables[i] = g.maxVar = new IndexedVariable(i++, typeof g.stiffness !== "undefined" ? g.stiffness : 0.01);
                     });
                 }
             }
@@ -2602,6 +1204,1369 @@ var cola;
         })();
         vpsc.Projection = Projection;
     })(vpsc = cola.vpsc || (cola.vpsc = {}));
+})(cola || (cola = {}));
+///<reference path="vpsc.ts"/>
+///<reference path="rectangle.ts"/>
+var cola;
+(function (cola) {
+    var geom;
+    (function (geom) {
+        var Point = (function () {
+            function Point() {
+            }
+            return Point;
+        })();
+        geom.Point = Point;
+        var LineSegment = (function () {
+            function LineSegment(x1, y1, x2, y2) {
+                this.x1 = x1;
+                this.y1 = y1;
+                this.x2 = x2;
+                this.y2 = y2;
+            }
+            return LineSegment;
+        })();
+        geom.LineSegment = LineSegment;
+        var PolyPoint = (function (_super) {
+            __extends(PolyPoint, _super);
+            function PolyPoint() {
+                _super.apply(this, arguments);
+            }
+            return PolyPoint;
+        })(Point);
+        geom.PolyPoint = PolyPoint;
+        /** tests if a point is Left|On|Right of an infinite line.
+         * @param points P0, P1, and P2
+         * @return >0 for P2 left of the line through P0 and P1
+         *            =0 for P2 on the line
+         *            <0 for P2 right of the line
+         */
+        function isLeft(P0, P1, P2) {
+            return (P1.x - P0.x) * (P2.y - P0.y) - (P2.x - P0.x) * (P1.y - P0.y);
+        }
+        geom.isLeft = isLeft;
+        function above(p, vi, vj) {
+            return isLeft(p, vi, vj) > 0;
+        }
+        function below(p, vi, vj) {
+            return isLeft(p, vi, vj) < 0;
+        }
+        /**
+         * returns the convex hull of a set of points using Andrew's monotone chain algorithm
+         * see: http://geomalgorithms.com/a10-_hull-1.html#Monotone%20Chain
+         * @param S array of points
+         * @return the convex hull as an array of points
+         */
+        function ConvexHull(S) {
+            var P = S.slice(0).sort(function (a, b) { return a.x !== b.x ? b.x - a.x : b.y - a.y; });
+            var n = S.length, i;
+            var minmin = 0;
+            var xmin = P[0].x;
+            for (i = 1; i < n; ++i) {
+                if (P[i].x !== xmin)
+                    break;
+            }
+            var minmax = i - 1;
+            var H = [];
+            H.push(P[minmin]); // push minmin point onto stack
+            if (minmax === n - 1) {
+                if (P[minmax].y !== P[minmin].y)
+                    H.push(P[minmax]);
+            }
+            else {
+                // Get the indices of points with max x-coord and min|max y-coord
+                var maxmin, maxmax = n - 1;
+                var xmax = P[n - 1].x;
+                for (i = n - 2; i >= 0; i--)
+                    if (P[i].x !== xmax)
+                        break;
+                maxmin = i + 1;
+                // Compute the lower hull on the stack H
+                i = minmax;
+                while (++i <= maxmin) {
+                    // the lower line joins P[minmin]  with P[maxmin]
+                    if (isLeft(P[minmin], P[maxmin], P[i]) >= 0 && i < maxmin)
+                        continue; // ignore P[i] above or on the lower line
+                    while (H.length > 1) {
+                        // test if  P[i] is left of the line at the stack top
+                        if (isLeft(H[H.length - 2], H[H.length - 1], P[i]) > 0)
+                            break;
+                        else
+                            H.length -= 1; // pop top point off  stack
+                    }
+                    if (i != minmin)
+                        H.push(P[i]);
+                }
+                // Next, compute the upper hull on the stack H above the bottom hull
+                if (maxmax != maxmin)
+                    H.push(P[maxmax]); // push maxmax point onto stack
+                var bot = H.length; // the bottom point of the upper hull stack
+                i = maxmin;
+                while (--i >= minmax) {
+                    // the upper line joins P[maxmax]  with P[minmax]
+                    if (isLeft(P[maxmax], P[minmax], P[i]) >= 0 && i > minmax)
+                        continue; // ignore P[i] below or on the upper line
+                    while (H.length > bot) {
+                        // test if  P[i] is left of the line at the stack top
+                        if (isLeft(H[H.length - 2], H[H.length - 1], P[i]) > 0)
+                            break;
+                        else
+                            H.length -= 1; // pop top point off  stack
+                    }
+                    if (i != minmin)
+                        H.push(P[i]); // push P[i] onto stack
+                }
+            }
+            return H;
+        }
+        geom.ConvexHull = ConvexHull;
+        // apply f to the points in P in clockwise order around the point p
+        function clockwiseRadialSweep(p, P, f) {
+            P.slice(0).sort(function (a, b) { return Math.atan2(a.y - p.y, a.x - p.x) - Math.atan2(b.y - p.y, b.x - p.x); }).forEach(f);
+        }
+        geom.clockwiseRadialSweep = clockwiseRadialSweep;
+        function nextPolyPoint(p, ps) {
+            if (p.polyIndex === ps.length - 1)
+                return ps[0];
+            return ps[p.polyIndex + 1];
+        }
+        function prevPolyPoint(p, ps) {
+            if (p.polyIndex === 0)
+                return ps[ps.length - 1];
+            return ps[p.polyIndex - 1];
+        }
+        // tangent_PointPolyC(): fast binary search for tangents to a convex polygon
+        //    Input:  P = a 2D point (exterior to the polygon)
+        //            n = number of polygon vertices
+        //            V = array of vertices for a 2D convex polygon with V[n] = V[0]
+        //    Output: rtan = index of rightmost tangent point V[rtan]
+        //            ltan = index of leftmost tangent point V[ltan]
+        function tangent_PointPolyC(P, V) {
+            return { rtan: Rtangent_PointPolyC(P, V), ltan: Ltangent_PointPolyC(P, V) };
+        }
+        // Rtangent_PointPolyC(): binary search for convex polygon right tangent
+        //    Input:  P = a 2D point (exterior to the polygon)
+        //            n = number of polygon vertices
+        //            V = array of vertices for a 2D convex polygon with V[n] = V[0]
+        //    Return: index "i" of rightmost tangent point V[i]
+        function Rtangent_PointPolyC(P, V) {
+            var n = V.length - 1;
+            // use binary search for large convex polygons
+            var a, b, c; // indices for edge chain endpoints
+            var upA, dnC; // test for up direction of edges a and c
+            // rightmost tangent = maximum for the isLeft() ordering
+            // test if V[0] is a local maximum
+            if (below(P, V[1], V[0]) && !above(P, V[n - 1], V[0]))
+                return 0; // V[0] is the maximum tangent point
+            for (a = 0, b = n;;) {
+                if (b - a === 1)
+                    if (above(P, V[a], V[b]))
+                        return a;
+                    else
+                        return b;
+                c = Math.floor((a + b) / 2); // midpoint of [a,b], and 0<c<n
+                dnC = below(P, V[c + 1], V[c]);
+                if (dnC && !above(P, V[c - 1], V[c]))
+                    return c; // V[c] is the maximum tangent point
+                // no max yet, so continue with the binary search
+                // pick one of the two subchains [a,c] or [c,b]
+                upA = above(P, V[a + 1], V[a]);
+                if (upA) {
+                    if (dnC)
+                        b = c; // select [a,c]
+                    else {
+                        if (above(P, V[a], V[c]))
+                            b = c; // select [a,c]
+                        else
+                            a = c; // select [c,b]
+                    }
+                }
+                else {
+                    if (!dnC)
+                        a = c; // select [c,b]
+                    else {
+                        if (below(P, V[a], V[c]))
+                            b = c; // select [a,c]
+                        else
+                            a = c; // select [c,b]
+                    }
+                }
+            }
+        }
+        // Ltangent_PointPolyC(): binary search for convex polygon left tangent
+        //    Input:  P = a 2D point (exterior to the polygon)
+        //            n = number of polygon vertices
+        //            V = array of vertices for a 2D convex polygon with V[n]=V[0]
+        //    Return: index "i" of leftmost tangent point V[i]
+        function Ltangent_PointPolyC(P, V) {
+            var n = V.length - 1;
+            // use binary search for large convex polygons
+            var a, b, c; // indices for edge chain endpoints
+            var dnA, dnC; // test for down direction of edges a and c
+            // leftmost tangent = minimum for the isLeft() ordering
+            // test if V[0] is a local minimum
+            if (above(P, V[n - 1], V[0]) && !below(P, V[1], V[0]))
+                return 0; // V[0] is the minimum tangent point
+            for (a = 0, b = n;;) {
+                if (b - a === 1)
+                    if (below(P, V[a], V[b]))
+                        return a;
+                    else
+                        return b;
+                c = Math.floor((a + b) / 2); // midpoint of [a,b], and 0<c<n
+                dnC = below(P, V[c + 1], V[c]);
+                if (above(P, V[c - 1], V[c]) && !dnC)
+                    return c; // V[c] is the minimum tangent point
+                // no min yet, so continue with the binary search
+                // pick one of the two subchains [a,c] or [c,b]
+                dnA = below(P, V[a + 1], V[a]);
+                if (dnA) {
+                    if (!dnC)
+                        b = c; // select [a,c]
+                    else {
+                        if (below(P, V[a], V[c]))
+                            b = c; // select [a,c]
+                        else
+                            a = c; // select [c,b]
+                    }
+                }
+                else {
+                    if (dnC)
+                        a = c; // select [c,b]
+                    else {
+                        if (above(P, V[a], V[c]))
+                            b = c; // select [a,c]
+                        else
+                            a = c; // select [c,b]
+                    }
+                }
+            }
+        }
+        // RLtangent_PolyPolyC(): get the RL tangent between two convex polygons
+        //    Input:  m = number of vertices in polygon 1
+        //            V = array of vertices for convex polygon 1 with V[m]=V[0]
+        //            n = number of vertices in polygon 2
+        //            W = array of vertices for convex polygon 2 with W[n]=W[0]
+        //    Output: *t1 = index of tangent point V[t1] for polygon 1
+        //            *t2 = index of tangent point W[t2] for polygon 2
+        function tangent_PolyPolyC(V, W, t1, t2, cmp1, cmp2) {
+            var ix1, ix2; // search indices for polygons 1 and 2
+            // first get the initial vertex on each polygon
+            ix1 = t1(W[0], V); // right tangent from W[0] to V
+            ix2 = t2(V[ix1], W); // left tangent from V[ix1] to W
+            // ping-pong linear search until it stabilizes
+            var done = false; // flag when done
+            while (!done) {
+                done = true; // assume done until...
+                while (true) {
+                    if (ix1 === V.length - 1)
+                        ix1 = 0;
+                    if (cmp1(W[ix2], V[ix1], V[ix1 + 1]))
+                        break;
+                    ++ix1; // get Rtangent from W[ix2] to V
+                }
+                while (true) {
+                    if (ix2 === 0)
+                        ix2 = W.length - 1;
+                    if (cmp2(V[ix1], W[ix2], W[ix2 - 1]))
+                        break;
+                    --ix2; // get Ltangent from V[ix1] to W
+                    done = false; // not done if had to adjust this
+                }
+            }
+            return { t1: ix1, t2: ix2 };
+        }
+        geom.tangent_PolyPolyC = tangent_PolyPolyC;
+        function LRtangent_PolyPolyC(V, W) {
+            var rl = RLtangent_PolyPolyC(W, V);
+            return { t1: rl.t2, t2: rl.t1 };
+        }
+        geom.LRtangent_PolyPolyC = LRtangent_PolyPolyC;
+        function RLtangent_PolyPolyC(V, W) {
+            return tangent_PolyPolyC(V, W, Rtangent_PointPolyC, Ltangent_PointPolyC, above, below);
+        }
+        geom.RLtangent_PolyPolyC = RLtangent_PolyPolyC;
+        function LLtangent_PolyPolyC(V, W) {
+            return tangent_PolyPolyC(V, W, Ltangent_PointPolyC, Ltangent_PointPolyC, below, below);
+        }
+        geom.LLtangent_PolyPolyC = LLtangent_PolyPolyC;
+        function RRtangent_PolyPolyC(V, W) {
+            return tangent_PolyPolyC(V, W, Rtangent_PointPolyC, Rtangent_PointPolyC, above, above);
+        }
+        geom.RRtangent_PolyPolyC = RRtangent_PolyPolyC;
+        var BiTangent = (function () {
+            function BiTangent(t1, t2) {
+                this.t1 = t1;
+                this.t2 = t2;
+            }
+            return BiTangent;
+        })();
+        geom.BiTangent = BiTangent;
+        var BiTangents = (function () {
+            function BiTangents() {
+            }
+            return BiTangents;
+        })();
+        geom.BiTangents = BiTangents;
+        var TVGPoint = (function (_super) {
+            __extends(TVGPoint, _super);
+            function TVGPoint() {
+                _super.apply(this, arguments);
+            }
+            return TVGPoint;
+        })(Point);
+        geom.TVGPoint = TVGPoint;
+        var VisibilityVertex = (function () {
+            function VisibilityVertex(id, polyid, polyvertid, p) {
+                this.id = id;
+                this.polyid = polyid;
+                this.polyvertid = polyvertid;
+                this.p = p;
+                p.vv = this;
+            }
+            return VisibilityVertex;
+        })();
+        geom.VisibilityVertex = VisibilityVertex;
+        var VisibilityEdge = (function () {
+            function VisibilityEdge(source, target) {
+                this.source = source;
+                this.target = target;
+            }
+            VisibilityEdge.prototype.length = function () {
+                var dx = this.source.p.x - this.target.p.x;
+                var dy = this.source.p.y - this.target.p.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            };
+            return VisibilityEdge;
+        })();
+        geom.VisibilityEdge = VisibilityEdge;
+        var TangentVisibilityGraph = (function () {
+            function TangentVisibilityGraph(P, g0) {
+                this.P = P;
+                this.V = [];
+                this.E = [];
+                if (!g0) {
+                    var n = P.length;
+                    for (var i = 0; i < n; i++) {
+                        var p = P[i];
+                        for (var j = 0; j < p.length; ++j) {
+                            var pj = p[j], vv = new VisibilityVertex(this.V.length, i, j, pj);
+                            this.V.push(vv);
+                            if (j > 0)
+                                this.E.push(new VisibilityEdge(p[j - 1].vv, vv));
+                        }
+                    }
+                    for (var i = 0; i < n - 1; i++) {
+                        var Pi = P[i];
+                        for (var j = i + 1; j < n; j++) {
+                            var Pj = P[j], t = geom.tangents(Pi, Pj);
+                            for (var q in t) {
+                                var c = t[q], source = Pi[c.t1], target = Pj[c.t2];
+                                this.addEdgeIfVisible(source, target, i, j);
+                            }
+                        }
+                    }
+                }
+                else {
+                    this.V = g0.V.slice(0);
+                    this.E = g0.E.slice(0);
+                }
+            }
+            TangentVisibilityGraph.prototype.addEdgeIfVisible = function (u, v, i1, i2) {
+                if (!this.intersectsPolys(new LineSegment(u.x, u.y, v.x, v.y), i1, i2)) {
+                    this.E.push(new VisibilityEdge(u.vv, v.vv));
+                }
+            };
+            TangentVisibilityGraph.prototype.addPoint = function (p, i1) {
+                var n = this.P.length;
+                this.V.push(new VisibilityVertex(this.V.length, n, 0, p));
+                for (var i = 0; i < n; ++i) {
+                    if (i === i1)
+                        continue;
+                    var poly = this.P[i], t = tangent_PointPolyC(p, poly);
+                    this.addEdgeIfVisible(p, poly[t.ltan], i1, i);
+                    this.addEdgeIfVisible(p, poly[t.rtan], i1, i);
+                }
+                return p.vv;
+            };
+            TangentVisibilityGraph.prototype.intersectsPolys = function (l, i1, i2) {
+                for (var i = 0, n = this.P.length; i < n; ++i) {
+                    if (i != i1 && i != i2 && intersects(l, this.P[i]).length > 0) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+            return TangentVisibilityGraph;
+        })();
+        geom.TangentVisibilityGraph = TangentVisibilityGraph;
+        function intersects(l, P) {
+            var ints = [];
+            for (var i = 1, n = P.length; i < n; ++i) {
+                var int = cola.vpsc.Rectangle.lineIntersection(l.x1, l.y1, l.x2, l.y2, P[i - 1].x, P[i - 1].y, P[i].x, P[i].y);
+                if (int)
+                    ints.push(int);
+            }
+            return ints;
+        }
+        function tangents(V, W) {
+            var m = V.length - 1, n = W.length - 1;
+            var bt = new BiTangents();
+            for (var i = 0; i < m; ++i) {
+                for (var j = 0; j < n; ++j) {
+                    var v1 = V[i == 0 ? m - 1 : i - 1];
+                    var v2 = V[i];
+                    var v3 = V[i + 1];
+                    var w1 = W[j == 0 ? n - 1 : j - 1];
+                    var w2 = W[j];
+                    var w3 = W[j + 1];
+                    var v1v2w2 = isLeft(v1, v2, w2);
+                    var v2w1w2 = isLeft(v2, w1, w2);
+                    var v2w2w3 = isLeft(v2, w2, w3);
+                    var w1w2v2 = isLeft(w1, w2, v2);
+                    var w2v1v2 = isLeft(w2, v1, v2);
+                    var w2v2v3 = isLeft(w2, v2, v3);
+                    if (v1v2w2 >= 0 && v2w1w2 >= 0 && v2w2w3 < 0 && w1w2v2 >= 0 && w2v1v2 >= 0 && w2v2v3 < 0) {
+                        bt.ll = new BiTangent(i, j);
+                    }
+                    else if (v1v2w2 <= 0 && v2w1w2 <= 0 && v2w2w3 > 0 && w1w2v2 <= 0 && w2v1v2 <= 0 && w2v2v3 > 0) {
+                        bt.rr = new BiTangent(i, j);
+                    }
+                    else if (v1v2w2 <= 0 && v2w1w2 > 0 && v2w2w3 <= 0 && w1w2v2 >= 0 && w2v1v2 < 0 && w2v2v3 >= 0) {
+                        bt.rl = new BiTangent(i, j);
+                    }
+                    else if (v1v2w2 >= 0 && v2w1w2 < 0 && v2w2w3 >= 0 && w1w2v2 <= 0 && w2v1v2 > 0 && w2v2v3 <= 0) {
+                        bt.lr = new BiTangent(i, j);
+                    }
+                }
+            }
+            return bt;
+        }
+        geom.tangents = tangents;
+        function isPointInsidePoly(p, poly) {
+            for (var i = 1, n = poly.length; i < n; ++i)
+                if (below(poly[i - 1], poly[i], p))
+                    return false;
+            return true;
+        }
+        function isAnyPInQ(p, q) {
+            return !p.every(function (v) { return !isPointInsidePoly(v, q); });
+        }
+        function polysOverlap(p, q) {
+            if (isAnyPInQ(p, q))
+                return true;
+            if (isAnyPInQ(q, p))
+                return true;
+            for (var i = 1, n = p.length; i < n; ++i) {
+                var v = p[i], u = p[i - 1];
+                if (intersects(new LineSegment(u.x, u.y, v.x, v.y), q).length > 0)
+                    return true;
+            }
+            return false;
+        }
+        geom.polysOverlap = polysOverlap;
+    })(geom = cola.geom || (cola.geom = {}));
+})(cola || (cola = {}));
+/**
+ * @module cola
+ */
+var cola;
+(function (cola) {
+    /**
+     * Descent respects a collection of locks over nodes that should not move
+     * @class Locks
+     */
+    var Locks = (function () {
+        function Locks() {
+            this.locks = {};
+        }
+        /**
+         * add a lock on the node at index id
+         * @method add
+         * @param id index of node to be locked
+         * @param x required position for node
+         */
+        Locks.prototype.add = function (id, x) {
+            if (isNaN(x[0]) || isNaN(x[1]))
+                debugger;
+            this.locks[id] = x;
+        };
+        /**
+         * @method clear clear all locks
+         */
+        Locks.prototype.clear = function () {
+            this.locks = {};
+        };
+        /**
+         * @isEmpty
+         * @returns false if no locks exist
+         */
+        Locks.prototype.isEmpty = function () {
+            for (var l in this.locks)
+                return false;
+            return true;
+        };
+        /**
+         * perform an operation on each lock
+         * @apply
+         */
+        Locks.prototype.apply = function (f) {
+            for (var l in this.locks) {
+                f(l, this.locks[l]);
+            }
+        };
+        return Locks;
+    })();
+    cola.Locks = Locks;
+    /**
+     * Uses a gradient descent approach to reduce a stress or p-stress goal function over a graph with specified ideal edge lengths or a square matrix of dissimilarities.
+     *
+     * @class Descent
+     */
+    var Descent = (function () {
+        /**
+         * @method constructor
+         * @param x {number[][]} initial coordinates for nodes
+         * @param D {number[][]} matrix of desired distances between pairs of nodes
+         * @param G {number[][]} [default=null] if specified, G is a matrix of weights for goal terms between pairs of nodes.
+         * If G[i][j] > 1 and the separation between nodes i and j is greater than their ideal distance, then there is no contribution for this pair to the goal
+         * If G[i][j] <= 1 then it is used as a weighting on the contribution of the variance between ideal and actual separation between i and j to the goal function
+         */
+        function Descent(x, D, G) {
+            if (G === void 0) { G = null; }
+            this.D = D;
+            this.G = G;
+            this.threshold = 0.0001;
+            // Parameters for grid snap stress.
+            // TODO: Make a pluggable "StressTerm" class instead of this
+            // mess.
+            this.numGridSnapNodes = 0;
+            this.snapGridSize = 100;
+            this.snapStrength = 1000;
+            this.scaleSnapByMaxH = false;
+            this.random = new PseudoRandom();
+            this.project = null;
+            this.x = x;
+            this.k = x.length; // dimensionality
+            var n = this.n = x[0].length; // number of nodes
+            this.H = new Array(this.k);
+            this.g = new Array(this.k);
+            this.Hd = new Array(this.k);
+            this.a = new Array(this.k);
+            this.b = new Array(this.k);
+            this.c = new Array(this.k);
+            this.d = new Array(this.k);
+            this.e = new Array(this.k);
+            this.ia = new Array(this.k);
+            this.ib = new Array(this.k);
+            this.xtmp = new Array(this.k);
+            this.locks = new Locks();
+            this.minD = Number.MAX_VALUE;
+            var i = n, j;
+            while (i--) {
+                j = n;
+                while (--j > i) {
+                    var d = D[i][j];
+                    if (d > 0 && d < this.minD) {
+                        this.minD = d;
+                    }
+                }
+            }
+            if (this.minD === Number.MAX_VALUE)
+                this.minD = 1;
+            i = this.k;
+            while (i--) {
+                this.g[i] = new Array(n);
+                this.H[i] = new Array(n);
+                j = n;
+                while (j--) {
+                    this.H[i][j] = new Array(n);
+                }
+                this.Hd[i] = new Array(n);
+                this.a[i] = new Array(n);
+                this.b[i] = new Array(n);
+                this.c[i] = new Array(n);
+                this.d[i] = new Array(n);
+                this.e[i] = new Array(n);
+                this.ia[i] = new Array(n);
+                this.ib[i] = new Array(n);
+                this.xtmp[i] = new Array(n);
+            }
+        }
+        Descent.createSquareMatrix = function (n, f) {
+            var M = new Array(n);
+            for (var i = 0; i < n; ++i) {
+                M[i] = new Array(n);
+                for (var j = 0; j < n; ++j) {
+                    M[i][j] = f(i, j);
+                }
+            }
+            return M;
+        };
+        Descent.prototype.offsetDir = function () {
+            var _this = this;
+            var u = new Array(this.k);
+            var l = 0;
+            for (var i = 0; i < this.k; ++i) {
+                var x = u[i] = this.random.getNextBetween(0.01, 1) - 0.5;
+                l += x * x;
+            }
+            l = Math.sqrt(l);
+            return u.map(function (x) { return x *= _this.minD / l; });
+        };
+        // compute first and second derivative information storing results in this.g and this.H
+        Descent.prototype.computeDerivatives = function (x) {
+            var _this = this;
+            var n = this.n;
+            if (n < 1)
+                return;
+            var i;
+            /* DEBUG
+                        for (var u: number = 0; u < n; ++u)
+                            for (i = 0; i < this.k; ++i)
+                                if (isNaN(x[i][u])) debugger;
+            DEBUG */
+            var d = new Array(this.k);
+            var d2 = new Array(this.k);
+            var Huu = new Array(this.k);
+            var maxH = 0;
+            for (var u = 0; u < n; ++u) {
+                for (i = 0; i < this.k; ++i)
+                    Huu[i] = this.g[i][u] = 0;
+                for (var v = 0; v < n; ++v) {
+                    if (u === v)
+                        continue;
+                    // The following loop randomly displaces nodes that are at identical positions
+                    var maxDisplaces = n; // avoid infinite loop in the case of numerical issues, such as huge values
+                    while (maxDisplaces--) {
+                        var sd2 = 0;
+                        for (i = 0; i < this.k; ++i) {
+                            var dx = d[i] = x[i][u] - x[i][v];
+                            sd2 += d2[i] = dx * dx;
+                        }
+                        if (sd2 > 1e-9)
+                            break;
+                        var rd = this.offsetDir();
+                        for (i = 0; i < this.k; ++i)
+                            x[i][v] += rd[i];
+                    }
+                    var l = Math.sqrt(sd2);
+                    var D = this.D[u][v];
+                    var weight = this.G != null ? this.G[u][v] : 1;
+                    if (weight > 1 && l > D || !isFinite(D)) {
+                        for (i = 0; i < this.k; ++i)
+                            this.H[i][u][v] = 0;
+                        continue;
+                    }
+                    if (weight > 1) {
+                        weight = 1;
+                    }
+                    var D2 = D * D;
+                    var gs = weight * (l - D) / (D2 * l);
+                    var hs = -weight / (D2 * l * l * l);
+                    if (!isFinite(gs))
+                        console.log(gs);
+                    for (i = 0; i < this.k; ++i) {
+                        this.g[i][u] += d[i] * gs;
+                        Huu[i] -= this.H[i][u][v] = hs * (D * (d2[i] - sd2) + l * sd2);
+                    }
+                }
+                for (i = 0; i < this.k; ++i)
+                    maxH = Math.max(maxH, this.H[i][u][u] = Huu[i]);
+            }
+            // Grid snap forces
+            var r = this.snapGridSize / 2;
+            var g = this.snapGridSize;
+            var w = this.snapStrength;
+            var k = w / (r * r);
+            var numNodes = this.numGridSnapNodes;
+            for (var u = 0; u < numNodes; ++u) {
+                for (i = 0; i < this.k; ++i) {
+                    var xiu = this.x[i][u];
+                    var m = xiu / g;
+                    var f = m % 1;
+                    var q = m - f;
+                    var a = Math.abs(f);
+                    var dx = (a <= 0.5) ? xiu - q * g : (xiu > 0) ? xiu - (q + 1) * g : xiu - (q - 1) * g;
+                    if (-r < dx && dx <= r) {
+                        if (this.scaleSnapByMaxH) {
+                            this.g[i][u] += maxH * k * dx;
+                            this.H[i][u][u] += maxH * k;
+                        }
+                        else {
+                            this.g[i][u] += k * dx;
+                            this.H[i][u][u] += k;
+                        }
+                    }
+                }
+            }
+            if (!this.locks.isEmpty()) {
+                this.locks.apply(function (u, p) {
+                    for (i = 0; i < _this.k; ++i) {
+                        _this.H[i][u][u] += maxH;
+                        _this.g[i][u] -= maxH * (p[i] - x[i][u]);
+                    }
+                });
+            }
+            /* DEBUG
+                        for (var u: number = 0; u < n; ++u)
+                            for (i = 0; i < this.k; ++i) {
+                                if (isNaN(this.g[i][u])) debugger;
+                                for (var v: number = 0; v < n; ++v)
+                                    if (isNaN(this.H[i][u][v])) debugger;
+                            }
+            DEBUG */
+        };
+        Descent.dotProd = function (a, b) {
+            var x = 0, i = a.length;
+            while (i--)
+                x += a[i] * b[i];
+            return x;
+        };
+        // result r = matrix m * vector v
+        Descent.rightMultiply = function (m, v, r) {
+            var i = m.length;
+            while (i--)
+                r[i] = Descent.dotProd(m[i], v);
+        };
+        // computes the optimal step size to take in direction d using the
+        // derivative information in this.g and this.H
+        // returns the scalar multiplier to apply to d to get the optimal step
+        Descent.prototype.computeStepSize = function (d) {
+            var numerator = 0, denominator = 0;
+            for (var i = 0; i < 2; ++i) {
+                numerator += Descent.dotProd(this.g[i], d[i]);
+                Descent.rightMultiply(this.H[i], d[i], this.Hd[i]);
+                denominator += Descent.dotProd(d[i], this.Hd[i]);
+            }
+            if (denominator === 0 || !isFinite(denominator))
+                return 0;
+            return numerator / denominator;
+        };
+        Descent.prototype.reduceStress = function () {
+            this.computeDerivatives(this.x);
+            var alpha = this.computeStepSize(this.g);
+            for (var i = 0; i < this.k; ++i) {
+                this.takeDescentStep(this.x[i], this.g[i], alpha);
+            }
+            return this.computeStress();
+        };
+        Descent.copy = function (a, b) {
+            var m = a.length, n = b[0].length;
+            for (var i = 0; i < m; ++i) {
+                for (var j = 0; j < n; ++j) {
+                    b[i][j] = a[i][j];
+                }
+            }
+        };
+        // takes a step of stepSize * d from x0, and then project against any constraints.
+        // result is returned in r.
+        // x0: starting positions
+        // r: result positions will be returned here
+        // d: unconstrained descent vector
+        // stepSize: amount to step along d
+        Descent.prototype.stepAndProject = function (x0, r, d, stepSize) {
+            Descent.copy(x0, r);
+            this.takeDescentStep(r[0], d[0], stepSize);
+            if (this.project)
+                this.project[0](x0[0], x0[1], r[0]);
+            this.takeDescentStep(r[1], d[1], stepSize);
+            if (this.project)
+                this.project[1](r[0], x0[1], r[1]);
+        };
+        Descent.mApply = function (m, n, f) {
+            var i = m;
+            while (i-- > 0) {
+                var j = n;
+                while (j-- > 0)
+                    f(i, j);
+            }
+        };
+        Descent.prototype.matrixApply = function (f) {
+            Descent.mApply(this.k, this.n, f);
+        };
+        Descent.prototype.computeNextPosition = function (x0, r) {
+            var _this = this;
+            this.computeDerivatives(x0);
+            var alpha = this.computeStepSize(this.g);
+            this.stepAndProject(x0, r, this.g, alpha);
+            for (var u = 0; u < this.n; ++u)
+                for (var i = 0; i < this.k; ++i)
+                    if (isNaN(r[i][u]))
+                        debugger;
+            if (this.project) {
+                this.matrixApply(function (i, j) { return _this.e[i][j] = x0[i][j] - r[i][j]; });
+                var beta = this.computeStepSize(this.e);
+                beta = Math.max(0.2, Math.min(beta, 1));
+                this.stepAndProject(x0, r, this.e, beta);
+            }
+        };
+        Descent.prototype.run = function (iterations) {
+            var stress = Number.MAX_VALUE, converged = false;
+            while (!converged && iterations-- > 0) {
+                var s = this.rungeKutta();
+                converged = Math.abs(stress / s - 1) < this.threshold;
+                stress = s;
+            }
+            return stress;
+        };
+        Descent.prototype.rungeKutta = function () {
+            var _this = this;
+            this.computeNextPosition(this.x, this.a);
+            Descent.mid(this.x, this.a, this.ia);
+            this.computeNextPosition(this.ia, this.b);
+            Descent.mid(this.x, this.b, this.ib);
+            this.computeNextPosition(this.ib, this.c);
+            this.computeNextPosition(this.c, this.d);
+            var disp = 0;
+            this.matrixApply(function (i, j) {
+                var x = (_this.a[i][j] + 2.0 * _this.b[i][j] + 2.0 * _this.c[i][j] + _this.d[i][j]) / 6.0, d = _this.x[i][j] - x;
+                disp += d * d;
+                _this.x[i][j] = x;
+            });
+            return disp;
+        };
+        Descent.mid = function (a, b, m) {
+            Descent.mApply(a.length, a[0].length, function (i, j) { return m[i][j] = a[i][j] + (b[i][j] - a[i][j]) / 2.0; });
+        };
+        Descent.prototype.takeDescentStep = function (x, d, stepSize) {
+            for (var i = 0; i < this.n; ++i) {
+                x[i] = x[i] - stepSize * d[i];
+            }
+        };
+        Descent.prototype.computeStress = function () {
+            var stress = 0;
+            for (var u = 0, nMinus1 = this.n - 1; u < nMinus1; ++u) {
+                for (var v = u + 1, n = this.n; v < n; ++v) {
+                    var l = 0;
+                    for (var i = 0; i < this.k; ++i) {
+                        var dx = this.x[i][u] - this.x[i][v];
+                        l += dx * dx;
+                    }
+                    l = Math.sqrt(l);
+                    var d = this.D[u][v];
+                    if (!isFinite(d))
+                        continue;
+                    var rl = d - l;
+                    var d2 = d * d;
+                    stress += rl * rl / d2;
+                }
+            }
+            return stress;
+        };
+        Descent.zeroDistance = 1e-10;
+        return Descent;
+    })();
+    cola.Descent = Descent;
+    // Linear congruential pseudo random number generator
+    var PseudoRandom = (function () {
+        function PseudoRandom(seed) {
+            if (seed === void 0) { seed = 1; }
+            this.seed = seed;
+            this.a = 214013;
+            this.c = 2531011;
+            this.m = 2147483648;
+            this.range = 32767;
+        }
+        // random real between 0 and 1
+        PseudoRandom.prototype.getNext = function () {
+            this.seed = (this.seed * this.a + this.c) % this.m;
+            return (this.seed >> 16) / this.range;
+        };
+        // random real between min and max
+        PseudoRandom.prototype.getNextBetween = function (min, max) {
+            return min + this.getNext() * (max - min);
+        };
+        return PseudoRandom;
+    })();
+    cola.PseudoRandom = PseudoRandom;
+})(cola || (cola = {}));
+var cola;
+(function (cola) {
+    var powergraph;
+    (function (powergraph) {
+        var PowerEdge = (function () {
+            function PowerEdge(source, target, type) {
+                this.source = source;
+                this.target = target;
+                this.type = type;
+            }
+            return PowerEdge;
+        })();
+        powergraph.PowerEdge = PowerEdge;
+        var Configuration = (function () {
+            function Configuration(n, edges, linkAccessor, rootGroup) {
+                var _this = this;
+                this.linkAccessor = linkAccessor;
+                this.modules = new Array(n);
+                this.roots = [];
+                if (rootGroup) {
+                    this.initModulesFromGroup(rootGroup);
+                }
+                else {
+                    this.roots.push(new ModuleSet());
+                    for (var i = 0; i < n; ++i)
+                        this.roots[0].add(this.modules[i] = new Module(i));
+                }
+                this.R = edges.length;
+                edges.forEach(function (e) {
+                    var s = _this.modules[linkAccessor.getSourceIndex(e)], t = _this.modules[linkAccessor.getTargetIndex(e)], type = linkAccessor.getType(e);
+                    s.outgoing.add(type, t);
+                    t.incoming.add(type, s);
+                });
+            }
+            Configuration.prototype.initModulesFromGroup = function (group) {
+                var moduleSet = new ModuleSet();
+                this.roots.push(moduleSet);
+                for (var i = 0; i < group.leaves.length; ++i) {
+                    var node = group.leaves[i];
+                    var module = new Module(node.id);
+                    this.modules[node.id] = module;
+                    moduleSet.add(module);
+                }
+                if (group.groups) {
+                    for (var j = 0; j < group.groups.length; ++j) {
+                        var child = group.groups[j];
+                        // Propagate group properties (like padding, stiffness, ...) as module definition so that the generated power graph group will inherit it
+                        var definition = {};
+                        for (var prop in child)
+                            if (prop !== "leaves" && prop !== "groups" && child.hasOwnProperty(prop))
+                                definition[prop] = child[prop];
+                        // Use negative module id to avoid clashes between predefined and generated modules
+                        moduleSet.add(new Module(-1 - j, new LinkSets(), new LinkSets(), this.initModulesFromGroup(child), definition));
+                    }
+                }
+                return moduleSet;
+            };
+            // merge modules a and b keeping track of their power edges and removing the from roots
+            Configuration.prototype.merge = function (a, b, k) {
+                if (k === void 0) { k = 0; }
+                var inInt = a.incoming.intersection(b.incoming), outInt = a.outgoing.intersection(b.outgoing);
+                var children = new ModuleSet();
+                children.add(a);
+                children.add(b);
+                var m = new Module(this.modules.length, outInt, inInt, children);
+                this.modules.push(m);
+                var update = function (s, i, o) {
+                    s.forAll(function (ms, linktype) {
+                        ms.forAll(function (n) {
+                            var nls = n[i];
+                            nls.add(linktype, m);
+                            nls.remove(linktype, a);
+                            nls.remove(linktype, b);
+                            a[o].remove(linktype, n);
+                            b[o].remove(linktype, n);
+                        });
+                    });
+                };
+                update(outInt, "incoming", "outgoing");
+                update(inInt, "outgoing", "incoming");
+                this.R -= inInt.count() + outInt.count();
+                this.roots[k].remove(a);
+                this.roots[k].remove(b);
+                this.roots[k].add(m);
+                return m;
+            };
+            Configuration.prototype.rootMerges = function (k) {
+                if (k === void 0) { k = 0; }
+                var rs = this.roots[k].modules();
+                var n = rs.length;
+                var merges = new Array(n * (n - 1));
+                var ctr = 0;
+                for (var i = 0, i_ = n - 1; i < i_; ++i) {
+                    for (var j = i + 1; j < n; ++j) {
+                        var a = rs[i], b = rs[j];
+                        merges[ctr++] = { nEdges: this.nEdges(a, b), a: a, b: b };
+                    }
+                }
+                return merges;
+            };
+            Configuration.prototype.greedyMerge = function () {
+                for (var i = 0; i < this.roots.length; ++i) {
+                    // Handle single nested module case
+                    if (this.roots[i].modules().length < 2)
+                        continue;
+                    var ms = this.rootMerges(i).sort(function (a, b) { return a.nEdges - b.nEdges; });
+                    var m = ms[0];
+                    if (m.nEdges >= this.R)
+                        continue;
+                    this.merge(m.a, m.b, i);
+                    return true;
+                }
+            };
+            Configuration.prototype.nEdges = function (a, b) {
+                var inInt = a.incoming.intersection(b.incoming), outInt = a.outgoing.intersection(b.outgoing);
+                return this.R - inInt.count() - outInt.count();
+            };
+            Configuration.prototype.getGroupHierarchy = function (retargetedEdges) {
+                var _this = this;
+                var groups = [];
+                var root = {};
+                toGroups(this.roots[0], root, groups);
+                var es = this.allEdges();
+                es.forEach(function (e) {
+                    var a = _this.modules[e.source];
+                    var b = _this.modules[e.target];
+                    retargetedEdges.push(new PowerEdge(typeof a.gid === "undefined" ? e.source : groups[a.gid], typeof b.gid === "undefined" ? e.target : groups[b.gid], e.type));
+                });
+                return groups;
+            };
+            Configuration.prototype.allEdges = function () {
+                var es = [];
+                Configuration.getEdges(this.roots[0], es);
+                return es;
+            };
+            Configuration.getEdges = function (modules, es) {
+                modules.forAll(function (m) {
+                    m.getEdges(es);
+                    Configuration.getEdges(m.children, es);
+                });
+            };
+            return Configuration;
+        })();
+        powergraph.Configuration = Configuration;
+        function toGroups(modules, group, groups) {
+            modules.forAll(function (m) {
+                if (m.isLeaf()) {
+                    if (!group.leaves)
+                        group.leaves = [];
+                    group.leaves.push(m.id);
+                }
+                else {
+                    var g = group;
+                    m.gid = groups.length;
+                    if (!m.isIsland() || m.isPredefined()) {
+                        g = { id: m.gid };
+                        if (m.isPredefined())
+                            for (var prop in m.definition)
+                                g[prop] = m.definition[prop];
+                        if (!group.groups)
+                            group.groups = [];
+                        group.groups.push(m.gid);
+                        groups.push(g);
+                    }
+                    toGroups(m.children, g, groups);
+                }
+            });
+        }
+        var Module = (function () {
+            function Module(id, outgoing, incoming, children, definition) {
+                if (outgoing === void 0) { outgoing = new LinkSets(); }
+                if (incoming === void 0) { incoming = new LinkSets(); }
+                if (children === void 0) { children = new ModuleSet(); }
+                this.id = id;
+                this.outgoing = outgoing;
+                this.incoming = incoming;
+                this.children = children;
+                this.definition = definition;
+            }
+            Module.prototype.getEdges = function (es) {
+                var _this = this;
+                this.outgoing.forAll(function (ms, edgetype) {
+                    ms.forAll(function (target) {
+                        es.push(new PowerEdge(_this.id, target.id, edgetype));
+                    });
+                });
+            };
+            Module.prototype.isLeaf = function () {
+                return this.children.count() === 0;
+            };
+            Module.prototype.isIsland = function () {
+                return this.outgoing.count() === 0 && this.incoming.count() === 0;
+            };
+            Module.prototype.isPredefined = function () {
+                return typeof this.definition !== "undefined";
+            };
+            return Module;
+        })();
+        powergraph.Module = Module;
+        function intersection(m, n) {
+            var i = {};
+            for (var v in m)
+                if (v in n)
+                    i[v] = m[v];
+            return i;
+        }
+        var ModuleSet = (function () {
+            function ModuleSet() {
+                this.table = {};
+            }
+            ModuleSet.prototype.count = function () {
+                return Object.keys(this.table).length;
+            };
+            ModuleSet.prototype.intersection = function (other) {
+                var result = new ModuleSet();
+                result.table = intersection(this.table, other.table);
+                return result;
+            };
+            ModuleSet.prototype.intersectionCount = function (other) {
+                return this.intersection(other).count();
+            };
+            ModuleSet.prototype.contains = function (id) {
+                return id in this.table;
+            };
+            ModuleSet.prototype.add = function (m) {
+                this.table[m.id] = m;
+            };
+            ModuleSet.prototype.remove = function (m) {
+                delete this.table[m.id];
+            };
+            ModuleSet.prototype.forAll = function (f) {
+                for (var mid in this.table) {
+                    f(this.table[mid]);
+                }
+            };
+            ModuleSet.prototype.modules = function () {
+                var vs = [];
+                this.forAll(function (m) {
+                    if (!m.isPredefined())
+                        vs.push(m);
+                });
+                return vs;
+            };
+            return ModuleSet;
+        })();
+        powergraph.ModuleSet = ModuleSet;
+        var LinkSets = (function () {
+            function LinkSets() {
+                this.sets = {};
+                this.n = 0;
+            }
+            LinkSets.prototype.count = function () {
+                return this.n;
+            };
+            LinkSets.prototype.contains = function (id) {
+                var result = false;
+                this.forAllModules(function (m) {
+                    if (!result && m.id == id) {
+                        result = true;
+                    }
+                });
+                return result;
+            };
+            LinkSets.prototype.add = function (linktype, m) {
+                var s = linktype in this.sets ? this.sets[linktype] : this.sets[linktype] = new ModuleSet();
+                s.add(m);
+                ++this.n;
+            };
+            LinkSets.prototype.remove = function (linktype, m) {
+                var ms = this.sets[linktype];
+                ms.remove(m);
+                if (ms.count() === 0) {
+                    delete this.sets[linktype];
+                }
+                --this.n;
+            };
+            LinkSets.prototype.forAll = function (f) {
+                for (var linktype in this.sets) {
+                    f(this.sets[linktype], linktype);
+                }
+            };
+            LinkSets.prototype.forAllModules = function (f) {
+                this.forAll(function (ms, lt) { return ms.forAll(f); });
+            };
+            LinkSets.prototype.intersection = function (other) {
+                var result = new LinkSets();
+                this.forAll(function (ms, lt) {
+                    if (lt in other.sets) {
+                        var i = ms.intersection(other.sets[lt]), n = i.count();
+                        if (n > 0) {
+                            result.sets[lt] = i;
+                            result.n += n;
+                        }
+                    }
+                });
+                return result;
+            };
+            return LinkSets;
+        })();
+        powergraph.LinkSets = LinkSets;
+        function intersectionCount(m, n) {
+            return Object.keys(intersection(m, n)).length;
+        }
+        function getGroups(nodes, links, la, rootGroup) {
+            var n = nodes.length, c = new powergraph.Configuration(n, links, la, rootGroup);
+            while (c.greedyMerge())
+                ;
+            var powerEdges = [];
+            var g = c.getGroupHierarchy(powerEdges);
+            powerEdges.forEach(function (e) {
+                var f = function (end) {
+                    var g = e[end];
+                    if (typeof g == "number")
+                        e[end] = nodes[g];
+                };
+                f("source");
+                f("target");
+            });
+            return { groups: g, powerEdges: powerEdges };
+        }
+        powergraph.getGroups = getGroups;
+    })(powergraph = cola.powergraph || (cola.powergraph = {}));
+})(cola || (cola = {}));
+/**
+ * @module cola
+ */
+var cola;
+(function (cola) {
+    // compute the size of the union of two sets a and b
+    function unionCount(a, b) {
+        var u = {};
+        for (var i in a)
+            u[i] = {};
+        for (var i in b)
+            u[i] = {};
+        return Object.keys(u).length;
+    }
+    // compute the size of the intersection of two sets a and b
+    function intersectionCount(a, b) {
+        var n = 0;
+        for (var i in a)
+            if (typeof b[i] !== 'undefined')
+                ++n;
+        return n;
+    }
+    function getNeighbours(links, la) {
+        var neighbours = {};
+        var addNeighbours = function (u, v) {
+            if (typeof neighbours[u] === 'undefined')
+                neighbours[u] = {};
+            neighbours[u][v] = {};
+        };
+        links.forEach(function (e) {
+            var u = la.getSourceIndex(e), v = la.getTargetIndex(e);
+            addNeighbours(u, v);
+            addNeighbours(v, u);
+        });
+        return neighbours;
+    }
+    // modify the lengths of the specified links by the result of function f weighted by w
+    function computeLinkLengths(links, w, f, la) {
+        var neighbours = getNeighbours(links, la);
+        links.forEach(function (l) {
+            var a = neighbours[la.getSourceIndex(l)];
+            var b = neighbours[la.getTargetIndex(l)];
+            la.setLength(l, 1 + w * f(a, b));
+        });
+    }
+    /** modify the specified link lengths based on the symmetric difference of their neighbours
+     * @class symmetricDiffLinkLengths
+     */
+    function symmetricDiffLinkLengths(links, la, w) {
+        if (w === void 0) { w = 1; }
+        computeLinkLengths(links, w, function (a, b) { return Math.sqrt(unionCount(a, b) - intersectionCount(a, b)); }, la);
+    }
+    cola.symmetricDiffLinkLengths = symmetricDiffLinkLengths;
+    /** modify the specified links lengths based on the jaccard difference between their neighbours
+     * @class jaccardLinkLengths
+     */
+    function jaccardLinkLengths(links, la, w) {
+        if (w === void 0) { w = 1; }
+        computeLinkLengths(links, w, function (a, b) { return Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1 ? 0 : intersectionCount(a, b) / unionCount(a, b); }, la);
+    }
+    cola.jaccardLinkLengths = jaccardLinkLengths;
+    /** generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
+     * @class generateDirectedEdgeConstraints
+     */
+    function generateDirectedEdgeConstraints(n, links, axis, la) {
+        var components = stronglyConnectedComponents(n, links, la);
+        var nodes = {};
+        components.filter(function (c) { return c.length > 1; }).forEach(function (c) { return c.forEach(function (v) { return nodes[v] = c; }); });
+        var constraints = [];
+        links.forEach(function (l) {
+            var ui = la.getSourceIndex(l), vi = la.getTargetIndex(l), u = nodes[ui], v = nodes[vi];
+            if (!u || !v || u.component !== v.component) {
+                constraints.push({
+                    axis: axis,
+                    left: ui,
+                    right: vi,
+                    gap: la.getMinSeparation(l)
+                });
+            }
+        });
+        return constraints;
+    }
+    cola.generateDirectedEdgeConstraints = generateDirectedEdgeConstraints;
+    /*
+    Following function based on: https://github.com/mikolalysenko/strongly-connected-components
+
+    The MIT License (MIT)
+
+    Copyright (c) 2013 Mikola Lysenko
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+    */
+    function stronglyConnectedComponents(numVertices, edges, la) {
+        var adjList = new Array(numVertices);
+        var index = new Array(numVertices);
+        var lowValue = new Array(numVertices);
+        var active = new Array(numVertices);
+        for (var i = 0; i < numVertices; ++i) {
+            adjList[i] = [];
+            index[i] = -1;
+            lowValue[i] = 0;
+            active[i] = false;
+        }
+        for (var i = 0; i < edges.length; ++i) {
+            adjList[la.getSourceIndex(edges[i])].push(la.getTargetIndex(edges[i]));
+        }
+        var count = 0;
+        var S = [];
+        var components = [];
+        function strongConnect(v) {
+            index[v] = count;
+            lowValue[v] = count;
+            active[v] = true;
+            count += 1;
+            S.push(v);
+            var e = adjList[v];
+            for (var i = 0; i < e.length; ++i) {
+                var u = e[i];
+                if (index[u] < 0) {
+                    strongConnect(u);
+                    lowValue[v] = Math.min(lowValue[v], lowValue[u]) | 0;
+                }
+                else if (active[u]) {
+                    lowValue[v] = Math.min(lowValue[v], lowValue[u]);
+                }
+            }
+            if (lowValue[v] === index[v]) {
+                var component = [];
+                for (var i = S.length - 1; i >= 0; --i) {
+                    var w = S[i];
+                    active[w] = false;
+                    component.push(w);
+                    if (w === v) {
+                        S.length = i;
+                        break;
+                    }
+                }
+                components.push(component);
+            }
+        }
+        for (var i = 0; i < numVertices; ++i) {
+            if (index[i] < 0) {
+                strongConnect(i);
+            }
+        }
+        return components;
+    }
 })(cola || (cola = {}));
 var PairingHeap = (function () {
     // from: https://gist.github.com/nervoussystem
@@ -2950,6 +2915,617 @@ var cola;
         })();
         shortestpaths.Calculator = Calculator;
     })(shortestpaths = cola.shortestpaths || (cola.shortestpaths = {}));
+})(cola || (cola = {}));
+///<reference path="handledisconnected.ts"/>
+///<reference path="geom.ts"/>
+///<reference path="descent.ts"/>
+///<reference path="powergraph.ts"/>
+///<reference path="linklengths.ts"/>
+///<reference path="shortestpaths.ts"/>
+/**
+ * @module cola
+ */
+var cola;
+(function (cola) {
+    /**
+     * The layout process fires three events:
+     *  - start: layout iterations started
+     *  - tick: fired once per iteration, listen to this to animate
+     *  - end: layout converged, you might like to zoom-to-fit or something at notification of this event
+     */
+    (function (EventType) {
+        EventType[EventType["start"] = 0] = "start";
+        EventType[EventType["tick"] = 1] = "tick";
+        EventType[EventType["end"] = 2] = "end";
+    })(cola.EventType || (cola.EventType = {}));
+    var EventType = cola.EventType;
+    ;
+    /**
+     * Main interface to cola layout.
+     * @class Layout
+     */
+    var Layout = (function () {
+        function Layout() {
+            this._canvasSize = [1, 1];
+            this._linkDistance = 20;
+            this._defaultNodeSize = 10;
+            this._linkLengthCalculator = null;
+            this._linkType = null;
+            this._avoidOverlaps = false;
+            this._handleDisconnected = true;
+            this._running = false;
+            this._nodes = [];
+            this._groups = [];
+            this._variables = [];
+            this._rootGroup = null;
+            this._links = [];
+            this._constraints = [];
+            this._distanceMatrix = null;
+            this._descent = null;
+            this._directedLinkConstraints = null;
+            this._threshold = 0.01;
+            this._visibilityGraph = null;
+            this._groupCompactness = 1e-6;
+            // sub-class and override this property to replace with a more sophisticated eventing mechanism
+            this.event = null;
+            this.linkAccessor = { getSourceIndex: Layout.getSourceIndex, getTargetIndex: Layout.getTargetIndex, setLength: Layout.setLinkLength, getType: this.getLinkType };
+        }
+        // subscribe a listener to an event
+        // sub-class and override this method to replace with a more sophisticated eventing mechanism
+        Layout.prototype.on = function (e, listener) {
+            // override me!
+            if (!this.event)
+                this.event = {};
+            if (typeof e === 'string') {
+                this.event[EventType[e]] = listener;
+            }
+            else {
+                this.event[e] = listener;
+            }
+            return this;
+        };
+        // a function that is notified of events like "tick"
+        // sub-class and override this method to replace with a more sophisticated eventing mechanism
+        Layout.prototype.trigger = function (e) {
+            if (this.event && typeof this.event[e.type] !== 'undefined') {
+                this.event[e.type](e);
+            }
+        };
+        // a function that kicks off the iteration tick loop
+        // it calls tick() repeatedly until tick returns true (is converged)
+        // subclass and override it with something fancier (e.g. dispatch tick on a timer)
+        Layout.prototype.kick = function () {
+            while (!this.tick())
+                ;
+        };
+        /**
+         * iterate the layout.  Returns true when layout converged.
+         */
+        Layout.prototype.tick = function () {
+            if (this._alpha < this._threshold) {
+                this._running = false;
+                this.trigger({ type: 2 /* end */, alpha: this._alpha = 0, stress: this._lastStress });
+                return true;
+            }
+            var n = this._nodes.length, m = this._links.length, o;
+            this._descent.locks.clear();
+            for (var i = 0; i < n; ++i) {
+                o = this._nodes[i];
+                if (o.fixed) {
+                    if (typeof o.px === 'undefined' || typeof o.py === 'undefined') {
+                        o.px = o.x;
+                        o.py = o.y;
+                    }
+                    var p = [o.px, o.py];
+                    this._descent.locks.add(i, p);
+                }
+            }
+            var s1 = this._descent.rungeKutta();
+            //var s1 = descent.reduceStress();
+            if (s1 === 0) {
+                this._alpha = 0;
+            }
+            else if (typeof this._lastStress !== 'undefined') {
+                this._alpha = s1; //Math.abs(Math.abs(this._lastStress / s1) - 1);
+            }
+            this._lastStress = s1;
+            for (var i = 0; i < n; ++i) {
+                o = this._nodes[i];
+                if (o.fixed) {
+                    o.x = o.px;
+                    o.y = o.py;
+                }
+                else {
+                    o.x = this._descent.x[0][i];
+                    o.y = this._descent.x[1][i];
+                }
+            }
+            this.trigger({ type: 1 /* tick */, alpha: this._alpha, stress: this._lastStress });
+            return false;
+        };
+        Layout.prototype.nodes = function (v) {
+            if (!v) {
+                if (this._nodes.length === 0 && this._links.length > 0) {
+                    // if we have links but no nodes, create the nodes array now with empty objects for the links to point at.
+                    var n = 0;
+                    this._links.forEach(function (l) {
+                        n = Math.max(n, l.source, l.target);
+                    });
+                    this._nodes = new Array(++n);
+                    for (var i = 0; i < n; ++i) {
+                        this._nodes[i] = {};
+                    }
+                }
+                return this._nodes;
+            }
+            this._nodes = v;
+            return this;
+        };
+        Layout.prototype.groups = function (x) {
+            var _this = this;
+            if (!x)
+                return this._groups;
+            this._groups = x;
+            this._rootGroup = {};
+            this._groups.forEach(function (g) {
+                if (typeof g.padding === "undefined")
+                    g.padding = 1;
+                if (typeof g.leaves !== "undefined")
+                    g.leaves.forEach(function (v, i) {
+                        (g.leaves[i] = _this._nodes[v]).parent = g;
+                    });
+                if (typeof g.groups !== "undefined")
+                    g.groups.forEach(function (gi, i) {
+                        (g.groups[i] = _this._groups[gi]).parent = g;
+                    });
+            });
+            this._rootGroup.leaves = this._nodes.filter(function (v) { return typeof v.parent === 'undefined'; });
+            this._rootGroup.groups = this._groups.filter(function (g) { return typeof g.parent === 'undefined'; });
+            return this;
+        };
+        Layout.prototype.powerGraphGroups = function (f) {
+            var g = cola.powergraph.getGroups(this._nodes, this._links, this.linkAccessor, this._rootGroup);
+            this.groups(g.groups);
+            f(g);
+            return this;
+        };
+        Layout.prototype.avoidOverlaps = function (v) {
+            if (!arguments.length)
+                return this._avoidOverlaps;
+            this._avoidOverlaps = v;
+            return this;
+        };
+        Layout.prototype.handleDisconnected = function (v) {
+            if (!arguments.length)
+                return this._handleDisconnected;
+            this._handleDisconnected = v;
+            return this;
+        };
+        /**
+         * causes constraints to be generated such that directed graphs are laid out either from left-to-right or top-to-bottom.
+         * a separation constraint is generated in the selected axis for each edge that is not involved in a cycle (part of a strongly connected component)
+         * @param axis {string} 'x' for left-to-right, 'y' for top-to-bottom
+         * @param minSeparation {number|link=>number} either a number specifying a minimum spacing required across all links or a function to return the minimum spacing for each link
+         */
+        Layout.prototype.flowLayout = function (axis, minSeparation) {
+            if (!arguments.length)
+                axis = 'y';
+            this._directedLinkConstraints = {
+                axis: axis,
+                getMinSeparation: typeof minSeparation === 'number' ? function () {
+                    return minSeparation;
+                } : minSeparation
+            };
+            return this;
+        };
+        Layout.prototype.links = function (x) {
+            if (!arguments.length)
+                return this._links;
+            this._links = x;
+            return this;
+        };
+        Layout.prototype.constraints = function (c) {
+            if (!arguments.length)
+                return this._constraints;
+            this._constraints = c;
+            return this;
+        };
+        Layout.prototype.distanceMatrix = function (d) {
+            if (!arguments.length)
+                return this._distanceMatrix;
+            this._distanceMatrix = d;
+            return this;
+        };
+        Layout.prototype.size = function (x) {
+            if (!x)
+                return this._canvasSize;
+            this._canvasSize = x;
+            return this;
+        };
+        Layout.prototype.defaultNodeSize = function (x) {
+            if (!x)
+                return this._defaultNodeSize;
+            this._defaultNodeSize = x;
+            return this;
+        };
+        Layout.prototype.groupCompactness = function (x) {
+            if (!x)
+                return this._groupCompactness;
+            this._groupCompactness = x;
+            return this;
+        };
+        Layout.prototype.linkDistance = function (x) {
+            if (!x) {
+                return this._linkDistance;
+            }
+            this._linkDistance = typeof x === "function" ? x : +x;
+            this._linkLengthCalculator = null;
+            return this;
+        };
+        Layout.prototype.linkType = function (f) {
+            this._linkType = f;
+            return this;
+        };
+        Layout.prototype.convergenceThreshold = function (x) {
+            if (!x)
+                return this._threshold;
+            this._threshold = typeof x === "function" ? x : +x;
+            return this;
+        };
+        Layout.prototype.alpha = function (x) {
+            if (!arguments.length)
+                return this._alpha;
+            else {
+                x = +x;
+                if (this._alpha) {
+                    if (x > 0)
+                        this._alpha = x; // we might keep it hot
+                    else
+                        this._alpha = 0; // or, next tick will dispatch "end"
+                }
+                else if (x > 0) {
+                    if (!this._running) {
+                        this._running = true;
+                        this.trigger({ type: 0 /* start */, alpha: this._alpha = x });
+                        this.kick();
+                    }
+                }
+                return this;
+            }
+        };
+        Layout.prototype.getLinkLength = function (link) {
+            return typeof this._linkDistance === "function" ? +(this._linkDistance(link)) : this._linkDistance;
+        };
+        Layout.setLinkLength = function (link, length) {
+            link.length = length;
+        };
+        Layout.prototype.getLinkType = function (link) {
+            return typeof this._linkType === "function" ? this._linkType(link) : 0;
+        };
+        /**
+         * compute an ideal length for each link based on the graph structure around that link.
+         * you can use this (for example) to create extra space around hub-nodes in dense graphs.
+         * In particular this calculation is based on the "symmetric difference" in the neighbour sets of the source and target:
+         * i.e. if neighbours of source is a and neighbours of target are b then calculation is: sqrt(|a union b| - |a intersection b|)
+         * Actual computation based on inspection of link structure occurs in start(), so links themselves
+         * don't have to have been assigned before invoking this function.
+         * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
+         * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
+         */
+        Layout.prototype.symmetricDiffLinkLengths = function (idealLength, w) {
+            var _this = this;
+            this.linkDistance(function (l) { return idealLength * l.length; });
+            this._linkLengthCalculator = function () { return cola.symmetricDiffLinkLengths(_this._links, _this.linkAccessor, w); };
+            return this;
+        };
+        /**
+         * compute an ideal length for each link based on the graph structure around that link.
+         * you can use this (for example) to create extra space around hub-nodes in dense graphs.
+         * In particular this calculation is based on the "symmetric difference" in the neighbour sets of the source and target:
+         * i.e. if neighbours of source is a and neighbours of target are b then calculation is: |a intersection b|/|a union b|
+         * Actual computation based on inspection of link structure occurs in start(), so links themselves
+         * don't have to have been assigned before invoking this function.
+         * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
+         * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
+         */
+        Layout.prototype.jaccardLinkLengths = function (idealLength, w) {
+            var _this = this;
+            this.linkDistance(function (l) { return idealLength * l.length; });
+            this._linkLengthCalculator = function () { return cola.jaccardLinkLengths(_this._links, _this.linkAccessor, w); };
+            return this;
+        };
+        /**
+         * start the layout process
+         * @method start
+         * @param {number} [initialUnconstrainedIterations=0] unconstrained initial layout iterations
+         * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
+         * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
+         * @param {number} [gridSnapIterations=0] iterations of "grid snap", which pulls nodes towards grid cell centers - grid of size node[0].width - only really makes sense if all nodes have the same width and height
+         */
+        Layout.prototype.start = function (initialUnconstrainedIterations, initialUserConstraintIterations, initialAllConstraintsIterations, gridSnapIterations) {
+            var _this = this;
+            if (initialUnconstrainedIterations === void 0) { initialUnconstrainedIterations = 0; }
+            if (initialUserConstraintIterations === void 0) { initialUserConstraintIterations = 0; }
+            if (initialAllConstraintsIterations === void 0) { initialAllConstraintsIterations = 0; }
+            if (gridSnapIterations === void 0) { gridSnapIterations = 0; }
+            var i, j, n = this.nodes().length, N = n + 2 * this._groups.length, m = this._links.length, w = this._canvasSize[0], h = this._canvasSize[1];
+            if (this._linkLengthCalculator)
+                this._linkLengthCalculator();
+            var x = new Array(N), y = new Array(N);
+            this._variables = new Array(N);
+            var makeVariable = function (i, w) { return _this._variables[i] = new cola.vpsc.IndexedVariable(i, w); };
+            var G = null;
+            var ao = this._avoidOverlaps;
+            this._nodes.forEach(function (v, i) {
+                v.index = i;
+                if (typeof v.x === 'undefined') {
+                    v.x = w / 2, v.y = h / 2;
+                }
+                x[i] = v.x, y[i] = v.y;
+            });
+            //should we do this to clearly label groups?
+            //this._groups.forEach((g, i) => g.groupIndex = i);
+            var distances;
+            if (this._distanceMatrix) {
+                // use the user specified distanceMatrix
+                distances = this._distanceMatrix;
+            }
+            else {
+                // construct an n X n distance matrix based on shortest paths through graph (with respect to edge.length).
+                distances = (new cola.shortestpaths.Calculator(N, this._links, Layout.getSourceIndex, Layout.getTargetIndex, function (l) { return _this.getLinkLength(l); })).DistanceMatrix();
+                // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
+                // otherwise 2. (
+                G = cola.Descent.createSquareMatrix(N, function () { return 2; });
+                this._links.forEach(function (e) {
+                    var u = Layout.getSourceIndex(e), v = Layout.getTargetIndex(e);
+                    G[u][v] = G[v][u] = 1;
+                });
+            }
+            var D = cola.Descent.createSquareMatrix(N, function (i, j) {
+                return distances[i][j];
+            });
+            if (this._rootGroup && typeof this._rootGroup.groups !== 'undefined') {
+                var i = n;
+                var addAttraction = function (i, j, strength, idealDistance) {
+                    G[i][j] = G[j][i] = strength;
+                    D[i][j] = D[j][i] = idealDistance;
+                };
+                this._groups.forEach(function (g) {
+                    addAttraction(i, i + 1, _this._groupCompactness, 0.1);
+                    // todo: add terms here attracting children of the group to the group dummy nodes
+                    //if (typeof g.leaves !== 'undefined')
+                    //    g.leaves.forEach(l => {
+                    //        addAttraction(l.index, i, 1e-4, 0.1);
+                    //        addAttraction(l.index, i + 1, 1e-4, 0.1);
+                    //    });
+                    //if (typeof g.groups !== 'undefined')
+                    //    g.groups.forEach(g => {
+                    //        var gid = n + g.groupIndex * 2;
+                    //        addAttraction(gid, i, 0.1, 0.1);
+                    //        addAttraction(gid + 1, i, 0.1, 0.1);
+                    //        addAttraction(gid, i + 1, 0.1, 0.1);
+                    //        addAttraction(gid + 1, i + 1, 0.1, 0.1);
+                    //    });
+                    x[i] = 0, y[i++] = 0;
+                    x[i] = 0, y[i++] = 0;
+                });
+            }
+            else
+                this._rootGroup = { leaves: this._nodes, groups: [] };
+            var curConstraints = this._constraints || [];
+            if (this._directedLinkConstraints) {
+                this.linkAccessor.getMinSeparation = this._directedLinkConstraints.getMinSeparation;
+                curConstraints = curConstraints.concat(cola.generateDirectedEdgeConstraints(n, this._links, this._directedLinkConstraints.axis, (this.linkAccessor)));
+            }
+            this.avoidOverlaps(false);
+            this._descent = new cola.Descent([x, y], D);
+            this._descent.locks.clear();
+            for (var i = 0; i < n; ++i) {
+                var o = this._nodes[i];
+                if (o.fixed) {
+                    o.px = o.x;
+                    o.py = o.y;
+                    var p = [o.x, o.y];
+                    this._descent.locks.add(i, p);
+                }
+            }
+            this._descent.threshold = this._threshold;
+            // apply initialIterations without user constraints or nonoverlap constraints
+            this._descent.run(initialUnconstrainedIterations);
+            // apply initialIterations with user constraints but no nonoverlap constraints
+            if (curConstraints.length > 0)
+                this._descent.project = new cola.vpsc.Projection(this._nodes, this._groups, this._rootGroup, curConstraints).projectFunctions();
+            this._descent.run(initialUserConstraintIterations);
+            // subsequent iterations will apply all constraints
+            this.avoidOverlaps(ao);
+            if (ao) {
+                this._nodes.forEach(function (v, i) {
+                    v.x = x[i], v.y = y[i];
+                });
+                this._descent.project = new cola.vpsc.Projection(this._nodes, this._groups, this._rootGroup, curConstraints, true).projectFunctions();
+                this._nodes.forEach(function (v, i) {
+                    x[i] = v.x, y[i] = v.y;
+                });
+            }
+            // allow not immediately connected nodes to relax apart (p-stress)
+            this._descent.G = G;
+            this._descent.run(initialAllConstraintsIterations);
+            if (gridSnapIterations) {
+                this._descent.snapStrength = 1000;
+                this._descent.snapGridSize = this._nodes[0].width;
+                this._descent.numGridSnapNodes = n;
+                this._descent.scaleSnapByMaxH = true;
+                var G0 = cola.Descent.createSquareMatrix(N, function (i, j) {
+                    if (i >= n || j >= n)
+                        return G[i][j];
+                    return 0;
+                });
+                this._descent.G = G0;
+                this._descent.run(gridSnapIterations);
+            }
+            this._links.forEach(function (l) {
+                if (typeof l.source == "number")
+                    l.source = _this._nodes[l.source];
+                if (typeof l.target == "number")
+                    l.target = _this._nodes[l.target];
+            });
+            this._nodes.forEach(function (v, i) {
+                v.x = x[i], v.y = y[i];
+            });
+            // recalculate nodes position for disconnected graphs
+            if (!this._distanceMatrix && this._handleDisconnected) {
+                var graphs = cola.separateGraphs(this._nodes, this._links);
+                cola.applyPacking(graphs, w, h, this._defaultNodeSize);
+                this._nodes.forEach(function (v, i) {
+                    _this._descent.x[0][i] = v.x, _this._descent.x[1][i] = v.y;
+                });
+            }
+            return this.resume();
+        };
+        Layout.prototype.resume = function () {
+            return this.alpha(0.1);
+        };
+        Layout.prototype.stop = function () {
+            return this.alpha(0);
+        };
+        Layout.prototype.prepareEdgeRouting = function (nodeMargin) {
+            this._visibilityGraph = new cola.geom.TangentVisibilityGraph(this._nodes.map(function (v) {
+                return v.bounds.inflate(-nodeMargin).vertices();
+            }));
+        };
+        Layout.prototype.routeEdge = function (d, draw) {
+            var lineData = [];
+            //if (d.source.id === 10 && d.target.id === 11) {
+            //    debugger;
+            //}
+            var vg2 = new cola.geom.TangentVisibilityGraph(this._visibilityGraph.P, { V: this._visibilityGraph.V, E: this._visibilityGraph.E }), port1 = { x: d.source.x, y: d.source.y }, port2 = { x: d.target.x, y: d.target.y }, start = vg2.addPoint(port1, d.source.id), end = vg2.addPoint(port2, d.target.id);
+            vg2.addEdgeIfVisible(port1, port2, d.source.id, d.target.id);
+            if (typeof draw !== 'undefined') {
+                draw(vg2);
+            }
+            var sourceInd = function (e) { return e.source.id; }, targetInd = function (e) { return e.target.id; }, length = function (e) { return e.length(); }, spCalc = new cola.shortestpaths.Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length), shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
+            if (shortestPath.length === 1 || shortestPath.length === vg2.V.length) {
+                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
+            }
+            else {
+                var n = shortestPath.length - 2, p = vg2.V[shortestPath[n]].p, q = vg2.V[shortestPath[0]].p, lineData = [d.source.innerBounds.rayIntersection(p.x, p.y)];
+                for (var i = n; i >= 0; --i)
+                    lineData.push(vg2.V[shortestPath[i]].p);
+                lineData.push(cola.vpsc.makeEdgeTo(q, d.target.innerBounds, 5));
+            }
+            //lineData.forEach((v, i) => {
+            //    if (i > 0) {
+            //        var u = lineData[i - 1];
+            //        this._nodes.forEach(function (node) {
+            //            if (node.id === getSourceIndex(d) || node.id === getTargetIndex(d)) return;
+            //            var ints = node.innerBounds.lineIntersections(u.x, u.y, v.x, v.y);
+            //            if (ints.length > 0) {
+            //                debugger;
+            //            }
+            //        })
+            //    }
+            //})
+            return lineData;
+        };
+        //The link source and target may be just a node index, or they may be references to nodes themselves.
+        Layout.getSourceIndex = function (e) {
+            return typeof e.source === 'number' ? e.source : e.source.index;
+        };
+        //The link source and target may be just a node index, or they may be references to nodes themselves.
+        Layout.getTargetIndex = function (e) {
+            return typeof e.target === 'number' ? e.target : e.target.index;
+        };
+        // Get a string ID for a given link.
+        Layout.linkId = function (e) {
+            return Layout.getSourceIndex(e) + "-" + Layout.getTargetIndex(e);
+        };
+        // The fixed property has three bits:
+        // Bit 1 can be set externally (e.g., d.fixed = true) and show persist.
+        // Bit 2 stores the dragging state, from mousedown to mouseup.
+        // Bit 3 stores the hover state, from mouseover to mouseout.
+        // Dragend is a special case: it also clears the hover state.
+        Layout.dragStart = function (d) {
+            d.fixed |= 2; // set bit 2
+            d.px = d.x, d.py = d.y; // set velocity to zero
+        };
+        Layout.dragEnd = function (d) {
+            d.fixed &= ~6; // unset bits 2 and 3
+            //d.fixed = 0;
+        };
+        Layout.mouseOver = function (d) {
+            d.fixed |= 4; // set bit 3
+            d.px = d.x, d.py = d.y; // set velocity to zero
+        };
+        Layout.mouseOut = function (d) {
+            d.fixed &= ~4; // unset bit 3
+        };
+        return Layout;
+    })();
+    cola.Layout = Layout;
+})(cola || (cola = {}));
+///<reference path="../extern/d3.d.ts"/>
+///<reference path="layout.ts"/>
+var cola;
+(function (cola) {
+    var D3StyleLayoutAdaptor = (function (_super) {
+        __extends(D3StyleLayoutAdaptor, _super);
+        function D3StyleLayoutAdaptor() {
+            _super.call(this);
+            this.event = d3.dispatch(cola.EventType[0 /* start */], cola.EventType[1 /* tick */], cola.EventType[2 /* end */]);
+            // bit of trickyness remapping 'this' so we can reference it in the function body.
+            var d3layout = this;
+            this.drag = function () {
+                var drag = d3.behavior.drag().origin(function (d) {
+                    return d;
+                }).on("dragstart.d3adaptor", cola.Layout.dragStart).on("drag.d3adaptor", function (d) {
+                    d.px = d3.event.x, d.py = d3.event.y;
+                    d3layout.resume(); // restart annealing
+                }).on("dragend.d3adaptor", cola.Layout.dragEnd);
+                if (!arguments.length)
+                    return drag;
+                // this is the context of the function, i.e. the d3 selection
+                this.call(drag);
+            };
+        }
+        D3StyleLayoutAdaptor.prototype.trigger = function (e) {
+            var d3event = { type: cola.EventType[e.type], alpha: e.alpha, stress: e.stress };
+            this.event[d3event.type](d3event); // via d3 dispatcher, e.g. event.start(e);
+        };
+        // iterate layout using a d3.timer, which queues calls to tick repeatedly until tick returns true
+        D3StyleLayoutAdaptor.prototype.kick = function () {
+            var _this = this;
+            d3.timer(function () { return _super.prototype.tick.call(_this); });
+        };
+        // a function for binding to events on the adapter
+        D3StyleLayoutAdaptor.prototype.on = function (eventType, listener) {
+            if (typeof eventType === 'string') {
+                this.event.on(eventType, listener);
+            }
+            else {
+                this.event.on(cola.EventType[eventType], listener);
+            }
+            return this;
+        };
+        return D3StyleLayoutAdaptor;
+    })(cola.Layout);
+    cola.D3StyleLayoutAdaptor = D3StyleLayoutAdaptor;
+    /**
+     * provides an interface for use with d3:
+     * - uses the d3 event system to dispatch layout events such as:
+     *   o "start" (start layout process)
+     *   o "tick" (after each layout iteration)
+     *   o "end" (layout converged and complete).
+     * - uses the d3 timer to queue layout iterations.
+     * - sets up d3.behavior.drag to drag nodes
+     *   o use `node.call(<the returned instance of Layout>.drag)` to make nodes draggable
+     * returns an instance of the cola.Layout itself with which the user
+     * can interact directly.
+     */
+    function d3adaptor() {
+        return new D3StyleLayoutAdaptor();
+    }
+    cola.d3adaptor = d3adaptor;
 })(cola || (cola = {}));
 /// <reference path="rectangle.ts"/>
 /// <reference path="shortestpaths.ts"/>
@@ -3465,483 +4041,6 @@ var cola;
         return GridRouter;
     })();
     cola.GridRouter = GridRouter;
-})(cola || (cola = {}));
-/**
- * @module cola
- */
-var cola;
-(function (cola) {
-    // compute the size of the union of two sets a and b
-    function unionCount(a, b) {
-        var u = {};
-        for (var i in a)
-            u[i] = {};
-        for (var i in b)
-            u[i] = {};
-        return Object.keys(u).length;
-    }
-    // compute the size of the intersection of two sets a and b
-    function intersectionCount(a, b) {
-        var n = 0;
-        for (var i in a)
-            if (typeof b[i] !== 'undefined')
-                ++n;
-        return n;
-    }
-    function getNeighbours(links, la) {
-        var neighbours = {};
-        var addNeighbours = function (u, v) {
-            if (typeof neighbours[u] === 'undefined')
-                neighbours[u] = {};
-            neighbours[u][v] = {};
-        };
-        links.forEach(function (e) {
-            var u = la.getSourceIndex(e), v = la.getTargetIndex(e);
-            addNeighbours(u, v);
-            addNeighbours(v, u);
-        });
-        return neighbours;
-    }
-    // modify the lengths of the specified links by the result of function f weighted by w
-    function computeLinkLengths(links, w, f, la) {
-        var neighbours = getNeighbours(links, la);
-        links.forEach(function (l) {
-            var a = neighbours[la.getSourceIndex(l)];
-            var b = neighbours[la.getTargetIndex(l)];
-            la.setLength(l, 1 + w * f(a, b));
-        });
-    }
-    /** modify the specified link lengths based on the symmetric difference of their neighbours
-     * @class symmetricDiffLinkLengths
-     */
-    function symmetricDiffLinkLengths(links, la, w) {
-        if (w === void 0) { w = 1; }
-        computeLinkLengths(links, w, function (a, b) { return Math.sqrt(unionCount(a, b) - intersectionCount(a, b)); }, la);
-    }
-    cola.symmetricDiffLinkLengths = symmetricDiffLinkLengths;
-    /** modify the specified links lengths based on the jaccard difference between their neighbours
-     * @class jaccardLinkLengths
-     */
-    function jaccardLinkLengths(links, la, w) {
-        if (w === void 0) { w = 1; }
-        computeLinkLengths(links, w, function (a, b) { return Math.min(Object.keys(a).length, Object.keys(b).length) < 1.1 ? 0 : intersectionCount(a, b) / unionCount(a, b); }, la);
-    }
-    cola.jaccardLinkLengths = jaccardLinkLengths;
-    /** generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
-     * @class generateDirectedEdgeConstraints
-     */
-    function generateDirectedEdgeConstraints(n, links, axis, la) {
-        var components = stronglyConnectedComponents(n, links, la);
-        var nodes = {};
-        components.filter(function (c) { return c.length > 1; }).forEach(function (c) { return c.forEach(function (v) { return nodes[v] = c; }); });
-        var constraints = [];
-        links.forEach(function (l) {
-            var ui = la.getSourceIndex(l), vi = la.getTargetIndex(l), u = nodes[ui], v = nodes[vi];
-            if (!u || !v || u.component !== v.component) {
-                constraints.push({
-                    axis: axis,
-                    left: ui,
-                    right: vi,
-                    gap: la.getMinSeparation(l)
-                });
-            }
-        });
-        return constraints;
-    }
-    cola.generateDirectedEdgeConstraints = generateDirectedEdgeConstraints;
-    /*
-    Following function based on: https://github.com/mikolalysenko/strongly-connected-components
-
-    The MIT License (MIT)
-
-    Copyright (c) 2013 Mikola Lysenko
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-    THE SOFTWARE.
-    */
-    function stronglyConnectedComponents(numVertices, edges, la) {
-        var adjList = new Array(numVertices);
-        var index = new Array(numVertices);
-        var lowValue = new Array(numVertices);
-        var active = new Array(numVertices);
-        for (var i = 0; i < numVertices; ++i) {
-            adjList[i] = [];
-            index[i] = -1;
-            lowValue[i] = 0;
-            active[i] = false;
-        }
-        for (var i = 0; i < edges.length; ++i) {
-            adjList[la.getSourceIndex(edges[i])].push(la.getTargetIndex(edges[i]));
-        }
-        var count = 0;
-        var S = [];
-        var components = [];
-        function strongConnect(v) {
-            index[v] = count;
-            lowValue[v] = count;
-            active[v] = true;
-            count += 1;
-            S.push(v);
-            var e = adjList[v];
-            for (var i = 0; i < e.length; ++i) {
-                var u = e[i];
-                if (index[u] < 0) {
-                    strongConnect(u);
-                    lowValue[v] = Math.min(lowValue[v], lowValue[u]) | 0;
-                }
-                else if (active[u]) {
-                    lowValue[v] = Math.min(lowValue[v], lowValue[u]);
-                }
-            }
-            if (lowValue[v] === index[v]) {
-                var component = [];
-                for (var i = S.length - 1; i >= 0; --i) {
-                    var w = S[i];
-                    active[w] = false;
-                    component.push(w);
-                    if (w === v) {
-                        S.length = i;
-                        break;
-                    }
-                }
-                components.push(component);
-            }
-        }
-        for (var i = 0; i < numVertices; ++i) {
-            if (index[i] < 0) {
-                strongConnect(i);
-            }
-        }
-        return components;
-    }
-})(cola || (cola = {}));
-var cola;
-(function (cola) {
-    var powergraph;
-    (function (powergraph) {
-        var PowerEdge = (function () {
-            function PowerEdge(source, target, type) {
-                this.source = source;
-                this.target = target;
-                this.type = type;
-            }
-            return PowerEdge;
-        })();
-        powergraph.PowerEdge = PowerEdge;
-        var Configuration = (function () {
-            function Configuration(n, edges, linkAccessor, rootGroup) {
-                var _this = this;
-                this.linkAccessor = linkAccessor;
-                this.modules = new Array(n);
-                this.roots = [];
-                if (rootGroup) {
-                    this.initModulesFromGroup(rootGroup);
-                }
-                else {
-                    this.roots.push(new ModuleSet());
-                    for (var i = 0; i < n; ++i)
-                        this.roots[0].add(this.modules[i] = new Module(i));
-                }
-                this.R = edges.length;
-                edges.forEach(function (e) {
-                    var s = _this.modules[linkAccessor.getSourceIndex(e)], t = _this.modules[linkAccessor.getTargetIndex(e)], type = linkAccessor.getType(e);
-                    s.outgoing.add(type, t);
-                    t.incoming.add(type, s);
-                });
-            }
-            Configuration.prototype.initModulesFromGroup = function (group) {
-                var moduleSet = new ModuleSet();
-                this.roots.push(moduleSet);
-                for (var i = 0; i < group.leaves.length; ++i) {
-                    var node = group.leaves[i];
-                    var module = new Module(node.id);
-                    this.modules[node.id] = module;
-                    moduleSet.add(module);
-                }
-                if (group.groups) {
-                    for (var j = 0; j < group.groups.length; ++j) {
-                        var child = group.groups[j];
-                        // Use negative module id to avoid clashes between predefined and generated modules
-                        moduleSet.add(new Module(-1 - j, new LinkSets(), new LinkSets(), this.initModulesFromGroup(child), true));
-                    }
-                }
-                return moduleSet;
-            };
-            // merge modules a and b keeping track of their power edges and removing the from roots
-            Configuration.prototype.merge = function (a, b, k) {
-                if (k === void 0) { k = 0; }
-                var inInt = a.incoming.intersection(b.incoming), outInt = a.outgoing.intersection(b.outgoing);
-                var children = new ModuleSet();
-                children.add(a);
-                children.add(b);
-                var m = new Module(this.modules.length, outInt, inInt, children);
-                this.modules.push(m);
-                var update = function (s, i, o) {
-                    s.forAll(function (ms, linktype) {
-                        ms.forAll(function (n) {
-                            var nls = n[i];
-                            nls.add(linktype, m);
-                            nls.remove(linktype, a);
-                            nls.remove(linktype, b);
-                            a[o].remove(linktype, n);
-                            b[o].remove(linktype, n);
-                        });
-                    });
-                };
-                update(outInt, "incoming", "outgoing");
-                update(inInt, "outgoing", "incoming");
-                this.R -= inInt.count() + outInt.count();
-                this.roots[k].remove(a);
-                this.roots[k].remove(b);
-                this.roots[k].add(m);
-                return m;
-            };
-            Configuration.prototype.rootMerges = function (k) {
-                if (k === void 0) { k = 0; }
-                var rs = this.roots[k].modules();
-                var n = rs.length;
-                var merges = new Array(n * (n - 1));
-                var ctr = 0;
-                for (var i = 0, i_ = n - 1; i < i_; ++i) {
-                    for (var j = i + 1; j < n; ++j) {
-                        var a = rs[i], b = rs[j];
-                        merges[ctr++] = { nEdges: this.nEdges(a, b), a: a, b: b };
-                    }
-                }
-                return merges;
-            };
-            Configuration.prototype.greedyMerge = function () {
-                for (var i = 0; i < this.roots.length; ++i) {
-                    // Handle single nested module case
-                    if (this.roots[i].modules().length < 2)
-                        continue;
-                    var ms = this.rootMerges(i).sort(function (a, b) { return a.nEdges - b.nEdges; });
-                    var m = ms[0];
-                    if (m.nEdges >= this.R)
-                        continue;
-                    this.merge(m.a, m.b, i);
-                    return true;
-                }
-            };
-            Configuration.prototype.nEdges = function (a, b) {
-                var inInt = a.incoming.intersection(b.incoming), outInt = a.outgoing.intersection(b.outgoing);
-                return this.R - inInt.count() - outInt.count();
-            };
-            Configuration.prototype.getGroupHierarchy = function (retargetedEdges) {
-                var _this = this;
-                var groups = [];
-                var root = {};
-                toGroups(this.roots[0], root, groups);
-                var es = this.allEdges();
-                es.forEach(function (e) {
-                    var a = _this.modules[e.source];
-                    var b = _this.modules[e.target];
-                    retargetedEdges.push(new PowerEdge(typeof a.gid === "undefined" ? e.source : groups[a.gid], typeof b.gid === "undefined" ? e.target : groups[b.gid], e.type));
-                });
-                return groups;
-            };
-            Configuration.prototype.allEdges = function () {
-                var es = [];
-                Configuration.getEdges(this.roots[0], es);
-                return es;
-            };
-            Configuration.getEdges = function (modules, es) {
-                modules.forAll(function (m) {
-                    m.getEdges(es);
-                    Configuration.getEdges(m.children, es);
-                });
-            };
-            return Configuration;
-        })();
-        powergraph.Configuration = Configuration;
-        function toGroups(modules, group, groups) {
-            modules.forAll(function (m) {
-                if (m.isLeaf()) {
-                    if (!group.leaves)
-                        group.leaves = [];
-                    group.leaves.push(m.id);
-                }
-                else {
-                    var g = group;
-                    m.gid = groups.length;
-                    if (!m.isIsland() || m.predefined) {
-                        g = { id: m.gid };
-                        if (!group.groups)
-                            group.groups = [];
-                        group.groups.push(m.gid);
-                        groups.push(g);
-                    }
-                    toGroups(m.children, g, groups);
-                }
-            });
-        }
-        var Module = (function () {
-            function Module(id, outgoing, incoming, children, predefined) {
-                if (outgoing === void 0) { outgoing = new LinkSets(); }
-                if (incoming === void 0) { incoming = new LinkSets(); }
-                if (children === void 0) { children = new ModuleSet(); }
-                if (predefined === void 0) { predefined = false; }
-                this.id = id;
-                this.outgoing = outgoing;
-                this.incoming = incoming;
-                this.children = children;
-                this.predefined = predefined;
-            }
-            Module.prototype.getEdges = function (es) {
-                var _this = this;
-                this.outgoing.forAll(function (ms, edgetype) {
-                    ms.forAll(function (target) {
-                        es.push(new PowerEdge(_this.id, target.id, edgetype));
-                    });
-                });
-            };
-            Module.prototype.isLeaf = function () {
-                return this.children.count() === 0;
-            };
-            Module.prototype.isIsland = function () {
-                return this.outgoing.count() === 0 && this.incoming.count() === 0;
-            };
-            return Module;
-        })();
-        powergraph.Module = Module;
-        function intersection(m, n) {
-            var i = {};
-            for (var v in m)
-                if (v in n)
-                    i[v] = m[v];
-            return i;
-        }
-        var ModuleSet = (function () {
-            function ModuleSet() {
-                this.table = {};
-            }
-            ModuleSet.prototype.count = function () {
-                return Object.keys(this.table).length;
-            };
-            ModuleSet.prototype.intersection = function (other) {
-                var result = new ModuleSet();
-                result.table = intersection(this.table, other.table);
-                return result;
-            };
-            ModuleSet.prototype.intersectionCount = function (other) {
-                return this.intersection(other).count();
-            };
-            ModuleSet.prototype.contains = function (id) {
-                return id in this.table;
-            };
-            ModuleSet.prototype.add = function (m) {
-                this.table[m.id] = m;
-            };
-            ModuleSet.prototype.remove = function (m) {
-                delete this.table[m.id];
-            };
-            ModuleSet.prototype.forAll = function (f) {
-                for (var mid in this.table) {
-                    f(this.table[mid]);
-                }
-            };
-            ModuleSet.prototype.modules = function () {
-                var vs = [];
-                this.forAll(function (m) {
-                    if (!m.predefined)
-                        vs.push(m);
-                });
-                return vs;
-            };
-            return ModuleSet;
-        })();
-        powergraph.ModuleSet = ModuleSet;
-        var LinkSets = (function () {
-            function LinkSets() {
-                this.sets = {};
-                this.n = 0;
-            }
-            LinkSets.prototype.count = function () {
-                return this.n;
-            };
-            LinkSets.prototype.contains = function (id) {
-                var result = false;
-                this.forAllModules(function (m) {
-                    if (!result && m.id == id) {
-                        result = true;
-                    }
-                });
-                return result;
-            };
-            LinkSets.prototype.add = function (linktype, m) {
-                var s = linktype in this.sets ? this.sets[linktype] : this.sets[linktype] = new ModuleSet();
-                s.add(m);
-                ++this.n;
-            };
-            LinkSets.prototype.remove = function (linktype, m) {
-                var ms = this.sets[linktype];
-                ms.remove(m);
-                if (ms.count() === 0) {
-                    delete this.sets[linktype];
-                }
-                --this.n;
-            };
-            LinkSets.prototype.forAll = function (f) {
-                for (var linktype in this.sets) {
-                    f(this.sets[linktype], linktype);
-                }
-            };
-            LinkSets.prototype.forAllModules = function (f) {
-                this.forAll(function (ms, lt) { return ms.forAll(f); });
-            };
-            LinkSets.prototype.intersection = function (other) {
-                var result = new LinkSets();
-                this.forAll(function (ms, lt) {
-                    if (lt in other.sets) {
-                        var i = ms.intersection(other.sets[lt]), n = i.count();
-                        if (n > 0) {
-                            result.sets[lt] = i;
-                            result.n += n;
-                        }
-                    }
-                });
-                return result;
-            };
-            return LinkSets;
-        })();
-        powergraph.LinkSets = LinkSets;
-        function intersectionCount(m, n) {
-            return Object.keys(intersection(m, n)).length;
-        }
-        function getGroups(nodes, links, la, rootGroup) {
-            var n = nodes.length, c = new powergraph.Configuration(n, links, la, rootGroup);
-            while (c.greedyMerge())
-                ;
-            var powerEdges = [];
-            var g = c.getGroupHierarchy(powerEdges);
-            powerEdges.forEach(function (e) {
-                var f = function (end) {
-                    var g = e[end];
-                    if (typeof g == "number")
-                        e[end] = nodes[g];
-                };
-                f("source");
-                f("target");
-            });
-            return { groups: g, powerEdges: powerEdges };
-        }
-        powergraph.getGroups = getGroups;
-    })(powergraph = cola.powergraph || (cola.powergraph = {}));
 })(cola || (cola = {}));
 
 //Based on js_bintrees:
