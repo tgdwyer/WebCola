@@ -149,6 +149,7 @@ function getLinkTypes(links) {
 function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
 
 function heuristicPowerGraphLayout(graph, size) {
+    // compute power graph
     var powerGraph;
     var d3cola = colans.d3adaptor()
         .avoidOverlaps(false)
@@ -159,6 +160,8 @@ function heuristicPowerGraphLayout(graph, size) {
             powerGraph.groups.forEach(function (v) { v.padding = 0.01 });
         });
 
+    // construct a flat graph with dummy nodes for the groups and edges connecting group dummy nodes to their children
+    // power edges attached to groups are replaced with edges connected to the corresponding group dummy node
     var n = graph.nodes.length;
     var edges = [];
     var vs = graph.nodes.slice(0);
@@ -175,6 +178,7 @@ function heuristicPowerGraphLayout(graph, size) {
         edges.push({ source: e.source.index, target: e.target.index });
     });
 
+    // layout the flat graph with dummy nodes and edges
     d3cola = colans.d3adaptor()
         .size(size)
         .nodes(vs)
@@ -183,11 +187,14 @@ function heuristicPowerGraphLayout(graph, size) {
         .symmetricDiffLinkLengths(5)
         .start(100);
 
+    // final layout taking node positions from above as starting positions
+    // subject to group containment constraints
     d3cola = colans.d3adaptor()
         .size(size)
         .avoidOverlaps(true)
         .nodes(graph.nodes)
         .links(graph.links)
+        //.flowLayout('y', 30)
         .groupCompactness(1e-4)
         .powerGraphGroups(function (d) {
             powerGraph = d;
