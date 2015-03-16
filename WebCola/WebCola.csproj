@@ -143,6 +143,7 @@
     <Content Include="examples\graphdata\labels.txt" />
     <Content Include="examples\graphdata\signed_weighted.txt" />
     <Content Include="examples\graphdata\signed_weighted_affil.txt" />
+    <Content Include="examples\dotpowergraph.html" />
     <Content Include="examples\vhybridize.html" />
     <Content Include="index.html" />
     <Content Include="examples\modifyinggraph.html" />
@@ -172,6 +173,7 @@
     <TypeScriptCompile Include="examples\pretrip.ts" />
     <TypeScriptCompile Include="examples\tetrisbug.ts" />
     <TypeScriptCompile Include="examples\tmdbgraph.ts" />
+    <TypeScriptCompile Include="examples\dotpowergraph.ts" />
     <TypeScriptCompile Include="examples\vhybridize.ts" />
     <TypeScriptCompile Include="src\layout.ts" />
     <TypeScriptCompile Include="src\d3adaptor.ts" />

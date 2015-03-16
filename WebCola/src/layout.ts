@@ -398,7 +398,7 @@ module cola {
          * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
          * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
          */
-        symmetricDiffLinkLengths(idealLength: number, w: number): Layout {
+        symmetricDiffLinkLengths(idealLength: number, w: number = 1): Layout {
             this.linkDistance(l => idealLength * l.length);
             this._linkLengthCalculator = () => cola.symmetricDiffLinkLengths(this._links, this.linkAccessor, w);
             return this;
@@ -414,7 +414,7 @@ module cola {
          * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
          * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
          */
-        jaccardLinkLengths(idealLength: number, w: number): Layout {
+        jaccardLinkLengths(idealLength: number, w: number = 1): Layout {
             this.linkDistance(l => idealLength * l.length);
             this._linkLengthCalculator = () => cola.jaccardLinkLengths(this._links, this.linkAccessor, w);
             return this;

@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Power graph representation of a dense graph</title>
+    <style>
+        @import url(../style.css);
+
+        .node {
+            cursor: move;
+            fill: #550000;
+        }
+
+        .group {
+            stroke: #AA6c39;
+            fill: #AA6c39;
+            stroke-width: 3;
+            fill-opacity: 0.4;
+        }
+
+        .link {
+            /*stroke: #661141;*/
+            stroke-width: 3px;
+            stroke-opacity: 1;
+            marker-end: url(#end-arrow);
+        }
+
+        .label {
+            fill: white;
+            font-family: Verdana;
+            font-size: 15px;
+            text-anchor: middle;
+            cursor: move;
+        }
+
+        .swatchlabel {
+            font-family: Verdana;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!--<h1>Hybridize input nodes &ampl; links JSON</h1>
+    <textarea id="inputjsontext" rows="50" cols="100"></textarea>
+    <button id="HybridizeButton">HYBRIDIZE</button>-->
+    <div id="mysoloresults"></div>
+    <script src="../extern/d3.v3.js"></script>
+    <script src="../extern/graphlib-dot.min.js"> </script> 
+    <script src="../cola.min.js"></script>
+    <script src="../src/gridrouter.js"></script>
+    <script src="dotpowergraph.js"></script>
+</body>
+</html>

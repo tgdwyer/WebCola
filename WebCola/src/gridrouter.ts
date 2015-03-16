@@ -63,201 +63,201 @@ module cola {
             return this.length >= 0 ? this.s.slice(this.si, this.si + this.length) : [];
         }
     }
-	export class GridRouter<Node> {
-		leaves:any[] = null;
-		groups: NodeWrapper[];
-		nodes: NodeWrapper[];
-		cols;
-		rows;
-		root;
-		verts: Vert[];
-		edges;
-		backToFront;
-		obstacles;
-		passableEdges;
-	    private avg(a) { return a.reduce((x,y)=>x+y)/a.length }
-	    private getGridDim(axis) {
-	        var columns = [];
-	        var ls = this.leaves.slice(0,this.leaves.length);
-	        while(ls.length > 0) {
-	            var r = ls[0].rect;
-	            var col = ls.filter(v=>v.rect['overlap'+axis.toUpperCase()](r));
-	            columns.push(col);
-	            col.forEach(v=> ls.splice(ls.indexOf(v),1));
-	            col[axis] = this.avg(col.map(v=> v.rect['c'+axis]()))
-	        }
-	        columns.sort((x,y)=> x[axis] - y[axis])
-	        return columns;
-	    }
+    export class GridRouter<Node> {
+        leaves: any[] = null;
+        groups: NodeWrapper[];
+        nodes: NodeWrapper[];
+        cols;
+        rows;
+        root;
+        verts: Vert[];
+        edges;
+        backToFront;
+        obstacles;
+        passableEdges;
+        private avg(a) { return a.reduce((x, y) => x + y) / a.length }
+        private getGridDim(axis) {
+            var columns = [];
+            var ls = this.leaves.slice(0, this.leaves.length);
+            while (ls.length > 0) {
+                var r = ls[0].rect;
+                var col = ls.filter(v=> v.rect['overlap' + axis.toUpperCase()](r));
+                columns.push(col);
+                col.forEach(v=> ls.splice(ls.indexOf(v), 1));
+                col[axis] = this.avg(col.map(v=> v.rect['c' + axis]()))
+            }
+            columns.sort((x, y) => x[axis] - y[axis])
+            return columns;
+        }
 
-	    // get the depth of the given node in the group hierarchy
-	    private getDepth(v) {
-	        var depth = 0;
-	        while (v.parent !== this.root) {
-	            depth++;
-	            v = v.parent;
-	        }
-	        return depth;
-	    }
+        // get the depth of the given node in the group hierarchy
+        private getDepth(v) {
+            var depth = 0;
+            while (v.parent !== this.root) {
+                depth++;
+                v = v.parent;
+            }
+            return depth;
+        }
 
-	    // medial axes between node centres and also boundary lines for the grid
-	    private midPoints(a) {
-	        var gap = a[1] - a[0];
-	        var mids = [a[0]-gap/2];
-	        for(var i = 1; i < a.length; i++) {
-	            mids.push((a[i]+a[i-1])/2);
-	        }
-	        mids.push(a[a.length-1] + gap/2);
-	        return mids;
-	    }
+        // medial axes between node centres and also boundary lines for the grid
+        private midPoints(a) {
+            var gap = a[1] - a[0];
+            var mids = [a[0] - gap / 2];
+            for (var i = 1; i < a.length; i++) {
+                mids.push((a[i] + a[i - 1]) / 2);
+            }
+            mids.push(a[a.length - 1] + gap / 2);
+            return mids;
+        }
 
         constructor(public originalnodes: Node[], accessor: NodeAccessor<Node>, public groupPadding: number = 12) {
-			this.nodes = originalnodes.map((v,i)=> new NodeWrapper(i, accessor.getBounds(v), accessor.getChildren(v)));
-	        this.leaves = this.nodes.filter(v=>v.leaf);
-	        this.groups = this.nodes.filter(g=>!g.leaf);
-	        this.cols = this.getGridDim('x');
-	        this.rows = this.getGridDim('y');
+            this.nodes = originalnodes.map((v, i) => new NodeWrapper(i, accessor.getBounds(v), accessor.getChildren(v)));
+            this.leaves = this.nodes.filter(v=> v.leaf);
+            this.groups = this.nodes.filter(g=> !g.leaf);
+            this.cols = this.getGridDim('x');
+            this.rows = this.getGridDim('y');
 
-	        // create parents for each node or group that is a member of another's children 
-	        this.groups.forEach(v=>
-	            v.children.forEach(c=> this.nodes[<number>c].parent = v));
+            // create parents for each node or group that is a member of another's children 
+            this.groups.forEach(v=>
+                v.children.forEach(c=> this.nodes[<number>c].parent = v));
 
-	        // root claims the remaining orphans
-	        this.root = {children:[]};
-	        this.nodes.forEach(v=> {
-	            if (typeof v.parent === 'undefined') {
-	                v.parent = this.root;
-	                this.root.children.push(v.id);
-	            }
+            // root claims the remaining orphans
+            this.root = { children: [] };
+            this.nodes.forEach(v=> {
+                if (typeof v.parent === 'undefined') {
+                    v.parent = this.root;
+                    this.root.children.push(v.id);
+                }
 
-	            // each node will have grid vertices associated with it,
-	            // some inside the node and some on the boundary
-	            // leaf nodes will have exactly one internal node at the center
-	            // and four boundary nodes
-	            // groups will have potentially many of each
-	            v.ports = []
-	        });
+                // each node will have grid vertices associated with it,
+                // some inside the node and some on the boundary
+                // leaf nodes will have exactly one internal node at the center
+                // and four boundary nodes
+                // groups will have potentially many of each
+                v.ports = []
+            });
 
-	        // nodes ordered by their position in the group hierarchy
-	        this.backToFront = this.nodes.slice(0);
-	        this.backToFront.sort((x,y)=> this.getDepth(x) - this.getDepth(y)); 
+            // nodes ordered by their position in the group hierarchy
+            this.backToFront = this.nodes.slice(0);
+            this.backToFront.sort((x, y) => this.getDepth(x) - this.getDepth(y)); 
 
-	        // compute boundary rectangles for each group
-	        // has to be done from front to back, i.e. inside groups to outside groups
-	        // such that each can be made large enough to enclose its interior
-	        var frontToBackGroups = this.backToFront.slice(0).reverse().filter(g=>!g.leaf);
-	        frontToBackGroups.forEach(v=> {
-	            var r = cola.vpsc.Rectangle.empty();
-	            v.children.forEach(c=> r = r.union(this.nodes[c].rect));
-	            v.rect = r.inflate(this.groupPadding);
-	        });
+            // compute boundary rectangles for each group
+            // has to be done from front to back, i.e. inside groups to outside groups
+            // such that each can be made large enough to enclose its interior
+            var frontToBackGroups = this.backToFront.slice(0).reverse().filter(g=> !g.leaf);
+            frontToBackGroups.forEach(v=> {
+                var r = cola.vpsc.Rectangle.empty();
+                v.children.forEach(c=> r = r.union(this.nodes[c].rect));
+                v.rect = r.inflate(this.groupPadding);
+            });
 
-	        var colMids = this.midPoints(this.cols.map(r=> r.x));
-	        var rowMids = this.midPoints(this.rows.map(r=> r.y));
+            var colMids = this.midPoints(this.cols.map(r=> r.x));
+            var rowMids = this.midPoints(this.rows.map(r=> r.y));
 
-	        // setup extents of lines
-	        var rowx = colMids[0], rowX = colMids[colMids.length-1];
-	        var coly = rowMids[0], colY = rowMids[rowMids.length-1];
+            // setup extents of lines
+            var rowx = colMids[0], rowX = colMids[colMids.length - 1];
+            var coly = rowMids[0], colY = rowMids[rowMids.length - 1];
 
-	        // horizontal lines
-	        var hlines = this.rows.map(r=> <any>{x1: rowx, x2: rowX, y1: r.y, y2: r.y})
-	                         .concat(rowMids.map(m=> <any>{x1: rowx, x2: rowX, y1: m, y2: m}));
+            // horizontal lines
+            var hlines = this.rows.map(r=> <any>{ x1: rowx, x2: rowX, y1: r.y, y2: r.y })
+                .concat(rowMids.map(m=> <any>{ x1: rowx, x2: rowX, y1: m, y2: m }));
 
-	        // vertical lines
-	        var vlines = this.cols.map(c=> <any>{x1: c.x, x2: c.x, y1: coly, y2: colY})
-	        				 .concat(colMids.map(m=> <any>{x1: m, x2: m, y1: coly, y2: colY}));
+            // vertical lines
+            var vlines = this.cols.map(c=> <any>{ x1: c.x, x2: c.x, y1: coly, y2: colY })
+                .concat(colMids.map(m=> <any>{ x1: m, x2: m, y1: coly, y2: colY }));
 
-	        // the full set of lines
-	        var lines = hlines.concat(vlines);
+            // the full set of lines
+            var lines = hlines.concat(vlines);
 
-	        // we record the vertices associated with each line
-	        lines.forEach(l=>l.verts = []);
+            // we record the vertices associated with each line
+            lines.forEach(l=> l.verts = []);
 
-	        // the routing graph
-	        this.verts = [];
-	        this.edges = [];
+            // the routing graph
+            this.verts = [];
+            this.edges = [];
 
-	        // create vertices at the crossings of horizontal and vertical grid-lines
-	        hlines.forEach(h=> 
-	            vlines.forEach(v=> {
-	                var p = new Vert(this.verts.length, v.x1, h.y1);
-	                h.verts.push(p);
-	                v.verts.push(p);
-	                this.verts.push(p);
+            // create vertices at the crossings of horizontal and vertical grid-lines
+            hlines.forEach(h=>
+                vlines.forEach(v=> {
+                    var p = new Vert(this.verts.length, v.x1, h.y1);
+                    h.verts.push(p);
+                    v.verts.push(p);
+                    this.verts.push(p);
 
-	                // assign vertices to the nodes immediately under them
-	                var i = this.backToFront.length;
-	                while (i-- > 0) {
-	                    var node = this.backToFront[i],
-	                        r = node.rect;
-	                    var dx = Math.abs(p.x - r.cx()),
-	                        dy = Math.abs(p.y - r.cy());
-	                    if (dx < r.width()/2 && dy < r.height()/2) {
-	                        (<any>p).node = node;
-	                        break;
-	                    }
-	                }
-	            })
-	        );
+                    // assign vertices to the nodes immediately under them
+                    var i = this.backToFront.length;
+                    while (i-- > 0) {
+                        var node = this.backToFront[i],
+                            r = node.rect;
+                        var dx = Math.abs(p.x - r.cx()),
+                            dy = Math.abs(p.y - r.cy());
+                        if (dx < r.width() / 2 && dy < r.height() / 2) {
+                            (<any>p).node = node;
+                            break;
+                        }
+                    }
+                })
+                );
 
-	        lines.forEach((l,li)=> {
-	            // create vertices at the intersections of nodes and lines
-	            this.nodes.forEach((v,i)=> {
-                    v.rect.lineIntersections(l.x1, l.y1, l.x2, l.y2).forEach((intersect,j)=> {
+            lines.forEach((l, li) => {
+                // create vertices at the intersections of nodes and lines
+                this.nodes.forEach((v, i) => {
+                    v.rect.lineIntersections(l.x1, l.y1, l.x2, l.y2).forEach((intersect, j) => {
                         //console.log(li+','+i+','+j+':'+intersect.x + ',' + intersect.y);
-	                	var p = new Vert(this.verts.length, intersect.x, intersect.y, v, l);
-	                    this.verts.push(p);
-	                    l.verts.push(p);
-	                    v.ports.push(p);
-	                });
-	            });
+                        var p = new Vert(this.verts.length, intersect.x, intersect.y, v, l);
+                        this.verts.push(p);
+                        l.verts.push(p);
+                        v.ports.push(p);
+                    });
+                });
 
-	            // split lines into edges joining vertices
-	            var isHoriz = Math.abs(l.y1 - l.y2) < 0.1;
-	            var delta = (a,b)=> isHoriz ? b.x - a.x : b.y - a.y;
-	            l.verts.sort(delta);
-	            for (var i = 1; i < l.verts.length; i++) {
-	                var u = l.verts[i-1], v = l.verts[i];
-	                if (u.node && u.node === v.node && u.node.leaf) continue;
-	                this.edges.push({source: u.id, target: v.id, length: Math.abs(delta(u,v))});
-	            }
-	        });
+                // split lines into edges joining vertices
+                var isHoriz = Math.abs(l.y1 - l.y2) < 0.1;
+                var delta = (a, b) => isHoriz ? b.x - a.x : b.y - a.y;
+                l.verts.sort(delta);
+                for (var i = 1; i < l.verts.length; i++) {
+                    var u = l.verts[i - 1], v = l.verts[i];
+                    if (u.node && u.node === v.node && u.node.leaf) continue;
+                    this.edges.push({ source: u.id, target: v.id, length: Math.abs(delta(u, v)) });
+                }
+            });
 
 
 
-		}
+        }
 
-	    // find path from v to root including both v and root
-	    private findLineage(v) {
-	        var lineage = [v];
-	        do {
-	            v = v.parent; 
-	            lineage.push(v);
-	        } while (v!==this.root);
-	        return lineage.reverse();
-	    }
+        // find path from v to root including both v and root
+        private findLineage(v) {
+            var lineage = [v];
+            do {
+                v = v.parent;
+                lineage.push(v);
+            } while (v !== this.root);
+            return lineage.reverse();
+        }
 
-	    // find path connecting a and b through their lowest common ancestor
-	    private findAncestorPathBetween(a,b) {
-	        var aa = this.findLineage(a), ba = this.findLineage(b), i = 0;
-	        while (aa[i] === ba[i]) i++;
-	        // i-1 to include common ancestor only once (as first element)
-	        return {commonAncestor: aa[i-1], lineages: aa.slice(i).concat(ba.slice(i))};
-	    }
+        // find path connecting a and b through their lowest common ancestor
+        private findAncestorPathBetween(a, b) {
+            var aa = this.findLineage(a), ba = this.findLineage(b), i = 0;
+            while (aa[i] === ba[i]) i++;
+            // i-1 to include common ancestor only once (as first element)
+            return { commonAncestor: aa[i - 1], lineages: aa.slice(i).concat(ba.slice(i)) };
+        }
 
-	    // when finding a path between two nodes a and b, siblings of a and b on the
-	    // paths from a and b to their least common ancestor are obstacles
-	    siblingObstacles(a,b) {
-	        var path = this.findAncestorPathBetween(a,b);
-	        var lineageLookup = {};
-	        path.lineages.forEach(v=> lineageLookup[v.id] = {} );
-	        var obstacles = path.commonAncestor.children.filter(v=> !(v in lineageLookup));
+        // when finding a path between two nodes a and b, siblings of a and b on the
+        // paths from a and b to their least common ancestor are obstacles
+        siblingObstacles(a, b) {
+            var path = this.findAncestorPathBetween(a, b);
+            var lineageLookup = {};
+            path.lineages.forEach(v=> lineageLookup[v.id] = {});
+            var obstacles = path.commonAncestor.children.filter(v=> !(v in lineageLookup));
 
-	        path.lineages
-	        	.filter(v=> v.parent !== path.commonAncestor)
-	        	.forEach(v=> obstacles = obstacles.concat(v.parent.children.filter(c=> c !== v.id)));
+            path.lineages
+                .filter(v=> v.parent !== path.commonAncestor)
+                .forEach(v=> obstacles = obstacles.concat(v.parent.children.filter(c=> c !== v.id)));
 
-	        return obstacles.map(v=> this.nodes[v]);
+            return obstacles.map(v=> this.nodes[v]);
         }
 
         // for the given routes, extract all the segments orthogonal to the axis x
@@ -300,7 +300,7 @@ module cola {
         //   e1 = edge of s1, e2 = edge of s2
         //   if leftOf(e1,e2) create constraint s1.x + gap <= s2.x
         //   else if leftOf(e2,e1) create cons. s2.x + gap <= s1.x
-        static nudgeSegs(x:string, y: string, routes, segments, leftOf, gap:number) {
+        static nudgeSegs(x: string, y: string, routes, segments, leftOf, gap: number) {
             var n = segments.length;
             if (n <= 1) return;
             var vs = segments.map(s => new vpsc.Variable(s[0][x]));
@@ -327,7 +327,7 @@ module cola {
                             } else {
                                 lind = i, rind = j;
                             }
-                        } 
+                        }
                     } else {
                         if (leftOf(e1, e2)) {
                             if (s1[0][y] < s1[1][y]) {
@@ -355,7 +355,7 @@ module cola {
             });
         }
 
-        static nudgeSegments(routes, x:string, y:string, leftOf: (e1:number,e2:number)=>boolean, gap: number) {
+        static nudgeSegments(routes, x: string, y: string, leftOf: (e1: number, e2: number) => boolean, gap: number) {
             var vsegmentsets = GridRouter.getSegmentSets(routes, x, y);
             // scan the grouped (by x) segment sets to find co-linear bundles
             for (var i = 0; i < vsegmentsets.length; i++) {
@@ -386,7 +386,7 @@ module cola {
 
         // obtain routes for the specified edges, nicely nudged apart
         // warning: edge paths may be reversed such that common paths are ordered consistently within bundles!
-        routeEdges<Edge>(edges: Edge[], gap: number, source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][][]{
+        routeEdges<Edge>(edges: Edge[], gap: number, source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][][] {
             var routePaths = edges.map(e=> this.route(source(e), target(e)));
             var order = cola.GridRouter.orderEdges(routePaths);
             var routes = routePaths.map(function (e) { return cola.GridRouter.makeSegments(e); });
@@ -476,7 +476,7 @@ module cola {
         // for an orthogonal path described by a sequence of points, create a list of segments
         // if consecutive segments would make a straight line they are merged into a single segment
         // segments are over cloned points, not the original vertices
-        static makeSegments(path: geom.Point[]): geom.Point[][]{
+        static makeSegments(path: geom.Point[]): geom.Point[][] {
             function copyPoint(p: geom.Point) {
                 return <geom.Point>{ x: p.x, y: p.y };
             }
@@ -493,58 +493,58 @@ module cola {
             return segments;
         }
 
-	    // find a route between node s and node t
-	    // returns an array of indices to verts
-        route(s: number, t: number): geom.Point[]{
-	    	var source = this.nodes[<number>s], target = this.nodes[<number>t];
-	    	this.obstacles = this.siblingObstacles(source, target);
+        // find a route between node s and node t
+        // returns an array of indices to verts
+        route(s: number, t: number): geom.Point[] {
+            var source = this.nodes[<number>s], target = this.nodes[<number>t];
+            this.obstacles = this.siblingObstacles(source, target);
 
-	        var obstacleLookup = {};
-	        this.obstacles.forEach(o => obstacleLookup[o.id] = o);
-	        this.passableEdges = this.edges.filter(e=> {
-	            var u = this.verts[e.source],
-	                v = this.verts[e.target];
-	            return !(u.node && u.node.id in obstacleLookup 
-	                     || v.node && v.node.id in obstacleLookup);
-	        });
+            var obstacleLookup = {};
+            this.obstacles.forEach(o => obstacleLookup[o.id] = o);
+            this.passableEdges = this.edges.filter(e=> {
+                var u = this.verts[e.source],
+                    v = this.verts[e.target];
+                return !(u.node && u.node.id in obstacleLookup
+                    || v.node && v.node.id in obstacleLookup);
+            });
 
             // add dummy segments linking ports inside source and target
-	        for(var i = 1; i < source.ports.length; i++) {
-	            var u = source.ports[0].id;
-	            var v = source.ports[i].id;
-	            this.passableEdges.push({
-	                source: u,
-	                target: v,
-	                length: 0
-	            });
-	        }
-	        for(var i = 1; i < target.ports.length; i++) {
-	            var u = target.ports[0].id;
-	            var v = target.ports[i].id;
-	            this.passableEdges.push({
-	                source: u,
-	                target: v,
-	                length: 0
-	            });
-	        }
+            for (var i = 1; i < source.ports.length; i++) {
+                var u = source.ports[0].id;
+                var v = source.ports[i].id;
+                this.passableEdges.push({
+                    source: u,
+                    target: v,
+                    length: 0
+                });
+            }
+            for (var i = 1; i < target.ports.length; i++) {
+                var u = target.ports[0].id;
+                var v = target.ports[i].id;
+                this.passableEdges.push({
+                    source: u,
+                    target: v,
+                    length: 0
+                });
+            }
 
-	        var getSource = e=>e.source,
-	            getTarget = e=>e.target,
-	            getLength = e=>e.length;
+            var getSource = e=> e.source,
+                getTarget = e=> e.target,
+                getLength = e=> e.length;
 
-	        var shortestPathCalculator = new cola.shortestpaths.Calculator(this.verts.length, this.passableEdges, getSource, getTarget, getLength);
-	        var bendPenalty = (u,v,w)=> {
-        		var a = this.verts[u], b = this.verts[v], c = this.verts[w];
-        		var dx = Math.abs(c.x - a.x), dy = Math.abs(c.y - a.y);
-        		// don't count bends from internal node edges
-        		if (a.node === source && a.node === b.node || b.node === target && b.node === c.node) 
-        			return 0;
-        		return dx > 1 && dy > 1  ? 1000 : 0;
+            var shortestPathCalculator = new cola.shortestpaths.Calculator(this.verts.length, this.passableEdges, getSource, getTarget, getLength);
+            var bendPenalty = (u, v, w) => {
+                var a = this.verts[u], b = this.verts[v], c = this.verts[w];
+                var dx = Math.abs(c.x - a.x), dy = Math.abs(c.y - a.y);
+                // don't count bends from internal node edges
+                if (a.node === source && a.node === b.node || b.node === target && b.node === c.node)
+                    return 0;
+                return dx > 1 && dy > 1 ? 1000 : 0;
             };
 
             // get shortest path
-	        var shortestPath = shortestPathCalculator.PathFromNodeToNodeWithPrevCost(
-	        	source.ports[0].id, target.ports[0].id,
+            var shortestPath = shortestPathCalculator.PathFromNodeToNodeWithPrevCost(
+                source.ports[0].id, target.ports[0].id,
                 bendPenalty);
             
             // shortest path is reversed and does not include the target port
@@ -552,9 +552,90 @@ module cola {
             pathPoints.push(this.nodes[target.id].ports[0]);
 
             // filter out any extra end points that are inside the source or target (i.e. the dummy segments above)
-            return pathPoints.filter((v, i) => 
+            return pathPoints.filter((v, i) =>
                 !(i < pathPoints.length - 1 && pathPoints[i + 1].node === source && v.node === source
-                || i > 0 && v.node === target && pathPoints[i - 1].node === target));
-	    }
+                    || i > 0 && v.node === target && pathPoints[i - 1].node === target));
+        }
+
+        static getRoutePath(route: geom.Point[][], cornerradius: number, arrowwidth: number, arrowheight: number): { routepath: string; arrowpath: string } {
+            var result = {
+                routepath: 'M ' + route[0][0].x + ' ' + route[0][0].y + ' ',
+                arrowpath: ''
+            };
+            if (route.length > 1) {
+                for (var i = 0; i < route.length; i++) {
+                    var li = route[i];
+                    var x = li[1].x, y = li[1].y;
+                    var dx = x - li[0].x;
+                    var dy = y - li[0].y;
+                    if (i < route.length - 1) {
+                        if (Math.abs(dx) > 0) {
+                            x -= dx / Math.abs(dx) * cornerradius;
+                        } else {
+                            y -= dy / Math.abs(dy) * cornerradius;
+                        }
+                        result.routepath += 'L ' + x + ' ' + y + ' ';
+                        var l = route[i + 1];
+                        var x0 = l[0].x, y0 = l[0].y;
+                        var x1 = l[1].x;
+                        var y1 = l[1].y;
+                        dx = x1 - x0;
+                        dy = y1 - y0;
+                        var angle = GridRouter.angleBetween2Lines(li, l) < 0 ? 1 : 0;
+                        //console.log(cola.GridRouter.angleBetween2Lines(li, l))
+                        var x2, y2;
+                        if (Math.abs(dx) > 0) {
+                            x2 = x0 + dx / Math.abs(dx) * cornerradius;
+                            y2 = y0;
+                        } else {
+                            x2 = x0;
+                            y2 = y0 + dy / Math.abs(dy) * cornerradius;
+                        }
+                        var cx = Math.abs(x2 - x);
+                        var cy = Math.abs(y2 - y);
+                        result.routepath += 'A ' + cx + ' ' + cy + ' 0 0 ' + angle + ' ' + x2 + ' ' + y2 + ' ';
+                    } else {
+                        var arrowtip = [x, y];
+                        var arrowcorner1, arrowcorner2;
+                        if (Math.abs(dx) > 0) {
+                            x -= dx / Math.abs(dx) * arrowheight;
+                            arrowcorner1 = [x, y + arrowwidth];
+                            arrowcorner2 = [x, y - arrowwidth];
+                        } else {
+                            y -= dy / Math.abs(dy) * arrowheight;
+                            arrowcorner1 = [x + arrowwidth, y];
+                            arrowcorner2 = [x - arrowwidth, y];
+                        }
+                        result.routepath += 'L ' + x + ' ' + y + ' ';
+                        if (arrowheight > 0) {
+                            result.arrowpath = 'M ' + arrowtip[0] + ' ' + arrowtip[1] + ' L ' + arrowcorner1[0] + ' ' + arrowcorner1[1]
+                            + ' L ' + arrowcorner2[0] + ' ' + arrowcorner2[1];
+                        }
+                    }
+                }
+            } else {
+                var li = route[0];
+                var x = li[1].x, y = li[1].y;
+                var dx = x - li[0].x;
+                var dy = y - li[0].y;
+                var arrowtip = [x, y];
+                var arrowcorner1, arrowcorner2;
+                if (Math.abs(dx) > 0) {
+                    x -= dx / Math.abs(dx) * arrowheight;
+                    arrowcorner1 = [x, y + arrowwidth];
+                    arrowcorner2 = [x, y - arrowwidth];
+                } else {
+                    y -= dy / Math.abs(dy) * arrowheight;
+                    arrowcorner1 = [x + arrowwidth, y];
+                    arrowcorner2 = [x - arrowwidth, y];
+                }
+                result.routepath += 'L ' + x + ' ' + y + ' ';
+                if (arrowheight > 0) {
+                    result.arrowpath = 'M ' + arrowtip[0] + ' ' + arrowtip[1] + ' L ' + arrowcorner1[0] + ' ' + arrowcorner1[1]
+                    + ' L ' + arrowcorner2[0] + ' ' + arrowcorner2[1];
+                }
+            }
+            return result;
+        }
     }
 }
