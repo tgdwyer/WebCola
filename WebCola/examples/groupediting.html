@@ -17,7 +17,7 @@
 
         .group {
             stroke: #fff;
-            stroke-width: 1.5px;
+            stroke-width: 2.5px;
             cursor: move;
             opacity: 0.7;
         }
@@ -35,13 +35,16 @@
             text-anchor: middle;
             cursor: move;
         }
+        .background {
+            fill: white;
+        }
     </style>
 </head>
 <body>
     <div class="header" style="float:none; text-align:center" width="100%">
         <h1>Layout with hierarchical grouping</h1>
     </div>
-    <div class="svgarea" style="float:left">
+    <div id="svgarea" style="float:left">
         <script src="../extern/d3.v3.js"></script>
         <script src="../cola.v3.min.js"></script>
         <script>
@@ -64,45 +67,161 @@
                 this.splice(new_index, 0, this.splice(old_index, 1)[0]);
                 return this;
             };
+            /*
+            function clone(graph) {
+                var temp = {};
+                temp.nodes = [];
+                temp.links = [];
+                temp.groups = [];
 
+                graph.nodes.forEach(function (e) {
+                    temp.nodes.push(e);
+                });
+
+                graph.links.forEach(function (e) {
+                    temp.links.push(e);
+                });
+
+                graph.groups.forEach(function (e) {
+                    temp.groups.push(e);
+                });
+
+                return temp;
+            }
+            */
             var width = 960,
-                height = 1000;
+                height = 800;
 
             var color = d3.scale.category20();
 
-            var cola = cola.d3adaptor()
-                .linkDistance(100)
-                .avoidOverlaps(true)
-                .handleDisconnected(false)
-                .size([width, height]);
+            function heuristicPowerGraphLayout(graph, size) {
+                
+                var d3cola = cola.d3adaptor()
+                .avoidOverlaps(false)
+                .nodes(graph.nodes)
+                .links(graph.links)
+                .groups(graph.groups);
 
-            var svg = d3.select(".svgarea").append("svg")
-                .attr("width", width)
-                .attr("height", height);
+                var n = graph.nodes.length;
+                var edges = [];
+                var vs = graph.nodes.slice(0);
+                vs.forEach(function (v, i) {
+                    return v.index = i;
+                });
+                graph.groups.forEach(function (g) {
+                    var sourceInd = g.gid = g.gid + n;
+                    vs.push(g);
+                    if (typeof g.leaves !== 'undefined')
+                        g.leaves.forEach(function (v) {
+                            return edges.push({ source: sourceInd, target: v.index });
+                        });
+                    if (typeof g.groups !== 'undefined')
+                        g.groups.forEach(function (gg) {
+                            return edges.push({ source: sourceInd, target: gg.gid + n });
+                        });
+                });
+                
 
-            //draw all the graph
-            var drawPicture = function (graph) {
-                cola
+                d3cola = cola.d3adaptor().size(size).nodes(vs).links(edges).avoidOverlaps(false).symmetricDiffLinkLengths(10).start(100);
+
+                d3cola = cola.d3adaptor().size(size).avoidOverlaps(true)
+                    .linkDistance(100)
+                    .handleDisconnected(false)
                     .nodes(graph.nodes)
                     .links(graph.links)
                     .groups(graph.groups)
-                    .start();
+                    .start(0, 0, 200);
+                    
+                return d3cola;
+            }
+            
+            var cola1;
+            var outer = d3.select("#svgarea").append("svg")
+                            .attr("width", width)
+                            .attr("height", height)
+                            .attr("pointer-events", "all");
+
+            
+            //var svg = d3.select(".svgarea").append("svg")
+            //    .attr("width", width)
+            //    .attr("height", height);
+
+            
+            var checkGroupChange = function (graph) {
+                //check and delete empty group
+                var tempGraphGroupsLength = graph.groups.length;
+                for (var index = tempGraphGroupsLength - 1; index >= 0; index--) {
+                    //console.log(graph.groups.length);
+                    //console.log(index);
+
+                    if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
+                        (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
+                        graph.groups.splice(index, 1);
+                    } else {
+                        if (typeof graph.groups[index].groups != "undefined") {
+                            var grouplength = graph.groups[index].groups.length;
+                            for (var i = grouplength - 1; i >= 0; i--) {
+                                if ((typeof graph.groups[index].groups[i].leaves == "undefined" || graph.groups[index].groups[i].leaves.length == 0) &&
+                                    (typeof graph.groups[index].groups[i].groups == "undefined" || graph.groups[index].groups[i].groups.length == 0)) {
+                                    graph.groups[index].groups.splice(i, 1);
+                                }
+                            }
+                        }
+                        if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
+                            (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
+                            graph.groups.splice(index, 1);
+                        }
+                    }
+                }
+
+            }
+
+            //draw all the graph
+            var runtimes = 1;
+            var drawPicture = function (graph) {
+                //console.log(graph);
+                if (runtimes == 1) {
+                    cola1 = heuristicPowerGraphLayout(graph, [width, height]);
+                    runtimes++;
+                } else {
+                    cola1
+                    .nodes(graph.nodes)
+                    .links(graph.links)
+                    .groups(graph.groups)
+                    .start(50, 10, 30)
+                }
+
+                //add zoom function
+                outer.append('rect')
+                .attr('class', 'background')
+                .attr('width', "100%")
+                .attr('height', "100%")
+                .call(d3.behavior.zoom().on("zoom", redraw));
+                var vis = outer
+                    .append('g')
+                    .attr('transform', 'translate(80,-50) scale(0.9)');
+
+                function redraw() {
+                    vis.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+                }
+                
                 var pad = 3;
 
-                var group = svg.selectAll(".group")
+                var group = vis.selectAll(".group")
                     .data(graph.groups)
                     .enter().append("rect")
                     .attr("rx", 8).attr("ry", 8)
                     .attr("class", "group")
                     .style("fill", function (d, i) { return color(i); });
 
-                var link = svg.selectAll(".link")
+
+                var link = vis.selectAll(".link")
                     .data(graph.links)
                     .enter().append("line")
                     .attr("class", "link");
 
 
-                var node = svg.selectAll(".node")
+                var node = vis.selectAll(".node")
                     .data(graph.nodes)
                     .enter().append("rect")
                     .attr("class", "node")
@@ -110,19 +229,35 @@
                     .attr("height", function (d) { return d.height - 2 * pad; })
                     .attr("rx", 5).attr("ry", 5)
                     .style("fill", function (d) { return color(3); })
-                    .call(cola.drag);
+                    .call(cola1.drag);
 
-                var label = svg.selectAll(".label")
+                var label = vis.selectAll(".label")
                     .data(graph.nodes)
                     .enter().append("text")
                     .attr("class", "label")
                     .text(function (d) { return d.name; })
-                    .call(cola.drag);
+                    .call(cola1.drag);
+
+                var triangledown = vis.selectAll(".triangledown")
+                    .data(graph.groups)
+                    .enter()
+                    .append("path")
+                    .attr("class", "triangledown")
+		            .attr("d", d3.svg.symbol().type("triangle-down").size(7*7*7))
+                    .attr("fill", "blue");
+
+                var triangleup = vis.selectAll(".triangleup")
+                    .data([])
+                    .enter()
+                    .append("path")
+                    .attr("class", "triangleup")
+		            .attr("d", d3.svg.symbol().type("triangle-up").size(7 * 7 * 7))
+                    .attr("fill", "blue");
 
                 node.append("title")
                     .text(function (d) { return d.name; });
 
-                cola.on("tick", function () {
+                cola1.on("tick", function () {
                     link.attr("x1", function (d) { return d.source.x; })
                         .attr("y1", function (d) { return d.source.y; })
                         .attr("x2", function (d) { return d.target.x; })
@@ -130,17 +265,23 @@
 
                     node.attr("x", function (d) { return d.x - d.width / 2 + pad; })
                         .attr("y", function (d) { return d.y - d.height / 2 + pad; });
+                    
+                    var groupx = -1;
+                    var groupy = -1;
 
-                    group.attr("x", function (d) { return d.bounds.x; })
-                         .attr("y", function (d) { return d.bounds.y; })
-                        .attr("width", function (d) { return d.bounds.width(); })
-                        .attr("height", function (d) { return d.bounds.height(); });
+                    group.attr("x", function (d) { groupx = d.bounds.x; return d.bounds.x; })
+                         .attr("y", function (d) { groupy = d.bounds.y; return d.bounds.y; })
+                         .attr("width", function (d) { return d.bounds.width(); })
+                         .attr("height", function (d) { return d.bounds.height(); });
 
                     label.attr("x", function (d) { return d.x; })
                          .attr("y", function (d) {
                              var h = this.getBBox().height;
                              return d.y + h / 4;
                          });
+                    triangledown.attr("transform", function (d) {                       
+                        return "translate(" + (d.bounds.x + 20) + ", " + (d.bounds.y + 20) + ")";
+                    })
                 });
 
                 node.on("click", function () {
@@ -199,17 +340,6 @@
                     }
                 });
 
-                //when click on any place of svg clear the class of selected group/node
-                svg.on("mousedown", function () {
-                    if (!d3.event.ctrlKey) {
-                        d3.selectAll(".selected").classed("selected", false).style("fill", function (d) { return color(3); })
-                        d3.selectAll(".selectedgroup").classed("selectedgroup", false);
-                        group.style("fill", function (d, i) { return color(i); });
-                    }
-                });
-
-                //grag group
-                var inGroupNodes = [];
                 var getParent = function (p, currentGroup) {
                     while (typeof p.parent != "undefined") {
                         p = p.parent;
@@ -219,6 +349,69 @@
                     }
                     return p;
                 };
+
+                //var actualGraph = clone(graph);
+
+                triangledown.on("click", function (d, i) {
+                    console.log("triangledown");
+                    /*
+                    var newNode = { "name": "group " + d.gid, "width": 60, "height": 40 };
+                    var inGroupNodes = d3.selectAll(".node").data().filter(function (v) {
+                        return getParent(v, d) == d;
+                    });
+                    graph.nodes.push(newNode);
+                    graph.links.forEach(function (e, vi) {
+                        var source = inGroupNodes.in_array_position(e.source);
+                        var target = inGroupNodes.in_array_position(e.target);
+                        if (source != -1 && target != -1) {
+                            graph.links.splice(vi, 1);
+                        } else if (source != -1 && target == -1) {
+                            e.source = newNode;
+                        } else if (source == -1 && target != -1) {
+                            e.target = newNode;
+                        }
+                    });
+
+                    inGroupNodes.forEach(function (e) {
+                        graph.nodes.splice(graph.nodes.in_array_position(e), 1);
+                    });
+
+                    //graph.groups.splice(i, 1);
+
+                    //var collapsedGroup = { "leaves": [] };
+                    if (typeof graph.groups[i].leaves == "undefined") {
+                        graph.groups[i].leaves = [];
+                    }
+                    graph.groups[i].leaves.push(newNode);
+                    //graph.groups.push(collapsedGroup);
+
+                    d3.selectAll("rect").remove();
+                    d3.selectAll("line").remove();
+                    d3.selectAll("text").remove();
+                    drawPicture(graph);
+                    //var templength = graph.nodes.length - 1;
+                    /*d3.selectAll(".node")
+                        .style("stroke-width", 0)
+                        .style("opacity", 0);*/
+                });
+
+                triangleup.on("click", function (d) {
+                    console.log("triangleup");
+                });
+
+                //when click on any place of svg clear the class of selected group/node
+                outer.on("mousedown", function () {
+                    if (!d3.event.ctrlKey) {
+                        d3.selectAll(".selected").classed("selected", false).style("fill", function (d) { return color(3); })
+                        d3.selectAll(".selectedgroup").classed("selectedgroup", false);
+                        group.style("fill", function (d, i) { return color(i); });
+                    }
+                });
+
+                //drag group 
+                var inGroupNodes = [];
+                var inGroupNodesLength = 0;
+                
                 var dragGroup = d3.behavior.drag()
                     .origin(function (d) { return d; })
                     .on("dragstart.d3adaptor", function (d, i) {
@@ -226,8 +419,8 @@
                         inGroupNodes = d3.selectAll(".node").data().filter(function (v) {
                             return getParent(v, d) == d;
                         });
-
-                        for (var index = 0; index < inGroupNodes.length; index++) {
+                        inGroupNodesLength = inGroupNodes.length;
+                        for (var index = 0; index < inGroupNodesLength; index++) {
                             inGroupNodes[index].fixed |= 2;
                             inGroupNodes[index].px = inGroupNodes[index].x;
                             inGroupNodes[index].py = inGroupNodes[index].y;
@@ -235,14 +428,14 @@
                     })
                     .on("drag.d3adaptor", function (d, i) {
 
-                        for (var index = 0; index < inGroupNodes.length; index++) {
+                        for (var index = 0; index < inGroupNodesLength; index++) {
                             inGroupNodes[index].px += d3.event.dx;
                             inGroupNodes[index].py += d3.event.dy;
                         }
-                        cola.resume();
+                        cola1.resume();
                     })
                     .on("dragend.d3adaptor", function (d, i) {
-                        for (var index = 0; index < inGroupNodes.length; index++) {
+                        for (var index = 0; index < inGroupNodesLength; index++) {
                             inGroupNodes[index].fixed &= ~6;
                         }
                     });
@@ -250,8 +443,8 @@
 
                 document.onkeyup = function (e) {
                     if (!e.shiftKey) {
-                        node.call(cola.drag);
-                        label.call(cola.drag);
+                        node.call(cola1.drag);
+                        label.call(cola1.drag);
                         group.call(dragGroup);
                     }
                 };
@@ -263,7 +456,7 @@
                     var shiftDragNode = d3.behavior.drag()
                                     .origin(function (d) { return d; })
                                     .on("dragstart.d3adaptor", function (d) {
-                                        ghost = svg.selectAll(".ghost")
+                                        ghost = vis.selectAll(".ghost")
                                             .data([d])//need to pass a data set not a single object so need []
                                             .enter().append("rect")
                                             .attr("class", "ghost")
@@ -286,10 +479,10 @@
                                         } else if (d3.select(this).classed("label") == true) {
                                             d3.select(d3.selectAll(".node")[0][d.index]).style("fill", "green");
                                         }
-                                        var groupStrokeColor = ["red", "green", "teal", "blue", "yellow",
-                                                                "purple", "pink", "khaki", "beige", "ponceau",
-                                                                "amaranth", "black", "blush", "brown", "cerise",
-                                                                "copper", "coral", "cyan", "erin", "gold"];
+                                        var groupStrokeColor = ["Aqua", "Black", "Blue", "BlueViolet", "Brown",
+                                                                  "CadetBlue", "Chartreuse", "Chocolate", "Coral", "Crimson",
+                                                                  "DarkBlue", "DarkCyan", "DarkGoldenRod ", "DarkGreen", "DarkOrange",
+                                                                  "DarkRed", "DarkSlateBlue", "DodgerBlue", "Fuchsia", "GoldenRod"];
 
                                         var inOneGroup = false;
                                         graph.groups.forEach(function (e, i) {
@@ -355,36 +548,16 @@
                                             }
                                         });
 
-                                        //check and delete empty group
                                         if (groupChanged) {
-                                            for (var index = graph.groups.length - 1; index >= 0; index--) {
-                                                if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
-                                                    (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
-                                                    graph.groups.splice(index, 1);
-                                                } else {
-                                                    if (typeof graph.groups[index].groups != "undefined") {
-                                                        var grouplength = graph.groups[index].groups.length;
-                                                        for (var i = grouplength - 1; i >= 0; i--) {
-                                                            if ((typeof graph.groups[index].groups[i].leaves == "undefined" || graph.groups[index].groups[i].leaves.length == 0) &&
-                                                                (typeof graph.groups[index].groups[i].groups == "undefined" || graph.groups[index].groups[i].groups.length == 0)) {
-                                                                graph.groups[index].groups.splice(i, 1);
-                                                            }
-                                                        }
-                                                    }
-                                                    if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
-                                                        (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
-                                                        graph.groups.splice(index, 1);
-                                                    }
-                                                }
-                                            }
+                                            checkGroupChange(graph);
                                         }
 
                                         //must wait till the layout is done. If do not want to wait, how?
-                                        cola.on("end", function () {
+                                        cola1.on("end", function () {
                                             node.each(function (d) {
                                                 d.fixed &= ~4;
                                             });
-                                            cola.on("end", null);
+                                            cola1.on("end", null);
                                         });
 
                                         if (groupChanged) {
@@ -393,7 +566,7 @@
                                             d3.selectAll("text").remove();
                                             drawPicture(graph);
                                         } else {
-                                            cola.start();
+                                            cola1.start();
                                         }
 
                                     });
@@ -403,7 +576,7 @@
                     var groupDropgroup = -1;
                     var shiftDragGroup = d3.behavior.drag()
                                       .on("dragstart.d3adaptor", function (d) {
-                                          groupGhost = svg.selectAll(".ghostgroup")
+                                          groupGhost = vis.selectAll(".ghostgroup")
                                             .data([d])
                                             .enter().append("rect")
                                             .attr("class", "ghostgroup")
@@ -424,31 +597,24 @@
                                                     .attr("y", function (d) { return groupy; });
 
                                           d3.select(this).style("fill", "green");
-                                          var groupStrokeColor = ["red", "green", "teal", "blue", "yellow",
-                                                                "purple", "pink", "khaki", "beige", "ponceau",
-                                                                "amaranth", "black", "blush", "brown", "cerise",
-                                                                "copper", "coral", "cyan", "erin", "gold"];
+                                          var groupStrokeColor = ["Aqua", "Black", "Blue", "BlueViolet", "Brown",
+                                                                  "CadetBlue", "Chartreuse", "Chocolate", "Coral", "Crimson",
+                                                                  "DarkBlue", "DarkCyan", "DarkGoldenRod ", "DarkGreen", "DarkOrange",
+                                                                  "DarkRed", "DarkSlateBlue", "DodgerBlue", "Fuchsia", "GoldenRod" ];
 
                                           var inOneGroup = false;
                                           dragGroupSecondCox = groupx + d.bounds.width() / 2;
                                           graph.groups.forEach(function (e, i) {
-                                              if (i != d.gid) {
-                                                  if (typeof e.parent != "undefined" && e.parent.gid != d.gid) {
-                                                      if ((Math.abs((groupx + d.bounds.width() / 2) - (e.bounds.x + e.bounds.width() / 2)) < (d.bounds.width() + e.bounds.width()) / 2) &&
-                                                          (Math.abs((groupy + d.bounds.height() / 2) - (e.bounds.y + e.bounds.height() / 2)) < (d.bounds.height() + e.bounds.height()) / 2)) {
-                                                          group.style("stroke", function (d, vi) { if (vi == i) { return groupStrokeColor[i]; } });
-                                                          groupDropgroup = i;
-                                                          inOneGroup = true;
-                                                      }
-                                                  } else {
-                                                      if ((Math.abs((groupx + d.bounds.width() / 2) - (e.bounds.x + e.bounds.width() / 2)) < (d.bounds.width() + e.bounds.width()) / 2) &&
-                                                          (Math.abs((groupy + d.bounds.height() / 2) - (e.bounds.y + e.bounds.height() / 2)) < (d.bounds.height() + e.bounds.height()) / 2)) {
-                                                          group.style("stroke", function (d, vi) { if (vi == i) { return groupStrokeColor[i]; } });
-                                                          groupDropgroup = i;
-                                                          inOneGroup = true;
-                                                      }
+                                              
+                                              if (e != d && getParent(e, d) != d) {
+                                                  if ((Math.abs((groupx + d.bounds.width() / 2) - (e.bounds.x + e.bounds.width() / 2)) < (d.bounds.width() + e.bounds.width()) / 2) &&
+                                                      (Math.abs((groupy + d.bounds.height() / 2) - (e.bounds.y + e.bounds.height() / 2)) < (d.bounds.height() + e.bounds.height()) / 2)) {
+                                                      group.style("stroke", function (d, vi) { if (vi == i) { return groupStrokeColor[i]; } });
+                                                      groupDropgroup = i;
+                                                      inOneGroup = true;
                                                   }
                                               }
+
                                           });
 
                                           if (!inOneGroup) {
@@ -457,6 +623,17 @@
                                           }
                                       })
                                       .on("dragend.d3adaptor", function (d) {
+                                          //select all the nodes in current group
+                                          var inGroupNodes = d3.selectAll(".node").data().filter(function (v) {
+                                              return getParent(v, d) == d;
+                                          });
+
+                                          //give selected nodes new coordinates.
+                                          inGroupNodes.forEach(function (e) {
+                                              e.fixed |= 4;
+                                              e.x = e.px = (e.x + groupx - d.bounds.x);
+                                              e.y = e.py = (e.y + groupy - d.bounds.y);
+                                          })
 
                                           groupGhost.remove();
                                           d3.select(this).style("fill", function (d, i) { return color(d.gid); });
@@ -475,6 +652,7 @@
                                           }
 
                                           var groupChanged = false;
+
                                           graph.groups.forEach(function (e, i) {
                                               if (groupDropgroup == i) {
                                                   deleteSameGroup(graph.groups, d);
@@ -482,15 +660,43 @@
                                                       e.groups = [];
                                                   }
                                                   e.groups.push(d);
+                                                  
                                                   if (e.gid > d.gid) {
-                                                      if (typeof d.groups != "undefined" && d.groups.length != 0) {
-                                                          graph.groups.move(d.gid, e.gid);
-                                                          for (var index = d.groups.length - 1; index >= 0; index--) {
+                                                      var temp = -1;
+                                                      if (typeof e.groups != "undefined" && e.groups.length != 0) {
+                                                          var tempGroupGids = [];
+                                                          e.groups.forEach(function (e) {
+                                                              tempGroupGids.push(e.gid);
+                                                          });
+                                                          temp = Math.max.apply(Math, tempGroupGids);
+                                                      } else {
+                                                          temp = e.gid;
+                                                      }
+
+                                                      function moveAllChildGroup(tempGroup) {
+                                                          if (typeof tempGroup.groups != "undefined" && tempGroup.groups.length != 0) {
+                                                              for (var index = tempGroup.groups.length - 1; index >= 0; index--) {
+                                                                  graph.groups.move(d.gid, e.gid);
+                                                                  moveAllChildGroup(tempGroup.groups[index]);
+                                                              }
+                                                          } else {
                                                               graph.groups.move(d.gid, e.gid);
                                                           }
+                                                      };
+
+                                                      //If e.gid bigger than d.gid, e will be draw before g, which may cover g.
+                                                      //So, g must change place with e.
+                                                      if (typeof d.groups != "undefined" && d.groups.length != 0) {
+                                                          //graph.groups.move(d.gid, e.gid);
+                                                          /*for (var index = d.groups.length; index >= 0; index--) {
+                                                              graph.groups.move(d.gid, e.gid);
+                                                          }*/
+                                                          moveAllChildGroup(d);
                                                       } else {
                                                           graph.groups.move(d.gid, e.gid);
                                                       }
+                                                  } else {
+                                                      graph.groups.move(d.gid, e.gid + 1);
                                                   }
                                                   groupChanged = true;
                                               } else if (groupDropgroup == -1) {
@@ -503,43 +709,25 @@
                                           });
 
                                           if (groupChanged) {
-                                              for (var index = graph.groups.length - 1; index >= 0; index--) {
-                                                  if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
-                                                      (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
-                                                      graph.groups.splice(index, 1);
-                                                  } else {
-                                                      if (typeof graph.groups[index].groups != "undefined") {
-                                                          var grouplength = graph.groups[index].groups.length;
-                                                          for (var i = grouplength - 1; i >= 0; i--) {
-                                                              if ((typeof graph.groups[index].groups[i].leaves == "undefined" || graph.groups[index].groups[i].leaves.length == 0) &&
-                                                                  (typeof graph.groups[index].groups[i].groups == "undefined" || graph.groups[index].groups[i].groups.length == 0)) {
-                                                                  graph.groups[index].groups.splice(i, 1);
-                                                              }
-                                                          }
-                                                      }
-                                                      if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
-                                                          (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
-                                                          graph.groups.splice(index, 1);
-                                                      }
-                                                  }
-                                              }
+                                              checkGroupChange(graph);
                                           }
 
-                                          cola.on("end", function () {
+                                          cola1.on("end", function () {
                                               console.log("layout is done!");
                                               node.each(function (d) {
                                                   d.fixed &= ~4;
                                               });
-                                              cola.on("end", null);
+                                              cola1.on("end", null);
                                           });
-
+                                          console.log("=====graph=====");
+                                          console.log(graph);
                                           if (groupChanged) {
                                               d3.selectAll("rect").remove();
                                               d3.selectAll("line").remove();
                                               d3.selectAll("text").remove();
                                               drawPicture(graph);
                                           } else {
-                                              cola.start();
+                                              cola1.start();
                                           }
 
                                       });
@@ -562,8 +750,8 @@
                 };
             };
 
+            //d3.json("mytest/smallgrouped.json", function (error, graph) {
             d3.json("graphdata/groupeditinged.json", function (error, graph) {
-                               
                 drawPicture(graph);
 
                 //add a new node
@@ -709,33 +897,14 @@
                                 var insertLocation = Math.min.apply(Math, newgroupGids);
                                 graph.groups.splice(insertLocation, 0, newgroup);
                             }
-
-                            for (var index = graph.groups.length - 1; index >= 0; index--) {
-                                if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
-                                    (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
-                                    graph.groups.splice(index, 1);
-                                } else {
-                                    if (typeof graph.groups[index].groups != "undefined") {
-                                        var grouplength = graph.groups[index].groups.length;
-                                        for (var i = grouplength - 1; i >= 0; i--) {
-                                            if ((typeof graph.groups[index].groups[i].leaves == "undefined" || graph.groups[index].groups[i].leaves.length == 0) &&
-                                                (typeof graph.groups[index].groups[i].groups == "undefined" || graph.groups[index].groups[i].groups.length == 0)) {
-                                                graph.groups[index].groups.splice(i, 1);
-                                            }
-                                        }
-                                    }
-                                    if ((typeof graph.groups[index].leaves == "undefined" || graph.groups[index].leaves.length == 0) &&
-                                        (typeof graph.groups[index].groups == "undefined" || graph.groups[index].groups.length == 0)) {
-                                        graph.groups.splice(index, 1);
-                                    }
-                                }
-                            }
+                            //check group changed or not
+                            checkGroupChange(graph);
+                            
                             d3.selectAll("rect").remove();
                             d3.selectAll("line").remove();
                             d3.selectAll("text").remove();
                             drawPicture(graph);
                         });
-
 
             });
 
@@ -762,4 +931,3 @@
     </div>
 </body>
 </html>
-
