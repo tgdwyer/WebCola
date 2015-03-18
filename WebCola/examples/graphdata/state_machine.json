@@ -1,265 +1,277 @@
 {
-  "nodes": [
-    {
-      "name": "draft_saved"
-    },
-    {
-      "name": "trip_cancelled"
-    },
-    {
-      "name": "pending_approval"
-    },
-    {
-      "name": "risk_approval_required"
-    },
-    {
-      "name": "pending_itinerary"
-    },
-    {
-      "name": "change_saved"
-    },
-    {
-      "name": "request_declined"
-    },
-    {
-      "name": "request_forbidden"
-    },
-    {
-      "name": "itinerary_issued"
-    },
-    {
-      "name": "itinerary_approved"
-    },
-    {
-      "name": "starting_state"
-    },
-    {
-      "name": "itinerary_declined"
-    },
-    {
-      "name": "trip_booked"
-    }
-  ],
-  "links": [
-    {
-      "source": 0,
-      "target": 1,
-      "type": "cancel_trip"
-    },
-    {
-      "source": 0,
-      "target": 2,
-      "type": "complete"
-    },
-    {
-      "source": 0,
-      "target": 3,
-      "type": "complete"
-    },
-    {
-      "source": 0,
-      "target": 4,
-      "type": "complete"
-    },
-    {
-      "source": 2,
-      "target": 5,
-      "type": "save_draft"
-    },
-    {
-      "source": 2,
-      "target": 1,
-      "type": "cancel_trip"
-    },
-    {
-      "source": 2,
-      "target": 3,
-      "type": "approve_request"
-    },
-    {
-      "source": 2,
-      "target": 4,
-      "type": "approve_request"
-    },
-    {
-      "source": 2,
-      "target": 6,
-      "type": "decline_request"
-    },
-    {
-      "source": 3,
-      "target": 5,
-      "type": "save_draft"
-    },
-    {
-      "source": 3,
-      "target": 1,
-      "type": "cancel_trip"
-    },
-    {
-      "source": 3,
-      "target": 4,
-      "type": "authorise_request"
-    },
-    {
-      "source": 3,
-      "target": 7,
-      "type": "forbid_request"
-    },
-    {
-      "source": 4,
-      "target": 5,
-      "type": "save_draft"
-    },
-    {
-      "source": 4,
-      "target": 1,
-      "type": "cancel_trip"
-    },
-    {
-      "source": 4,
-      "target": 8,
-      "type": "issue_itinerary"
-    },
-    {
-      "source": 4,
-      "target": 9,
-      "type": "issue_itinerary"
-    },
-    {
-      "source": 10,
-      "target": 0,
-      "type": ""
-    },
-    {
-      "source": 5,
-      "target": 0,
-      "type": "save_draft"
-    },
-    {
-      "source": 5,
-      "target": 1,
-      "type": "cancel_trip"
-    },
-    {
-      "source": 5,
-      "target": 2,
-      "type": "complete"
-    },
-    {
-      "source": 5,
-      "target": 3,
-      "type": "complete"
-    },
-    {
-      "source": 5,
-      "target": 4,
-      "type": "complete"
-    },
-    {
-      "source": 6,
-      "target": 5,
-      "type": "save_draft"
-    },
-    {
-      "source": 6,
-      "target": 1,
-      "type": "cancel_trip"
-    },
-    {
-      "source": 6,
-      "target": 3,
-      "type": "approve_request"
-    },
-    {
-      "source": 6,
-      "target": 4,
-      "type": "approve_request"
-    },
-    {
-      "source": 7,
-      "target": 5,
-      "type": "save_draft"
-    },
-    {
-      "source": 7,
-      "target": 1,
-      "type": "cancel_trip"
-    },
-    {
-      "source": 8,
-      "target": 5,
-      "type": "save_draft"
-    },
-    {
-      "source": 8,
-      "target": 1,
-      "type": "cancel_trip"
-    },
-    {
-      "source": 8,
-      "target": 9,
-      "type": "issue_itinerary"
-    },
-    {
-      "source": 8,
-      "target": 9,
-      "type": "approve_itinerary"
-    },
-    {
-      "source": 8,
-      "target": 11,
-      "type": "decline_itinerary"
-    },
-    {
-      "source": 9,
-      "target": 5,
-      "type": "save_draft"
-    },
-    {
-      "source": 9,
-      "target": 1,
-      "type": "cancel_trip"
-    },
-    {
-      "source": 9,
-      "target": 12,
-      "type": "book_trip"
-    },
-    {
-      "source": 11,
-      "target": 5,
-      "type": "save_draft"
-    },
-    {
-      "source": 11,
-      "target": 1,
-      "type": "cancel_trip"
-    },
-    {
-      "source": 11,
-      "target": 8,
-      "type": "issue_itinerary"
-    },
-    {
-      "source": 11,
-      "target": 9,
-      "type": "issue_itinerary"
-    },
-    {
-      "source": 11,
-      "target": 9,
-      "type": "approve_itinerary"
-    },
-    {
-      "source": 12,
-      "target": 5,
-      "type": "save_draft"
-    },
-    {
-      "source": 12,
-      "target": 1,
-      "type": "cancel_trip"
-    }
-  ]
+    "nodes": [
+        {
+            "name": "draft_saved",
+            "detail": "Trip request has been saved as a draft"
+        },
+        {
+            "name": "trip_cancelled",
+            "detail": "Trip request has been cancelled"
+        },
+        {
+            "name": "pending_approval",
+            "detail": "Your travel request has been submitted and will be reviewed shortly"
+        },
+        {
+            "name": "risk_approval_required",
+            "detail": "Trip request approved. Due to risk rating, approval is required by risk authoriser"
+        },
+        {
+            "name": "pending_itinerary",
+            "detail": "Your travel request has been submitted and is pending an Itinerary"
+        },
+        {
+            "name": "change_saved",
+            "detail": "Trip request has been changed"
+        },
+        {
+            "name": "request_declined",
+            "detail": "Trip request declined"
+        },
+        {
+            "name": "request_forbidden",
+            "detail": "Trip request forbidden"
+        },
+        {
+            "name": "itinerary_issued",
+            "detail": "Trip Itinerary has been submitted and requires approval"
+        },
+        {
+            "name": "itinerary_approved",
+            "detail": "Itinerary has been approved and pending booking!"
+        },
+        {
+            "name": "starting_state"
+        },
+        {
+            "name": "itinerary_declined",
+            "detail": "Trip itinerary declined"
+        },
+        {
+            "name": "trip_booked",
+            "detail": "Trip approved and itinerary booked"
+        }
+    ],
+    "links": [
+        {
+            "source": 0,
+            "target": 1,
+            "type": "cancel_trip"
+        },
+        {
+            "source": 0,
+            "target": 2,
+            "type": "complete"
+        },
+        {
+            "source": 0,
+            "target": 3,
+            "type": "complete"
+        },
+        {
+            "source": 0,
+            "target": 4,
+            "type": "complete"
+        },
+        {
+            "source": 2,
+            "target": 5,
+            "type": "save_draft"
+        },
+        {
+            "source": 2,
+            "target": 1,
+            "type": "cancel_trip"
+        },
+        {
+            "source": 2,
+            "target": 3,
+            "type": "approve_request"
+        },
+        {
+            "source": 2,
+            "target": 4,
+            "type": "approve_request"
+        },
+        {
+            "source": 2,
+            "target": 6,
+            "type": "decline_request"
+        },
+        {
+            "source": 3,
+            "target": 5,
+            "type": "save_draft"
+        },
+        {
+            "source": 3,
+            "target": 1,
+            "type": "cancel_trip"
+        },
+        {
+            "source": 3,
+            "target": 4,
+            "type": "authorise_request"
+        },
+        {
+            "source": 3,
+            "target": 7,
+            "type": "forbid_request"
+        },
+        {
+            "source": 4,
+            "target": 5,
+            "type": "save_draft"
+        },
+        {
+            "source": 4,
+            "target": 1,
+            "type": "cancel_trip"
+        },
+        {
+            "source": 4,
+            "target": 8,
+            "type": "issue_itinerary"
+        },
+        {
+            "source": 4,
+            "target": 9,
+            "type": "issue_itinerary"
+        },
+        {
+            "source": 10,
+            "target": 0,
+            "type": ""
+        },
+        {
+            "source": 5,
+            "target": 0,
+            "type": "save_draft"
+        },
+        {
+            "source": 5,
+            "target": 1,
+            "type": "cancel_trip"
+        },
+        {
+            "source": 5,
+            "target": 2,
+            "type": "complete"
+        },
+        {
+            "source": 5,
+            "target": 3,
+            "type": "complete"
+        },
+        {
+            "source": 5,
+            "target": 4,
+            "type": "complete"
+        },
+        {
+            "source": 6,
+            "target": 5,
+            "type": "save_draft"
+        },
+        {
+            "source": 6,
+            "target": 1,
+            "type": "cancel_trip"
+        },
+        {
+            "source": 6,
+            "target": 3,
+            "type": "approve_request"
+        },
+        {
+            "source": 6,
+            "target": 4,
+            "type": "approve_request"
+        },
+        {
+            "source": 7,
+            "target": 5,
+            "type": "save_draft"
+        },
+        {
+            "source": 7,
+            "target": 1,
+            "type": "cancel_trip"
+        },
+        {
+            "source": 8,
+            "target": 5,
+            "type": "save_draft"
+        },
+        {
+            "source": 8,
+            "target": 1,
+            "type": "cancel_trip"
+        },
+        {
+            "source": 8,
+            "target": 9,
+            "type": "issue_itinerary"
+        },
+        {
+            "source": 8,
+            "target": 9,
+            "type": "approve_itinerary"
+        },
+        {
+            "source": 8,
+            "target": 11,
+            "type": "decline_itinerary"
+        },
+        {
+            "source": 9,
+            "target": 5,
+            "type": "save_draft"
+        },
+        {
+            "source": 9,
+            "target": 1,
+            "type": "cancel_trip"
+        },
+        {
+            "source": 9,
+            "target": 12,
+            "type": "book_trip"
+        },
+        {
+            "source": 11,
+            "target": 5,
+            "type": "save_draft"
+        },
+        {
+            "source": 11,
+            "target": 1,
+            "type": "cancel_trip"
+        },
+        {
+            "source": 11,
+            "target": 8,
+            "type": "issue_itinerary"
+        },
+        {
+            "source": 11,
+            "target": 9,
+            "type": "issue_itinerary"
+        },
+        {
+            "source": 11,
+            "target": 9,
+            "type": "approve_itinerary"
+        },
+        {
+            "source": 12,
+            "target": 5,
+            "type": "save_draft"
+        },
+        {
+            "source": 12,
+            "target": 1,
+            "type": "cancel_trip"
+        }
+    ]
 }

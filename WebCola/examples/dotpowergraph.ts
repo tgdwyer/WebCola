@@ -85,11 +85,11 @@ module dotpowergraph {
             .groupCompactness(1e-4)
             .symmetricDiffLinkLengths(3)
             .powerGraphGroups(function (d) {
-            powerGraph = d;
-            powerGraph.groups.forEach(function (v) {
-                v.padding = grouppadding
-            });
-        }).start(100, 0, 50, 50);
+                powerGraph = d;
+                powerGraph.groups.forEach(function (v) {
+                    v.padding = grouppadding
+                });
+            }).start(50, 0, 50);
         return { cola: d3cola, powerGraph: powerGraph };
     }
 
@@ -182,9 +182,33 @@ module dotpowergraph {
                 .attr("y", function (d) {
                 var h = this.getBBox().height;
                 return d.y + h / 3.5;
-
             });
         }).on('end', function () {
+            var cc = cola.d3adaptor()
+                .size(size)
+                .avoidOverlaps(true)
+                .nodes(pgLayout.cola.nodes())
+                .links(pgLayout.cola.links())
+            //.flowLayout('y', 30)
+                .groupCompactness(1e-4)
+                .symmetricDiffLinkLengths(3)
+                .powerGraphGroups(function (d) {
+                    d.groups.forEach(function (v) {
+                    v.padding = grouppadding
+                });
+                }).start(0, 0, 50, 50);
+            node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
+            group.each(function (d) { d.innerBounds = d.bounds.inflate(-groupMargin) });
+            label.transition().attr("x", function (d) { return d.innerBounds.cx(); })
+                .attr("y", function (d) {
+                var h = this.getBBox().height;
+                return d.innerBounds.cy() + h / 3.5;
+            });
+
+            node.transition().attr("x", function (d) { return d.innerBounds.x; })
+                .attr("y", function (d) { return d.innerBounds.y; })
+                .attr("width", function (d) { return d.innerBounds.width(); })
+                .attr("height", function (d) { return d.innerBounds.height(); });
             svg.selectAll(".link").remove();
             svg.selectAll("path").remove();
             var n = pgLayout.cola.nodes().length,
@@ -213,7 +237,7 @@ module dotpowergraph {
                 margin - groupMargin);
 
             var gs = gridrouter.groups;
-            group.attr('x',(g, i) => gs[i].rect.x).attr('y',(g, i) => gs[i].rect.y)
+            group.transition().attr('x',(g, i) => gs[i].rect.x).attr('y',(g, i) => gs[i].rect.y)
                 .attr('width',(g, i) => gs[i].rect.width()).attr('height',(g, i) => gs[i].rect.height())
                 .style("fill",(g, i) => color(i));
             var routes = gridrouter.routeEdges<any>(g.edges, 5, e=> e.source, e=> e.target);

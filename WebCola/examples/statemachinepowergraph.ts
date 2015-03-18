@@ -1,17 +1,17 @@
 ///<reference path="../src/vpsc.ts"/>
 ///<reference path="../src/rectangle.ts"/>
 ///<reference path="../src/gridrouter.ts"/>
+///<reference path="../src/layout.ts"/>
 ///<reference path="../extern/jquery.d.ts"/>
 ///<reference path="../extern/d3.d.ts"/>
 
-module tetrisbug {
+module statemachine {
     var width = 1280,
-        height = 650;
+        height = 800;
 
     var color = d3.scale.category10();
 
     var makeEdgeBetween;
-    var colans = <any>cola;
     var graphfile = "graphdata/state_machine.json";
     function makeSVG() {
         var svg = d3.select("body").append("svg")
@@ -32,7 +32,7 @@ module tetrisbug {
         return svg;
     }
     function flatGraph() {
-        var d3cola = colans.d3adaptor()
+        var d3cola = cola.d3adaptor()
             .linkDistance(150)
             .avoidOverlaps(true)
             .size([width, height]);
@@ -65,13 +65,13 @@ module tetrisbug {
                 .attr("width", d => d.width + 2 * margin)
                 .attr("height", d => d.height + 2 * margin)
                 .attr("rx", 4).attr("ry", 4)
-                .call(d3cola.drag);
+                .call((<any>d3cola).drag);
             var label = svg.selectAll(".label")
                 .data(graph.nodes)
                 .enter().append("text")
                 .attr("class", "label")
                 .text(d => d.name)
-                .call(d3cola.drag);
+                .call((<any>d3cola).drag);
 
             node.append("title")
                 .text(d => d.name);
@@ -132,7 +132,7 @@ module tetrisbug {
     }
 
     function powerGraph() {
-        var d3cola = colans.d3adaptor()
+        var d3cola = cola.d3adaptor()
             .linkDistance(80)
             .handleDisconnected(false)
             .avoidOverlaps(true)
@@ -144,7 +144,7 @@ module tetrisbug {
             graph.nodes.forEach((v, i) => {
                 v.index = i;
                 v.width = 160;
-                v.height = 50;
+                v.height = 110;
             });
             var powerGraph;
 
@@ -153,8 +153,8 @@ module tetrisbug {
                 vs.forEach(v=> {
                     var index = Number(v.label) - 1;
                     var node = graph.nodes[index];
-                    node.y = Number(v.y) / 1.2;
-                    node.x = Number(v.x) * 1.6 - 70;
+                    node.x = Number(v.y) * 1.7 - 70;
+                    node.y = 700-Number(v.x) * 1.3;
                     node.fixed = 1;
                 });
                 var n = graph.nodes.length,
@@ -206,14 +206,21 @@ module tetrisbug {
                     .attr("width", d => d.width)
                     .attr("height", d => d.height)
                     .attr("rx", 4).attr("ry", 4)
-                    .call(d3cola.drag);
+                    .call((<any>d3cola).drag);
                 var label = svg.selectAll(".label")
                     .data(graph.nodes)
                     .enter().append("text")
                     .attr("class", "label")
                     .attr("transform", function (d) {
-                        return "translate(" + (d.x + 10) + "," + (d.y + 25 - d.height/2) + ")";
+                        return "translate(" + (d.x + 10) + "," + d.y + ")";
                     });
+                var detailLabel = svg.selectAll(".detailLabel")
+                    .data(graph.nodes)
+                    .enter().append("text")
+                    .attr("class", "label")
+                    .attr("transform", function (d) {
+                    return "translate(" + (d.x + 10) + "," + d.y + ")";
+                });
                     // .text(d => /*d.index +':' +*/ d.name)
                     // //.attr("x", d => d.x + d.width/2) // centred
                     // .style('text-anchor','start')
@@ -227,25 +234,45 @@ module tetrisbug {
                     var el = d3.select(this);
                     var words = d.name.split('_');
                     el.text('');
-                    words = [words[0]+' '+words[1]].concat(words.slice(2));
-
-                    for (var i = 0; i < words.length; i++) {
-                        var tspan = el.append('tspan').text(words[i]);
+                    d.lines = [words[0]+' '+words[1]].concat(words.slice(2));
+                    for (var i = 0; i < d.lines.length; i++) {
+                        var tspan = el.append('tspan').text(d.lines[i]);
                         tspan.attr('x', 0).attr('dy', '20')
-                            .style('text-anchor','start')
-                             .attr("font-size", "15");
-                        if (words.length < 2) {
-                            tspan.attr('y',10)
+                             .attr("class", "label");
+                    }
+                };
+                var insertDetailLinebreaks = function (d) {
+                    if (!d.detail) return;
+
+                    var text = d3.select(this),
+                        words = d.detail.split(/\s+/).reverse(),
+                        word,
+                        line = [],
+                        lineNumber = 0,
+                        lineHeight = 1.2, // ems
+                        width = d.width,
+                        y = d.lines.length * 20 + 20,//text.attr("y"),
+                        dy = 0, //parseFloat(text.attr("dy")),
+                        tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em").attr('class','detailLabel');
+                    while (word = words.pop()) {
+                        line.push(word);
+                        tspan.text(line.join(" "));
+                        if ((<any>tspan.node()).getComputedTextLength() > width) {
+                            line.pop();
+                            tspan.text(line.join(" "));
+                            line = [word];
+                            tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").attr('class', 'detailLabel').text(word);
                         }
                     }
                 };
 
                 label.each(insertLinebreaks);
+                detailLabel.each(insertDetailLinebreaks);
 
                 node.append("title")
                     .text(d => d.name);
 
-                var routes = gridrouter.routeEdges<any>(g.edges, 10, e=> e.source, e=> e.target);
+                var routes = gridrouter.routeEdges<any>(g.edges, 18, e=> e.source, e=> e.target);
                 //var vLookup = {};
                 //var verts = [];
                 //g.edges.forEach((e, i) => {
@@ -271,11 +298,11 @@ module tetrisbug {
                 g.edges.forEach((e, j) => {
                     var route = routes[j];
                     var id = 'e'+e.source+'-'+e.target;
-                    var cornerradius = 10;
-                    var arrowwidth = 6;
-                    var arrowheight = 12;
+                    var cornerradius = 15;
+                    var arrowwidth = 13;
+                    var arrowheight = 18;
                     var c = color(e.type);
-                    var linewidth = 5;
+                    var linewidth = 15;
                     var path= 'M '+route[0][0].x+' '+route[0][0].y+' ';
                     if (route.length>1) {
                         for (var i = 0; i < route.length; i++) {
@@ -393,20 +420,20 @@ module tetrisbug {
                 var N = graph.nodes.length;
                 modules.edges.push({ source: getId(e.source, N), target: getId(e.target, N) });
             });
-            //if (document.URL.toLowerCase().indexOf('marvl.infotech.monash.edu') >= 0) {
-            //    $.ajax({
-            //        type: 'post',
-            //        url: 'http://marvl.infotech.monash.edu/cgi-bin/test.py',
-            //        data: JSON.stringify(modules),
-            //        datatype: "json",
-            //        success: function (response) {
-            //            doLayout(response);
-            //        },
-            //        error: function (jqXHR, status, err) {
-            //            alert(status);
-            //        }
-            //    });
-            //} else
+            if (document.URL.toLowerCase().indexOf('marvl.infotech.monash.edu') >= 0) {
+                $.ajax({
+                    type: 'post',
+                    url: 'http://marvl.infotech.monash.edu/cgi-bin/test.py',
+                    data: JSON.stringify(modules),
+                    datatype: "json",
+                    success: function (response) {
+                        doLayout(response);
+                    },
+                    error: function (jqXHR, status, err) {
+                        alert(status);
+                    }
+                });
+            } else
             {
                 d3.json(graphfile.replace(/.json/,'pgresponse.json'), function (error, response) {
                     doLayout(response);

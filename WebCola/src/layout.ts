@@ -386,7 +386,10 @@ module cola {
             return typeof this._linkType === "function" ? this._linkType(link) : 0;
         }
 
-        linkAccessor = { getSourceIndex: Layout.getSourceIndex, getTargetIndex: Layout.getTargetIndex, setLength: Layout.setLinkLength, getType: this.getLinkType };
+        linkAccessor = {
+            getSourceIndex: Layout.getSourceIndex, getTargetIndex: Layout.getTargetIndex, setLength: Layout.setLinkLength,
+            getType: (l) => typeof this._linkType === "function" ? this._linkType(l) : 0
+        };
 
         /**
          * compute an ideal length for each link based on the graph structure around that link.

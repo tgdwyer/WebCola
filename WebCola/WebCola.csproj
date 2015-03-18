@@ -229,6 +229,7 @@
     <Content Include="test\test.html" />
     <Content Include="test\tests.js" />
     <Content Include="examples\graphdata\pre_trip.json" />
+    <Content Include="examples\graphdata\state_machine.json" />
     <None Include="examples\graphdata\test1.json" />
     <TypeScriptCompile Include="test\apitests.ts" />
     <TypeScriptCompile Include="test\qunit.d.ts" />

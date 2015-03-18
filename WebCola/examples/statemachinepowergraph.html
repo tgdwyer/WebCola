@@ -30,7 +30,15 @@
     fill: white;
     font-family: Verdana;
     font-size: 15px;
-    text-anchor: middle;
+    text-anchor: start;
+    cursor: move;
+}
+.detailLabel {
+    fill: white;
+    font-family: Verdana;
+    font-size: 12px;
+    font-style: italic;
+    text-anchor: start;
     cursor: move;
 }
 
@@ -43,14 +51,21 @@
 </head>
 <body>
     <script src="../extern/d3.v3.js"></script>
-    <script src="../cola.min.js"></script>    
+    <!--<script src="../cola.min.js"></script>-->    
     <script src="../extern/jquery-1.10.2.min.js"></script>
     <script src="../src/powergraph.js"></script>
     <script src="../src/gridrouter.js"></script>
-
-    <!--<script src="../src/descent.js"></script>
+    <script src="../src/layout.js"></script>
+    <script src="../src/descent.js"></script>
     <script src="../src/vpsc.js"></script>
-    <script src="../src/rectangle.js"></script>-->
+    <script src="../src/rectangle.js"></script>
+    <script src="../src/d3adaptor.js"></script>
+    <script src="../src/geom.js"></script>
+    <script src="../src/handledisconnected.js"></script>
+    <script src="../src/shortestpaths.js"></script>
+    <script src="../src/linklengths.js"></script>
+    <script src="../src/rbtree.js"></script>
+    <script src="../src/pqueue.js"></script>
     <script src="statemachinepowergraph.js"></script>
 </body>
 </html>
