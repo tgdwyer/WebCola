@@ -3362,7 +3362,7 @@ var cola;
                 this._descent.snapStrength = 1000;
                 this._descent.snapGridSize = this._nodes[0].width;
                 this._descent.numGridSnapNodes = n;
-                this._descent.scaleSnapByMaxH = true;
+                this._descent.scaleSnapByMaxH = n != N; // if we have groups then need to scale hessian so grid forces still apply
                 var G0 = cola.Descent.createSquareMatrix(N, function (i, j) {
                     if (i >= n || j >= n)
                         return G[i][j];
