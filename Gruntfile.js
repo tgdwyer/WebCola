@@ -74,13 +74,14 @@ module.exports = function (grunt) {
       all: ["WebCola/examples/*.html"]
     },
     typedoc: {
-          options: {
-              module: 'amd',
-              target: 'es5',
-              out: 'doc/',
-              name: 'WebCoLa AKA cola.js'
-          },
-          src: ["<%= typescript.base.src %>"]
+      options: {
+          module: 'amd',
+          target: 'es5',
+          out: 'doc/',
+          name: 'WebCoLa AKA cola.js',
+          theme: 'minimal'
+      },
+      src: ["<%= typescript.base.src %>"]
     }
   });
  
