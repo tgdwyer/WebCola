@@ -8,11 +8,10 @@
     "grunt-contrib-qunit": "^0.5.2",
     "grunt-contrib-uglify": "^0.7.0",
     "grunt-contrib-watch": "~0.6.1",
-    "grunt-typedoc": "^0.2.1",
     "grunt-typescript": "^0.6.1",
     "grunt-umd": "~1.7.3",
     "load-grunt-tasks": "~0.4.0",
-    "typedoc": "^0.2.3",
+    "typedoc": "^0.3.2",
     "typescript": "~1.4.1",
     "uglify-js": "^2.4.16"
   },

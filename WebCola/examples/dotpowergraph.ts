@@ -1,5 +1,6 @@
 ﻿///<reference path="../extern/d3.d.ts"/>
 ///<reference path="../src/layout.ts"/>
+///<reference path="../src/d3adaptor.ts"/>
 ///<reference path="../src/vpsc.ts"/>
 ///<reference path="../src/rectangle.ts"/>
 ///<reference path="../src/gridrouter.ts"/>

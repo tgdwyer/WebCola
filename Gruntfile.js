@@ -1,7 +1,7 @@
 module.exports = function (grunt) {
   require('load-grunt-tasks')(grunt);
   require('./tasks/examples')(grunt);
-  grunt.loadNpmTasks('grunt-typedoc');
+  grunt.loadNpmTasks('typedoc');
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     watch: {
@@ -74,15 +74,13 @@ module.exports = function (grunt) {
       all: ["WebCola/examples/*.html"]
     },
     typedoc: {
-      build: {
           options: {
               module: 'amd',
               target: 'es5',
               out: 'doc/',
               name: 'WebCoLa AKA cola.js'
           },
-          src: ["<%= typescript.base.src %>"],
-      },
+          src: ["<%= typescript.base.src %>"]
     }
   });
  
@@ -90,5 +88,6 @@ module.exports = function (grunt) {
   grunt.registerTask('nougly', ['typescript:base', 'concat', 'qunit']);
   grunt.registerTask('nougly-notest', ['typescript', 'concat']);
   grunt.registerTask('docs', ['typedoc', 'typescript:examples']);
+  grunt.registerTask('examples', ['typescript:examples']);
   grunt.registerTask('full', ['default', 'typescript:examples', 'examples']);
 };
