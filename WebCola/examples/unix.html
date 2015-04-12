@@ -49,14 +49,10 @@
         var width = 960, height = 700;
 
         var outer = d3.select("body").append("svg")
-            .attr("width", width)
-            .attr("height", height)
-            .attr("pointer-events", "all");
+            .attr({ width: width, height: height, "pointer-events": "all" });
 
         outer.append('rect')
-            .attr('class', 'background')
-            .attr('width', "100%")
-            .attr('height', "100%")
+            .attr({ class: 'background', width: "100%", height: "100%" })
             .call(d3.behavior.zoom().on("zoom", redraw));
 
         var vis = outer
@@ -143,15 +139,15 @@
                 link.attr("d", function (d) {
                     return lineFunction(d3cola.routeEdge(d
                      // show visibility graph
-                        , function (g) {
-                            if (d.source.id === 10 && d.target.id === 11) {
-                            g.E.forEach(function (e) {
-                                vis.append("line").attr("x1", e.source.p.x).attr("y1", e.source.p.y)
-                                    .attr("x2", e.target.p.x).attr("y2", e.target.p.y)
-                                    .attr("stroke", "green");
-                            });
-                            }
-                        }
+                        //, function (g) {
+                        //    if (d.source.id === 10 && d.target.id === 11) {
+                        //    g.E.forEach(function (e) {
+                        //        vis.append("line").attr("x1", e.source.p.x).attr("y1", e.source.p.y)
+                        //            .attr("x2", e.target.p.x).attr("y2", e.target.p.y)
+                        //            .attr("stroke", "green");
+                        //    });
+                        //    }
+                        //}
         ));
                 });
                 if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
