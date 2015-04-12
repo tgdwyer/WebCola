@@ -600,7 +600,7 @@ module cola {
             return this.alpha(0);
         }
 
-        prepareEdgeRouting(nodeMargin) {
+        prepareEdgeRouting(nodeMargin: number = 0) {
             this._visibilityGraph = new cola.geom.TangentVisibilityGraph(
                 this._nodes.map(function (v) {
                     return v.bounds.inflate(-nodeMargin).vertices();

@@ -3397,6 +3397,7 @@ var cola;
             return this.alpha(0);
         };
         Layout.prototype.prepareEdgeRouting = function (nodeMargin) {
+            if (nodeMargin === void 0) { nodeMargin = 0; }
             this._visibilityGraph = new cola.geom.TangentVisibilityGraph(this._nodes.map(function (v) {
                 return v.bounds.inflate(-nodeMargin).vertices();
             }));

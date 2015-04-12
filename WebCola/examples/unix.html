@@ -68,16 +68,19 @@
         }
 
         outer.append('svg:defs').append('svg:marker')
-            .attr('id', 'end-arrow')
-            .attr('viewBox', '0 -5 10 10')
-            .attr('refX', 8)
-            .attr('markerWidth', 6)
-            .attr('markerHeight', 6)
-            .attr('orient', 'auto')
+            .attr({
+                id: 'end-arrow',
+                viewBox: '0 -5 10 10',
+                refX: 8,
+                markerWidth: 6,
+                markerHeight: 6,
+                orient: 'auto'
+            })
           .append('svg:path')
-            .attr('d', 'M0,-5L10,0L0,5L2,0')
-            .attr('stroke-width', '0px')
-            .attr('fill', '#000');
+            .attr({
+                d: 'M0,-5L10,0L0,5L2,0',
+                'stroke-width': '0px',
+                fill: '#000'});
 
         d3.text("graphdata/unix.dot", function (f) {
             var digraph = graphlibDot.parse(f);
@@ -113,8 +116,8 @@
             var node = vis.selectAll(".node")
                 .data(nodes)
                 .enter().append("rect")
-                .attr("class", "node")
-                .attr("rx", 5).attr("ry", 5)
+                .classed("node", true)
+                .attr({ rx: 5, ry: 5 })
                 .call(d3cola.drag);
 
             var label = vis.selectAll(".label")
@@ -136,10 +139,10 @@
                 .interpolate("linear");
 
             var routeEdges = function () {
-                d3cola.prepareEdgeRouting(20);
+                d3cola.prepareEdgeRouting();
                 link.attr("d", function (d) {
                     return lineFunction(d3cola.routeEdge(d
-                    // // show visibility graph
+                     // show visibility graph
                         , function (g) {
                             if (d.source.id === 10 && d.target.id === 11) {
                             g.E.forEach(function (e) {
@@ -148,7 +151,8 @@
                                     .attr("stroke", "green");
                             });
                             }
-                        })); 
+                        }
+        ));
                 });
                 if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
             }
@@ -156,7 +160,9 @@
                 node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin); })
                     .attr("x", function (d) { return d.innerBounds.x; })
                     .attr("y", function (d) { return d.innerBounds.y; })
-                    .attr("width", function (d) { return d.innerBounds.width(); })
+                    .attr("width", function (d) {
+                        return d.innerBounds.width();
+                    })
                     .attr("height", function (d) { return d.innerBounds.height(); });
 
                 link.attr("d", function (d) {
