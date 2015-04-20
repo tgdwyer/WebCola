@@ -443,8 +443,9 @@ module cola {
                         f.reversed = true;
                         lcs = new cola.LongestCommonSubsequence(e, f);
                     }
-                    if (lcs.length === e.length || lcs.length === f.length) {
-                        // the edges are completely co-linear so make an arbitrary ordering decision
+                    if ((lcs.si <= 0 || lcs.ti <= 0) &&
+                        (lcs.si + lcs.length >= e.length || lcs.ti + lcs.length >= f.length)) {
+                        // the paths do not diverge, so make an arbitrary ordering decision
                         edgeOrder.push({ l: i, r: j });
                         continue;
                     }
