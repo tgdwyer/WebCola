@@ -19,7 +19,7 @@ var dragHelper = require('./drag');
 * @class adaptor
 */
 
-function adaptor (options) {   
+function adaptor (options) {
     var adaptor = {},
         trigger = options.trigger, // a function that is notified of events like "tick"
         kick = options.kick, // a function that kicks off the simulation tick loop
@@ -125,7 +125,7 @@ function adaptor (options) {
                     n = Math.max(n, l.source, l.target);
                 });
                 nodes = new Array(++n);
-                for (var var i = 0; i < n; ++i) {
+                for (var i = 0; i < n; ++i) {
                     nodes[i] = {};
                 }
             }
@@ -218,7 +218,7 @@ function adaptor (options) {
     /**
      * list of constraints of various types
      * @property constraints
-     * @type {array} 
+     * @type {array}
      * @default empty list
      */
     adaptor.constraints = function (c) {
@@ -264,7 +264,7 @@ function adaptor (options) {
     };
 
     adaptor.linkDistance = function (x) {
-        if (!arguments.length) 
+        if (!arguments.length)
             return typeof linkDistance === "function" ? linkDistance() : linkDistance;
         linkDistance = typeof x === "function" ? x : +x;
         return adaptor;
@@ -327,7 +327,7 @@ function adaptor (options) {
     /**
      * start the layout process
      * @method start
-     * @param {number} [initialUnconstrainedIterations=0] unconstrained initial layout iterations 
+     * @param {number} [initialUnconstrainedIterations=0] unconstrained initial layout iterations
      * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
      * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
      */
@@ -351,7 +351,7 @@ function adaptor (options) {
 
         var G = null;
 
-        var avar o = this.avoidOverlaps();
+        var ao = this.avoidOverlaps();
 
         nodes.forEach(function (v, i) {
             v.index = i;
@@ -383,7 +383,7 @@ function adaptor (options) {
         });
 
         if (rootGroup && typeof rootGroup.groups !== 'undefined') {
-            var var i = n;
+            var i = n;
             groups.forEach(function(g) {
                 G[i][i + 1] = G[i + 1][i] = 1e-6;
                 D[i][i + 1] = D[i + 1][i] = 0.1;
@@ -397,7 +397,7 @@ function adaptor (options) {
             linkAccessor.getMinSeparation = directedLinkConstraints.getMinSeparation;
             curConstraints = curConstraints.concat(generateDirectedEdgeConstraints(n, links, directedLinkConstraints.axis, linkAccessor));
         }
-        
+
         var initialUnconstrainedIterations = arguments.length > 0 ? arguments[0] : 0;
         var initialUserConstraintIterations = arguments.length > 1 ? arguments[1] : 0;
         var initialAllConstraintsIterations = arguments.length > 2 ? arguments[2] : 0;
@@ -451,7 +451,7 @@ function adaptor (options) {
                 descent.x[0][i] = v.x, descent.x[1][i] = v.y;
             });
         }
-        
+
         return adaptor.resume();
     };
 
@@ -484,7 +484,7 @@ function adaptor (options) {
         if (typeof draw !== 'undefined') {
             draw(vg2);
         }
-        var sourceInd = function(e) { return e.source.id }, targetInd = function(e) { return e.target.id }, length = function(e) { return e.length() }, 
+        var sourceInd = function(e) { return e.source.id }, targetInd = function(e) { return e.target.id }, length = function(e) { return e.length() },
             spCalc = new shortestpaths.Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length),
             shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
         if (shortestPath.length === 1 || shortestPath.length === vg2.V.length) {
@@ -495,7 +495,7 @@ function adaptor (options) {
                 p = vg2.V[shortestPath[n]].p,
                 q = vg2.V[shortestPath[0]].p,
                 lineData = [d.source.innerBounds.rayIntersection(p.x, p.y)];
-            for (var var i = n; i >= 0; --i) 
+            for (var i = n; i >= 0; --i)
                 lineData.push(vg2.V[shortestPath[i]].p);
             lineData.push(vpsc.makeEdgeTo(q, d.target.innerBounds, 5));
         }
