@@ -1,7 +1,6 @@
 var async = require('async'),
-  PhantomJS = require(
-    '../node_modules/grunt-contrib-qunit/node_modules/grunt-lib-phantomjs'
-  );
+    PhantomJS = require('grunt-lib-phantomjs');
+
 module.exports = function(grunt){
   grunt.registerMultiTask('examples', 'Run all the examples.', function(){
     var phantomjs = PhantomJS.init(grunt),
