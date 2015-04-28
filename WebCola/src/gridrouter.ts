@@ -477,7 +477,7 @@ module cola {
         // for an orthogonal path described by a sequence of points, create a list of segments
         // if consecutive segments would make a straight line they are merged into a single segment
         // segments are over cloned points, not the original vertices
-        static makeSegments(path: geom.Point[]): geom.Point[][] {
+        static makeSegments(path: any): geom.Point[][] {
             function copyPoint(p: geom.Point) {
                 return <geom.Point>{ x: p.x, y: p.y };
             }
@@ -490,6 +490,12 @@ module cola {
                     segments.push([a, b]);
                     a = b;
                 }
+            }
+            if (path.reversed) {
+                segments.reverse(); // reverse order of segments
+                segments.forEach(function(segment) {
+                    segment.reverse();  // reverse each segment
+                });
             }
             return segments;
         }
