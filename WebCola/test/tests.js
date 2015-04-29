@@ -411,7 +411,7 @@ test('metro crossing min', function () {
         ];
         verts.forEach(function(v) {
             v.x -= 400;
-            v.y -= 200;
+            v.y -= 160;
             v.x /= 4;
             v.y /= 8;
         });
@@ -435,11 +435,28 @@ test('metro crossing min', function () {
         routes = edges.map(function (e) { return cola.GridRouter.makeSegments(e); });
         cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, 2);
         cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, 2);
+        cola.GridRouter.unreverseEdges(routes, edges);
         draw();
     }
 
     var draw = function () {
-        var svg = d3.select("body").append("svg").attr("width", 100).attr("height", 100).append('g').attr('transform', 'scale(4,4)')
+        var svg = d3.select("body").append("svg").attr("width", 100).attr("height", 100).append('g').attr('transform', 'scale(4,4)');
+
+        svg.append('svg:defs').append('svg:marker')
+            .attr({
+                id: 'end-arrow',
+                viewBox: '0 -5 10 10',
+                refX: 8,
+                markerWidth: 3,
+                markerHeight: 3,
+                orient: 'auto'
+            })
+          .append('svg:path')
+            .attr({
+                d: 'M0,-5L10,0L0,5L2,0',
+                'stroke-width': '0px',
+                fill: '#000'
+            });
         var color = d3.scale.category10();
         // draw segments
         var getPoints = function (segs) {
@@ -453,6 +470,10 @@ test('metro crossing min', function () {
             .attr('d', function (d) { return lineFunction(getPoints(d)) })
             .attr('stroke', function (d, i) { return color(i) })
             .attr('fill', 'none')
+            .style('marker-end', 'url(#end-arrow)');
+        svg.selectAll('.node').data(verts).enter()
+            .append('ellipse').attr({rx: 1, ry: 1, opacity: 0.5})
+            .attr('cx', function (d) { return d.x }).attr('cy', function (d) { return d.y })
         // draw from edge paths
         //var edgepaths = svg.selectAll(".edge").data(edges).enter()
         //    .append('path').attr('class', 'edge').attr('opacity', 0.5)
@@ -512,6 +533,7 @@ test('metro crossing min', function () {
 
     regression1();
     nudge();
+    equal(countRouteIntersections(routes), 0);
 });
 
 // next steps: 

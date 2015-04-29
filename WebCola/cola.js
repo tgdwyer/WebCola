@@ -3907,7 +3907,21 @@ var cola;
             });
             cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, gap);
             cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, gap);
+            cola.GridRouter.unreverseEdges(routes, routePaths);
             return routes;
+        };
+        // path may have been reversed by the subsequence processing in orderEdges
+        // so now we need to restore the original order
+        GridRouter.unreverseEdges = function (routes, routePaths) {
+            routes.forEach(function (segments, i) {
+                var path = routePaths[i];
+                if (path.reversed) {
+                    segments.reverse(); // reverse order of segments
+                    segments.forEach(function (segment) {
+                        segment.reverse(); // reverse each segment
+                    });
+                }
+            });
         };
         GridRouter.angleBetween2Lines = function (line1, line2) {
             var angle1 = Math.atan2(line1[0].y - line1[1].y, line1[0].x - line1[1].x);
@@ -3998,14 +4012,6 @@ var cola;
                     segments.push([a, b]);
                     a = b;
                 }
-            }
-            // path may have been reversed by the subsequence processing in orderEdges
-            // so now we need to restore the original order
-            if (path.reversed) {
-                segments.reverse(); // reverse order of segments
-                segments.forEach(function (segment) {
-                    segment.reverse(); // reverse each segment
-                });
             }
             return segments;
         };

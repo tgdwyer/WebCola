@@ -392,7 +392,22 @@ module cola {
             var routes = routePaths.map(function (e) { return cola.GridRouter.makeSegments(e); });
             cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, gap);
             cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, gap);
+            cola.GridRouter.unreverseEdges(routes, routePaths);
             return routes;
+        }
+        
+        // path may have been reversed by the subsequence processing in orderEdges
+        // so now we need to restore the original order
+        static unreverseEdges(routes, routePaths) {
+            routes.forEach((segments, i) => {
+                var path = routePaths[i];
+                if ((<any>path).reversed) {
+                    segments.reverse(); // reverse order of segments
+                    segments.forEach(function (segment) {
+                        segment.reverse();  // reverse each segment
+                    });
+                }
+            });
         }
 
         static angleBetween2Lines(line1: geom.Point[], line2: geom.Point[]): number {
@@ -490,14 +505,6 @@ module cola {
                     segments.push([a, b]);
                     a = b;
                 }
-            }
-            // path may have been reversed by the subsequence processing in orderEdges
-            // so now we need to restore the original order
-            if ((<any>path).reversed) {
-                segments.reverse(); // reverse order of segments
-                segments.forEach(function(segment) {
-                    segment.reverse();  // reverse each segment
-                });
             }
             return segments;
         }
