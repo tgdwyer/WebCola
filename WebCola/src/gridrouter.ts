@@ -443,8 +443,9 @@ module cola {
                         f.reversed = true;
                         lcs = new cola.LongestCommonSubsequence(e, f);
                     }
-                    if (lcs.length === e.length || lcs.length === f.length) {
-                        // the edges are completely co-linear so make an arbitrary ordering decision
+                    if ((lcs.si <= 0 || lcs.ti <= 0) &&
+                        (lcs.si + lcs.length >= e.length || lcs.ti + lcs.length >= f.length)) {
+                        // the paths do not diverge, so make an arbitrary ordering decision
                         edgeOrder.push({ l: i, r: j });
                         continue;
                     }
@@ -476,7 +477,7 @@ module cola {
         // for an orthogonal path described by a sequence of points, create a list of segments
         // if consecutive segments would make a straight line they are merged into a single segment
         // segments are over cloned points, not the original vertices
-        static makeSegments(path: geom.Point[]): geom.Point[][] {
+        static makeSegments(path: any): geom.Point[][] {
             function copyPoint(p: geom.Point) {
                 return <geom.Point>{ x: p.x, y: p.y };
             }
@@ -489,6 +490,12 @@ module cola {
                     segments.push([a, b]);
                     a = b;
                 }
+            }
+            if (path.reversed) {
+                segments.reverse(); // reverse order of segments
+                segments.forEach(function(segment) {
+                    segment.reverse();  // reverse each segment
+                });
             }
             return segments;
         }

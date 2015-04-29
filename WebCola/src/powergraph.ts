@@ -98,6 +98,7 @@ module cola.powergraph {
         }
 
         private rootMerges(k: number = 0): {
+            id: number;
             nEdges: number;
             a: Module;
             b: Module;
@@ -109,7 +110,8 @@ module cola.powergraph {
             for (var i = 0, i_ = n - 1; i < i_; ++i) {
                 for (var j = i+1; j < n; ++j) {
                     var a = rs[i], b = rs[j];
-                    merges[ctr++] = { nEdges: this.nEdges(a, b), a: a, b: b };
+                    merges[ctr] = { id: ctr, nEdges: this.nEdges(a, b), a: a, b: b };
+                    ctr++;
                 }
             }
             return merges;
@@ -119,7 +121,7 @@ module cola.powergraph {
             for (var i = 0; i < this.roots.length; ++i) {
                 // Handle single nested module case
                 if (this.roots[i].modules().length < 2) continue;
-                var ms = this.rootMerges(i).sort((a, b) => a.nEdges - b.nEdges);
+                var ms = this.rootMerges(i).sort((a, b) => a.nEdges == b.nEdges ? a.id - b.id : a.nEdges - b.nEdges);
                 var m = ms[0];
                 if (m.nEdges >= this.R) continue;
                 this.merge(m.a, m.b, i);
