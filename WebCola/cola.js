@@ -2176,7 +2176,8 @@ var cola;
                 for (var i = 0, i_ = n - 1; i < i_; ++i) {
                     for (var j = i + 1; j < n; ++j) {
                         var a = rs[i], b = rs[j];
-                        merges[ctr++] = { nEdges: this.nEdges(a, b), a: a, b: b };
+                        merges[ctr] = { id: ctr, nEdges: this.nEdges(a, b), a: a, b: b };
+                        ctr++;
                     }
                 }
                 return merges;
@@ -2186,7 +2187,8 @@ var cola;
                     // Handle single nested module case
                     if (this.roots[i].modules().length < 2)
                         continue;
-                    var ms = this.rootMerges(i).sort(function (a, b) { return a.nEdges - b.nEdges; });
+                    // find the merge that allows for the most edges to be removed.  secondary ordering based on arbitrary id (for predictability)
+                    var ms = this.rootMerges(i).sort(function (a, b) { return a.nEdges == b.nEdges ? a.id - b.id : a.nEdges - b.nEdges; });
                     var m = ms[0];
                     if (m.nEdges >= this.R)
                         continue;
@@ -3949,8 +3951,8 @@ var cola;
                         f.reversed = true;
                         lcs = new cola.LongestCommonSubsequence(e, f);
                     }
-                    if (lcs.length === e.length || lcs.length === f.length) {
-                        // the edges are completely co-linear so make an arbitrary ordering decision
+                    if ((lcs.si <= 0 || lcs.ti <= 0) && (lcs.si + lcs.length >= e.length || lcs.ti + lcs.length >= f.length)) {
+                        // the paths do not diverge, so make an arbitrary ordering decision
                         edgeOrder.push({ l: i, r: j });
                         continue;
                     }
@@ -3996,6 +3998,14 @@ var cola;
                     segments.push([a, b]);
                     a = b;
                 }
+            }
+            // path may have been reversed by the subsequence processing in orderEdges
+            // so now we need to restore the original order
+            if (path.reversed) {
+                segments.reverse(); // reverse order of segments
+                segments.forEach(function (segment) {
+                    segment.reverse(); // reverse each segment
+                });
             }
             return segments;
         };
