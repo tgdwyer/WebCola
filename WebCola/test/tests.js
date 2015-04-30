@@ -599,7 +599,7 @@ asyncTest('grid router', function() {
         shortestPath = gridrouter.route(source, target);
 
         if (draw) {
-            var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 400).append('g').attr('transform', 'scale(0.5,0.8)')
+            var svg = d3.select("body").append("svg").attr({width: 800, height: 400}).append('g').attr('transform', 'scale(0.5,0.8)')
             var color = d3.scale.category10();
             function color(d) { return 'grey' }
             var nodegroups = svg.selectAll('.gridNodes')
@@ -744,7 +744,7 @@ test("tangents", function () {
                 return { x1: A[tp.t1].x, y1: A[tp.t1].y, x2: B[tp.t2].x, y2: B[tp.t2].y };
             }
             d3.select("body").append("p").html(j);
-            var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 100);
+            var svg = d3.select("body").append("svg").attr({ width: 800, height: 100 });
             drawPoly(svg, A);
             drawPoly(svg, B);
             for (var p in t) {
