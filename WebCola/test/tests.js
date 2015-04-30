@@ -308,10 +308,13 @@ function makeNonoverlappingPolys(rand, n) {
 function drawPoly(svg, P) {
     for (var i = 0; i < P.length; ++i) {
         var lineFunction = d3.svg.line().x(function (d) { return d.x * 10; }).y(function (d) { return d.y * 10; }).interpolate("linear");
-        svg.append("path").attr("d", lineFunction(P))
-            .attr("stroke", "blue")
-            .attr("stroke-width", 1)
-            .attr("fill", "none");
+        svg.append("path")
+            .attr({
+                d: lineFunction(P),
+                stroke: "blue",
+                'stroke-width': 1,
+                fill: "none"
+            });
     }
     if (arguments.length > 2) {
         var label = arguments[2];
@@ -324,13 +327,23 @@ function drawLine(svg, l) {
     if (arguments.length > 2) {
         stroke = arguments[2];
     }
-    svg.append("line").attr('x1', 10 * l.x1).attr('y1', 10 * l.y1).attr('x2', 10 * l.x2).attr("y2", 10 * l.y2)
-                    .attr("stroke", stroke)
-                    .attr("stroke-width", 1);
+    svg.append("line").attr({
+        x1: 10 * l.x1,
+        y1: 10 * l.y1,
+        x2: 10 * l.x2,
+        y2: 10 * l.y2,
+        stroke: stroke,
+        'stroke-width': 2
+    });
 }
 
 function drawCircle(svg, p) {
-    svg.append("circle").attr("cx", 10 * p.x).attr("cy", 10 * p.y).attr('fill', 'red').attr("r", 2);
+    svg.append("circle").attr({
+        cx: 10 * p.x,
+        cy: 10 * p.y,
+        fill: 'red',
+        r: 3
+    });
 }
 
 function midPoint(p) {
@@ -690,12 +703,15 @@ test("tangent visibility graph", function () {
             start = g.addPoint(port1, 8),
             end = g.addPoint(port2, 9);
         g.addEdgeIfVisible(port1, port2, 8, 9);
-        var getSource = function (e) { return e.source.id }, getTarget = function(e) { return e.target.id}, getLength = function(e) { return e.length }
-            shortestPath = (new cola.shortestpaths.Calculator(g.V.length, g.E, getSource, getTarget, getLength)).PathFromNodeToNode(start.id, end.id);
+        var getSource = function (e) { return e.source.id }, getTarget = function(e) { return e.target.id}, getLength = function(e) { return e.length() }
+        shortestPath = (new cola.shortestpaths.Calculator(g.V.length, g.E, getSource, getTarget, getLength)).PathFromNodeToNode(start.id, end.id);
+        ok(shortestPath.length > 0);
         if (draw) {
             d3.select("body").append("p").html(tt);
             var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 250);
             P.forEach(function (p, i) { drawPoly(svg, p /*, i*/) });
+
+            // draw visibility graph:
             //g.E.forEach(function (e) {
             //    drawLine(svg, { x1: e.source.p.x, y1: e.source.p.y, x2: e.target.p.x, y2: e.target.p.y });
             //});

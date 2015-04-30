@@ -25,7 +25,7 @@ module.exports = function (grunt) {
         options: {
           module: 'amd',
           target: 'es5',
-          sourceMap: false
+          sourceMap: true
         }
       },
       examples: {
@@ -33,7 +33,7 @@ module.exports = function (grunt) {
         options: {
           module: 'amd',
           target: 'es5',
-          sourceMap: false
+          sourceMap: true
         }
       }
     },
@@ -41,9 +41,9 @@ module.exports = function (grunt) {
       options: {},
       dist: {
         src: [
-          'WebCola/cola.js',
           'WebCola/src/rbtree.js',
           'WebCola/src/scc.js',
+          'WebCola/cola.js',
         ],
         dest: 'WebCola/cola.js'
       }
@@ -58,7 +58,10 @@ module.exports = function (grunt) {
         }
       }
     },
-    uglify: {
+    uglify: {    
+      options: {
+        sourceMap: true
+      },
       dist: {
         files: {
           'WebCola/cola.min.js': [
