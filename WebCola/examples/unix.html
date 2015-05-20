@@ -97,6 +97,7 @@
 
             d3cola
                 .avoidOverlaps(true)
+                .convergenceThreshold(1e-3)
                 .flowLayout('x', 150)
                 .size([width, height])
                 .nodes(nodes)
@@ -152,7 +153,7 @@
                 });
                 if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
             }
-            d3cola.start(10, 30, 100).on("tick", function () {
+            d3cola.start(50, 100, 200).on("tick", function () {
                 node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin); })
                     .attr("x", function (d) { return d.innerBounds.x; })
                     .attr("y", function (d) { return d.innerBounds.y; })

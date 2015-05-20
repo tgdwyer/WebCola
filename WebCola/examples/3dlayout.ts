@@ -2,6 +2,7 @@
 /// <reference path="../src/shortestpaths.ts"/>
 /// <reference path="../src/linklengths.ts"/>
 /// <reference path="../src/descent.ts"/>
+/// <reference path="../src/layout3d.ts"/>
 module cola3 {
     export class Graph {
         parentObject;
@@ -95,21 +96,12 @@ module cola3 {
         }
     }
 }
-
-class LinkAccessor implements cola.LinkLengthAccessor<any> {
-    getSourceIndex(e: any): number { return e.source; }
-    getTargetIndex(e: any): number { return e.target; }
-    getLength(e: any): number { return e.length; }
-    setLength(e: any, l: number) { e.length = l; }
-}
-
 d3.json("graphdata/miserables.json", function (error, graph) {
     var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    var camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 1000);
     var renderer = new THREE.WebGLRenderer({ antialias: true });
     var sizeRatio = 0.8;
     renderer.setSize(window.innerWidth * sizeRatio, window.innerHeight * sizeRatio);
-
     var div = document.getElementById("graphdiv");
     div.appendChild(renderer.domElement);
 
@@ -131,37 +123,9 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     });
     var colaGraph = new cola3.Graph(colaObject, n, graph.links, nodeColourings);
 
-    var linkAccessor = new LinkAccessor();
-    cola.jaccardLinkLengths(graph.links, linkAccessor, 1.5);
+    let layout = new cola.Layout3D(graph.nodes, graph.links, 6);
+    layout.start(10);
 
-    // Create the distance matrix that Cola needs
-    var distanceMatrix = (new cola.shortestpaths.Calculator(n, graph.links,
-        linkAccessor.getSourceIndex, linkAccessor.getTargetIndex, linkAccessor.getLength)).DistanceMatrix();
-
-    var D = cola.Descent.createSquareMatrix(n, (i, j) => {
-        return distanceMatrix[i][j] * 7;
-    });
-    // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
-    // otherwise 2. (
-    var G = cola.Descent.createSquareMatrix(n, function () { return 2 });
-    graph.links.forEach(function (e) {
-        var u = linkAccessor.getSourceIndex(e), v = linkAccessor.getTargetIndex(e);
-        G[u][v] = G[v][u] = 1;
-    });
-
-    // 3d positions vector
-    var k = 3;
-    var x = new Array(k);
-    for (var i = 0; i < k; ++i) {
-        x[i] = new Array(n);
-        for (var j = 0; j < n; ++j) {
-            x[i][j] = 0;
-        }
-    }
-
-    var descent = new cola.Descent(x, D);
-    descent.run(10);
-    descent.G = G;
     camera.position.z = 50;
 
     var xAngle = 0;
@@ -196,10 +160,10 @@ d3.json("graphdata/miserables.json", function (error, graph) {
         xAngle += mouse.dx / 100;
         yAngle += mouse.dy / 100;
         colaObject.rotation.set(yAngle, xAngle, 0);
-        var s = converged ? 0 : descent.rungeKutta();
+        var s = converged ? 0 : layout.tick();
         if (s != 0 && Math.abs(Math.abs(delta / s) - 1) > 1e-7) {
             delta = s;
-            colaGraph.setNodePositions(descent.x);
+            colaGraph.setNodePositions(layout.x);
             colaGraph.update(); // Update all the edge positions
         } else {
             converged = true;

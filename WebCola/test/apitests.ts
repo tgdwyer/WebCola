@@ -10,7 +10,7 @@ test("Basic headless layout",() => {
             { source: 0, target: 1 },
             { source: 1, target: 2 },
             { source: 2, target: 0 }])
-        .start();
+        .start(10);
     // that's it!
 
     var vs = layout.nodes();
@@ -26,7 +26,7 @@ test("Basic headless layout",() => {
     checkLengths(layout.linkDistance());
 
     // rerun layout with a new ideal link length
-    layout.linkDistance(10).start();
+    layout.linkDistance(10).start(10);
     checkLengths(10);
 });
 
@@ -46,6 +46,17 @@ test("Layout events",() => {
 
     ok(layout.alpha() <= layout.convergenceThreshold(), 'converged to alpha=' + layout.alpha());
     equal(starts, 1, 'started once');
-    ok(ticks >= 1 && ticks < 20, 'ticked '+ticks+' times');
+    ok(ticks >= 1 && ticks < 50, 'ticked '+ticks+' times');
     equal(ends, 1, 'ended once');
+});
+
+test("3D Layout", () => {
+    const nodes = [new cola.Node3D(0, 0, -1), new cola.Node3D(0, 0, 1)];
+    const links = [new cola.Link3D(0,1)];
+    const desiredLength = 10;
+
+    let layout = new cola.Layout3D(nodes, links, desiredLength);
+    layout.start(100);
+    let linkLength = layout.linkLength(links[0]);
+    ok(Math.abs(linkLength - desiredLength) < 1e-3, "length = " + linkLength);
 });

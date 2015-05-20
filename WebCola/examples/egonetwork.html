@@ -108,6 +108,9 @@
 
     var body = d3.select("body");
   
+    var getLinkId = function (d) {
+        return d.source.index + "-" + d.target.index;
+    };
 
     var egosvg = (function () {
         function egosvg(file) {
@@ -150,9 +153,7 @@
             this.d3cola.on("tick", null);
             this.d3cola.links(this.edges)
                 .symmetricDiffLinkLengths(8).start(0, 0, 10);
-            this.link.data(this.d3cola.links(), function (d) {
-                return d.source.index + "-" + d.target.index;
-            }).exit().remove();
+            this.link.data(this.d3cola.links(), getLinkId).exit().remove();
         };
 
         egosvg.prototype.connectNode0 = function () {
@@ -175,9 +176,7 @@
 
             var _this = this;
             this.link = this.edgegroup.selectAll(".link")
-                .data(this.edges, function (d) {
-                    return _this.d3cola.linkId(d);
-                });
+                .data(this.edges, getLinkId);
             this.link.enter().append("line")
                 .attr("class", "link")
                 .style("stroke-width", function (d) { return Math.sqrt(d.value); }).attr("x1", function (d) { return d.source.x; })
@@ -222,9 +221,7 @@
             nodes.forEach(function (v) { v.width = 20; v.height = 20; });
 
             this.link = this.edgegroup.selectAll(".link")
-                .data(this.d3cola.links(), function (d) {
-                    return _this.d3cola.linkId(d);
-                });
+                .data(this.d3cola.links(), getLinkId);
 
             this.link.enter().append("line")
                 .attr("class", "link")

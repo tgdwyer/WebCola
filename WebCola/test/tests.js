@@ -1,9 +1,10 @@
-﻿/// <reference path="d3.v3.min.js"/>
+﻿/// <reference path="qunit.js"/>
+/// <reference path="qunit.d.ts"/>
+/// <reference path="../extern/d3.v3.min.js"/>
 /// <reference path="../src/layout.js"/>
 /// <reference path="../src/d3adaptor.js"/>
 /// <reference path="../src/shortestpaths.js"/>
 /// <reference path="../src/descent.js"/>
-/// <reference path="../src/cola.vpsc.js"/>
 /// <reference path="../src/rectangle.js"/>
 /// <reference path="../src/geom.js"/>
 /// <reference path="../src/powergraph.js"/>
@@ -119,12 +120,12 @@ asyncTest("edge lengths", function () {
             .linkDistance(length)
             .nodes(graph.nodes)
             .links(graph.links);
-        d3cola.start(10);
+        d3cola.start(100);
         var errors = graph.links.map(function (e) {
             var l = nodeDistance(e.source, e.target);
             return Math.abs(l - length(e));
         }), max = Math.max.apply(this, errors);
-        ok(max < 0.1);
+        ok(max < 0.1, "max = "+max);
         start();
     });
     ok(true);

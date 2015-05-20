@@ -72,7 +72,7 @@ module tmdb {
             }));
             var d = $.Deferred<Node[]>();
             $.when.apply($, dn)
-                .then(() => {
+                .then(function () {
                     var neighbours = Array.prototype.slice.call(arguments);
                     d.resolve(neighbours);
                     });
