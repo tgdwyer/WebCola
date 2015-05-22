@@ -85,6 +85,7 @@ test("Fixed nodes", () => {
     nodes[0].x = -5;
     nodes[4].x = 5;
 
+    // with ideal edge length at 10, other nodes will arc around in a kind of horsh-shoe shape
     const layout = new cola.Layout3D(nodes, links, 10).start();
 
     let closeEnough = (a, b) => Math.abs(a - b) < 1;
