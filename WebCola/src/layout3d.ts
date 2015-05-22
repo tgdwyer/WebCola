@@ -15,10 +15,11 @@ module cola {
         }
     }
     export class Node3D {
+        lockPosition: number[];
         constructor(
-            public x: number,
-            public y: number,
-            public z: number) { }
+            public x: number = 0,
+            public y: number = 0,
+            public z: number = 0) { }
     }
     export class Layout3D {
         x: number[][];
@@ -43,7 +44,7 @@ module cola {
             return l.actualLength(this.x);
         }
         descent: cola.Descent;
-        start(iterations: number) {
+        start(iterations: number): Layout3D {
             const n = this.nodes.length;
 
             var linkAccessor = new LinkAccessor();
@@ -64,7 +65,14 @@ module cola {
             this.descent = new cola.Descent(this.x, D);
             this.descent.threshold = 1e-3;
             this.descent.G = G;
+            for (var i = 0; i < this.nodes.length; i++) {
+                var v = this.nodes[i];
+                if (v.lockPosition) {
+                    this.descent.locks.add(i, v.lockPosition);
+                }
+            }
             this.descent.run(iterations);
+            return this;
         }
 
         tick(): number {

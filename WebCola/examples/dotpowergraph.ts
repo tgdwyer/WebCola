@@ -72,25 +72,29 @@ module dotpowergraph {
             .nodes(vs)
             .links(edges)
             .avoidOverlaps(false)
+            .linkDistance(30)
             .symmetricDiffLinkLengths(5)
+            .convergenceThreshold(1e-4)
             .start(100);
 
         // final layout taking node positions from above as starting positions
         // subject to group containment constraints
         d3cola = cola.d3adaptor()
+            .convergenceThreshold(1e-3)
             .size(size)
             .avoidOverlaps(true)
             .nodes(graph.nodes)
             .links(graph.links)
         //.flowLayout('y', 30)
             .groupCompactness(1e-4)
-            .symmetricDiffLinkLengths(3)
+            .linkDistance(30)
+            .symmetricDiffLinkLengths(5)
             .powerGraphGroups(function (d) {
                 powerGraph = d;
                 powerGraph.groups.forEach(function (v) {
                     v.padding = grouppadding
                 });
-            }).start(50, 0, 50);
+            }).start(50, 0, 100);
         return { cola: d3cola, powerGraph: powerGraph };
     }
 
@@ -186,6 +190,7 @@ module dotpowergraph {
             });
         }).on('end', function () {
             var cc = cola.d3adaptor()
+                .convergenceThreshold(1e-4)
                 .size(size)
                 .avoidOverlaps(true)
                 .nodes(pgLayout.cola.nodes())

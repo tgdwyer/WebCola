@@ -46,17 +46,41 @@ test("Layout events",() => {
 
     ok(layout.alpha() <= layout.convergenceThreshold(), 'converged to alpha=' + layout.alpha());
     equal(starts, 1, 'started once');
-    ok(ticks >= 1 && ticks < 50, 'ticked '+ticks+' times');
+    ok(ticks >= 1 && ticks < 50, `ticked ${ticks} times`);
     equal(ends, 1, 'ended once');
 });
 
 test("3D Layout", () => {
+    // single link with non-zero coords only in z-axis.
+    // should relax to ideal length, nodes moving only in z-axis
     const nodes = [new cola.Node3D(0, 0, -1), new cola.Node3D(0, 0, 1)];
-    const links = [new cola.Link3D(0,1)];
+    const links = [new cola.Link3D(0, 1)];
     const desiredLength = 10;
-
-    let layout = new cola.Layout3D(nodes, links, desiredLength);
-    layout.start(100);
+    let layout = new cola.Layout3D(nodes, links, desiredLength).start(100);
     let linkLength = layout.linkLength(links[0]);
-    ok(Math.abs(linkLength - desiredLength) < 1e-3, "length = " + linkLength);
+    nodes.forEach(({x, y}) => ok(Math.abs(x) < 1e-5 && Math.abs(y) < 1e-5));
+    ok(Math.abs(linkLength - desiredLength) < 1e-4, "length = " + linkLength);
+});
+
+test("3D Pyramid", () => {
+    // k4 should relax to a 3D pyramid with all edges the same length
+    const nodes = Array.apply(null, { length: 4 }).map(() => new cola.Node3D);
+    const links = [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]]
+        .map(([u, v]) => new cola.Link3D(u, v));
+    const layout = new cola.Layout3D(nodes, links, 10).start(100);
+    const lengths = links.map(l=> layout.linkLength(l));
+    lengths.forEach(l=> ok(Math.abs(l - lengths[0]) < 1e-4, "length = " + l));
+});
+
+test("3D Locks", () => {
+    const nodes = Array.apply(null, { length: 5 }).map(() => new cola.Node3D);
+    const links = [[0, 1], [1, 2], [2, 3], [3, 4]]
+        .map(([u, v]) => new cola.Link3D(u, v));
+    nodes[0].lockPosition = [-10, 0, 0];
+    nodes[4].lockPosition = [10, 0, 0];
+    const layout = new cola.Layout3D(nodes, links, 10).start(100);
+    ok(Math.abs(layout.x[0][0] - nodes[0].lockPosition[0]) < 1);
+    ok(Math.abs(layout.x[0][4] - nodes[4].lockPosition[0]) < 1);
+    const lengths = links.map(l=> layout.linkLength(l));
+    lengths.forEach(l=> ok(Math.abs(l - lengths[0]) < 10, "length = " + l));
 });

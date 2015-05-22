@@ -226,9 +226,9 @@ DEBUG */
                         weight = 1;
                     }
                     var D2: number = D * D;
-                    var gs: number = weight * (l - D) / (D2 * l);
+                    var gs: number = 2 * weight * (l - D) / (D2 * l);
                     var l3 = l * l * l;
-                    var hs: number = -weight / (D2 * l3);
+                    var hs: number = 2 * -weight / (D2 * l3);
                     if (!isFinite(gs))
                         console.log(gs);
                     for (i = 0; i < this.k; ++i) {
@@ -339,6 +339,8 @@ DEBUG */
             if (this.project) this.project[0](x0[0], x0[1], r[0]);
             this.takeDescentStep(r[1], d[1], stepSize);
             if (this.project) this.project[1](r[0], x0[1], r[1]);
+
+            // todo: allow projection against constraints in higher dimensions
             for (var i = 2; i < this.k; i++) 
                 this.takeDescentStep(r[i], d[i], stepSize);
         }

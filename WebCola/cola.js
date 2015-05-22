@@ -2208,7 +2208,11 @@ var cola;
     cola.Locks = Locks;
     /**
      * Uses a gradient descent approach to reduce a stress or p-stress goal function over a graph with specified ideal edge lengths or a square matrix of dissimilarities.
-     * The standard stress function over a graph with n
+     * The standard stress function over a graph nodes with position vectors x,y,z is (mathematica input):
+     *   stress[x_,y_,z_,D_,w_]:=Sum[w[[i,j]] (length[x[[i]],y[[i]],z[[i]],x[[j]],y[[j]],z[[j]]]-d[[i,j]])^2,{i,Length[x]-1},{j,i+1,Length[x]}]
+     * where: D is a square matrix of ideal separations between nodes, w is matrix of weights for those separations
+     *        length[x1_, y1_, z1_, x2_, y2_, z2_] = Sqrt[(x1 - x2)^2 + (y1 - y2)^2 + (z1 - z2)^2]
+     * below, we use wij = 1/(Dij^2)
      *
      * @class Descent
      */
@@ -2351,9 +2355,9 @@ var cola;
                         weight = 1;
                     }
                     var D2 = D * D;
-                    var gs = weight * (l - D) / (D2 * l);
+                    var gs = 2 * weight * (l - D) / (D2 * l);
                     var l3 = l * l * l;
-                    var hs = -weight / (D2 * l3);
+                    var hs = 2 * -weight / (D2 * l3);
                     if (!isFinite(gs))
                         console.log(gs);
                     for (i = 0; i < this.k; ++i) {
@@ -2465,6 +2469,7 @@ var cola;
             this.takeDescentStep(r[1], d[1], stepSize);
             if (this.project)
                 this.project[1](r[0], x0[1], r[1]);
+            // todo: allow projection against constraints in higher dimensions
             for (var i = 2; i < this.k; i++)
                 this.takeDescentStep(r[i], d[i], stepSize);
         };
@@ -4683,6 +4688,9 @@ var cola;
     cola.Link3D = Link3D;
     var Node3D = (function () {
         function Node3D(x, y, z) {
+            if (x === void 0) { x = 0; }
+            if (y === void 0) { y = 0; }
+            if (z === void 0) { z = 0; }
             this.x = x;
             this.y = y;
             this.z = z;
