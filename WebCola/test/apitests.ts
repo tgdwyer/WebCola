@@ -1,6 +1,6 @@
 ﻿///<reference path="qunit.d.ts"/>
 ///<reference path="../src/layout.ts"/>
-QUnit.module("Typescript API Tests");
+QUnit.module("Headless API");
 
 test("Basic headless layout",() => {
     // layout a triangular graph
@@ -50,7 +50,9 @@ test("Layout events",() => {
     equal(ends, 1, 'ended once');
 });
 
-test("3D Layout", () => {
+QUnit.module("3D Layout");
+
+test("single link", () => {
     // single link with non-zero coords only in z-axis.
     // should relax to ideal length, nodes moving only in z-axis
     const nodes = [new cola.Node3D(0, 0, -1), new cola.Node3D(0, 0, 1)];
@@ -62,7 +64,7 @@ test("3D Layout", () => {
     ok(Math.abs(linkLength - desiredLength) < 1e-4, "length = " + linkLength);
 });
 
-test("3D Pyramid", () => {
+test("Pyramid", () => {
     // k4 should relax to a 3D pyramid with all edges the same length
     const nodes = Array.apply(null, { length: 4 }).map(() => new cola.Node3D);
     const links = [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]]
@@ -72,15 +74,24 @@ test("3D Pyramid", () => {
     lengths.forEach(l=> ok(Math.abs(l - lengths[0]) < 1e-4, "length = " + l));
 });
 
-test("3D Locks", () => {
+test("Locks", () => {
     const nodes = Array.apply(null, { length: 5 }).map(() => new cola.Node3D);
     const links = [[0, 1], [1, 2], [2, 3], [3, 4]]
         .map(([u, v]) => new cola.Link3D(u, v));
-    nodes[0].lockPosition = [-10, 0, 0];
-    nodes[4].lockPosition = [10, 0, 0];
+    nodes[0].lockPosition = [-5, 0, 0];
+    nodes[4].lockPosition = [5, 0, 0];
     const layout = new cola.Layout3D(nodes, links, 10).start(100);
-    ok(Math.abs(layout.x[0][0] - nodes[0].lockPosition[0]) < 1);
-    ok(Math.abs(layout.x[0][4] - nodes[4].lockPosition[0]) < 1);
+
+    let closeEnough = (a, b) => Math.abs(a - b) < 1;
+
+    for (let i = 0; i < nodes.length; i++) {
+        if (!nodes[i].lockPosition) continue;
+        for (let j = 0; j < 3; j++) {
+            ok(closeEnough(layout.x[j][i], nodes[i].lockPosition[j]));
+        }
+    }
+
     const lengths = links.map(l=> layout.linkLength(l));
-    lengths.forEach(l=> ok(Math.abs(l - lengths[0]) < 10, "length = " + l));
+    let meanLength = lengths.reduce((s, l) => s + l, 0) / lengths.length;
+    lengths.forEach(l=> ok(closeEnough(l, meanLength), "length = " + l));
 });
