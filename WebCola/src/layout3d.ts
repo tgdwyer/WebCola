@@ -15,36 +15,39 @@ module cola {
         }
     }
     export class Node3D {
-        lockPosition: number[];
+        // if fixed, layout will not move the node from its specified starting position
+        fixed: boolean;
+
         constructor(
             public x: number = 0,
             public y: number = 0,
             public z: number = 0) { }
     }
     export class Layout3D {
-        x: number[][];
+        static dims = ['x', 'y', 'z'];
+        static k = Layout3D.dims.length;
+        result: number[][];
+
         constructor(public nodes: Node3D[], public links: Link3D[], public idealLinkLength: number) {
-            // 3d positions vector
-            var k = 3;
-            this.x = new Array(k);
-            for (var i = 0; i < k; ++i) {
-                this.x[i] = new Array(nodes.length);
+            this.result = new Array(Layout3D.k);
+            for (var i = 0; i < Layout3D.k; ++i) {
+                this.result[i] = new Array(nodes.length);
             }
             nodes.forEach((v, i) => {
-                for (var dim of ['x', 'y', 'z']) {
+                for (var dim of Layout3D.dims) {
                     if (typeof v[dim] == 'undefined') v[dim] = Math.random();
                 }
-                this.x[0][i] = v.x;
-                this.x[1][i] = v.y;
-                this.x[2][i] = v.z;
+                this.result[0][i] = v.x;
+                this.result[1][i] = v.y;
+                this.result[2][i] = v.z;
             });
         };
 
         linkLength(l: Link3D): number {
-            return l.actualLength(this.x);
+            return l.actualLength(this.result);
         }
         descent: cola.Descent;
-        start(iterations: number): Layout3D {
+        start(iterations: number = 100): Layout3D {
             const n = this.nodes.length;
 
             var linkAccessor = new LinkAccessor();
@@ -62,15 +65,17 @@ module cola {
             var G = cola.Descent.createSquareMatrix(n, function () { return 2 });
             this.links.forEach(({ source, target }) => G[source][target] = G[target][source] = 1);
 
-            this.descent = new cola.Descent(this.x, D);
+            this.descent = new cola.Descent(this.result, D);
             this.descent.threshold = 1e-3;
             this.descent.G = G;
+
             for (var i = 0; i < this.nodes.length; i++) {
                 var v = this.nodes[i];
-                if (v.lockPosition) {
-                    this.descent.locks.add(i, v.lockPosition);
+                if (v.fixed) {
+                    this.descent.locks.add(i, [v.x, v.y, v.z]);
                 }
             }
+
             this.descent.run(iterations);
             return this;
         }

@@ -58,7 +58,7 @@ test("single link", () => {
     const nodes = [new cola.Node3D(0, 0, -1), new cola.Node3D(0, 0, 1)];
     const links = [new cola.Link3D(0, 1)];
     const desiredLength = 10;
-    let layout = new cola.Layout3D(nodes, links, desiredLength).start(100);
+    let layout = new cola.Layout3D(nodes, links, desiredLength).start();
     let linkLength = layout.linkLength(links[0]);
     nodes.forEach(({x, y}) => ok(Math.abs(x) < 1e-5 && Math.abs(y) < 1e-5));
     ok(Math.abs(linkLength - desiredLength) < 1e-4, "length = " + linkLength);
@@ -69,29 +69,31 @@ test("Pyramid", () => {
     const nodes = Array.apply(null, { length: 4 }).map(() => new cola.Node3D);
     const links = [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]]
         .map(([u, v]) => new cola.Link3D(u, v));
-    const layout = new cola.Layout3D(nodes, links, 10).start(100);
+    const layout = new cola.Layout3D(nodes, links, 10).start();
     const lengths = links.map(l=> layout.linkLength(l));
     lengths.forEach(l=> ok(Math.abs(l - lengths[0]) < 1e-4, "length = " + l));
 });
 
-test("Locks", () => {
-    const nodes = Array.apply(null, { length: 5 }).map(() => new cola.Node3D);
+test("Fixed nodes", () => {
+    const N = 5;
+    const nodes = Array.apply(null, { length: N }).map(() => new cola.Node3D);
     const links = [[0, 1], [1, 2], [2, 3], [3, 4]]
         .map(([u, v]) => new cola.Link3D(u, v));
-    nodes[0].lockPosition = [-5, 0, 0];
-    nodes[4].lockPosition = [5, 0, 0];
-    const layout = new cola.Layout3D(nodes, links, 10).start(100);
+
+    // nodes 0 and 4 will be locked at (-5,0,0) and (5,0,0) respectively
+    nodes[0].fixed = nodes[4].fixed = true;
+    nodes[0].x = -5;
+    nodes[4].x = 5;
+
+    const layout = new cola.Layout3D(nodes, links, 10).start();
 
     let closeEnough = (a, b) => Math.abs(a - b) < 1;
 
-    for (let i = 0; i < nodes.length; i++) {
-        if (!nodes[i].lockPosition) continue;
-        for (let j = 0; j < 3; j++) {
-            ok(closeEnough(layout.x[j][i], nodes[i].lockPosition[j]));
-        }
-    }
+    for (var i = 0; i < N; i++) if (nodes[i].fixed) 
+        cola.Layout3D.dims.forEach((d, j) =>
+            ok(closeEnough(layout.result[j][i], nodes[i][d]), `nodes[${i}] locked in ${d}-axis`));
 
     const lengths = links.map(l=> layout.linkLength(l));
     let meanLength = lengths.reduce((s, l) => s + l, 0) / lengths.length;
-    lengths.forEach(l=> ok(closeEnough(l, meanLength), "length = " + l));
+    lengths.forEach(l=> ok(closeEnough(l, meanLength), "edge length = " + l));
 });

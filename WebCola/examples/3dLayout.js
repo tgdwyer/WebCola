@@ -144,7 +144,7 @@ d3.json("graphdata/miserables.json", function (error, graph) {
         var s = converged ? 0 : layout.tick();
         if (s != 0 && Math.abs(Math.abs(delta / s) - 1) > 1e-7) {
             delta = s;
-            colaGraph.setNodePositions(layout.x);
+            colaGraph.setNodePositions(layout.result);
             colaGraph.update(); // Update all the edge positions
         }
         else {
