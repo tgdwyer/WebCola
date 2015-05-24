@@ -493,4 +493,4 @@ function double_rotate(root, dir) {
 module.exports = RBTree;
 };
 return require('__main__');
-})(window);
+})(typeof module === 'undefined' ? window : module.exports);
