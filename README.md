@@ -5,6 +5,21 @@ Javascript constraint based layout for high-quality graph visualization and expl
 using D3.js and other web-based graphics libraries.  
 [Homepage with examples](http://marvl.infotech.monash.edu/webcola)
 
+Installation
+------------
+
+A version suitable for browsers can be found [here](WebCola/cola.js) ([minified](WebCola/cola.min.js)).
+
+You can also install it through npm by first adding it to `package.json`:
+
+    "dependencies": {
+      "cola": "tgdwyer/WebCola#master"
+    }
+
+Then by running `npm install`.
+
+If you use TypeScript, you can get complete TypeScript definitions by installing [tsd 0.6](https://github.com/DefinitelyTyped/tsd) and running `tsd link`.
+
 Building
 --------
 
@@ -26,6 +41,10 @@ Building
 > grunt
 
 This creates the cola.v3.min.js file in the WebCola directory.
+
+> grunt commonjs
+
+This creates index.js for npm.
 
 *Visual Studio:*
 

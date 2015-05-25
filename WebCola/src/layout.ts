@@ -37,7 +37,7 @@ module cola {
      */
     export class Layout {
         private _canvasSize = [1, 1];
-        private _linkDistance: number | ((any) => number) = 20;
+        private _linkDistance: number | ((t: any) => number) = 20;
         private _defaultNodeSize: number = 10;
         private _linkLengthCalculator = null;
         private _linkType = null;
@@ -64,7 +64,7 @@ module cola {
 
         // subscribe a listener to an event
         // sub-class and override this method to replace with a more sophisticated eventing mechanism
-        public on(e: EventType | string, listener: (Event) => void): Layout {
+        public on(e: EventType | string, listener: (event: Event) => void): Layout {
             // override me!
             if (!this.event) this.event = {};
             if (typeof e === 'string') {
@@ -234,7 +234,7 @@ module cola {
          * @param axis {string} 'x' for left-to-right, 'y' for top-to-bottom
          * @param minSeparation {number|link=>number} either a number specifying a minimum spacing required across all links or a function to return the minimum spacing for each link
          */
-        flowLayout(axis: string, minSeparation: number|((any)=>number)): Layout {
+        flowLayout(axis: string, minSeparation: number|((t: any)=>number)): Layout {
             if (!arguments.length) axis = 'y';
             this._directedLinkConstraints = {
                 axis: axis,
@@ -329,9 +329,9 @@ module cola {
          * links have an ideal distance, The automatic layout will compute layout that tries to keep links (AKA edges) as close as possible to this length.
          */
         linkDistance(): number
-        linkDistance(): (any) => number
+        linkDistance(): (t: any) => number
         linkDistance(x: number): Layout
-        linkDistance(x: (any) => number): Layout
+        linkDistance(x: (t: any) => number): Layout
         linkDistance(x?: any): any {
             if (!x) {
                 return this._linkDistance;
