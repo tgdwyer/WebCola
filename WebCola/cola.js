@@ -493,7 +493,7 @@ function double_rotate(root, dir) {
 module.exports = RBTree;
 };
 return require('__main__');
-})(window);
+})(typeof module === 'undefined' ? window : module.exports);
 
 var cola;
 (function (cola) {
@@ -4704,29 +4704,28 @@ var cola;
             this.nodes = nodes;
             this.links = links;
             this.idealLinkLength = idealLinkLength;
-            // 3d positions vector
-            var k = 3;
-            this.x = new Array(k);
-            for (var i = 0; i < k; ++i) {
-                this.x[i] = new Array(nodes.length);
+            this.result = new Array(Layout3D.k);
+            for (var i = 0; i < Layout3D.k; ++i) {
+                this.result[i] = new Array(nodes.length);
             }
             nodes.forEach(function (v, i) {
-                for (var _i = 0, _a = ['x', 'y', 'z']; _i < _a.length; _i++) {
+                for (var _i = 0, _a = Layout3D.dims; _i < _a.length; _i++) {
                     var dim = _a[_i];
                     if (typeof v[dim] == 'undefined')
                         v[dim] = Math.random();
                 }
-                _this.x[0][i] = v.x;
-                _this.x[1][i] = v.y;
-                _this.x[2][i] = v.z;
+                _this.result[0][i] = v.x;
+                _this.result[1][i] = v.y;
+                _this.result[2][i] = v.z;
             });
         }
         ;
         Layout3D.prototype.linkLength = function (l) {
-            return l.actualLength(this.x);
+            return l.actualLength(this.result);
         };
         Layout3D.prototype.start = function (iterations) {
             var _this = this;
+            if (iterations === void 0) { iterations = 100; }
             var n = this.nodes.length;
             var linkAccessor = new LinkAccessor();
             cola.jaccardLinkLengths(this.links, linkAccessor, 1.5);
@@ -4741,14 +4740,23 @@ var cola;
                 var source = _a.source, target = _a.target;
                 return G[source][target] = G[target][source] = 1;
             });
-            this.descent = new cola.Descent(this.x, D);
+            this.descent = new cola.Descent(this.result, D);
             this.descent.threshold = 1e-3;
             this.descent.G = G;
+            for (var i = 0; i < this.nodes.length; i++) {
+                var v = this.nodes[i];
+                if (v.fixed) {
+                    this.descent.locks.add(i, [v.x, v.y, v.z]);
+                }
+            }
             this.descent.run(iterations);
+            return this;
         };
         Layout3D.prototype.tick = function () {
             return this.descent.rungeKutta();
         };
+        Layout3D.dims = ['x', 'y', 'z'];
+        Layout3D.k = Layout3D.dims.length;
         return Layout3D;
     })();
     cola.Layout3D = Layout3D;
