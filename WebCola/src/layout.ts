@@ -99,13 +99,12 @@ module cola {
                 this.trigger({ type: EventType.end, alpha: this._alpha = 0, stress: this._lastStress });
                 return true;
             }
-
-            var n = this._nodes.length,
-                m = this._links.length,
-                o;
+            const n = this._nodes.length,
+                  m = this._links.length;
+            let o, i;
 
             this._descent.locks.clear();
-            for (var i = 0; i < n; ++i) {
+            for (i = 0; i < n; ++i) {
                 o = this._nodes[i];
                 if (o.fixed) {
                     if (typeof o.px === 'undefined' || typeof o.py === 'undefined') {
@@ -117,7 +116,7 @@ module cola {
                 }
             }
 
-            var s1 = this._descent.rungeKutta();
+            let s1 = this._descent.rungeKutta();
             //var s1 = descent.reduceStress();
             if (s1 === 0) {
                 this._alpha = 0;
@@ -126,15 +125,11 @@ module cola {
             }
             this._lastStress = s1;
 
-            for (var i = 0; i < n; ++i) {
+            const x = this._descent.x[0], y = this._descent.x[1];
+            for (i = 0; i < n; ++i) {
                 o = this._nodes[i];
-                if (o.fixed) {
-                    o.x = o.px;
-                    o.y = o.py;
-                } else {
-                    o.x = this._descent.x[0][i];
-                    o.y = this._descent.x[1][i];
-                }
+                o.x = x[i];
+                o.y = y[i];
             }
 
             this.trigger({ type: EventType.tick, alpha: this._alpha, stress: this._lastStress });

@@ -61,7 +61,7 @@ module cola {
             const D = cola.Descent.createSquareMatrix(n, (i, j) => distanceMatrix[i][j]);
 
             // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
-            // otherwise 2. (
+            // otherwise 2.
             var G = cola.Descent.createSquareMatrix(n, function () { return 2 });
             this.links.forEach(({ source, target }) => G[source][target] = G[target][source] = 1);
 
@@ -81,6 +81,13 @@ module cola {
         }
 
         tick(): number {
+            this.descent.locks.clear();
+            for (var i = 0; i < this.nodes.length; i++) {
+                var v = this.nodes[i];
+                if (v.fixed) {
+                    this.descent.locks.add(i, [v.x, v.y, v.z]);
+                }
+            }
             return this.descent.rungeKutta();
         }
     }

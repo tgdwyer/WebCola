@@ -1,5 +1,6 @@
 ﻿///<reference path="qunit.d.ts"/>
 ///<reference path="../src/layout.ts"/>
+
 QUnit.module("Headless API");
 
 test("Basic headless layout",() => {
@@ -69,7 +70,41 @@ test("Pyramid", () => {
     const nodes = Array.apply(null, { length: 4 }).map(() => new cola.Node3D);
     const links = [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]]
         .map(([u, v]) => new cola.Link3D(u, v));
-    const layout = new cola.Layout3D(nodes, links, 10).start();
+    let layout = new cola.Layout3D(nodes, links, 10).start(0);
+
+    let d = layout.descent;
+    let x = layout.result;
+    let s = d.computeStress();
+    let takeDescentStep = alpha => {
+        for (var i = 0; i < 3; ++i) {
+            d.takeDescentStep(d.x[i], d.g[i], alpha);
+        }
+    }
+    let reduceStress = () => {
+        d.computeDerivatives(d.x);
+        var alpha = 2 * d.computeStepSize(d.g);
+        let f = 5;
+        takeDescentStep(f * alpha);
+        let sOver = d.computeStress();
+        takeDescentStep(-f * alpha);
+        f = 0.8;
+        takeDescentStep(f * alpha);
+        let sUnder = d.computeStress();
+        takeDescentStep(-f * alpha);
+        takeDescentStep(alpha);
+        let s = d.computeStress();
+        ok(sOver >= s, `  overshoot'=${sOver}, s=${s}`);
+        ok(sUnder >= s, `  undershoot'=${sUnder}, s=${s}`);
+        return [s,alpha];
+    }
+
+    for (let i = 0; i < 10; i++) {
+        let [s2, alpha] = reduceStress();
+        ok(s2 <= s, `s'=${s2}, s=${s}, alpha=${alpha}`);
+        s = s2; 
+    }
+
+    layout = new cola.Layout3D(nodes, links, 10).start();
     const lengths = links.map(l=> layout.linkLength(l));
     lengths.forEach(l=> ok(Math.abs(l - lengths[0]) < 1e-4, "length = " + l));
 });
@@ -85,16 +120,18 @@ test("Fixed nodes", () => {
     nodes[0].x = -5;
     nodes[4].x = 5;
 
-    // with ideal edge length at 10, other nodes will arc around in a kind of horsh-shoe shape
+    // with ideal edge length at 10, unfixed nodes will arc around in a horse-shoe shape
     const layout = new cola.Layout3D(nodes, links, 10).start();
 
-    let closeEnough = (a, b) => Math.abs(a - b) < 1;
+    let closeEnough = (a, b, t) => Math.abs(a - b) < t;
 
     for (var i = 0; i < N; i++) if (nodes[i].fixed) 
         cola.Layout3D.dims.forEach((d, j) =>
-            ok(closeEnough(layout.result[j][i], nodes[i][d]), `nodes[${i}] locked in ${d}-axis`));
+            ok(closeEnough(layout.result[j][i], nodes[i][d], 0.01), `nodes[${i}] locked in ${d}-axis`));
 
     const lengths = links.map(l=> layout.linkLength(l));
     let meanLength = lengths.reduce((s, l) => s + l, 0) / lengths.length;
-    lengths.forEach(l=> ok(closeEnough(l, meanLength), "edge length = " + l));
+
+    // check all edge-lengths are within 25% of the mean
+    lengths.forEach(l=> ok(closeEnough(l, meanLength, meanLength / 4), "edge length = " + l));
 });

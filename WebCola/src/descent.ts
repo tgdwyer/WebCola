@@ -306,7 +306,7 @@ DEBUG */
                 denominator += Descent.dotProd(d[i], this.Hd[i]);
             }
             if (denominator === 0 || !isFinite(denominator)) return 0;
-            return numerator / denominator;
+            return 1 * numerator / denominator;
         }
 
         public reduceStress(): number {
@@ -343,6 +343,14 @@ DEBUG */
             // todo: allow projection against constraints in higher dimensions
             for (var i = 2; i < this.k; i++) 
                 this.takeDescentStep(r[i], d[i], stepSize);
+
+            if (!this.locks.isEmpty()) {
+                this.locks.apply((u, p) => {
+                    for (var i = 0; i < this.k; i++) {
+                        r[i][u] = p[i];
+                    }
+                });
+            }
         }
 
         private static mApply(m: number, n: number, f: (i: number, j: number) => any) {
