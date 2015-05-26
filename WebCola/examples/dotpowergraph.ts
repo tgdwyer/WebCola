@@ -197,12 +197,12 @@ module dotpowergraph {
                 .links(pgLayout.cola.links())
             //.flowLayout('y', 30)
                 .groupCompactness(1e-4)
-                .symmetricDiffLinkLengths(3)
+                .symmetricDiffLinkLengths(5)
                 .powerGraphGroups(function (d) {
                     d.groups.forEach(function (v) {
                     v.padding = grouppadding
                 });
-                }).start(0, 0, 50, 50);
+                }).start(0, 0, 10, 10);
             node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
             group.each(function (d) { d.innerBounds = d.bounds.inflate(-groupMargin) });
             label.transition().attr("x", function (d) { return d.innerBounds.cx(); })

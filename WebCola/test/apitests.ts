@@ -1,5 +1,6 @@
 ﻿///<reference path="qunit.d.ts"/>
 ///<reference path="../src/layout.ts"/>
+///<reference path="../src/layout3d.ts"/>
 
 QUnit.module("Headless API");
 
@@ -115,23 +116,42 @@ test("Fixed nodes", () => {
     const links = [[0, 1], [1, 2], [2, 3], [3, 4]]
         .map(([u, v]) => new cola.Link3D(u, v));
 
-    // nodes 0 and 4 will be locked at (-5,0,0) and (5,0,0) respectively
-    nodes[0].fixed = nodes[4].fixed = true;
-    nodes[0].x = -5;
-    nodes[4].x = 5;
-
-    // with ideal edge length at 10, unfixed nodes will arc around in a horse-shoe shape
-    const layout = new cola.Layout3D(nodes, links, 10).start();
-
+    let lock = (i, x) => {
+        nodes[i].fixed = true;
+        nodes[i].x = x;
+    } 
+    
     let closeEnough = (a, b, t) => Math.abs(a - b) < t;
+    const layout = new cola.Layout3D(nodes, links, 10);
 
-    for (var i = 0; i < N; i++) if (nodes[i].fixed) 
-        cola.Layout3D.dims.forEach((d, j) =>
-            ok(closeEnough(layout.result[j][i], nodes[i][d], 0.01), `nodes[${i}] locked in ${d}-axis`));
+    let check = () => {
+        // locked nodes should be at their initial position
+        for (var i = 0; i < N; i++) if (nodes[i].fixed)
+            cola.Layout3D.dims.forEach((d, j) =>
+                ok(closeEnough(layout.result[j][i], nodes[i][d], 0.01), `nodes[${i}] locked in ${d}-axis at ${nodes[i][d]}`));
 
-    const lengths = links.map(l=> layout.linkLength(l));
-    let meanLength = lengths.reduce((s, l) => s + l, 0) / lengths.length;
+        const lengths = links.map(l=> layout.linkLength(l));
+        let meanLength = lengths.reduce((s, l) => s + l, 0) / lengths.length;
 
-    // check all edge-lengths are within 25% of the mean
-    lengths.forEach(l=> ok(closeEnough(l, meanLength, meanLength / 4), "edge length = " + l));
+        // check all edge-lengths are within 5% of the mean
+        lengths.forEach(l=> ok(closeEnough(l, meanLength, meanLength / 20), "edge length = " + l));
+    };
+
+    // nodes 0 and 4 will be locked at (-5,0,0) and (5,0,0) respectively
+    // with these locks and ideal edge length at 10, unfixed nodes will arc around in a horse-shoe shape
+    lock(0, -5);
+    lock(4, 5);
+
+    layout.start();
+
+    check();
+
+    // move the lock positions
+    lock(0, -10);
+    lock(4, 10);
+
+    // run layout incrementally
+    for (let i = 0; i < 100; i++) layout.tick();
+
+    check();
 });

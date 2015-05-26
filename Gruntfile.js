@@ -28,6 +28,15 @@ module.exports = function (grunt) {
           sourceMap: true
         }
       },
+      test: {
+        src: ['WebCola/test/*.ts'],
+        dest: 'WebCola/cola.js',
+        options: {
+          module: 'amd',
+          target: 'es5',
+          sourceMap: true
+        }
+      },
       commonjs: {
         src: ['WebCola/index.ts'],
         dest: 'WebCola/index.js',
