@@ -209,9 +209,19 @@
 <p>
     The call to <code>d3adaptor.routeEdge</code> for each edge, uses the Dijkstra algorithm to find a shortest path through the visibility graph from the 
     centre of the source node to the centre of the target node.
-    </p></p>
+    </p><p>
     The last bit: <code>if (isIE()) link.each(...</code> is an IE10/11 specific hack to force it to redraw the edges.  This is necessary because
     IE has trouble with SVG markers (in this case the arrow heads).
 </p>
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-63535113-1', 'auto');
+  ga('send', 'pageview');
+
+    </script>
 </body>
 </html>
