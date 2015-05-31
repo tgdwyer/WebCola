@@ -22,6 +22,7 @@
     <UseGlobalApplicationHostFile />
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="examples\3dtree.html" />
     <Content Include="examples\3dLayout.html" />
     <Content Include="examples\brainnetwork2.html" />
     <Content Include="examples\dansgraph.html" />
@@ -168,6 +169,7 @@
     <Content Include="examples\sucrosebreakdown.png" />
     <Content Include="examples\nonoverlapping.html" />
     <Content Include="test\qunit.css" />
+    <TypeScriptCompile Include="examples\3dtree.ts" />
     <TypeScriptCompile Include="examples\3dlayout.ts" />
     <TypeScriptCompile Include="examples\powergraphexample.ts" />
     <TypeScriptCompile Include="examples\statemachinepowergraph.ts" />

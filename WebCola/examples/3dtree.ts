@@ -98,11 +98,11 @@ module tree3d {
 }
 d3.json("graphdata/chris.json", function (error, graph) {
     var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.1, 1000);
+    var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
     var renderer = new THREE.WebGLRenderer({ antialias: true });
-    var sizeRatio = 0.8;
-    renderer.setSize(window.innerWidth * sizeRatio, window.innerHeight * sizeRatio);
+    var sizeRatio = 1;
     var div = document.getElementById("graphdiv");
+    renderer.setSize(window.innerWidth * sizeRatio, window.innerHeight * sizeRatio - div.offsetTop);
     div.appendChild(renderer.domElement);
 
     var colaObject = new THREE.Object3D();

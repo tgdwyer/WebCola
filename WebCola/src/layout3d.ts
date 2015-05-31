@@ -14,10 +14,15 @@ module cola {
                 }, 0));
         }
     }
-    export class Node3D {
+    export class Node3D implements vpsc.GraphNode {
         // if fixed, layout will not move the node from its specified starting position
         fixed: boolean;
-
+        width: number;
+        height: number;
+        px: number;
+        py: number;
+        bounds: vpsc.Rectangle;
+        variable: vpsc.Variable;
         constructor(
             public x: number = 0,
             public y: number = 0,
@@ -27,6 +32,7 @@ module cola {
         static dims = ['x', 'y', 'z'];
         static k = Layout3D.dims.length;
         result: number[][];
+        constraints: any[] = null;
 
         constructor(public nodes: Node3D[], public links: Link3D[], public idealLinkLength: number) {
             this.result = new Array(Layout3D.k);
@@ -68,6 +74,11 @@ module cola {
             this.descent = new cola.Descent(this.result, D);
             this.descent.threshold = 1e-3;
             this.descent.G = G;
+            //let constraints = this.links.map(e=> <any>{
+            //    axis: 'y', left: e.source, right: e.target, gap: e.length*1.5
+            //});
+            if (this.constraints) 
+                this.descent.project = new cola.vpsc.Projection(<vpsc.GraphNode[]>this.nodes, null, null, this.constraints).projectFunctions();
 
             for (var i = 0; i < this.nodes.length; i++) {
                 var v = this.nodes[i];

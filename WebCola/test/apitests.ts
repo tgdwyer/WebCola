@@ -2,6 +2,8 @@
 ///<reference path="../src/layout.ts"/>
 ///<reference path="../src/layout3d.ts"/>
 
+import {  } from '../extern/d3.d.ts';
+
 QUnit.module("Headless API");
 
 test("Basic headless layout",() => {

@@ -3,6 +3,10 @@
 <head>
     <style>
         @import url(../style.css);
+        #graphdiv {
+            position: absolute;
+            left: 0px;
+        }
     </style>
     <title>3D Layout</title>
     <script src="../extern/d3.v3.js"></script>
@@ -15,8 +19,13 @@
 <body>
     <h1><a href="http://wilma.sf.net">WilmaScope</a> on the Web!</h1>   
      Not really, just <a href="http://marvl.infotech.monash.edu/webcola">cola.js</a> and <a href="http://threejs.org/">three.js</a>.
-    <div id="graphdiv">
-    </div>
-    <script src="3dtree.js"></script>
+    <p>
+        This is a 3D version of <a href="downwardedges.html">this graph</a>.  The constraints here are over the y-position variables while the xs and zs are unconstrained.
+
+        Pairs of nodes connected by an edge have a separation constraint, requiring that the source be a minimum distance above the target.
+
+        <div id="graphdiv">
+        </div>
+        <script src="3dtree.js"></script>
 </body>
 </html>
