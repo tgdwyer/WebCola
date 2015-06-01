@@ -30,16 +30,12 @@ module dotpowergraph {
         return svg;
     }
 
-    function getId(v, n) {
-        return (typeof v.index === 'number' ? v.index : v.id + n) + 1;
-    }
-
     function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
 
-    function heuristicPowerGraphLayout(graph, size, grouppadding) {
+    function heuristicPowerGraphLayout(graph, size, grouppadding, margin, groupMargin) {
         // compute power graph
         var powerGraph;
-        var d3cola = cola.d3adaptor()
+        cola.d3adaptor()
             .avoidOverlaps(false)
             .nodes(graph.nodes)
             .links(graph.links)
@@ -67,7 +63,7 @@ module dotpowergraph {
         });
 
         // layout the flat graph with dummy nodes and edges
-        d3cola = cola.d3adaptor()
+        cola.d3adaptor()
             .size(size)
             .nodes(vs)
             .links(edges)
@@ -79,7 +75,8 @@ module dotpowergraph {
 
         // final layout taking node positions from above as starting positions
         // subject to group containment constraints
-        d3cola = cola.d3adaptor()
+        // and then gridifying the layout
+        return { cola: cola.d3adaptor()
             .convergenceThreshold(1e-3)
             .size(size)
             .avoidOverlaps(true)
@@ -94,8 +91,85 @@ module dotpowergraph {
                 powerGraph.groups.forEach(function (v) {
                     v.padding = grouppadding
                 });
-            }).start(50, 0, 100);
-        return { cola: d3cola, powerGraph: powerGraph };
+            }).start(50, 0, 100),
+            powerGraph: powerGraph
+        };
+    }
+
+    function route(nodes, groups, margin, groupMargin) {
+        nodes.forEach(d => {
+            d.routerNode = <any>{
+                name: d.name,
+                bounds: d.bounds.inflate(-margin)
+            };
+        });
+        groups.forEach(d => {
+            d.routerNode = <any>{
+                bounds: d.bounds.inflate(-groupMargin),
+                children: (typeof d.groups !== 'undefined' ? d.groups.map(c=> nodes.length + c.id) : [])
+                    .concat(typeof d.leaves !== 'undefined' ? d.leaves.map(c=> c.index) : [])
+            };
+        });
+        let gridRouterNodes = nodes.concat(groups).map((d, i) => {
+            d.routerNode.id = i;
+            return d.routerNode;
+        });
+        return new cola.GridRouter(gridRouterNodes, {
+            getChildren: (v: any) => v.children,
+            getBounds: v => v.bounds
+        }, margin - groupMargin);
+    }
+
+    function gridify(svg, pgLayout, margin, groupMargin) {
+        pgLayout.cola.start(0, 0, 0, 10);
+        let gridrouter = route(pgLayout.cola.nodes(), pgLayout.cola.groups(), margin, groupMargin);
+        var routes = gridrouter.routeEdges<any>(pgLayout.powerGraph.powerEdges, 5, e=> e.source.routerNode.id, e=> e.target.routerNode.id);
+        svg.selectAll('path').remove();
+        routes.forEach(route => {
+            var cornerradius = 5;
+            var arrowwidth = 3;
+            var arrowheight = 7;
+            var p = cola.GridRouter.getRoutePath(route, cornerradius, arrowwidth, arrowheight);
+            var c = color(0);
+            var linewidth = 2;
+            if (arrowheight > 0) {
+                svg.append('path')
+                    .attr('d', p.arrowpath + ' Z')
+                    .attr('stroke', '#550000')
+                    .attr('stroke-width', 2);
+                svg.append('path')
+                    .attr('d', p.arrowpath)
+                    .attr('stroke', 'none')
+                    .attr('fill', c);
+            }
+            svg.append('path')
+                .attr('d', p.routepath)
+                .attr('fill', 'none')
+                .attr('stroke', '#550000')
+                .attr('stroke-width', linewidth + 2);
+            svg.append('path')
+                .attr('d', p.routepath)
+                .attr('fill', 'none')
+                .attr('stroke', c)
+                .attr('stroke-width', linewidth);
+        });
+
+        svg.selectAll(".label").transition().attr("x", d=> d.routerNode.bounds.cx())
+            .attr("y", function (d) {
+            var h = this.getBBox().height;
+            return d.bounds.cy() + h / 3.5;
+        });
+
+        svg.selectAll(".node").transition().attr("x", d=> d.routerNode.bounds.x)
+            .attr("y", d=> d.routerNode.bounds.y)
+            .attr("width", d=> d.routerNode.bounds.width())
+            .attr("height", d=> d.routerNode.bounds.height());
+
+        svg.selectAll(".group").transition().attr('x', d => d.routerNode.bounds.x)
+            .attr('y', d => d.routerNode.bounds.y)
+            .attr('width', d => d.routerNode.bounds.width())
+            .attr('height', d => d.routerNode.bounds.height())
+            .style("fill", (d, i) => color(i));
     }
 
     function createPowerGraph(inputjson) {
@@ -109,7 +183,9 @@ module dotpowergraph {
             v.height = 70;
         });
 
-        var pgLayout = heuristicPowerGraphLayout(inputjson, size, grouppadding);
+        var margin = 20;
+        var groupMargin = 15;
+        var pgLayout = heuristicPowerGraphLayout(inputjson, size, grouppadding, margin, groupMargin);
 
         // filter duplicate links:
         //var es = pgLayout.powerGraph.powerEdges;
@@ -136,146 +212,53 @@ module dotpowergraph {
             .attr("class", "group")
             .style("fill", function (d, i) { return color(i); });
 
-        var link = svg.selectAll(".link")
-            .data(pgLayout.powerGraph.powerEdges)
-            .enter().append("line")
-            .attr("class", "link")
-            .style("stroke", "black");
-
-        var margin = 20;
-        var groupMargin = 15;
         var node = svg.selectAll(".node")
             .data(inputjson.nodes)
             .enter().append("rect")
             .attr("class", "node")
-            .attr("rx", 4).attr("ry", 4)
-            .call((<cola.D3StyleLayoutAdaptor>pgLayout.cola).drag);
+            .attr("rx", 4).attr("ry", 4);
+        node.append("title").text(d=> d.name);
 
         var label = svg.selectAll(".label")
             .data(inputjson.nodes)
             .enter().append("text")
             .attr("class", "label")
-            .text(d=> d.name.replace(/^u/,'')).call((<cola.D3StyleLayoutAdaptor>pgLayout.cola).drag);
+            .text(d=> d.name.replace(/^u/, ''));
 
-        node.append("title").text(d=> d.name);
+        gridify(svg, pgLayout, margin, groupMargin);
 
-        pgLayout.cola.on("tick", function () {
-            node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
-            group.each(function (d) { d.innerBounds = d.bounds.inflate(-groupMargin) });
-            link.each(function (d) {
-                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
-                if (isIE()) this.parentNode.insertBefore(this, this);
-
-            });
-
-            link.attr("x1", function (d) { return d.sourceIntersection.x; })
-                .attr("y1", function (d) { return d.sourceIntersection.y; })
-                .attr("x2", function (d) { return d.targetIntersection.x; })
-                .attr("y2", function (d) { return d.targetIntersection.y; });
-
-            node.attr("x", function (d) { return d.innerBounds.x; })
-                .attr("y", function (d) { return d.innerBounds.y; })
-                .attr("width", function (d) { return d.innerBounds.width(); })
-                .attr("height", function (d) { return d.innerBounds.height(); });
-
-            group.attr("x", function (d) { return d.innerBounds.x; })
-                .attr("y", function (d) { return d.innerBounds.y; })
-                .attr("width", function (d) { return d.innerBounds.width(); })
-                .attr("height", function (d) { return d.innerBounds.height(); });
-
-            label.attr("x", function (d) { return d.x; })
-                .attr("y", function (d) {
-                var h = this.getBBox().height;
-                return d.y + h / 3.5;
-            });
-        }).on('end', function () {
-            var cc = cola.d3adaptor()
-                .convergenceThreshold(1e-4)
-                .size(size)
-                .avoidOverlaps(true)
-                .nodes(pgLayout.cola.nodes())
-                .links(pgLayout.cola.links())
-            //.flowLayout('y', 30)
-                .groupCompactness(1e-4)
-                .symmetricDiffLinkLengths(5)
-                .powerGraphGroups(function (d) {
-                    d.groups.forEach(function (v) {
-                    v.padding = grouppadding
-                });
-                }).start(0, 0, 10, 10);
-            node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
-            group.each(function (d) { d.innerBounds = d.bounds.inflate(-groupMargin) });
-            label.transition().attr("x", function (d) { return d.innerBounds.cx(); })
-                .attr("y", function (d) {
-                var h = this.getBBox().height;
-                return d.innerBounds.cy() + h / 3.5;
-            });
-
-            node.transition().attr("x", function (d) { return d.innerBounds.x; })
-                .attr("y", function (d) { return d.innerBounds.y; })
-                .attr("width", function (d) { return d.innerBounds.width(); })
-                .attr("height", function (d) { return d.innerBounds.height(); });
-            svg.selectAll(".link").remove();
-            svg.selectAll("path").remove();
-            var n = pgLayout.cola.nodes().length,
-                _id = v => getId(v, n) - 1,
-                g = {
-                    nodes: pgLayout.cola.nodes().map((d: any)=> <any>{
-                        id: _id(d),
-                        name: d.name,
-                        bounds: new cola.vpsc.Rectangle(d.innerBounds.x, d.innerBounds.X, d.innerBounds.y, d.innerBounds.Y)
-                    }).concat(
-                        pgLayout.powerGraph.groups.map(d=> <any>{
-                            id: _id(d),
-                            bounds: new cola.vpsc.Rectangle(d.innerBounds.x, d.innerBounds.X, d.innerBounds.y, d.innerBounds.Y),
-                            children: (typeof d.groups !== 'undefined' ? d.groups.map(c=> n + c.id) : [])
-                                .concat(typeof d.leaves !== 'undefined' ? d.leaves.map(c=> c.index) : [])
-                        })),
-                    edges: pgLayout.powerGraph.powerEdges.map(e=> <any>{
-                        source: _id(e.source),
-                        target: _id(e.target),
-                        type: e.type
-                    })
-                };
-            var gridrouter = new cola.GridRouter(g.nodes, {
-                getChildren: v => v.children,
-                getBounds: v => v.bounds},
-                margin - groupMargin);
-
-            var gs = gridrouter.groups;
-            group.transition().attr('x',(g, i) => gs[i].rect.x).attr('y',(g, i) => gs[i].rect.y)
-                .attr('width',(g, i) => gs[i].rect.width()).attr('height',(g, i) => gs[i].rect.height())
-                .style("fill",(g, i) => color(i));
-            var routes = gridrouter.routeEdges<any>(g.edges, 5, e=> e.source, e=> e.target);
-            routes.forEach(route => {
-                var cornerradius = 5;
-                var arrowwidth = 3;
-                var arrowheight = 7;
-                var p = cola.GridRouter.getRoutePath(route, cornerradius, arrowwidth, arrowheight);
-                var c = color(0);
-                var linewidth = 2;
-                if (arrowheight > 0) {
-                    svg.append('path')
-                        .attr('d', p.arrowpath + ' Z')
-                        .attr('stroke', '#550000')
-                        .attr('stroke-width', 2);
-                    svg.append('path')
-                        .attr('d', p.arrowpath)
-                        .attr('stroke', 'none')
-                        .attr('fill', c);
-                }
-                svg.append('path')
-                    .attr('d', p.routepath)
-                    .attr('fill', 'none')
-                    .attr('stroke', '#550000')
-                    .attr('stroke-width', linewidth + 2);
-                svg.append('path')
-                    .attr('d', p.routepath)
-                    .attr('fill', 'none')
-                    .attr('stroke', c)
-                    .attr('stroke-width', linewidth);
-            });
-        });
+        let mouseStart = null, ghosts = null;
+        function dragStart(d) {
+            ghosts = [1, 2].map(i=> svg.append('rect')
+                .attr({ 
+                    class: 'ghost',
+                    x: d.routerNode.bounds.x,
+                    y: d.routerNode.bounds.y,
+                    width: d.routerNode.bounds.width(),
+                    height: d.routerNode.bounds.height()
+                }));
+            mouseStart = d3.mouse(svg[0][0]);
+        }
+        function getDropPos(d) {
+            let mouse = d3.mouse(svg[0][0]);
+            return { x: d.routerNode.bounds.x + mouse[0] - mouseStart[0], y: d.routerNode.bounds.y + mouse[1] - mouseStart[1] };
+        }
+        function drag(d) {
+            ghosts[1].attr(getDropPos(d));
+        }
+        function dragEnd(d) {
+            let dropPos = getDropPos(d);
+            d.x = dropPos.x;
+            d.y = dropPos.y;
+            ghosts.forEach(g=> g.remove());
+            gridify(svg, pgLayout, margin, groupMargin);
+        }
+        let dragListener = d3.behavior.drag()
+            .on("dragstart", dragStart)
+            .on("drag", drag)
+            .on("dragend", dragEnd);
+        node.call(dragListener);
+        label.call(dragListener);
     }
 
     d3.text("graphdata/n26e35.dot", function (f) {
