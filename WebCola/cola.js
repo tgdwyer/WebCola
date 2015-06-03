@@ -4708,6 +4708,7 @@ var cola;
             this.nodes = nodes;
             this.links = links;
             this.idealLinkLength = idealLinkLength;
+            this.constraints = null;
             this.result = new Array(Layout3D.k);
             for (var i = 0; i < Layout3D.k; ++i) {
                 this.result[i] = new Array(nodes.length);
@@ -4747,6 +4748,11 @@ var cola;
             this.descent = new cola.Descent(this.result, D);
             this.descent.threshold = 1e-3;
             this.descent.G = G;
+            //let constraints = this.links.map(e=> <any>{
+            //    axis: 'y', left: e.source, right: e.target, gap: e.length*1.5
+            //});
+            if (this.constraints)
+                this.descent.project = new cola.vpsc.Projection(this.nodes, null, null, this.constraints).projectFunctions();
             for (var i = 0; i < this.nodes.length; i++) {
                 var v = this.nodes[i];
                 if (v.fixed) {

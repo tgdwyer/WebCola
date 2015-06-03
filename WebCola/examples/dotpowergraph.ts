@@ -227,6 +227,11 @@ module dotpowergraph {
 
         gridify(svg, pgLayout, margin, groupMargin);
         let eventStart = {}, ghosts = null;
+
+        function getEventPos() {
+            let e = d3.event.sourceEvent instanceof TouchEvent ? (<any>d3.event.sourceEvent).changedTouches[0] : d3.event.sourceEvent;
+            return { x: e.clientX, y: e.clientY };
+        }
         function dragStart(d) {
             ghosts = [1, 2].map(i=> svg.append('rect')
                 .attr({ 
@@ -236,15 +241,16 @@ module dotpowergraph {
                     width: d.routerNode.bounds.width(),
                     height: d.routerNode.bounds.height()
                 }));
-            eventStart[d.routerNode.id] = { x: d3.event.sourceEvent.clientX, y: d3.event.sourceEvent.clientY };
+            eventStart[d.routerNode.id] = getEventPos();
         }
         function getDragPos(d) {
-            let pos = { x: d3.event.sourceEvent.clientX, y: d3.event.sourceEvent.clientY },
+            let p = getEventPos(),
                 startPos = eventStart[d.routerNode.id];
-            return { x: d.routerNode.bounds.x + pos.x - startPos.x, y: d.routerNode.bounds.y + pos.y - startPos.y };
+            return { x: d.routerNode.bounds.x + p.x - startPos.x, y: d.routerNode.bounds.y + p.y - startPos.y };
         }
         function drag(d) {
-            ghosts[1].attr(getDragPos(d));
+            var p = getDragPos(d);
+            ghosts[1].attr(p);
         }
         function dragEnd(d) {
             let dropPos = getDragPos(d);

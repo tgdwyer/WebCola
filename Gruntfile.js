@@ -30,7 +30,6 @@ module.exports = function (grunt) {
       },
       test: {
         src: ['WebCola/test/*.ts'],
-        dest: 'WebCola/cola.js',
         options: {
           module: 'amd',
           target: 'es5',
@@ -105,8 +104,8 @@ module.exports = function (grunt) {
     }
   });
  
-  grunt.registerTask('default', ['typescript:base', 'concat', 'uglify', 'qunit']);
-  grunt.registerTask('nougly', ['typescript:base', 'concat', 'qunit']);
+  grunt.registerTask('default', ['typescript', 'concat', 'uglify', 'qunit']);
+  grunt.registerTask('nougly', ['typescript', 'concat', 'qunit']);
   grunt.registerTask('nougly-notest', ['typescript', 'concat']);
   grunt.registerTask('docs', ['typedoc', 'typescript:examples']);
   grunt.registerTask('examples', ['typescript:examples']);

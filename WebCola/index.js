@@ -1940,7 +1940,7 @@ var cola;
             }
             if (denominator === 0 || !isFinite(denominator))
                 return 0;
-            return numerator / denominator;
+            return 1 * numerator / denominator;
         };
         Descent.prototype.reduceStress = function () {
             this.computeDerivatives(this.x);
@@ -1965,6 +1965,7 @@ var cola;
         // d: unconstrained descent vector
         // stepSize: amount to step along d
         Descent.prototype.stepAndProject = function (x0, r, d, stepSize) {
+            var _this = this;
             Descent.copy(x0, r);
             this.takeDescentStep(r[0], d[0], stepSize);
             if (this.project)
@@ -1975,6 +1976,13 @@ var cola;
             // todo: allow projection against constraints in higher dimensions
             for (var i = 2; i < this.k; i++)
                 this.takeDescentStep(r[i], d[i], stepSize);
+            if (!this.locks.isEmpty()) {
+                this.locks.apply(function (u, p) {
+                    for (var i = 0; i < _this.k; i++) {
+                        r[i][u] = p[i];
+                    }
+                });
+            }
         };
         Descent.mApply = function (m, n, f) {
             var i = m;
@@ -3026,9 +3034,10 @@ var cola;
                 this.trigger({ type: EventType.end, alpha: this._alpha = 0, stress: this._lastStress });
                 return true;
             }
-            var n = this._nodes.length, m = this._links.length, o;
+            var n = this._nodes.length, m = this._links.length;
+            var o, i;
             this._descent.locks.clear();
-            for (var i = 0; i < n; ++i) {
+            for (i = 0; i < n; ++i) {
                 o = this._nodes[i];
                 if (o.fixed) {
                     if (typeof o.px === 'undefined' || typeof o.py === 'undefined') {
@@ -3048,16 +3057,11 @@ var cola;
                 this._alpha = s1; //Math.abs(Math.abs(this._lastStress / s1) - 1);
             }
             this._lastStress = s1;
-            for (var i = 0; i < n; ++i) {
+            var x = this._descent.x[0], y = this._descent.x[1];
+            for (i = 0; i < n; ++i) {
                 o = this._nodes[i];
-                if (o.fixed) {
-                    o.x = o.px;
-                    o.y = o.py;
-                }
-                else {
-                    o.x = this._descent.x[0][i];
-                    o.y = this._descent.x[1][i];
-                }
+                o.x = x[i];
+                o.y = y[i];
             }
             this.trigger({ type: EventType.tick, alpha: this._alpha, stress: this._lastStress });
             return false;
@@ -4207,6 +4211,7 @@ var cola;
             this.nodes = nodes;
             this.links = links;
             this.idealLinkLength = idealLinkLength;
+            this.constraints = null;
             this.result = new Array(Layout3D.k);
             for (var i = 0; i < Layout3D.k; ++i) {
                 this.result[i] = new Array(nodes.length);
@@ -4237,7 +4242,7 @@ var cola;
             var distanceMatrix = (new cola.shortestpaths.Calculator(n, this.links, function (e) { return e.source; }, function (e) { return e.target; }, function (e) { return e.length; })).DistanceMatrix();
             var D = cola.Descent.createSquareMatrix(n, function (i, j) { return distanceMatrix[i][j]; });
             // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
-            // otherwise 2. (
+            // otherwise 2.
             var G = cola.Descent.createSquareMatrix(n, function () { return 2; });
             this.links.forEach(function (_a) {
                 var source = _a.source, target = _a.target;
@@ -4246,6 +4251,11 @@ var cola;
             this.descent = new cola.Descent(this.result, D);
             this.descent.threshold = 1e-3;
             this.descent.G = G;
+            //let constraints = this.links.map(e=> <any>{
+            //    axis: 'y', left: e.source, right: e.target, gap: e.length*1.5
+            //});
+            if (this.constraints)
+                this.descent.project = new cola.vpsc.Projection(this.nodes, null, null, this.constraints).projectFunctions();
             for (var i = 0; i < this.nodes.length; i++) {
                 var v = this.nodes[i];
                 if (v.fixed) {
@@ -4256,6 +4266,13 @@ var cola;
             return this;
         };
         Layout3D.prototype.tick = function () {
+            this.descent.locks.clear();
+            for (var i = 0; i < this.nodes.length; i++) {
+                var v = this.nodes[i];
+                if (v.fixed) {
+                    this.descent.locks.add(i, [v.x, v.y, v.z]);
+                }
+            }
             return this.descent.rungeKutta();
         };
         Layout3D.dims = ['x', 'y', 'z'];
