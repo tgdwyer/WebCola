@@ -226,8 +226,7 @@ module dotpowergraph {
             .text(d=> d.name.replace(/^u/, ''));
 
         gridify(svg, pgLayout, margin, groupMargin);
-
-        let mouseStart = null, ghosts = null;
+        let eventStart = {}, ghosts = null;
         function dragStart(d) {
             ghosts = [1, 2].map(i=> svg.append('rect')
                 .attr({ 
@@ -237,21 +236,25 @@ module dotpowergraph {
                     width: d.routerNode.bounds.width(),
                     height: d.routerNode.bounds.height()
                 }));
-            mouseStart = d3.mouse(svg[0][0]);
+            eventStart[d.routerNode.id] = { x: d3.event.sourceEvent.clientX, y: d3.event.sourceEvent.clientY };
         }
-        function getDropPos(d) {
-            let mouse = d3.mouse(svg[0][0]);
-            return { x: d.routerNode.bounds.x + mouse[0] - mouseStart[0], y: d.routerNode.bounds.y + mouse[1] - mouseStart[1] };
+        function getDragPos(d) {
+            let pos = { x: d3.event.sourceEvent.clientX, y: d3.event.sourceEvent.clientY },
+                startPos = eventStart[d.routerNode.id];
+            return { x: d.routerNode.bounds.x + pos.x - startPos.x, y: d.routerNode.bounds.y + pos.y - startPos.y };
         }
         function drag(d) {
-            ghosts[1].attr(getDropPos(d));
+            ghosts[1].attr(getDragPos(d));
         }
         function dragEnd(d) {
-            let dropPos = getDropPos(d);
+            let dropPos = getDragPos(d);
+            delete eventStart[d.routerNode.id];
             d.x = dropPos.x;
             d.y = dropPos.y;
             ghosts.forEach(g=> g.remove());
-            gridify(svg, pgLayout, margin, groupMargin);
+            if (Object.keys(eventStart).length === 0) {
+                gridify(svg, pgLayout, margin, groupMargin);
+            }
         }
         let dragListener = d3.behavior.drag()
             .on("dragstart", dragStart)
