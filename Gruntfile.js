@@ -3,7 +3,17 @@ module.exports = function (grunt) {
   require('./tasks/examples')(grunt);
   grunt.loadNpmTasks('typedoc');
   grunt.initConfig({
-    pkg: grunt.file.readJSON('package.json'),
+      pkg: grunt.file.readJSON('package.json'),
+      copy: {
+          d3: {
+              src: 'node_modules/d3/d3.min.js',
+              dest: 'webcola/extern/d3.min.js'
+          },
+          qunit: {
+              src: 'node_modules/qunitjs/qunit/*',
+              dest: 'webcola/test/'
+          },
+      },
     watch: {
       default: {
         files: ["<%= concat.dist.src %>", "Gruntfile.js", "templates/*"],
@@ -104,7 +114,7 @@ module.exports = function (grunt) {
     }
   });
  
-  grunt.registerTask('default', ['typescript', 'concat', 'uglify', 'qunit']);
+  grunt.registerTask('default', ['copy', 'typescript', 'concat', 'uglify', 'qunit']);
   grunt.registerTask('nougly', ['typescript', 'concat', 'qunit']);
   grunt.registerTask('nougly-notest', ['typescript', 'concat']);
   grunt.registerTask('docs', ['typedoc', 'typescript:examples']);

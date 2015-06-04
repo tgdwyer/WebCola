@@ -66,11 +66,18 @@ test("single link", () => {
     ok(Math.abs(linkLength - desiredLength) < 1e-4, "length = " + linkLength);
 });
 
+function graph(links: number[][]): {
+    nodes: cola.Node3D[];
+    links: cola.Link3D[];
+} {
+    const N = links.reduce((n, [u, v]) => Math.max(n, u, v), -1) + 1, nodes = new Array(N);
+    for (let i = N; i--;) nodes[i] = new cola.Node3D;
+    return { nodes: nodes, links: links.map(([u, v]) => new cola.Link3D(u, v)) };
+}
+
 test("Pyramid", () => {
     // k4 should relax to a 3D pyramid with all edges the same length
-    const nodes = Array.apply(null, { length: 4 }).map(() => new cola.Node3D);
-    const links = [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]]
-        .map(([u, v]) => new cola.Link3D(u, v));
+    const { nodes, links } = graph([[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]]);
     let layout = new cola.Layout3D(nodes, links, 10).start(0);
 
     let d = layout.descent;
@@ -111,11 +118,7 @@ test("Pyramid", () => {
 });
 
 test("Fixed nodes", () => {
-    const N = 5;
-    const nodes = Array.apply(null, { length: N }).map(() => new cola.Node3D);
-    const links = [[0, 1], [1, 2], [2, 3], [3, 4]]
-        .map(([u, v]) => new cola.Link3D(u, v));
-
+    const { nodes, links } = graph([[0, 1], [1, 2], [2, 3], [3, 4]]);
     let lock = (i, x) => {
         nodes[i].fixed = true;
         nodes[i].x = x;
@@ -126,7 +129,7 @@ test("Fixed nodes", () => {
 
     let check = () => {
         // locked nodes should be at their initial position
-        for (var i = 0; i < N; i++) if (nodes[i].fixed)
+        for (var i = 0; i < nodes.length; i++) if (nodes[i].fixed)
             cola.Layout3D.dims.forEach((d, j) =>
                 ok(closeEnough(layout.result[j][i], nodes[i][d], 0.01), `nodes[${i}] locked in ${d}-axis at ${nodes[i][d]}`));
 
