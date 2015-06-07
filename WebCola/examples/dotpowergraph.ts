@@ -165,10 +165,10 @@ module dotpowergraph {
             .attr("width", d=> d.routerNode.bounds.width())
             .attr("height", d=> d.routerNode.bounds.height());
 
-        svg.selectAll(".group").transition().attr('x', d => d.routerNode.bounds.x)
-            .attr('y', d => d.routerNode.bounds.y)
-            .attr('width', d => d.routerNode.bounds.width())
-            .attr('height', d => d.routerNode.bounds.height())
+        svg.selectAll(".group").transition().attr('x', (d, i) => gridrouter.groups[i].rect.x)
+            .attr('y', (d, i) => gridrouter.groups[i].rect.y)
+            .attr('width', (d, i) => gridrouter.groups[i].rect.width())
+            .attr('height', (d, i) => gridrouter.groups[i].rect.height())
             .style("fill", (d, i) => color(i));
     }
 
