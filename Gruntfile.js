@@ -7,11 +7,11 @@ module.exports = function (grunt) {
       copy: {
           d3: {
               src: 'node_modules/d3/d3.min.js',
-              dest: 'webcola/extern/d3.min.js'
+              dest: 'WebCola/extern/d3.min.js'
           },
           qunit: {
               src: 'node_modules/qunitjs/qunit/*',
-              dest: 'webcola/test/'
+              dest: 'WebCola/test/'
           },
       },
     watch: {
