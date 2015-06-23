@@ -595,6 +595,8 @@ module cola {
             return this.alpha(0);
         }
 
+        /// find a visibility graph over the set of nodes.  assumes all nodes have a
+        /// bounds property (a rectangle) and that no pair of bounds overlaps.
         prepareEdgeRouting(nodeMargin: number = 0) {
             this._visibilityGraph = new cola.geom.TangentVisibilityGraph(
                 this._nodes.map(function (v) {
@@ -602,34 +604,38 @@ module cola {
                 }));
         }
 
-        routeEdge(d, draw) {
+        /// find a route avoiding node bounds for the given edge.
+        /// assumes the visibility graph has been created (by prepareEdgeRouting method)
+        /// and also assumes that nodes have an index property giving their position in the
+        /// node array.  This index property is created by the start() method.
+        routeEdge(edge, draw) {
             var lineData = [];
             //if (d.source.id === 10 && d.target.id === 11) {
             //    debugger;
             //}
             var vg2 = new cola.geom.TangentVisibilityGraph(this._visibilityGraph.P, { V: this._visibilityGraph.V, E: this._visibilityGraph.E }),
-                port1 = <geom.TVGPoint>{ x: d.source.x, y: d.source.y },
-                port2 = <geom.TVGPoint>{ x: d.target.x, y: d.target.y },
-                start = vg2.addPoint(port1, d.source.id),
-                end = vg2.addPoint(port2, d.target.id);
-            vg2.addEdgeIfVisible(port1, port2, d.source.id, d.target.id);
+                port1 = <geom.TVGPoint>{ x: edge.source.x, y: edge.source.y },
+                port2 = <geom.TVGPoint>{ x: edge.target.x, y: edge.target.y },
+                start = vg2.addPoint(port1, edge.source.index),
+                end = vg2.addPoint(port2, edge.target.index);
+            vg2.addEdgeIfVisible(port1, port2, edge.source.index, edge.target.index);
             if (typeof draw !== 'undefined') {
                 draw(vg2);
             }
-            var sourceInd = e => e.source.id, targetInd = e => e.target.id, length = e => e.length(),
+            var sourceInd = e => e.source.index, targetInd = e => e.target.index, length = e => e.length(),
                 spCalc = new cola.shortestpaths.Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length),
                 shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
             if (shortestPath.length === 1 || shortestPath.length === vg2.V.length) {
-                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
-                lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
+                cola.vpsc.makeEdgeBetween(edge, edge.source.innerBounds, edge.target.innerBounds, 5);
+                lineData = [{ x: edge.sourceIntersection.x, y: edge.sourceIntersection.y }, { x: edge.arrowStart.x, y: edge.arrowStart.y }];
             } else {
                 var n = shortestPath.length - 2,
                     p = vg2.V[shortestPath[n]].p,
                     q = vg2.V[shortestPath[0]].p,
-                    lineData = [d.source.innerBounds.rayIntersection(p.x, p.y)];
+                    lineData = [edge.source.innerBounds.rayIntersection(p.x, p.y)];
                 for (var i = n; i >= 0; --i)
                     lineData.push(vg2.V[shortestPath[i]].p);
-                lineData.push(cola.vpsc.makeEdgeTo(q, d.target.innerBounds, 5));
+                lineData.push(cola.vpsc.makeEdgeTo(q, edge.target.innerBounds, 5));
             }
             //lineData.forEach((v, i) => {
             //    if (i > 0) {
