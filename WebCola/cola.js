@@ -3908,7 +3908,10 @@ var cola;
                 return v.bounds.inflate(-nodeMargin).vertices();
             }));
         };
-        /// find a route avoiding node bounds for the given edge
+        /// find a route avoiding node bounds for the given edge.
+        /// assumes the visibility graph has been created (by prepareEdgeRouting method)
+        /// and also assumes that nodes have an index property giving their position in the
+        /// node array.  This index property is created by the start() method.
         Layout.prototype.routeEdge = function (edge, draw) {
             var lineData = [];
             //if (d.source.id === 10 && d.target.id === 11) {
@@ -3979,6 +3982,51 @@ var cola;
         return Layout;
     })();
     cola.Layout = Layout;
+})(cola || (cola = {}));
+///<reference path="layout.ts"/>
+var cola;
+(function (cola) {
+    var LayoutAdaptor = (function (_super) {
+        __extends(LayoutAdaptor, _super);
+        function LayoutAdaptor(options) {
+            _super.call(this);
+            // take in implementation as defined by client
+            var self = this;
+            var o = options;
+            if (o.trigger) {
+                this.trigger = o.trigger;
+            }
+            if (o.kick) {
+                this.kick = o.kick;
+            }
+            if (o.drag) {
+                this.drag = o.drag;
+            }
+            if (o.on) {
+                this.on = o.on;
+            }
+            this.dragstart = this.dragStart = cola.Layout.dragStart;
+            this.dragend = this.dragEnd = cola.Layout.dragEnd;
+        }
+        // dummy functions in case not defined by client
+        LayoutAdaptor.prototype.trigger = function (e) { };
+        ;
+        LayoutAdaptor.prototype.kick = function () { };
+        ;
+        LayoutAdaptor.prototype.drag = function () { };
+        ;
+        LayoutAdaptor.prototype.on = function (eventType, listener) { return this; };
+        ;
+        return LayoutAdaptor;
+    })(cola.Layout);
+    cola.LayoutAdaptor = LayoutAdaptor;
+    /**
+     * provides an interface for use with any external graph system (e.g. Cytoscape.js):
+     */
+    function adaptor(options) {
+        return new LayoutAdaptor(options);
+    }
+    cola.adaptor = adaptor;
 })(cola || (cola = {}));
 ///<reference path="../extern/d3.d.ts"/>
 ///<reference path="layout.ts"/>

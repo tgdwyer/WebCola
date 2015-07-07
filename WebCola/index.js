@@ -3411,7 +3411,10 @@ var cola;
                 return v.bounds.inflate(-nodeMargin).vertices();
             }));
         };
-        /// find a route avoiding node bounds for the given edge
+        /// find a route avoiding node bounds for the given edge.
+        /// assumes the visibility graph has been created (by prepareEdgeRouting method)
+        /// and also assumes that nodes have an index property giving their position in the
+        /// node array.  This index property is created by the start() method.
         Layout.prototype.routeEdge = function (edge, draw) {
             var lineData = [];
             //if (d.source.id === 10 && d.target.id === 11) {
