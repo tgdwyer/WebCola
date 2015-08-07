@@ -134,7 +134,7 @@
     <p><b>cola.js</b> (A.K.A. "WebCoLa") is an <a href="https://raw.github.com/tgdwyer/WebCola/master/LICENSE">open-source</a> JavaScript library for arranging your HTML5 documents and diagrams using constraint-based optimization techniques.
 
     <p>
-        It works well with libraries like <a href="http://d3js.org">D3.js</a> and <a href="http://www.svgjs.com">svg.js</a>.
+        It works well with libraries like <a href="http://d3js.org">D3.js</a>, <a href="http://www.svgjs.com">svg.js</a>, and <a href="http://js.cytoscape.org">Cytoscape.js</a>.
         The core layout is based on a complete rewrite in Javascript of the C++ <a href="http://adaptagrams.org">libcola</a> library.
     </p>
 
@@ -152,11 +152,21 @@
                 <li>Nicholas Smith</li>
                 <li><a href="https://github.com/bollwyvl">bollwyvl</a></li>
                 <li><a href="https://github.com/Craxic">Matt Ready</a></li>
+                <li><a href="https://github.com/maxkfranz">Max Franz</a></li>
             </ul> 
         </p>
     </aside>
+    
     <p>
-        It has an adaptor for d3.js that allows you to use cola as a drop-in replacement for the <a href="https://github.com/mbostock/d3/wiki/Force-Layout">D3 force layout</a>.
+        Cytoscape.js has <a href="http://js.cytoscape.org/#layouts/cola">full support for Cola.js</a>.  Cytoscape.js has a full graph
+        theory model, highly customisable styling, gesture support, and layouts &mdash; such that Cola.js can be run in Cytoscape.js
+        in a single line of code:
+    </p>
+    
+<pre><code>cy.layout({ name: 'cola' /* and maybe some other options */ });</code></pre>
+    
+    <p>
+        It also has an adaptor for d3.js that allows you to use cola as a drop-in replacement for the <a href="https://github.com/mbostock/d3/wiki/Force-Layout">D3 force layout</a>.
         The layout converges to a local optimum unlike the D3 force layout, which forces convergence through a simple annealing strategy.
         Thus, compared to D3 force layout:
         <ul>
@@ -177,7 +187,7 @@
     </aside>    <p>
              cola.js can now (optionally) <a href="examples/unix.html">route edges to avoid intersections with node boundaries</a>.
         </p>
-    <h2>Getting Started</h2>
+    <h2>Getting Started with D3</h2>
         <p>
             Replacing D3 force layout with cola.js is easy.  Include the following in your html:
             <pre><code class="html">&lt;script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"&gt;&lt;/script&gt;</code></pre>
