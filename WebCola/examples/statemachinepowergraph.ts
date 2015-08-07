@@ -13,7 +13,7 @@ module statemachine {
 
     var makeEdgeBetween;
     var graphfile = "graphdata/state_machine.json";
-    function makeSVG() {
+    function makeSVG(): any {
         var svg = d3.select("body").append("svg")
             .attr("width", width)
             .attr("height", height);

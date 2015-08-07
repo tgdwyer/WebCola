@@ -257,7 +257,7 @@
         }
     }
 
-    // seraration of disconnected graphs
+    // connected components
     // returns an array of {}
     export function separateGraphs(nodes, links) {
         var marks = {};

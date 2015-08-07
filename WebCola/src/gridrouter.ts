@@ -63,12 +63,17 @@ module cola {
             return this.length >= 0 ? this.s.slice(this.si, this.si + this.length) : [];
         }
     }
+    // a horizontal or vertical line of nodes
+    export interface GridLine {
+        nodes: NodeWrapper[];
+        pos: number;
+    }
     export class GridRouter<Node> {
-        leaves: any[] = null;
+        leaves: NodeWrapper[] = null;
         groups: NodeWrapper[];
         nodes: NodeWrapper[];
-        cols;
-        rows;
+        cols: GridLine[];
+        rows: GridLine[];
         root;
         verts: Vert[];
         edges;
@@ -76,15 +81,21 @@ module cola {
         obstacles;
         passableEdges;
         private avg(a) { return a.reduce((x, y) => x + y) / a.length }
-        private getGridDim(axis) {
+
+        // in the given axis, find sets of leaves overlapping in that axis
+        // center of each GridLine is average of all nodes in column
+        private getGridLines(axis): GridLine[] {
             var columns = [];
             var ls = this.leaves.slice(0, this.leaves.length);
             while (ls.length > 0) {
-                var r = ls[0].rect;
-                var col = ls.filter(v=> v.rect['overlap' + axis.toUpperCase()](r));
+                // find a column of all leaves overlapping in axis with the first leaf
+                let overlapping = ls.filter(v=> v.rect['overlap' + axis.toUpperCase()](ls[0].rect));
+                let col = {
+                    nodes: overlapping,
+                    pos: this.avg(overlapping.map(v=> v.rect['c' + axis]()))
+                };
                 columns.push(col);
-                col.forEach(v=> ls.splice(ls.indexOf(v), 1));
-                col[axis] = this.avg(col.map(v=> v.rect['c' + axis]()))
+                col.nodes.forEach(v=> ls.splice(ls.indexOf(v), 1));
             }
             columns.sort((x, y) => x[axis] - y[axis])
             return columns;
@@ -115,8 +126,8 @@ module cola {
             this.nodes = originalnodes.map((v, i) => new NodeWrapper(i, accessor.getBounds(v), accessor.getChildren(v)));
             this.leaves = this.nodes.filter(v=> v.leaf);
             this.groups = this.nodes.filter(g=> !g.leaf);
-            this.cols = this.getGridDim('x');
-            this.rows = this.getGridDim('y');
+            this.cols = this.getGridLines('x');
+            this.rows = this.getGridLines('y');
 
             // create parents for each node or group that is a member of another's children 
             this.groups.forEach(v=>
@@ -152,19 +163,19 @@ module cola {
                 v.rect = r.inflate(this.groupPadding);
             });
 
-            var colMids = this.midPoints(this.cols.map(r=> r.x));
-            var rowMids = this.midPoints(this.rows.map(r=> r.y));
+            var colMids = this.midPoints(this.cols.map(r=> r.pos));
+            var rowMids = this.midPoints(this.rows.map(r=> r.pos));
 
             // setup extents of lines
             var rowx = colMids[0], rowX = colMids[colMids.length - 1];
             var coly = rowMids[0], colY = rowMids[rowMids.length - 1];
 
             // horizontal lines
-            var hlines = this.rows.map(r=> <any>{ x1: rowx, x2: rowX, y1: r.y, y2: r.y })
+            var hlines = this.rows.map(r=> <any>{ x1: rowx, x2: rowX, y1: r.pos, y2: r.pos })
                 .concat(rowMids.map(m=> <any>{ x1: rowx, x2: rowX, y1: m, y2: m }));
 
             // vertical lines
-            var vlines = this.cols.map(c=> <any>{ x1: c.x, x2: c.x, y1: coly, y2: colY })
+            var vlines = this.cols.map(c=> <any>{ x1: c.pos, x2: c.pos, y1: coly, y2: colY })
                 .concat(colMids.map(m=> <any>{ x1: m, x2: m, y1: coly, y2: colY }));
 
             // the full set of lines

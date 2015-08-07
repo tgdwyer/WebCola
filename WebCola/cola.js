@@ -697,7 +697,7 @@ var cola;
         }
     }
     cola.applyPacking = applyPacking;
-    // seraration of disconnected graphs
+    // connected components
     // returns an array of {}
     function separateGraphs(nodes, links) {
         var marks = {};
@@ -4184,8 +4184,8 @@ var cola;
             this.nodes = originalnodes.map(function (v, i) { return new NodeWrapper(i, accessor.getBounds(v), accessor.getChildren(v)); });
             this.leaves = this.nodes.filter(function (v) { return v.leaf; });
             this.groups = this.nodes.filter(function (g) { return !g.leaf; });
-            this.cols = this.getGridDim('x');
-            this.rows = this.getGridDim('y');
+            this.cols = this.getGridLines('x');
+            this.rows = this.getGridLines('y');
             // create parents for each node or group that is a member of another's children 
             this.groups.forEach(function (v) {
                 return v.children.forEach(function (c) { return _this.nodes[c].parent = v; });
@@ -4216,16 +4216,16 @@ var cola;
                 v.children.forEach(function (c) { return r = r.union(_this.nodes[c].rect); });
                 v.rect = r.inflate(_this.groupPadding);
             });
-            var colMids = this.midPoints(this.cols.map(function (r) { return r.x; }));
-            var rowMids = this.midPoints(this.rows.map(function (r) { return r.y; }));
+            var colMids = this.midPoints(this.cols.map(function (r) { return r.pos; }));
+            var rowMids = this.midPoints(this.rows.map(function (r) { return r.pos; }));
             // setup extents of lines
             var rowx = colMids[0], rowX = colMids[colMids.length - 1];
             var coly = rowMids[0], colY = rowMids[rowMids.length - 1];
             // horizontal lines
-            var hlines = this.rows.map(function (r) { return { x1: rowx, x2: rowX, y1: r.y, y2: r.y }; })
+            var hlines = this.rows.map(function (r) { return { x1: rowx, x2: rowX, y1: r.pos, y2: r.pos }; })
                 .concat(rowMids.map(function (m) { return { x1: rowx, x2: rowX, y1: m, y2: m }; }));
             // vertical lines
-            var vlines = this.cols.map(function (c) { return { x1: c.x, x2: c.x, y1: coly, y2: colY }; })
+            var vlines = this.cols.map(function (c) { return { x1: c.pos, x2: c.pos, y1: coly, y2: colY }; })
                 .concat(colMids.map(function (m) { return { x1: m, x2: m, y1: coly, y2: colY }; }));
             // the full set of lines
             var lines = hlines.concat(vlines);
@@ -4277,15 +4277,20 @@ var cola;
             });
         }
         GridRouter.prototype.avg = function (a) { return a.reduce(function (x, y) { return x + y; }) / a.length; };
-        GridRouter.prototype.getGridDim = function (axis) {
+        // in the given axis, find sets of leaves overlapping in that axis
+        // center of each GridLine is average of all nodes in column
+        GridRouter.prototype.getGridLines = function (axis) {
             var columns = [];
             var ls = this.leaves.slice(0, this.leaves.length);
             while (ls.length > 0) {
-                var r = ls[0].rect;
-                var col = ls.filter(function (v) { return v.rect['overlap' + axis.toUpperCase()](r); });
+                // find a column of all leaves overlapping in axis with the first leaf
+                var overlapping = ls.filter(function (v) { return v.rect['overlap' + axis.toUpperCase()](ls[0].rect); });
+                var col = {
+                    nodes: overlapping,
+                    pos: this.avg(overlapping.map(function (v) { return v.rect['c' + axis](); }))
+                };
                 columns.push(col);
-                col.forEach(function (v) { return ls.splice(ls.indexOf(v), 1); });
-                col[axis] = this.avg(col.map(function (v) { return v.rect['c' + axis](); }));
+                col.nodes.forEach(function (v) { return ls.splice(ls.indexOf(v), 1); });
             }
             columns.sort(function (x, y) { return x[axis] - y[axis]; });
             return columns;

@@ -9,7 +9,7 @@
 var graphlibDot: any;
 
 module dotpowergraph {
-    var color = d3.scale.category10();
+    var color = d3.scale.category10<Number>();
 
     function makeSVG(addGridLines, mywidth, myheight) {
         var svg = d3.select("#mysoloresults").append("svg")
@@ -175,7 +175,7 @@ module dotpowergraph {
     function createPowerGraph(inputjson) {
         var size = [700, 700];
 
-        var svg = makeSVG(false, size[0], size[1]);
+        var svg = <any>makeSVG(false, size[0], size[1]);
         var grouppadding = 0.01;
 
         inputjson.nodes.forEach(v=> {
@@ -229,7 +229,8 @@ module dotpowergraph {
         let eventStart = {}, ghosts = null;
 
         function getEventPos() {
-            let e = d3.event.sourceEvent instanceof TouchEvent ? (<any>d3.event.sourceEvent).changedTouches[0] : d3.event.sourceEvent;
+            let ev = <any>d3.event;
+            let e = ev.sourceEvent instanceof TouchEvent ? (ev.sourceEvent).changedTouches[0] : ev.sourceEvent;
             return { x: e.clientX, y: e.clientY };
         }
         function dragStart(d) {

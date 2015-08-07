@@ -25,7 +25,7 @@ module cola {
         var drag;
             this.drag = function () {
                 if (!drag) {
-                    var drag = d3.behavior.drag()
+                    var drag = d3.behavior.drag<any>()
                         .origin(function (d) { return d; })
                         .on("dragstart.d3adaptor", Layout.dragStart)
                         .on("drag.d3adaptor",(d) => {
