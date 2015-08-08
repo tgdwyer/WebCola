@@ -34,7 +34,7 @@ module cola {
         result: number[][];
         constraints: any[] = null;
 
-        constructor(public nodes: Node3D[], public links: Link3D[], public idealLinkLength: number) {
+        constructor(public nodes: Node3D[], public links: Link3D[], public idealLinkLength: number = 1) {
             this.result = new Array(Layout3D.k);
             for (var i = 0; i < Layout3D.k; ++i) {
                 this.result[i] = new Array(nodes.length);
@@ -52,12 +52,18 @@ module cola {
         linkLength(l: Link3D): number {
             return l.actualLength(this.result);
         }
+
+        useJaccardLinkLengths: boolean = true;
+
         descent: cola.Descent;
         start(iterations: number = 100): Layout3D {
             const n = this.nodes.length;
 
             var linkAccessor = new LinkAccessor();
-            cola.jaccardLinkLengths(this.links, linkAccessor, 1.5);
+
+            if (this.useJaccardLinkLengths)
+                cola.jaccardLinkLengths(this.links, linkAccessor, 1.5);
+
             this.links.forEach(e => e.length *= this.idealLinkLength);
 
             // Create the distance matrix that Cola needs

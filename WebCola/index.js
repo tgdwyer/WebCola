@@ -4222,10 +4222,12 @@ var cola;
     var Layout3D = (function () {
         function Layout3D(nodes, links, idealLinkLength) {
             var _this = this;
+            if (idealLinkLength === void 0) { idealLinkLength = 1; }
             this.nodes = nodes;
             this.links = links;
             this.idealLinkLength = idealLinkLength;
             this.constraints = null;
+            this.useJaccardLinkLengths = true;
             this.result = new Array(Layout3D.k);
             for (var i = 0; i < Layout3D.k; ++i) {
                 this.result[i] = new Array(nodes.length);
@@ -4250,7 +4252,8 @@ var cola;
             if (iterations === void 0) { iterations = 100; }
             var n = this.nodes.length;
             var linkAccessor = new LinkAccessor();
-            cola.jaccardLinkLengths(this.links, linkAccessor, 1.5);
+            if (this.useJaccardLinkLengths)
+                cola.jaccardLinkLengths(this.links, linkAccessor, 1.5);
             this.links.forEach(function (e) { return e.length *= _this.idealLinkLength; });
             // Create the distance matrix that Cola needs
             var distanceMatrix = (new cola.shortestpaths.Calculator(n, this.links, function (e) { return e.source; }, function (e) { return e.target; }, function (e) { return e.length; })).DistanceMatrix();
