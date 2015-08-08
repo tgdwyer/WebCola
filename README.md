@@ -40,7 +40,7 @@ Building
 
 > grunt
 
-This creates the cola.v3.min.js file in the WebCola directory index.js for npm.
+This creates the cola.v3.min.js file in the WebCola directory, generates index.js for npm, and runs tests.
 
 *Visual Studio:*
 
