@@ -210,10 +210,12 @@ module cola {
         }
 
         /**
-         * if true, the layout will not permit overlaps of the node bounding boxes (defined by the width and height properties on nodes)
-         * @property avoidOverlaps
+         * if true, the final step of the start method will be to nicely pack connected components of the graph.
+         * works best if start() is called with a reasonable number of iterations specified and 
+         * each node has a bounding box (defined by the width and height properties on nodes).
+         * @property handleDisconnected
          * @type bool
-         * @default false
+         * @default true
          */
         handleDisconnected(): boolean
         handleDisconnected(v: boolean): Layout 
