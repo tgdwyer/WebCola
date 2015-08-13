@@ -85,6 +85,15 @@ test("single link", () => {
     let linkLength = layout.linkLength(links[0]);
     nodes.forEach(({x, y}) => ok(Math.abs(x) < 1e-5 && Math.abs(y) < 1e-5));
     ok(Math.abs(linkLength - desiredLength) < 1e-4, "length = " + linkLength);
+
+    // test per-link desiredLength:
+    const smallerLength = 5;
+    links[0].length = smallerLength;
+    layout = new cola.Layout3D(nodes, links);
+    layout.useJaccardLinkLengths = false;
+    layout.start();
+    linkLength = layout.linkLength(links[0]);
+    ok(Math.abs(linkLength - smallerLength) < 1e-4, "length = " + linkLength);
 });
 
 function graph(links: number[][]): {
