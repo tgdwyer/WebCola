@@ -3,6 +3,27 @@
 ///<reference path="../src/layout3d.ts"/>
 
 QUnit.module("Headless API");
+test('strongly connected components', () => {
+    var la = <cola.LinkAccessor<number[]>> {
+        getSourceIndex: ([source, target]) => source,
+        getTargetIndex: ([source, target]) => target
+    };
+    var links = [[0, 1]];
+    var components = cola.stronglyConnectedComponents(2, links, la);
+    equal(components.length, 2);
+
+    links = [[0, 1], [1, 2], [2, 0]];
+    components = cola.stronglyConnectedComponents(3, links, la);
+    equal(components.length, 1);
+
+    links = [[0, 1], [1, 2], [2, 0], [2, 3], [3, 4], [4, 5], [5, 3]];
+    components = cola.stronglyConnectedComponents(6, links, la);
+    equal(components.length, 2);
+
+    links = [[0, 1], [1, 2], [2, 0], [2, 3], [3, 4], [4, 2]];
+    components = cola.stronglyConnectedComponents(5, links, la);
+    equal(components.length, 1);
+});
 
 test("Basic headless layout",() => {
     // layout a triangular graph

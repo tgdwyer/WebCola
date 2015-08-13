@@ -2,6 +2,7 @@ module.exports = function (grunt) {
   require('load-grunt-tasks')(grunt);
   require('./tasks/examples')(grunt);
   grunt.loadNpmTasks('typedoc');
+  grunt.loadNpmTasks('dts-generator');
   grunt.initConfig({
       pkg: grunt.file.readJSON('package.json'),
       copy: {
@@ -62,6 +63,17 @@ module.exports = function (grunt) {
           sourceMap: true
         }
       }
+    },
+    dtsGenerator: {
+        options: {
+            name: 'cola',
+            baseDir: 'WebCola',
+            out: 'WebCola/cola.d.ts',
+	    excludes: ['extern/d3.d.ts']
+        },
+        default: {
+            src: [ 'WebCola/src/*.ts' ]
+        }
     },
     concat: {
       options: {},
