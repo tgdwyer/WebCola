@@ -200,8 +200,10 @@ var cola;
         }
     }
     cola.applyPacking = applyPacking;
-    // connected components
-    // returns an array of {}
+    /**
+     * connected components of graph
+     * returns an array of {}
+     */
     function separateGraphs(nodes, links) {
         var marks = {};
         var ways = {};
@@ -3728,7 +3730,7 @@ var cola;
                 columns.push(col);
                 col.nodes.forEach(function (v) { return ls.splice(ls.indexOf(v), 1); });
             }
-            columns.sort(function (x, y) { return x[axis] - y[axis]; });
+            columns.sort(function (a, b) { return a.pos - b.pos; });
             return columns;
         };
         // get the depth of the given node in the group hierarchy

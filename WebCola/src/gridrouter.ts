@@ -97,7 +97,7 @@ module cola {
                 columns.push(col);
                 col.nodes.forEach(v=> ls.splice(ls.indexOf(v), 1));
             }
-            columns.sort((x, y) => x[axis] - y[axis])
+            columns.sort((a, b) => a.pos - b.pos)
             return columns;
         }
 
