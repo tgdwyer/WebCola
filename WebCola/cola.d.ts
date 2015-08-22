@@ -1,5 +1,9 @@
 declare module cola {
     function applyPacking(graphs: Array<any>, w: any, h: any, node_size: any, desired_ratio?: number): void;
+    /**
+     * connected components of graph
+     * returns an array of {}
+     */
     function separateGraphs(nodes: any, links: any): any[];
 }
 declare module cola.vpsc {
@@ -89,18 +93,47 @@ declare module cola.vpsc {
         solve(): number;
     }
 }
-declare class Iterator<T> {
-    next(): T;
-    prev(): T;
+declare module cola {
+    class TreeBase {
+        _root: any;
+        size: any;
+        _comparator: any;
+        clear(): void;
+        find(data: any): any;
+        findIter: (data: any) => any;
+        lowerBound(data: any): Iterator;
+        upperBound(data: any): Iterator;
+        min(): any;
+        max(): any;
+        iterator(): Iterator;
+        each(cb: any): void;
+        reach(cb: any): void;
+        _bound(data: any, cmp: any): Iterator;
+    }
+    class Iterator {
+        _tree: any;
+        _ancestors: any;
+        _cursor: any;
+        constructor(tree: any);
+        data(): any;
+        next(): any;
+        prev(): any;
+        _minNode(start: any): void;
+        _maxNode(start: any): void;
+    }
+    class RBTree<T> extends TreeBase {
+        _root: any;
+        _comparator: any;
+        size: any;
+        constructor(comparator: (a: T, b: T) => number);
+        insert(data: any): boolean;
+        remove(data: any): boolean;
+        static is_red(node: any): any;
+        static single_rotate(root: any, dir: any): any;
+        static double_rotate(root: any, dir: any): any;
+    }
 }
-declare class RBTree<T> {
-    constructor(comparator: (a: T, b: T) => number);
-    insert(data: T): boolean;
-    remove(data: T): boolean;
-    findIter(data: T): Iterator<T>;
-    iterator(): Iterator<T>;
-    size: number;
-}/// <reference path="vpsc.d.ts" />
+/// <reference path="vpsc.d.ts" />
 /// <reference path="rbtree.d.ts" />
 declare module cola.vpsc {
     interface Leaf {
@@ -676,8 +709,23 @@ declare module cola {
         listener?: () => void;
     }
     interface Node {
+        /**
+         * x and y will be computed by layout as the Node's centroid
+         */
         x: number;
+        /**
+         * x and y will be computed by layout as the Node's centroid
+         */
         y: number;
+        /**
+         * specify a width and height of the node's bounding box if you turn on avoidOverlaps
+         */
+        width?: number;
+        /**
+         * specify a width and height of the node's bounding box if you turn on avoidOverlaps
+         */
+        height?: any;
+        number: any;
     }
     interface Link<NodeType> {
         source: NodeType;
@@ -745,10 +793,12 @@ declare module cola {
         avoidOverlaps(): boolean;
         avoidOverlaps(v: boolean): Layout;
         /**
-         * if true, the layout will not permit overlaps of the node bounding boxes (defined by the width and height properties on nodes)
-         * @property avoidOverlaps
+         * if true, the final step of the start method will be to nicely pack connected components of the graph.
+         * works best if start() is called with a reasonable number of iterations specified and
+         * each node has a bounding box (defined by the width and height properties on nodes).
+         * @property handleDisconnected
          * @type bool
-         * @default false
+         * @default true
          */
         handleDisconnected(): boolean;
         handleDisconnected(v: boolean): Layout;
@@ -855,8 +905,9 @@ declare module cola {
          * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
          * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
          * @param {number} [gridSnapIterations=0] iterations of "grid snap", which pulls nodes towards grid cell centers - grid of size node[0].width - only really makes sense if all nodes have the same width and height
+         * @param [keepRunning=true] keep iterating asynchronously via the tick method
          */
-        start(initialUnconstrainedIterations?: number, initialUserConstraintIterations?: number, initialAllConstraintsIterations?: number, gridSnapIterations?: number): Layout;
+        start(initialUnconstrainedIterations?: number, initialUserConstraintIterations?: number, initialAllConstraintsIterations?: number, gridSnapIterations?: number, keepRunning?: boolean): Layout;
         resume(): Layout;
         stop(): Layout;
         prepareEdgeRouting(nodeMargin?: number): void;
@@ -1026,8 +1077,9 @@ declare module cola {
         static k: number;
         result: number[][];
         constraints: any[];
-        constructor(nodes: Node3D[], links: Link3D[], idealLinkLength: number);
+        constructor(nodes: Node3D[], links: Link3D[], idealLinkLength?: number);
         linkLength(l: Link3D): number;
+        useJaccardLinkLengths: boolean;
         descent: cola.Descent;
         start(iterations?: number): Layout3D;
         tick(): number;

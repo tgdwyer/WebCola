@@ -192,8 +192,8 @@
     <Content Include="src\powergraph.js">
       <DependentUpon>powergraph.ts</DependentUpon>
     </Content>
+    <TypeScriptCompile Include="src\rbtree.ts" />
     <TypeScriptCompile Include="src\vpsc.ts" />
-    <TypeScriptCompile Include="src\rbtree.d.ts" />
     <Content Include="src\rectangle.js">
       <DependentUpon>rectangle.ts</DependentUpon>
     </Content>

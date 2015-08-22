@@ -968,7 +968,7 @@ test("vpsc", function () {
 
 /// <reference path="rbtree.js"/>
 test("rbtree", function () {
-    var tree = new RBTree(function (a, b) { return a - b });
+    var tree = new cola.RBTree(function (a, b) { return a - b });
     var data = [5, 8, 3, 1, 7, 6, 2];
     data.forEach(function (d) { tree.insert(d); });
     var it = tree.iterator(), item;

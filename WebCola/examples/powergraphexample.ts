@@ -8,7 +8,6 @@ var width = 700,
 
 var color = d3.scale.category20();
 var makeEdgeBetween;
-var colans = <any>cola;
 var graphfile = "graphdata/n7e23.json";
 
 
@@ -82,7 +81,7 @@ function createLabels(svg, graph, node, d3cola, margin) {
     return labels;
 }
 function flatGraph() {
-    var d3cola = colans.d3adaptor()
+    var d3cola = cola.d3adaptor()
         .linkDistance(80)
         .avoidOverlaps(true)
         .size([width, height]);
@@ -102,8 +101,7 @@ function flatGraph() {
             .data(graph.nodes)
             .enter().append("rect")
             .attr("class", "node")
-            .attr("rx", 4).attr("ry", 4)
-            .call(d3cola.drag);
+            .attr("rx", 4).attr("ry", 4);
 
         var label = createLabels(svg, graph, node, d3cola, margin);
 
@@ -162,7 +160,7 @@ function getId(v, n) {
 }
 
 function powerGraph() {
-    var d3cola = colans.d3adaptor()
+    var d3cola = cola.d3adaptor()
         .convergenceThreshold(0.01)
         .linkDistance(80)
         .handleDisconnected(false)
@@ -197,8 +195,7 @@ function powerGraph() {
                 .attr("class", "node")
                 .attr("width", d => d.width + 2 * margin)
                 .attr("height", d => d.height + 2 * margin)
-                .attr("rx", 4).attr("ry", 4)
-                .call(d3cola.drag);
+                .attr("rx", 4).attr("ry", 4);
 
             var label = createLabels(svg, graph, node, d3cola, margin);
 
@@ -298,7 +295,7 @@ d3.select("#filemenu").on("change", function () {
 });
 
 function powerGraph2() {
-    var d3cola = colans.d3adaptor()
+    var d3cola = cola.d3adaptor()
         //.linkDistance(100)
         .jaccardLinkLengths(10, 0.5)
         .avoidOverlaps(true)
@@ -338,14 +335,12 @@ function powerGraph2() {
             .attr("class", "node")
             .attr("width", function (d) { return d.width + 2 * margin; })
             .attr("height", function (d) { return d.height + 2 * margin; })
-            .attr("rx", 4).attr("ry", 4)
-            .call(d3cola.drag);
+            .attr("rx", 4).attr("ry", 4);
         var label = svg.selectAll(".label")
             .data(graph.nodes)
             .enter().append("text")
             .attr("class", "label")
-            .text(function (d) { return d.name; })
-            .call(d3cola.drag);
+            .text(function (d) { return d.name; });
 
         node.append("title")
             .text(function (d) { return d.name; });

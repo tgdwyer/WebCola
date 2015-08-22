@@ -16,10 +16,6 @@ module.exports = function (grunt) {
           },
       },
     watch: {
-      default: {
-        files: ["<%= concat.dist.src %>", "Gruntfile.js", "templates/*"],
-        tasks: ["default"]
-      },
       typescript: {
         files: ["<%= typescript.base.src %>","<%= typescript.examples.src %>"],
         tasks: ["typescript"]
@@ -75,20 +71,9 @@ module.exports = function (grunt) {
             src: [ 'WebCola/src/*.ts' ]
         }
     },
-    concat: {
-      options: {},
-      dist: {
-        src: [
-          'WebCola/src/rbtree.js',
-          'WebCola/src/scc.js',
-          'WebCola/cola.js',
-        ],
-        dest: 'WebCola/cola.js'
-      }
-    },
     umd: {
       all: {
-        src: '<%= concat.dist.dest %>',
+        src: '<%= dist.dest %>',
         template: 'templates/umd.hbs',
         objectToExport: 'cola',
         deps: {
@@ -103,7 +88,7 @@ module.exports = function (grunt) {
       dist: {
         files: {
           'WebCola/cola.min.js': [
-            '<%= concat.dist.dest %>'
+            '<%= typescript.base.dest %>'
           ]
         }
       }
@@ -126,9 +111,9 @@ module.exports = function (grunt) {
     }
   });
  
-  grunt.registerTask('default', ['copy', 'typescript', 'concat', 'uglify', 'qunit']);
-  grunt.registerTask('nougly', ['typescript', 'concat', 'qunit']);
-  grunt.registerTask('nougly-notest', ['typescript', 'concat']);
+  grunt.registerTask('default', ['copy', 'typescript', 'uglify', 'qunit']);
+  grunt.registerTask('nougly', ['typescript', 'qunit']);
+  grunt.registerTask('nougly-notest', ['typescript']);
   grunt.registerTask('docs', ['typedoc', 'typescript:examples']);
   grunt.registerTask('examples', ['typescript:examples']);
   grunt.registerTask('full', ['default', 'typescript:examples', 'examples']);
