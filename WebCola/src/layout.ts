@@ -22,8 +22,22 @@ module cola {
         listener?: () => void;
     }
     export interface Node {
+        /**
+         * x and y will be computed by layout as the Node's centroid
+         */
         x: number;
+        /**
+         * x and y will be computed by layout as the Node's centroid
+         */
         y: number;
+        /**
+         * specify a width and height of the node's bounding box if you turn on avoidOverlaps
+         */
+        width?: number;
+        /**
+         * specify a width and height of the node's bounding box if you turn on avoidOverlaps
+         */
+        height?; number;
     }
     export interface Link<NodeType> {
         source: NodeType;
