@@ -712,7 +712,7 @@ var cola;
         vpsc.Solver = Solver;
     })(vpsc = cola.vpsc || (cola.vpsc = {}));
 })(cola || (cola = {}));
-var __extends = this.__extends || function (d, b) {
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
@@ -720,7 +720,7 @@ var __extends = this.__extends || function (d, b) {
 };
 var cola;
 (function (cola) {
-    //Based on js_bintrees:
+    //Based on js_es:
     //
     //https://github.com/vadimg/js_bintrees
     //
@@ -871,6 +871,7 @@ var cola;
         ;
         return TreeBase;
     })();
+    cola.TreeBase = TreeBase;
     var Iterator = (function () {
         function Iterator(tree) {
             this._tree = tree;
@@ -964,6 +965,7 @@ var cola;
         ;
         return Iterator;
     })();
+    cola.Iterator = Iterator;
     var Node = (function () {
         function Node(data) {
             this.data = data;
