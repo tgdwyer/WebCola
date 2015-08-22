@@ -71,7 +71,7 @@ module dotpowergraph {
             .linkDistance(30)
             .symmetricDiffLinkLengths(5)
             .convergenceThreshold(1e-4)
-            .start(100);
+            .start(100,0,0,0,false);
 
         // final layout taking node positions from above as starting positions
         // subject to group containment constraints
@@ -91,7 +91,7 @@ module dotpowergraph {
                 powerGraph.groups.forEach(function (v) {
                     v.padding = grouppadding
                 });
-            }).start(50, 0, 100),
+            }).start(50, 0, 100,0,false),
             powerGraph: powerGraph
         };
     }
@@ -121,7 +121,7 @@ module dotpowergraph {
     }
 
     function gridify(svg, pgLayout, margin, groupMargin) {
-        pgLayout.cola.start(0, 0, 0, 10);
+        pgLayout.cola.start(0, 0, 0, 10, false);
         let gridrouter = route(pgLayout.cola.nodes(), pgLayout.cola.groups(), margin, groupMargin);
         var routes = gridrouter.routeEdges<any>(pgLayout.powerGraph.powerEdges, 5, e=> e.source.routerNode.id, e=> e.target.routerNode.id);
         svg.selectAll('path').remove();
@@ -230,7 +230,7 @@ module dotpowergraph {
 
         function getEventPos() {
             let ev = <any>d3.event;
-            let e = ev.sourceEvent instanceof TouchEvent ? (ev.sourceEvent).changedTouches[0] : ev.sourceEvent;
+            let e =  typeof TouchEvent !== 'undefined' && ev.sourceEvent instanceof TouchEvent ? (ev.sourceEvent).changedTouches[0] : ev.sourceEvent;
             return { x: e.clientX, y: e.clientY };
         }
         function dragStart(d) {

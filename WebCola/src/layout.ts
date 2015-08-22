@@ -441,12 +441,14 @@ module cola {
          * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
          * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
          * @param {number} [gridSnapIterations=0] iterations of "grid snap", which pulls nodes towards grid cell centers - grid of size node[0].width - only really makes sense if all nodes have the same width and height
+         * @param [keepRunning=true] keep iterating asynchronously via the tick method
          */
         start(
             initialUnconstrainedIterations: number = 0,
             initialUserConstraintIterations: number = 0,
             initialAllConstraintsIterations: number = 0,
-            gridSnapIterations: number = 0
+            gridSnapIterations: number = 0,
+            keepRunning = true
         ): Layout {
             var i: number,
                 j: number,
@@ -599,8 +601,7 @@ module cola {
                     this._descent.x[0][i] = v.x, this._descent.x[1][i] = v.y;
                 });
             }
-
-            return this.resume();
+            return keepRunning ? this.resume() : this;
         }
 
         resume(): Layout {
