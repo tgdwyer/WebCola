@@ -18,7 +18,7 @@ var maxwidth = 4;
 
     var modules;
 
-function makeSVG(addGridLines, mywidth, myheight) {
+function makeSVG(addGridLines, mywidth, myheight):any {
     var svg = d3.select("#mysoloresults").append("svg")
         .attr("width", mywidth)
         .attr("height", myheight);

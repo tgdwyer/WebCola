@@ -35,7 +35,7 @@ module tetrisbug {
             .avoidOverlaps(true)
             .size([width, height]);
 
-        var svg = makeSVG();
+        var svg = <any>makeSVG();
 
         d3.json(graphfile, function (error, graph) {
             graph.nodes.forEach(v=> {
@@ -136,7 +136,7 @@ module tetrisbug {
             .avoidOverlaps(true)
             .size([width, height]);
 
-        var svg = makeSVG();
+        var svg = <any>makeSVG();
 
         d3.json(graphfile, function (error, graph) {
             graph.nodes.forEach((v, i) => {

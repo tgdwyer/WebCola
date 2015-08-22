@@ -257,8 +257,10 @@
         }
     }
 
-    // seraration of disconnected graphs
-    // returns an array of {}
+    /** 
+     * connected components of graph
+     * returns an array of {}
+     */
     export function separateGraphs(nodes, links) {
         var marks = {};
         var ways = {};

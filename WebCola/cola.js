@@ -697,8 +697,10 @@ var cola;
         }
     }
     cola.applyPacking = applyPacking;
-    // seraration of disconnected graphs
-    // returns an array of {}
+    /**
+     * connected components of graph
+     * returns an array of {}
+     */
     function separateGraphs(nodes, links) {
         var marks = {};
         var ways = {};
@@ -2985,13 +2987,13 @@ var cola;
     function generateDirectedEdgeConstraints(n, links, axis, la) {
         var components = stronglyConnectedComponents(n, links, la);
         var nodes = {};
-        components.filter(function (c) { return c.length > 1; }).forEach(function (c) {
-            return c.forEach(function (v) { return nodes[v] = c; });
+        components.forEach(function (c, i) {
+            return c.forEach(function (v) { return nodes[v] = i; });
         });
         var constraints = [];
         links.forEach(function (l) {
             var ui = la.getSourceIndex(l), vi = la.getTargetIndex(l), u = nodes[ui], v = nodes[vi];
-            if (!u || !v || u.component !== v.component) {
+            if (u !== v) {
                 constraints.push({
                     axis: axis,
                     left: ui,
@@ -3003,89 +3005,67 @@ var cola;
         return constraints;
     }
     cola.generateDirectedEdgeConstraints = generateDirectedEdgeConstraints;
-    /*
-    Following function based on: https://github.com/mikolalysenko/strongly-connected-components
-
-    The MIT License (MIT)
-
-    Copyright (c) 2013 Mikola Lysenko
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-    THE SOFTWARE.
-    */
+    /**
+     * Tarjan's strongly connected components algorithm for directed graphs
+     * returns an array of arrays of node indicies in each of the strongly connected components.
+     * a vertex not in a SCC of two or more nodes is it's own SCC.
+     * adaptation of https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
+     */
     function stronglyConnectedComponents(numVertices, edges, la) {
-        var adjList = new Array(numVertices);
-        var index = new Array(numVertices);
-        var lowValue = new Array(numVertices);
-        var active = new Array(numVertices);
-        //Initialize tables
-        for (var i = 0; i < numVertices; ++i) {
-            adjList[i] = [];
-            index[i] = -1;
-            lowValue[i] = 0;
-            active[i] = false;
-        }
-        //Build adjacency list representation
-        for (var i = 0; i < edges.length; ++i) {
-            adjList[la.getSourceIndex(edges[i])].push(la.getTargetIndex(edges[i]));
-        }
-        var count = 0;
-        var S = [];
+        var nodes = [];
+        var index = 0;
+        var stack = [];
         var components = [];
         function strongConnect(v) {
-            index[v] = count;
-            lowValue[v] = count;
-            active[v] = true;
-            count += 1;
-            S.push(v);
-            var e = adjList[v];
-            for (var i = 0; i < e.length; ++i) {
-                var u = e[i];
-                if (index[u] < 0) {
-                    strongConnect(u);
-                    lowValue[v] = Math.min(lowValue[v], lowValue[u]) | 0;
+            // Set the depth index for v to the smallest unused index
+            v.index = v.lowlink = index++;
+            stack.push(v);
+            v.onStack = true;
+            // Consider successors of v
+            for (var _i = 0, _a = v.out; _i < _a.length; _i++) {
+                var w = _a[_i];
+                if (typeof w.index === 'undefined') {
+                    // Successor w has not yet been visited; recurse on it
+                    strongConnect(w);
+                    v.lowlink = Math.min(v.lowlink, w.lowlink);
                 }
-                else if (active[u]) {
-                    lowValue[v] = Math.min(lowValue[v], lowValue[u]);
+                else if (w.onStack) {
+                    // Successor w is in stack S and hence in the current SCC
+                    v.lowlink = Math.min(v.lowlink, w.index);
                 }
             }
-            if (lowValue[v] === index[v]) {
+            // If v is a root node, pop the stack and generate an SCC
+            if (v.lowlink === v.index) {
+                // start a new strongly connected component
                 var component = [];
-                for (var i = S.length - 1; i >= 0; --i) {
-                    var w = S[i];
-                    active[w] = false;
+                while (stack.length) {
+                    w = stack.pop();
+                    w.onStack = false;
+                    //add w to current strongly connected component
                     component.push(w);
-                    if (w === v) {
-                        S.length = i;
+                    if (w === v)
                         break;
-                    }
                 }
-                components.push(component);
+                // output the current strongly connected component
+                components.push(component.map(function (v) { return v.id; }));
             }
         }
-        //Run strong connect starting from each vertex
-        for (var i = 0; i < numVertices; ++i) {
-            if (index[i] < 0) {
-                strongConnect(i);
-            }
+        for (var i = 0; i < numVertices; i++) {
+            nodes.push({ id: i, out: [] });
+        }
+        for (var _i = 0; _i < edges.length; _i++) {
+            var e = edges[_i];
+            var v_1 = nodes[la.getSourceIndex(e)], w = nodes[la.getTargetIndex(e)];
+            v_1.out.push(w);
+        }
+        for (var _a = 0; _a < nodes.length; _a++) {
+            var v = nodes[_a];
+            if (typeof v.index === 'undefined')
+                strongConnect(v);
         }
         return components;
     }
+    cola.stronglyConnectedComponents = stronglyConnectedComponents;
 })(cola || (cola = {}));
 var PairingHeap = (function () {
     // from: https://gist.github.com/nervoussystem
@@ -3908,7 +3888,10 @@ var cola;
                 return v.bounds.inflate(-nodeMargin).vertices();
             }));
         };
-        /// find a route avoiding node bounds for the given edge
+        /// find a route avoiding node bounds for the given edge.
+        /// assumes the visibility graph has been created (by prepareEdgeRouting method)
+        /// and also assumes that nodes have an index property giving their position in the
+        /// node array.  This index property is created by the start() method.
         Layout.prototype.routeEdge = function (edge, draw) {
             var lineData = [];
             //if (d.source.id === 10 && d.target.id === 11) {
@@ -3980,6 +3963,51 @@ var cola;
     })();
     cola.Layout = Layout;
 })(cola || (cola = {}));
+///<reference path="layout.ts"/>
+var cola;
+(function (cola) {
+    var LayoutAdaptor = (function (_super) {
+        __extends(LayoutAdaptor, _super);
+        function LayoutAdaptor(options) {
+            _super.call(this);
+            // take in implementation as defined by client
+            var self = this;
+            var o = options;
+            if (o.trigger) {
+                this.trigger = o.trigger;
+            }
+            if (o.kick) {
+                this.kick = o.kick;
+            }
+            if (o.drag) {
+                this.drag = o.drag;
+            }
+            if (o.on) {
+                this.on = o.on;
+            }
+            this.dragstart = this.dragStart = cola.Layout.dragStart;
+            this.dragend = this.dragEnd = cola.Layout.dragEnd;
+        }
+        // dummy functions in case not defined by client
+        LayoutAdaptor.prototype.trigger = function (e) { };
+        ;
+        LayoutAdaptor.prototype.kick = function () { };
+        ;
+        LayoutAdaptor.prototype.drag = function () { };
+        ;
+        LayoutAdaptor.prototype.on = function (eventType, listener) { return this; };
+        ;
+        return LayoutAdaptor;
+    })(cola.Layout);
+    cola.LayoutAdaptor = LayoutAdaptor;
+    /**
+     * provides an interface for use with any external graph system (e.g. Cytoscape.js):
+     */
+    function adaptor(options) {
+        return new LayoutAdaptor(options);
+    }
+    cola.adaptor = adaptor;
+})(cola || (cola = {}));
 ///<reference path="../extern/d3.d.ts"/>
 ///<reference path="layout.ts"/>
 var cola;
@@ -3991,15 +4019,18 @@ var cola;
             this.event = d3.dispatch(cola.EventType[cola.EventType.start], cola.EventType[cola.EventType.tick], cola.EventType[cola.EventType.end]);
             // bit of trickyness remapping 'this' so we can reference it in the function body.
             var d3layout = this;
+            var drag;
             this.drag = function () {
-                var drag = d3.behavior.drag()
-                    .origin(function (d) { return d; })
-                    .on("dragstart.d3adaptor", cola.Layout.dragStart)
-                    .on("drag.d3adaptor", function (d) {
-                    d.px = d3.event.x, d.py = d3.event.y;
-                    d3layout.resume(); // restart annealing
-                })
-                    .on("dragend.d3adaptor", cola.Layout.dragEnd);
+                if (!drag) {
+                    var drag = d3.behavior.drag()
+                        .origin(function (d) { return d; })
+                        .on("dragstart.d3adaptor", cola.Layout.dragStart)
+                        .on("drag.d3adaptor", function (d) {
+                        d.px = d3.event.x, d.py = d3.event.y;
+                        d3layout.resume(); // restart annealing
+                    })
+                        .on("dragend.d3adaptor", cola.Layout.dragEnd);
+                }
                 if (!arguments.length)
                     return drag;
                 // this is the context of the function, i.e. the d3 selection
@@ -4133,8 +4164,8 @@ var cola;
             this.nodes = originalnodes.map(function (v, i) { return new NodeWrapper(i, accessor.getBounds(v), accessor.getChildren(v)); });
             this.leaves = this.nodes.filter(function (v) { return v.leaf; });
             this.groups = this.nodes.filter(function (g) { return !g.leaf; });
-            this.cols = this.getGridDim('x');
-            this.rows = this.getGridDim('y');
+            this.cols = this.getGridLines('x');
+            this.rows = this.getGridLines('y');
             // create parents for each node or group that is a member of another's children 
             this.groups.forEach(function (v) {
                 return v.children.forEach(function (c) { return _this.nodes[c].parent = v; });
@@ -4165,16 +4196,16 @@ var cola;
                 v.children.forEach(function (c) { return r = r.union(_this.nodes[c].rect); });
                 v.rect = r.inflate(_this.groupPadding);
             });
-            var colMids = this.midPoints(this.cols.map(function (r) { return r.x; }));
-            var rowMids = this.midPoints(this.rows.map(function (r) { return r.y; }));
+            var colMids = this.midPoints(this.cols.map(function (r) { return r.pos; }));
+            var rowMids = this.midPoints(this.rows.map(function (r) { return r.pos; }));
             // setup extents of lines
             var rowx = colMids[0], rowX = colMids[colMids.length - 1];
             var coly = rowMids[0], colY = rowMids[rowMids.length - 1];
             // horizontal lines
-            var hlines = this.rows.map(function (r) { return { x1: rowx, x2: rowX, y1: r.y, y2: r.y }; })
+            var hlines = this.rows.map(function (r) { return { x1: rowx, x2: rowX, y1: r.pos, y2: r.pos }; })
                 .concat(rowMids.map(function (m) { return { x1: rowx, x2: rowX, y1: m, y2: m }; }));
             // vertical lines
-            var vlines = this.cols.map(function (c) { return { x1: c.x, x2: c.x, y1: coly, y2: colY }; })
+            var vlines = this.cols.map(function (c) { return { x1: c.pos, x2: c.pos, y1: coly, y2: colY }; })
                 .concat(colMids.map(function (m) { return { x1: m, x2: m, y1: coly, y2: colY }; }));
             // the full set of lines
             var lines = hlines.concat(vlines);
@@ -4226,17 +4257,22 @@ var cola;
             });
         }
         GridRouter.prototype.avg = function (a) { return a.reduce(function (x, y) { return x + y; }) / a.length; };
-        GridRouter.prototype.getGridDim = function (axis) {
+        // in the given axis, find sets of leaves overlapping in that axis
+        // center of each GridLine is average of all nodes in column
+        GridRouter.prototype.getGridLines = function (axis) {
             var columns = [];
             var ls = this.leaves.slice(0, this.leaves.length);
             while (ls.length > 0) {
-                var r = ls[0].rect;
-                var col = ls.filter(function (v) { return v.rect['overlap' + axis.toUpperCase()](r); });
+                // find a column of all leaves overlapping in axis with the first leaf
+                var overlapping = ls.filter(function (v) { return v.rect['overlap' + axis.toUpperCase()](ls[0].rect); });
+                var col = {
+                    nodes: overlapping,
+                    pos: this.avg(overlapping.map(function (v) { return v.rect['c' + axis](); }))
+                };
                 columns.push(col);
-                col.forEach(function (v) { return ls.splice(ls.indexOf(v), 1); });
-                col[axis] = this.avg(col.map(function (v) { return v.rect['c' + axis](); }));
+                col.nodes.forEach(function (v) { return ls.splice(ls.indexOf(v), 1); });
             }
-            columns.sort(function (x, y) { return x[axis] - y[axis]; });
+            columns.sort(function (a, b) { return a.pos - b.pos; });
             return columns;
         };
         // get the depth of the given node in the group hierarchy
@@ -4708,10 +4744,12 @@ var cola;
     var Layout3D = (function () {
         function Layout3D(nodes, links, idealLinkLength) {
             var _this = this;
+            if (idealLinkLength === void 0) { idealLinkLength = 1; }
             this.nodes = nodes;
             this.links = links;
             this.idealLinkLength = idealLinkLength;
             this.constraints = null;
+            this.useJaccardLinkLengths = true;
             this.result = new Array(Layout3D.k);
             for (var i = 0; i < Layout3D.k; ++i) {
                 this.result[i] = new Array(nodes.length);
@@ -4736,7 +4774,8 @@ var cola;
             if (iterations === void 0) { iterations = 100; }
             var n = this.nodes.length;
             var linkAccessor = new LinkAccessor();
-            cola.jaccardLinkLengths(this.links, linkAccessor, 1.5);
+            if (this.useJaccardLinkLengths)
+                cola.jaccardLinkLengths(this.links, linkAccessor, 1.5);
             this.links.forEach(function (e) { return e.length *= _this.idealLinkLength; });
             // Create the distance matrix that Cola needs
             var distanceMatrix = (new cola.shortestpaths.Calculator(n, this.links, function (e) { return e.source; }, function (e) { return e.target; }, function (e) { return e.length; })).DistanceMatrix();

@@ -91,14 +91,14 @@ module cola {
     {
         var components = stronglyConnectedComponents(n, links, la);
         var nodes = {};
-        components.filter(c => c.length > 1).forEach(c =>
-            c.forEach(v => nodes[v] = c)
+        components.forEach((c,i) =>
+            c.forEach(v => nodes[v] = i)
         );
         var constraints: any[] = [];
         links.forEach(l => {
             var ui = la.getSourceIndex(l), vi = la.getTargetIndex(l),
                 u = nodes[ui], v = nodes[vi];
-            if (!u || !v || u.component !== v.component) {
+            if (u !== v) {
                 constraints.push({
                     axis: axis,
                     left: ui,
@@ -110,92 +110,60 @@ module cola {
         return constraints;
     }
 
-    /*
-    Following function based on: https://github.com/mikolalysenko/strongly-connected-components
-
-    The MIT License (MIT)
-
-    Copyright (c) 2013 Mikola Lysenko
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-    THE SOFTWARE.
-    */
-    function stronglyConnectedComponents<Link>(numVertices: number, edges: Link[], la: LinkAccessor<Link>): number[][] {
-        var adjList: number[][] = new Array(numVertices)
-        var index: number[] = new Array(numVertices)
-        var lowValue: number[] = new Array(numVertices)
-        var active: boolean[] = new Array(numVertices)
-
-        //Initialize tables
-        for (var i = 0; i < numVertices; ++i) {
-            adjList[i] = []
-            index[i] = -1
-            lowValue[i] = 0
-            active[i] = false
-        }
-
-        //Build adjacency list representation
-        for (var i = 0; i < edges.length; ++i) {
-            adjList[la.getSourceIndex(edges[i])].push(la.getTargetIndex(edges[i]))
-        }
-
-        var count = 0
-        var S: number[] = []
-        var components: number[][] = []
-
+    /**
+     * Tarjan's strongly connected components algorithm for directed graphs
+     * returns an array of arrays of node indicies in each of the strongly connected components.
+     * a vertex not in a SCC of two or more nodes is it's own SCC.
+     * adaptation of https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
+     */
+    export function stronglyConnectedComponents<Link>(numVertices: number, edges: Link[], la: LinkAccessor<Link>): number[][]{
+        var nodes = [];
+        var index = 0;
+        var stack = [];
+        var components = [];
         function strongConnect(v) {
-            index[v] = count
-            lowValue[v] = count
-            active[v] = true
-            count += 1
-            S.push(v)
-            var e = adjList[v]
-            for (var i = 0; i < e.length; ++i) {
-                var u = e[i]
-                if (index[u] < 0) {
-                    strongConnect(u)
-                    lowValue[v] = Math.min(lowValue[v], lowValue[u]) | 0
-                } else if (active[u]) {
-                    lowValue[v] = Math.min(lowValue[v], lowValue[u])
+            // Set the depth index for v to the smallest unused index
+            v.index = v.lowlink = index++;
+            stack.push(v);
+            v.onStack = true;
+
+            // Consider successors of v
+            for (var w of v.out) {
+                if (typeof w.index === 'undefined') {
+                    // Successor w has not yet been visited; recurse on it
+                    strongConnect(w);
+                    v.lowlink = Math.min(v.lowlink, w.lowlink);
+                } else if (w.onStack) {
+                    // Successor w is in stack S and hence in the current SCC
+                    v.lowlink = Math.min(v.lowlink, w.index);
                 }
             }
-            if (lowValue[v] === index[v]) {
-                var component = []
-                for (var i = S.length - 1; i >= 0; --i) {
-                    var w = S[i]
-                    active[w] = false
-                    component.push(w)
-                    if (w === v) {
-                        S.length = i
-                        break
-                    }
+
+            // If v is a root node, pop the stack and generate an SCC
+            if (v.lowlink === v.index) {
+                // start a new strongly connected component
+                var component = [];
+                while (stack.length) {
+                    w = stack.pop();
+                    w.onStack = false;
+                    //add w to current strongly connected component
+                    component.push(w);
+                    if (w === v) break;
                 }
-                components.push(component)
+                // output the current strongly connected component
+                components.push(component.map(v => v.id));
             }
         }
-
-        //Run strong connect starting from each vertex
-        for (var i = 0; i < numVertices; ++i) {
-            if (index[i] < 0) {
-                strongConnect(i)
-            }
+        for (var i = 0; i < numVertices; i++) {
+            nodes.push({id: i, out: []});
         }
-
-        return components
+        for (var e of edges) {
+            let v = nodes[la.getSourceIndex(e)],
+                w = nodes[la.getTargetIndex(e)];
+            v.out.push(w);
+        }
+        for (var v of nodes) if (typeof v.index === 'undefined') strongConnect(v);
+        return components;
     }
+
 }
