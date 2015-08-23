@@ -1,4 +1,4 @@
-module cola {
+module cola.vpsc {
     //Based on js_es:
     //
     //https://github.com/vadimg/js_bintrees

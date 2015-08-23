@@ -176,8 +176,8 @@ module cola.vpsc {
     }
 
     class Node {
-        prev: cola.RBTree<Node>;
-        next: cola.RBTree<Node>;
+        prev: cola.vpsc.RBTree<Node>;
+        next: RBTree<Node>;
 
         constructor(public v: Variable, public r: Rectangle, public pos: number) {
             this.prev = makeRBTree();
@@ -203,8 +203,8 @@ module cola.vpsc {
         return 0;
     }
 
-    function makeRBTree(): cola.RBTree<Node> {
-        return new cola.RBTree<Node>((a, b) => a.pos - b.pos);
+    function makeRBTree(): RBTree<Node> {
+        return new RBTree<Node>((a, b) => a.pos - b.pos);
     }
 
     interface RectAccessors {
@@ -213,7 +213,7 @@ module cola.vpsc {
         getClose: (r: Rectangle) => number;
         getSize: (r: Rectangle) => number;
         makeRect: (open: number, close: number, center: number, size: number) => Rectangle;
-        findNeighbours: (v: Node, scanline: cola.RBTree<Node>) => void;
+        findNeighbours: (v: Node, scanline: RBTree<Node>) => void;
     }
 
     var xRect: RectAccessors = {
@@ -319,7 +319,7 @@ module cola.vpsc {
         return cs;
     }
 
-    function findXNeighbours(v: Node, scanline: cola.RBTree<Node>): void {
+    function findXNeighbours(v: Node, scanline: RBTree<Node>): void {
         var f = (forward, reverse) => {
             var it = scanline.findIter(v);
             var u;
@@ -338,7 +338,7 @@ module cola.vpsc {
         f("prev", "next");
     }
 
-    function findYNeighbours(v: Node, scanline: cola.RBTree<Node>): void {
+    function findYNeighbours(v: Node, scanline: RBTree<Node>): void {
         var f = (forward, reverse) => {
             var u = scanline.findIter(v)[forward]();
             if (u !== null && u.r.overlapX(v.r) > 0) {
