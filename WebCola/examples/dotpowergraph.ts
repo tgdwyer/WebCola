@@ -12,7 +12,7 @@ module dotpowergraph {
     var color = d3.scale.category10<Number>();
 
     function makeSVG(addGridLines, mywidth, myheight) {
-        var svg = d3.select("#mysoloresults").append("svg")
+        var svg = d3.select("body").append("svg")
             .attr("width", mywidth)
             .attr("height", myheight);
         // define arrow markers for graph links
