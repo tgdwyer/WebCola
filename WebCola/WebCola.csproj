@@ -178,6 +178,7 @@
     <TypeScriptCompile Include="examples\tmdbgraph.ts" />
     <TypeScriptCompile Include="examples\dotpowergraph.ts" />
     <TypeScriptCompile Include="examples\vhybridize.ts" />
+    <TypeScriptCompile Include="src\batch.ts" />
     <TypeScriptCompile Include="src\layout.ts" />
     <TypeScriptCompile Include="src\d3adaptor.ts" />
     <TypeScriptCompile Include="src\geom.ts" />

@@ -712,7 +712,7 @@ var cola;
         vpsc.Solver = Solver;
     })(vpsc = cola.vpsc || (cola.vpsc = {}));
 })(cola || (cola = {}));
-var __extends = this.__extends || function (d, b) {
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
@@ -3952,6 +3952,70 @@ var cola;
         return new LayoutAdaptor(options);
     }
     cola.adaptor = adaptor;
+})(cola || (cola = {}));
+var cola;
+(function (cola) {
+    function powerGraphGridLayout(graph, size, grouppadding, margin, groupMargin) {
+        // compute power graph
+        var powerGraph;
+        cola.d3adaptor()
+            .avoidOverlaps(false)
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .powerGraphGroups(function (d) {
+            powerGraph = d;
+            powerGraph.groups.forEach(function (v) { return v.padding = grouppadding; });
+        });
+        // construct a flat graph with dummy nodes for the groups and edges connecting group dummy nodes to their children
+        // power edges attached to groups are replaced with edges connected to the corresponding group dummy node
+        var n = graph.nodes.length;
+        var edges = [];
+        var vs = graph.nodes.slice(0);
+        vs.forEach(function (v, i) { return v.index = i; });
+        powerGraph.groups.forEach(function (g) {
+            var sourceInd = g.index = g.id + n;
+            vs.push(g);
+            if (typeof g.leaves !== 'undefined')
+                g.leaves.forEach(function (v) { return edges.push({ source: sourceInd, target: v.index }); });
+            if (typeof g.groups !== 'undefined')
+                g.groups.forEach(function (gg) { return edges.push({ source: sourceInd, target: gg.id + n }); });
+        });
+        powerGraph.powerEdges.forEach(function (e) {
+            edges.push({ source: e.source.index, target: e.target.index });
+        });
+        // layout the flat graph with dummy nodes and edges
+        cola.d3adaptor()
+            .size(size)
+            .nodes(vs)
+            .links(edges)
+            .avoidOverlaps(false)
+            .linkDistance(30)
+            .symmetricDiffLinkLengths(5)
+            .convergenceThreshold(1e-4)
+            .start(100, 0, 0, 0, false);
+        // final layout taking node positions from above as starting positions
+        // subject to group containment constraints
+        // and then gridifying the layout
+        return {
+            cola: cola.d3adaptor()
+                .convergenceThreshold(1e-3)
+                .size(size)
+                .avoidOverlaps(true)
+                .nodes(graph.nodes)
+                .links(graph.links)
+                .groupCompactness(1e-4)
+                .linkDistance(30)
+                .symmetricDiffLinkLengths(5)
+                .powerGraphGroups(function (d) {
+                powerGraph = d;
+                powerGraph.groups.forEach(function (v) {
+                    v.padding = grouppadding;
+                });
+            }).start(50, 0, 100, 0, false),
+            powerGraph: powerGraph
+        };
+    }
+    cola.powerGraphGridLayout = powerGraphGridLayout;
 })(cola || (cola = {}));
 ///<reference path="../extern/d3.d.ts"/>
 ///<reference path="layout.ts"/>
