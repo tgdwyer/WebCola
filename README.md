@@ -1,7 +1,7 @@
 WebCola
 =======
 
-Javascript constraint based layout for high-quality graph visualization and exploration 
+JavaScript constraint based layout for high-quality graph visualization and exploration 
 using D3.js and other web-based graphics libraries.  
 [Homepage with examples](http://marvl.infotech.monash.edu/webcola)
 
@@ -28,17 +28,16 @@ Building
  - install [node.js](http://nodejs.org)
  - install grunt from the command line using npm (comes with node.js):
 
-> npm install -g grunt-cli
+        npm install -g grunt-cli
 
  - from the WebCola directory:
 
-> npm install grunt
-
-> npm install
+        npm install grunt
+        npm install
 
  - build, minify and test:
 
-> grunt
+        grunt
 
 This creates the cola.v3.min.js file in the WebCola directory, generates index.js for npm, and runs tests.
 
@@ -54,9 +53,10 @@ Running
 
 Install the Node.js http-server module:
 
-> npm install -g http-server
+    npm install -g http-server
 
 After installing http-server, we can serve out the example content in the WebCola directory.
-> http-server WebCola
+
+    http-server WebCola
 
 The default configuration of http-server will serve the exampes on [http://localhost:8080](http://localhost:8080).
