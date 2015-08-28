@@ -2120,8 +2120,9 @@ var cola;
          * @param x required position for node
          */
         Locks.prototype.add = function (id, x) {
-            if (isNaN(x[0]) || isNaN(x[1]))
-                debugger;
+            /* DEBUG
+                        if (isNaN(x[0]) || isNaN(x[1])) debugger;
+            DEBUG */
             this.locks[id] = x;
         };
         /**
@@ -2442,10 +2443,11 @@ var cola;
             this.computeDerivatives(x0);
             var alpha = this.computeStepSize(this.g);
             this.stepAndProject(x0, r, this.g, alpha);
-            for (var u = 0; u < this.n; ++u)
-                for (var i = 0; i < this.k; ++i)
-                    if (isNaN(r[i][u]))
-                        debugger;
+            /* DEBUG
+                        for (var u: number = 0; u < this.n; ++u)
+                            for (var i = 0; i < this.k; ++i)
+                                if (isNaN(r[i][u])) debugger;
+            DEBUG */
             if (this.project) {
                 this.matrixApply(function (i, j) { return _this.e[i][j] = x0[i][j] - r[i][j]; });
                 var beta = this.computeStepSize(this.e);
@@ -4349,13 +4351,18 @@ var cola;
         };
         // obtain routes for the specified edges, nicely nudged apart
         // warning: edge paths may be reversed such that common paths are ordered consistently within bundles!
-        GridRouter.prototype.routeEdges = function (edges, gap, source, target) {
+        // @param edges list of edges
+        // @param nudgeGap how much to space parallel edge segements
+        // @param source function to retrieve the index of the source node for a given edge
+        // @param target function to retrieve the index of the target node for a given edge
+        // @returns an array giving, for each edge, an array of segments, each segment a pair of points in an array
+        GridRouter.prototype.routeEdges = function (edges, nudgeGap, source, target) {
             var _this = this;
             var routePaths = edges.map(function (e) { return _this.route(source(e), target(e)); });
             var order = cola.GridRouter.orderEdges(routePaths);
             var routes = routePaths.map(function (e) { return cola.GridRouter.makeSegments(e); });
-            cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, gap);
-            cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, gap);
+            cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, nudgeGap);
+            cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, nudgeGap);
             cola.GridRouter.unreverseEdges(routes, routePaths);
             return routes;
         };

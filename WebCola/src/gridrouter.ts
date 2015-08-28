@@ -397,12 +397,17 @@ module cola {
 
         // obtain routes for the specified edges, nicely nudged apart
         // warning: edge paths may be reversed such that common paths are ordered consistently within bundles!
-        routeEdges<Edge>(edges: Edge[], gap: number, source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][][] {
+        // @param edges list of edges
+        // @param nudgeGap how much to space parallel edge segements
+        // @param source function to retrieve the index of the source node for a given edge
+        // @param target function to retrieve the index of the target node for a given edge
+        // @returns an array giving, for each edge, an array of segments, each segment a pair of points in an array
+        routeEdges<Edge>(edges: Edge[], nudgeGap: number, source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][][] {
             var routePaths = edges.map(e=> this.route(source(e), target(e)));
             var order = cola.GridRouter.orderEdges(routePaths);
             var routes = routePaths.map(function (e) { return cola.GridRouter.makeSegments(e); });
-            cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, gap);
-            cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, gap);
+            cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, nudgeGap);
+            cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, nudgeGap);
             cola.GridRouter.unreverseEdges(routes, routePaths);
             return routes;
         }

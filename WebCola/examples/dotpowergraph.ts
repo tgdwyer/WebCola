@@ -33,34 +33,8 @@ module dotpowergraph {
 
     function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
 
-    function route(nodes, groups, margin, groupMargin) {
-        nodes.forEach(d => {
-            d.routerNode = <any>{
-                name: d.name,
-                bounds: d.bounds.inflate(-margin)
-            };
-        });
-        groups.forEach(d => {
-            d.routerNode = <any>{
-                bounds: d.bounds.inflate(-groupMargin),
-                children: (typeof d.groups !== 'undefined' ? d.groups.map(c=> nodes.length + c.id) : [])
-                    .concat(typeof d.leaves !== 'undefined' ? d.leaves.map(c=> c.index) : [])
-            };
-        });
-        let gridRouterNodes = nodes.concat(groups).map((d, i) => {
-            d.routerNode.id = i;
-            return d.routerNode;
-        });
-        return new cola.GridRouter(gridRouterNodes, {
-            getChildren: (v: any) => v.children,
-            getBounds: v => v.bounds
-        }, margin - groupMargin);
-    }
-
     function gridify(svg, pgLayout, margin, groupMargin) {
-        pgLayout.cola.start(0, 0, 0, 10, false);
-        let gridrouter = route(pgLayout.cola.nodes(), pgLayout.cola.groups(), margin, groupMargin);
-        var routes = gridrouter.routeEdges<any>(pgLayout.powerGraph.powerEdges, 5, e=> e.source.routerNode.id, e=> e.target.routerNode.id);
+        var routes = cola.gridify(pgLayout, 5, margin, groupMargin);
         svg.selectAll('path').remove();
         routes.forEach(route => {
             var cornerradius = 5;

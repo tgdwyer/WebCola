@@ -1,4 +1,32 @@
 ﻿module cola {
+    export function gridify(pgLayout, nudgeGap, margin, groupMargin) {
+        pgLayout.cola.start(0, 0, 0, 10, false);
+        let gridrouter = route(pgLayout.cola.nodes(), pgLayout.cola.groups(), margin, groupMargin);
+        return gridrouter.routeEdges<any>(pgLayout.powerGraph.powerEdges, nudgeGap, e=> e.source.routerNode.id, e=> e.target.routerNode.id);
+    }
+    function route(nodes, groups, margin, groupMargin) {
+        nodes.forEach(d => {
+            d.routerNode = <any>{
+                name: d.name,
+                bounds: d.bounds.inflate(-margin)
+            };
+        });
+        groups.forEach(d => {
+            d.routerNode = <any>{
+                bounds: d.bounds.inflate(-groupMargin),
+                children: (typeof d.groups !== 'undefined' ? d.groups.map(c=> nodes.length + c.id) : [])
+                    .concat(typeof d.leaves !== 'undefined' ? d.leaves.map(c=> c.index) : [])
+            };
+        });
+        let gridRouterNodes = nodes.concat(groups).map((d, i) => {
+            d.routerNode.id = i;
+            return d.routerNode;
+        });
+        return new cola.GridRouter(gridRouterNodes, {
+            getChildren: (v: any) => v.children,
+            getBounds: v => v.bounds
+        }, margin - groupMargin);
+    }
     export function powerGraphGridLayout(
         graph: { nodes: Node[], links: Link<Node>[] },
         size: number[],
@@ -8,7 +36,8 @@
     {
         // compute power graph
         var powerGraph;
-        cola.d3adaptor()
+        graph.nodes.forEach((v,i) => (<any>v).index = i);
+        new cola.Layout()
             .avoidOverlaps(false)
             .nodes(graph.nodes)
             .links(graph.links)
@@ -36,7 +65,7 @@
         });
 
         // layout the flat graph with dummy nodes and edges
-        cola.d3adaptor()
+        new cola.Layout()
             .size(size)
             .nodes(vs)
             .links(edges)
@@ -50,7 +79,8 @@
         // subject to group containment constraints
         // and then gridifying the layout
         return {
-            cola: cola.d3adaptor()
+            cola:
+                new cola.Layout()
                 .convergenceThreshold(1e-3)
                 .size(size)
                 .avoidOverlaps(true)

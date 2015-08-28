@@ -93,7 +93,7 @@ declare module cola.vpsc {
         solve(): number;
     }
 }
-declare module cola {
+declare module cola.vpsc {
     class TreeBase {
         _root: any;
         size: any;
@@ -939,6 +939,16 @@ declare module cola {
      */
     function adaptor(options: any): LayoutAdaptor;
 }
+declare module cola {
+    function gridify(pgLayout: any, nudgeGap: any, margin: any, groupMargin: any): geom.Point[][][];
+    function powerGraphGridLayout(graph: {
+        nodes: Node[];
+        links: Link<Node>[];
+    }, size: number[], grouppadding: number, margin: number, groupMargin: number): {
+        cola: Layout;
+        powerGraph: any;
+    };
+}
 /// <reference path="../extern/d3.d.ts" />
 /// <reference path="layout.d.ts" />
 declare module cola {
@@ -1030,7 +1040,7 @@ declare module cola {
         static getSegmentSets(routes: any, x: any, y: any): any[];
         static nudgeSegs(x: string, y: string, routes: any, segments: any, leftOf: any, gap: number): void;
         static nudgeSegments(routes: any, x: string, y: string, leftOf: (e1: number, e2: number) => boolean, gap: number): void;
-        routeEdges<Edge>(edges: Edge[], gap: number, source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][][];
+        routeEdges<Edge>(edges: Edge[], nudgeGap: number, source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][][];
         static unreverseEdges(routes: any, routePaths: any): void;
         static angleBetween2Lines(line1: geom.Point[], line2: geom.Point[]): number;
         private static isLeft(a, b, c);

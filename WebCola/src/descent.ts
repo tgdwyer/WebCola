@@ -15,7 +15,9 @@ module cola {
          * @param x required position for node
          */
         add(id: number, x: number[]) {
+/* DEBUG
             if (isNaN(x[0]) || isNaN(x[1])) debugger;
+DEBUG */
             this.locks[id] = x;
         }
         /**
@@ -366,11 +368,11 @@ DEBUG */
             this.computeDerivatives(x0);
             var alpha = this.computeStepSize(this.g);
             this.stepAndProject(x0, r, this.g, alpha);
-
+/* DEBUG
             for (var u: number = 0; u < this.n; ++u)
                 for (var i = 0; i < this.k; ++i)
                     if (isNaN(r[i][u])) debugger;
-
+DEBUG */
             if (this.project) {
                 this.matrixApply((i, j) => this.e[i][j] = x0[i][j] - r[i][j]);
                 var beta = this.computeStepSize(this.e);
