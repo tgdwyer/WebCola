@@ -26,6 +26,7 @@
 ///<reference path="./src/rectangle.ts"/>
 ///<reference path="./src/shortestpaths.ts"/>
 ///<reference path="./src/vpsc.ts"/>
+///<reference path="./src/rbtree.ts"/>
 
 // Declare this a CommonJS environment. Environments such as Node, Webpack,
 // Browserify, and React Native define the module module as such:
@@ -52,5 +53,3 @@ declare var module: {
 // TypeScript's model is that the current context is the global context (i.e., window.cola
 // === cola), so `export = cola` is transpiled as a no-op.
 module.exports = cola;
-module.exports.RBTree = require("./src/rbtree");
-

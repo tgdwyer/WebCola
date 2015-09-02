@@ -4762,9 +4762,9 @@ var cola;
 ///<reference path="./src/rectangle.ts"/>
 ///<reference path="./src/shortestpaths.ts"/>
 ///<reference path="./src/vpsc.ts"/>
+///<reference path="./src/rbtree.ts"/>
 // Export cola as a CommonJS module. Note that we're bypassing TypeScript's external
 // module system here. Because internal modules were written with the browser in mind,
 // TypeScript's model is that the current context is the global context (i.e., window.cola
 // === cola), so `export = cola` is transpiled as a no-op.
 module.exports = cola;
-module.exports.RBTree = require("./src/rbtree");
