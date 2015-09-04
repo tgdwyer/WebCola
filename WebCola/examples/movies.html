@@ -17,6 +17,7 @@
 <body>
 <script src="../extern/jquery-1.10.2.min.js"></script>
 <script>
+    <a href="../index.html">cola.js home</a>
     function tmdbrequest(type, id, content, callback) {
         $.ajax("https://api.themoviedb.org/3/" + type + "/" + id + "/" + content + "?api_key=1bba0362f468d50d2ec27acff6d5e05a")
          .done(callback);

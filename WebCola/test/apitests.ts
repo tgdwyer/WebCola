@@ -161,7 +161,7 @@ test("Fixed nodes", () => {
         // locked nodes should be at their initial position
         for (var i = 0; i < nodes.length; i++) if (nodes[i].fixed)
             cola.Layout3D.dims.forEach((d, j) =>
-                ok(closeEnough(layout.result[j][i], nodes[i][d], 0.01), `nodes[${i}] locked in ${d}-axis at ${nodes[i][d]}`));
+                ok(closeEnough(layout.result[j][i], nodes[i][d], 1), `nodes[${i}] lock in ${d}-axis at ${nodes[i][d]}, actual=${layout.result[j][i]}`));
 
         const lengths = links.map(l=> layout.linkLength(l));
         let meanLength = lengths.reduce((s, l) => s + l, 0) / lengths.length;

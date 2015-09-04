@@ -2408,7 +2408,6 @@ var cola;
         // d: unconstrained descent vector
         // stepSize: amount to step along d
         Descent.prototype.stepAndProject = function (x0, r, d, stepSize) {
-            var _this = this;
             Descent.copy(x0, r);
             this.takeDescentStep(r[0], d[0], stepSize);
             if (this.project)
@@ -2419,13 +2418,14 @@ var cola;
             // todo: allow projection against constraints in higher dimensions
             for (var i = 2; i < this.k; i++)
                 this.takeDescentStep(r[i], d[i], stepSize);
-            if (!this.locks.isEmpty()) {
-                this.locks.apply(function (u, p) {
-                    for (var i = 0; i < _this.k; i++) {
-                        r[i][u] = p[i];
-                    }
-                });
-            }
+            // the following makes locks extra sticky... but hides the result of the projection from the consumer
+            //if (!this.locks.isEmpty()) {
+            //    this.locks.apply((u, p) => {
+            //        for (var i = 0; i < this.k; i++) {
+            //            r[i][u] = p[i];
+            //        }
+            //    });
+            //}
         };
         Descent.mApply = function (m, n, f) {
             var i = m;

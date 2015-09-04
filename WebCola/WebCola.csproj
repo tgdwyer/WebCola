@@ -36,6 +36,7 @@
     <Content Include="examples\gridifiedSmallGroups.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="examples\pageBoundsConstraints.png" />
     <Content Include="examples\statemachinepowergraph.html" />
     <Content Include="examples\pretrippowergraph.html" />
     <Content Include="examples\tetrisbugpowergraph.html" />

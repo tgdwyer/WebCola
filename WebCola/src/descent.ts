@@ -346,13 +346,14 @@ DEBUG */
             for (var i = 2; i < this.k; i++) 
                 this.takeDescentStep(r[i], d[i], stepSize);
 
-            if (!this.locks.isEmpty()) {
-                this.locks.apply((u, p) => {
-                    for (var i = 0; i < this.k; i++) {
-                        r[i][u] = p[i];
-                    }
-                });
-            }
+            // the following makes locks extra sticky... but hides the result of the projection from the consumer
+            //if (!this.locks.isEmpty()) {
+            //    this.locks.apply((u, p) => {
+            //        for (var i = 0; i < this.k; i++) {
+            //            r[i][u] = p[i];
+            //        }
+            //    });
+            //}
         }
 
         private static mApply(m: number, n: number, f: (i: number, j: number) => any) {
