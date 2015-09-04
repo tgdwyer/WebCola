@@ -47,6 +47,7 @@
     <Content Include="examples\ariel.html" />
     <Content Include="examples\tetrisbug.html" />
     <Content Include="examples\adam.html" />
+    <Content Include="examples\pageBoundsConstraints.html" />
     <Content Include="examples\unix.html" />
     <Content Include="examples\unix.png" />
     <Content Include="examples\smallgroups.html">
