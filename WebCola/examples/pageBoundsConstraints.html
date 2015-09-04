@@ -109,7 +109,10 @@ body {
 
     hljs.initHighlightingOnLoad();
 </script>
-    <p>Example showing how we can setup constraints to keep the graph nodes inside a given bounding box.
+    <a href="https://github.com/tgdwyer/WebCola/blob/master/WebCola/examples/pageBoundsConstraints.html">Source</a>
+    <p>Example showing how we can setup constraints to keep the graph nodes inside a given bounding box
+     (as per <a href="http://www.researchgate.net/publication/221557356_Dunnart_A_Constraint-Based_Network_Diagram_Authoring_Tool">this paper</a>).  
+    Try dragging a node outside the box: you'll see the bounding box stretch to enclose it, and then snap back on release.  
     </p>
     <p>
         The idea is, we create a pair of dummy nodes: one for the top left corner of the box, and one for the bottom right.
@@ -152,7 +155,7 @@ body {
         .call(cola.drag);
 </code></pre>
     <p>
-        To keep the visuals for the page bounds up-to-date, i.e. in case the user drags a node outside the bounds (try it!), inside the tick handler we do the following:
+        To keep the visuals for the page bounds up-to-date, i.e. in case the user drags a node outside the bounds, inside the tick handler we do the following:
     </p>
 <pre><code>page.attr(pageBounds = {
     x: topLeft.x,
