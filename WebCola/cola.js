@@ -83,15 +83,11 @@ var cola;
                 center.y /= g.array.length;
                 // calculate current top left corner:
                 var corner = { x: center.x - g.width / 2, y: center.y - g.height / 2 };
-                var offset = { x: g.x - corner.x, y: g.y - corner.y };
+                var offset = { x: g.x - corner.x + svg_width / 2 - real_width / 2, y: g.y - corner.y + svg_height / 2 - real_height / 2 };
                 // put nodes:
                 g.array.forEach(function (node) {
-                    node.x = node.x + offset.x + svg_width / 2 - real_width / 2;
-                    node.y = node.y + offset.y + svg_height / 2 - real_height / 2;
-                    if (node.bounds) {
-                        node.bounds.setXCentre(node.x);
-                        node.bounds.setYCentre(node.y);
-                    }
+                    node.x += offset.x;
+                    node.y += offset.y;
                 });
             });
         }
@@ -3487,6 +3483,7 @@ var cola;
             this.trigger({ type: EventType.tick, alpha: this._alpha, stress: this._lastStress });
             return false;
         };
+        // copy positions out of descent instance into each of the nodes' center coords
         Layout.prototype.updateNodePositions = function () {
             var x = this._descent.x[0], y = this._descent.x[1];
             var o, i = this._nodes.length;
@@ -3727,6 +3724,12 @@ var cola;
                 // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
                 // otherwise 2. (
                 G = cola.Descent.createSquareMatrix(N, function () { return 2; });
+                this._links.forEach(function (l) {
+                    if (typeof l.source == "number")
+                        l.source = _this._nodes[l.source];
+                    if (typeof l.target == "number")
+                        l.target = _this._nodes[l.target];
+                });
                 this._links.forEach(function (e) {
                     var u = Layout.getSourceIndex(e), v = Layout.getTargetIndex(e);
                     G[u][v] = G[v][u] = 1;
@@ -3787,6 +3790,7 @@ var cola;
             if (curConstraints.length > 0)
                 this._descent.project = new cola.vpsc.Projection(this._nodes, this._groups, this._rootGroup, curConstraints).projectFunctions();
             this._descent.run(initialUserConstraintIterations);
+            this.separateOverlappingComponents(w, h);
             // subsequent iterations will apply all constraints
             this.avoidOverlaps(ao);
             if (ao) {
@@ -3810,22 +3814,27 @@ var cola;
                 this._descent.G = G0;
                 this._descent.run(gridSnapIterations);
             }
-            this._links.forEach(function (l) {
-                if (typeof l.source == "number")
-                    l.source = _this._nodes[l.source];
-                if (typeof l.target == "number")
-                    l.target = _this._nodes[l.target];
-            });
             this.updateNodePositions();
+            this.separateOverlappingComponents(w, h);
+            return keepRunning ? this.resume() : this;
+        };
+        // recalculate nodes position for disconnected graphs
+        Layout.prototype.separateOverlappingComponents = function (width, height) {
+            var _this = this;
             // recalculate nodes position for disconnected graphs
             if (!this._distanceMatrix && this._handleDisconnected) {
+                var x = this._descent.x[0], y = this._descent.x[1];
+                this._nodes.forEach(function (v, i) { v.x = x[i], v.y = y[i]; });
                 var graphs = cola.separateGraphs(this._nodes, this._links);
-                cola.applyPacking(graphs, w, h, this._defaultNodeSize);
+                cola.applyPacking(graphs, width, height, this._defaultNodeSize);
                 this._nodes.forEach(function (v, i) {
                     _this._descent.x[0][i] = v.x, _this._descent.x[1][i] = v.y;
+                    if (v.bounds) {
+                        v.bounds.setXCentre(v.x);
+                        v.bounds.setYCentre(v.y);
+                    }
                 });
             }
-            return keepRunning ? this.resume() : this;
         };
         Layout.prototype.resume = function () {
             return this.alpha(0.1);

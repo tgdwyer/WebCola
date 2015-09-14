@@ -133,26 +133,22 @@ asyncTest("edge lengths", function () {
 
 test("group", function () {
     var d3cola = cola.d3adaptor();
-
-    var length = function (l) {
-        return d3cola.linkId(l) == "2-3" ? 2 : 1;
-    }
     var nodes = [];
-    var u = { x: -5, y: 0, width: 10, height: 10 };
-    var v = { x: 5, y: 0, width: 10, height: 10 };
+    var u = { x: -5, y: 0, width: 10, height: 20 };
+    var v = { x: 5, y: 0, width: 10, height: 20 };
     var g = { padding: 10, leaves: [0] };
 
     d3cola
-        .linkDistance(length)
         .avoidOverlaps(true)
+        .handleDisconnected(false)
         .nodes([u,v])
         .groups([g]);
     d3cola.start(10, 10, 10);
 
     ok(approxEquals(g.bounds.width(), 30, 0.1));
-    ok(approxEquals(g.bounds.height(), 30, 0.1));
+    ok(approxEquals(g.bounds.height(), 40, 0.1));
 
-    ok(approxEquals(Math.abs(u.y - v.y), 20, 0.1));
+    ok(approxEquals(Math.abs(u.x - v.x), 20, 0.1));
 });
 
 asyncTest("equality constraints", function () {

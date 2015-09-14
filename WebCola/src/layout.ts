@@ -495,7 +495,11 @@ module cola {
 
                 // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
                 // otherwise 2. (
-                G = cola.Descent.createSquareMatrix(N,() => 2);
+                G = cola.Descent.createSquareMatrix(N, () => 2);
+                this._links.forEach(l => {
+                    if (typeof l.source == "number") l.source = this._nodes[l.source];
+                    if (typeof l.target == "number") l.target = this._nodes[l.target];
+                });
                 this._links.forEach(e => {
                     var u = Layout.getSourceIndex(e), v = Layout.getTargetIndex(e);
                     G[u][v] = G[v][u] = 1;
@@ -564,6 +568,7 @@ module cola {
             // apply initialIterations with user constraints but no nonoverlap constraints
             if (curConstraints.length > 0) this._descent.project = new cola.vpsc.Projection(this._nodes, this._groups, this._rootGroup, curConstraints).projectFunctions();
             this._descent.run(initialUserConstraintIterations);
+            this.separateOverlappingComponents(w, h);
 
             // subsequent iterations will apply all constraints
             this.avoidOverlaps(ao);
@@ -590,22 +595,27 @@ module cola {
                 this._descent.run(gridSnapIterations);
             }
 
-            this._links.forEach(l => {
-                if (typeof l.source == "number") l.source = this._nodes[l.source];
-                if (typeof l.target == "number") l.target = this._nodes[l.target];
-            });
             this.updateNodePositions();
-
+            this.separateOverlappingComponents(w, h);
+            return keepRunning ? this.resume() : this;
+        }
+        
+        // recalculate nodes position for disconnected graphs
+        private separateOverlappingComponents(width: number, height: number): void {
             // recalculate nodes position for disconnected graphs
             if (!this._distanceMatrix && this._handleDisconnected) {
+                let x = this._descent.x[0], y = this._descent.x[1];
+                this._nodes.forEach(function (v, i) { v.x = x[i], v.y = y[i]; });
                 var graphs = cola.separateGraphs(this._nodes, this._links);
-                cola.applyPacking(graphs, w, h, this._defaultNodeSize);
-
+                cola.applyPacking(graphs, width, height, this._defaultNodeSize);
                 this._nodes.forEach((v, i) => {
                     this._descent.x[0][i] = v.x, this._descent.x[1][i] = v.y;
+                    if (v.bounds) {
+                        v.bounds.setXCentre(v.x);
+                        v.bounds.setYCentre(v.y);
+                    }
                 });
             }
-            return keepRunning ? this.resume() : this;
         }
 
         resume(): Layout {
