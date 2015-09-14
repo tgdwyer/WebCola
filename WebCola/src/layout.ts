@@ -139,15 +139,21 @@ module cola {
             }
             this._lastStress = s1;
 
+            this.updateNodePositions();
+
+            this.trigger({ type: EventType.tick, alpha: this._alpha, stress: this._lastStress });
+            return false;
+        }
+
+        // copy positions out of descent instance into each of the nodes' center coords
+        private updateNodePositions(): void {
             const x = this._descent.x[0], y = this._descent.x[1];
-            for (i = 0; i < n; ++i) {
+            let o, i = this._nodes.length;
+            while (i--) {
                 o = this._nodes[i];
                 o.x = x[i];
                 o.y = y[i];
             }
-
-            this.trigger({ type: EventType.tick, alpha: this._alpha, stress: this._lastStress });
-            return false;
         }
 
         /**
@@ -588,9 +594,7 @@ module cola {
                 if (typeof l.source == "number") l.source = this._nodes[l.source];
                 if (typeof l.target == "number") l.target = this._nodes[l.target];
             });
-            this._nodes.forEach(function (v, i) {
-                v.x = x[i], v.y = y[i];
-            });
+            this.updateNodePositions();
 
             // recalculate nodes position for disconnected graphs
             if (!this._distanceMatrix && this._handleDisconnected) {

@@ -88,6 +88,10 @@ var cola;
                 g.array.forEach(function (node) {
                     node.x = node.x + offset.x + svg_width / 2 - real_width / 2;
                     node.y = node.y + offset.y + svg_height / 2 - real_height / 2;
+                    if (node.bounds) {
+                        node.bounds.setXCentre(node.x);
+                        node.bounds.setYCentre(node.y);
+                    }
                 });
             });
         }
@@ -3479,14 +3483,18 @@ var cola;
                 this._alpha = s1; //Math.abs(Math.abs(this._lastStress / s1) - 1);
             }
             this._lastStress = s1;
+            this.updateNodePositions();
+            this.trigger({ type: EventType.tick, alpha: this._alpha, stress: this._lastStress });
+            return false;
+        };
+        Layout.prototype.updateNodePositions = function () {
             var x = this._descent.x[0], y = this._descent.x[1];
-            for (i = 0; i < n; ++i) {
+            var o, i = this._nodes.length;
+            while (i--) {
                 o = this._nodes[i];
                 o.x = x[i];
                 o.y = y[i];
             }
-            this.trigger({ type: EventType.tick, alpha: this._alpha, stress: this._lastStress });
-            return false;
         };
         Layout.prototype.nodes = function (v) {
             if (!v) {
@@ -3808,9 +3816,7 @@ var cola;
                 if (typeof l.target == "number")
                     l.target = _this._nodes[l.target];
             });
-            this._nodes.forEach(function (v, i) {
-                v.x = x[i], v.y = y[i];
-            });
+            this.updateNodePositions();
             // recalculate nodes position for disconnected graphs
             if (!this._distanceMatrix && this._handleDisconnected) {
                 var graphs = cola.separateGraphs(this._nodes, this._links);

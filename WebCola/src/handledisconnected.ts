@@ -125,6 +125,10 @@
                 g.array.forEach(function (node) {
                     node.x = node.x + offset.x + svg_width / 2 - real_width / 2;
                     node.y = node.y + offset.y + svg_height / 2 - real_height / 2;
+                    if (node.bounds) {
+                        node.bounds.setXCentre(node.x);
+                        node.bounds.setYCentre(node.y);
+                    }
                 });
             });
         }
