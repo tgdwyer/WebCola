@@ -1475,9 +1475,7 @@ var cola;
             var solver = new vpsc.Solver(vs, cs);
             solver.solve();
             vs.forEach(function (v, i) { return rs[i].setXCentre(v.position()); });
-            vs = rs.map(function (r) {
-                return new vpsc.Variable(r.cy());
-            });
+            vs = rs.map(function (r) { return new vpsc.Variable(r.cy()); });
             cs = vpsc.generateYConstraints(rs, vs);
             solver = new vpsc.Solver(vs, cs);
             solver.solve();
@@ -1570,7 +1568,7 @@ var cola;
             Projection.prototype.setupVariablesAndBounds = function (x0, y0, desired, getDesired) {
                 this.nodes.forEach(function (v, i) {
                     if (v.fixed) {
-                        v.variable.weight = 1000;
+                        v.variable.weight = v.fixedWeight ? v.fixedWeight : 1000;
                         desired[i] = getDesired(v);
                     }
                     else {
@@ -3402,7 +3400,6 @@ var cola;
             this._running = false;
             this._nodes = [];
             this._groups = [];
-            this._variables = [];
             this._rootGroup = null;
             this._links = [];
             this._constraints = [];
@@ -3700,8 +3697,6 @@ var cola;
             if (this._linkLengthCalculator)
                 this._linkLengthCalculator();
             var x = new Array(N), y = new Array(N);
-            this._variables = new Array(N);
-            var makeVariable = function (i, w) { return _this._variables[i] = new cola.vpsc.IndexedVariable(i, w); };
             var G = null;
             var ao = this._avoidOverlaps;
             this._nodes.forEach(function (v, i) {

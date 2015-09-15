@@ -62,7 +62,6 @@ module cola {
         private _running = false;
         private _nodes = [];
         private _groups = [];
-        private _variables = [];
         private _rootGroup = null;
         private _links = [];
         private _constraints = [];
@@ -467,9 +466,6 @@ module cola {
             if (this._linkLengthCalculator) this._linkLengthCalculator();
 
             var x = new Array(N), y = new Array(N);
-            this._variables = new Array(N);
-
-            var makeVariable = (i, w) => this._variables[i] = new vpsc.IndexedVariable(i, w);
 
             var G = null;
 

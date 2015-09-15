@@ -372,9 +372,7 @@ module cola.vpsc {
         var solver = new vpsc.Solver(vs, cs);
         solver.solve();
         vs.forEach((v, i) => rs[i].setXCentre(v.position()));
-        vs = rs.map(function (r) {
-            return new vpsc.Variable(r.cy());
-        });
+        vs = rs.map(r=> new vpsc.Variable(r.cy()));
         cs = vpsc.generateYConstraints(rs, vs);
         solver = new vpsc.Solver(vs, cs);
         solver.solve();
@@ -383,6 +381,7 @@ module cola.vpsc {
 
     export interface GraphNode extends Leaf {
         fixed: boolean;
+        fixedWeight?: number;
         width: number;
         height: number;
         x: number;
@@ -481,7 +480,7 @@ module cola.vpsc {
         private setupVariablesAndBounds(x0: number[], y0: number[], desired: number[], getDesired: (v: GraphNode) => number) {
             this.nodes.forEach((v, i) => {
                 if (v.fixed) {
-                    v.variable.weight = 1000;
+                    v.variable.weight = v.fixedWeight ? v.fixedWeight : 1000;
                     desired[i] = getDesired(v);
                 } else {
                     v.variable.weight = 1;
