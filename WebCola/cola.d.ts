@@ -725,6 +725,7 @@ declare module cola {
         source: NodeType;
         target: NodeType;
         length?: number;
+        weight?: number;
     }
     /**
      * Main interface to cola layout.
