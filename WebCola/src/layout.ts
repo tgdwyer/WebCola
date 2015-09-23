@@ -43,11 +43,12 @@ module cola {
         source: NodeType;
         target: NodeType;
 
-        // ideal length the layout engine should try to achieve for this link
+        // ideal length the layout should try to achieve for this link
         length?: number;
 
         // how hard we should try to satisfy this link's ideal length
-        // 0 < weight <= 1
+        // must be in the range: 0 < weight <= 1
+        // if unspecified 1 is the default
         weight?: number;
     }
     
