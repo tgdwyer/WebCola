@@ -136,6 +136,10 @@ declare module cola.vpsc {
 /// <reference path="vpsc.d.ts" />
 /// <reference path="rbtree.d.ts" />
 declare module cola.vpsc {
+    interface Point {
+        x: number;
+        y: number;
+    }
     interface Leaf {
         bounds: Rectangle;
         variable: Variable;
@@ -175,10 +179,7 @@ declare module cola.vpsc {
          * @param y2 number second y coord of line
          * @return any intersection points found
          */
-        lineIntersections(x1: number, y1: number, x2: number, y2: number): Array<{
-            x: number;
-            y: number;
-        }>;
+        lineIntersections(x1: number, y1: number, x2: number, y2: number): Array<Point>;
         /**
          * return any intersection points between a line extending from the centre of this rectangle to the given point,
          *  and the sides of this rectangle
@@ -187,28 +188,20 @@ declare module cola.vpsc {
          * @param y2 number second y coord of line
          * @return any intersection points found
          */
-        rayIntersection(x2: number, y2: number): {
-            x: number;
-            y: number;
-        };
-        vertices(): {
-            x: number;
-            y: number;
-        }[];
-        static lineIntersection(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number): {
-            x: number;
-            y: number;
-        };
+        rayIntersection(x2: number, y2: number): Point;
+        vertices(): Point[];
+        static lineIntersection(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number): Point;
         inflate(pad: number): Rectangle;
     }
-    function makeEdgeBetween(link: any, source: Rectangle, target: Rectangle, ah: number): void;
+    function makeEdgeBetween(source: Rectangle, target: Rectangle, ah: number): {
+        sourceIntersection: Point;
+        targetIntersection: Point;
+        arrowStart: Point;
+    };
     function makeEdgeTo(s: {
         x: number;
         y: number;
-    }, target: Rectangle, ah: number): {
-        x: number;
-        y: number;
-    };
+    }, target: Rectangle, ah: number): Point;
     function generateXConstraints(rs: Rectangle[], vars: Variable[]): Constraint[];
     function generateYConstraints(rs: Rectangle[], vars: Variable[]): Constraint[];
     function generateXGroupConstraints(root: Group): Constraint[];
@@ -216,6 +209,7 @@ declare module cola.vpsc {
     function removeOverlaps(rs: Rectangle[]): void;
     interface GraphNode extends Leaf {
         fixed: boolean;
+        fixedWeight?: number;
         width: number;
         height: number;
         x: number;
@@ -749,7 +743,6 @@ declare module cola {
         private _running;
         private _nodes;
         private _groups;
-        private _variables;
         private _rootGroup;
         private _links;
         private _constraints;
@@ -767,6 +760,7 @@ declare module cola {
          * iterate the layout.  Returns true when layout converged.
          */
         protected tick(): boolean;
+        private updateNodePositions();
         /**
          * the list of nodes.
          * If nodes has not been set, but links has, then we instantiate a nodes list here, of the correct size,
@@ -908,6 +902,7 @@ declare module cola {
          * @param [keepRunning=true] keep iterating asynchronously via the tick method
          */
         start(initialUnconstrainedIterations?: number, initialUserConstraintIterations?: number, initialAllConstraintsIterations?: number, gridSnapIterations?: number, keepRunning?: boolean): Layout;
+        private separateOverlappingComponents(width, height);
         resume(): Layout;
         stop(): Layout;
         prepareEdgeRouting(nodeMargin?: number): void;

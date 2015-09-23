@@ -1,7 +1,10 @@
 ///<reference path="vpsc.ts"/>
 ///<reference path="rbtree.ts"/>
 module cola.vpsc {
-    type Point = { x: number; y: number };
+    export interface Point {
+        x: number;
+        y: number
+    }
 
     export interface Leaf {
         bounds: Rectangle;
