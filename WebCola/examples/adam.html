@@ -44,7 +44,7 @@
         function graph(edgeType) {
             var d3cola = cola.d3adaptor().convergenceThreshold(0.1);
 
-            var width = 350, height = 550;
+            var width = 1600, height = 800;
             var heading = d3.select("body").append("h1");
             heading.text(edgeType);
             var outer = d3.select("body").append("svg")
@@ -150,9 +150,8 @@
                         .attr("height", function (d) { return d.innerBounds.height(); });
 
                     link.attr("d", function (d) {
-                        cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
-                        var lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
-                        return lineFunction(lineData);
+                        var route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                        return lineFunction([route.sourceIntersection, route.arrowStart]);
                     });
                     if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
 

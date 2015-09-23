@@ -7,7 +7,6 @@ var width = 700,
     height = 350;
 
 var color = d3.scale.category20();
-var makeEdgeBetween;
 var graphfile = "graphdata/n7e23.json";
 
 
@@ -116,14 +115,14 @@ function flatGraph() {
                 d => d.innerBounds = d.bounds.inflate(-margin)
                 );
             link.each(function (d) {
-                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE()) this.parentNode.insertBefore(this, this);
             });
 
-            link.attr("x1", d => d.sourceIntersection.x)
-                .attr("y1", d => d.sourceIntersection.y)
-                .attr("x2", d => d.arrowStart.x)
-                .attr("y2", d => d.arrowStart.y);
+            link.attr("x1", d => d.route.sourceIntersection.x)
+                .attr("y1", d => d.route.sourceIntersection.y)
+                .attr("x2", d => d.route.arrowStart.x)
+                .attr("y2", d => d.route.arrowStart.y);
 
             node.attr("x", d => d.innerBounds.x)
                 .attr("y", d => d.innerBounds.y)
@@ -218,14 +217,14 @@ function powerGraph() {
                     });
                 group.each(d => d.innerBounds = d.bounds.inflate(-margin));
                 link.each(function (d) {
-                    cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                    d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                     if (isIE()) this.parentNode.insertBefore(this, this);
                 });
 
-                link.attr("x1", d => d.sourceIntersection.x)
-                    .attr("y1", d => d.sourceIntersection.y)
-                    .attr("x2", d => d.arrowStart.x)
-                    .attr("y2", d => d.arrowStart.y);
+                link.attr("x1", d => d.route.sourceIntersection.x)
+                    .attr("y1", d => d.route.sourceIntersection.y)
+                    .attr("x2", d => d.route.arrowStart.x)
+                    .attr("y2", d => d.route.arrowStart.y);
 
                 node.attr("x", d => d.innerBounds.x)
                     .attr("y", d => d.innerBounds.y)
@@ -262,7 +261,7 @@ function powerGraph() {
             modules.edges.push({ source: getId(e.source, N), target: getId(e.target, N) });
         });
         if (document.URL.toLowerCase().indexOf('marvl.infotech.monash.edu') >= 0) {
-            $.ajax({
+            $.ajax(<JQueryAjaxSettings>{
                 type: 'post',
                 url: 'http://marvl.infotech.monash.edu/cgi-bin/test.py',
                 data: JSON.stringify(modules),
@@ -349,15 +348,15 @@ function powerGraph2() {
             node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
             group.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
             link.each(function (d) {
-                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE()) this.parentNode.insertBefore(this, this);
 
             });
 
-            link.attr("x1", function (d) { return d.sourceIntersection.x; })
-                .attr("y1", function (d) { return d.sourceIntersection.y; })
-                .attr("x2", function (d) { return d.arrowStart.x; })
-                .attr("y2", function (d) { return d.arrowStart.y; });
+            link.attr("x1", function (d) { return d.route.sourceIntersection.x; })
+                .attr("y1", function (d) { return d.route.sourceIntersection.y; })
+                .attr("x2", function (d) { return d.route.arrowStart.x; })
+                .attr("y2", function (d) { return d.route.arrowStart.y; });
 
             node.attr("x", function (d) { return d.innerBounds.x; })
                 .attr("y", function (d) { return d.innerBounds.y; })

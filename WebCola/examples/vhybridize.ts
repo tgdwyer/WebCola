@@ -95,12 +95,19 @@ function flatGraph() {
         d3cola.on("tick", function () {
             node.each(function (d) { return d.innerBounds = d.bounds.inflate(-margin); });
             link.each(function (d) {
-                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE())
                     this.parentNode.insertBefore(this, this);
-            });
-            link.attr("x1", function (d) { return d.sourceIntersection.x; }).attr("y1", function (d) { return d.sourceIntersection.y; }).attr("x2", function (d) { return d.arrowStart.x; }).attr("y2", function (d) { return d.arrowStart.y; });
-            node.attr("x", function (d) { return d.innerBounds.x; }).attr("y", function (d) { return d.innerBounds.y; }).attr("width", function (d) { return d.innerBounds.width(); }).attr("height", function (d) { return d.innerBounds.height(); });
+            })
+                .attr("x1", function (d) { return d.route.sourceIntersection.x; })
+                .attr("y1", function (d) { return d.route.sourceIntersection.y; })
+                .attr("x2", function (d) { return d.route.arrowStart.x; })
+                .attr("y2", function (d) { return d.route.arrowStart.y; });
+
+            node.attr("x", function (d) { return d.innerBounds.x; })
+                .attr("y", function (d) { return d.innerBounds.y; })
+                .attr("width", function (d) { return d.innerBounds.width(); })
+                .attr("height", function (d) { return d.innerBounds.height(); });
             label.attr("x", function (d) { return d.x; }).attr("y", function (d) {
                 var h = this.getBBox().height;
                 return d.y + h / 3.5;
@@ -610,15 +617,15 @@ function powerGraph2(callback) {
             node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
             group.each(function (d) { d.innerBounds = d.bounds.inflate(-20) });
             link.each(function (d) {
-                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE()) this.parentNode.insertBefore(this, this);
 
             });
 
-            link.attr("x1", function (d) { return d.sourceIntersection.x; })
-                .attr("y1", function (d) { return d.sourceIntersection.y; })
-                .attr("x2", function (d) { return d.targetIntersection.x; })
-                .attr("y2", function (d) { return d.targetIntersection.y; });
+            link.attr("x1", function (d) { return d.route.sourceIntersection.x; })
+                .attr("y1", function (d) { return d.route.sourceIntersection.y; })
+                .attr("x2", function (d) { return d.route.targetIntersection.x; })
+                .attr("y2", function (d) { return d.route.targetIntersection.y; });
 
             node.attr("x", function (d) { return d.innerBounds.x; })
                 .attr("y", function (d) { return d.innerBounds.y; })

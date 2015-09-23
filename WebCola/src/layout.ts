@@ -649,12 +649,12 @@ module cola {
             if (typeof draw !== 'undefined') {
                 draw(vg2);
             }
-            var sourceInd = e => e.source.index, targetInd = e => e.target.index, length = e => e.length(),
+            var sourceInd = e => e.source.id, targetInd = e => e.target.id, length = e => e.length(),
                 spCalc = new cola.shortestpaths.Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length),
                 shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
             if (shortestPath.length === 1 || shortestPath.length === vg2.V.length) {
-                cola.vpsc.makeEdgeBetween(edge, edge.source.innerBounds, edge.target.innerBounds, 5);
-                lineData = [{ x: edge.sourceIntersection.x, y: edge.sourceIntersection.y }, { x: edge.arrowStart.x, y: edge.arrowStart.y }];
+                let route = cola.vpsc.makeEdgeBetween(edge.source.innerBounds, edge.target.innerBounds, 5);
+                lineData = [route.sourceIntersection, route.arrowStart];
             } else {
                 var n = shortestPath.length - 2,
                     p = vg2.V[shortestPath[n]].p,

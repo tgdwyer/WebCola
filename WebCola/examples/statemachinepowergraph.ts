@@ -81,14 +81,14 @@ module statemachine {
                     d => d.innerBounds = d.bounds.inflate(-margin)
                     );
                 link.each(function (d) {
-                    cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                    d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                     if (isIE()) this.parentNode.insertBefore(this, this);
                 });
 
-                link.attr("x1", d => d.sourceIntersection.x)
-                    .attr("y1", d => d.sourceIntersection.y)
-                    .attr("x2", d => d.arrowStart.x)
-                    .attr("y2", d => d.arrowStart.y);
+                link.attr("x1", d => d.route.sourceIntersection.x)
+                    .attr("y1", d => d.route.sourceIntersection.y)
+                    .attr("x2", d => d.route.arrowStart.x)
+                    .attr("y2", d => d.route.arrowStart.y);
 
                 node.attr("x", d => d.innerBounds.x)
                     .attr("y", d => d.innerBounds.y)
@@ -320,7 +320,7 @@ module statemachine {
                 modules.edges.push({ source: getId(e.source, N), target: getId(e.target, N) });
             });
             if (document.URL.toLowerCase().indexOf('marvl.infotech.monash.edu') >= 0) {
-                $.ajax({
+                $.ajax(<JQueryAjaxSettings>{
                     type: 'post',
                     url: 'http://marvl.infotech.monash.edu/cgi-bin/test.py',
                     data: JSON.stringify(modules),

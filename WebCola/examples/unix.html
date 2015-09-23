@@ -40,7 +40,9 @@
     <h2>Directed graph flow layout and shortest-path edge routing</h2>
     <script src="../extern/graphlib-dot.min.js"> </script> 
     <script src="../extern/d3.v3.js"></script>
-    <script src="../cola.min.js"></script>
+    <script src="../cola.js"></script>
+    <script src="../src/layout.js"></script>
+    <script src="../src/shortestpaths.js"></script>
     <link rel="stylesheet" href="../extern/hljs/styles/github.css">
     <script src="../extern/hljs/highlight.pack.js"></script>
     <script>
@@ -164,9 +166,8 @@
                     .attr("height", function (d) { return d.innerBounds.height(); });
 
                 link.attr("d", function (d) {
-                    cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
-                    var lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
-                    return lineFunction(lineData);
+                    var route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                    return lineFunction([route.sourceIntersection, route.arrowStart]);
                 });
                 if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
 

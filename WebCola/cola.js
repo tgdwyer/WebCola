@@ -1280,17 +1280,13 @@ var cola;
             return Rectangle;
         })();
         vpsc.Rectangle = Rectangle;
-        function makeEdgeBetween(link, source, target, ah) {
-            var si = source.rayIntersection(target.cx(), target.cy());
-            if (!si)
-                si = { x: source.cx(), y: source.cy() };
-            var ti = target.rayIntersection(source.cx(), source.cy());
-            if (!ti)
-                ti = { x: target.cx(), y: target.cy() };
-            var dx = ti.x - si.x, dy = ti.y - si.y, l = Math.sqrt(dx * dx + dy * dy), al = l - ah;
-            link.sourceIntersection = si;
-            link.targetIntersection = ti;
-            link.arrowStart = { x: si.x + al * dx / l, y: si.y + al * dy / l };
+        function makeEdgeBetween(source, target, ah) {
+            var si = source.rayIntersection(target.cx(), target.cy()) || { x: source.cx(), y: source.cy() }, ti = target.rayIntersection(source.cx(), source.cy()) || { x: target.cx(), y: target.cy() }, dx = ti.x - si.x, dy = ti.y - si.y, l = Math.sqrt(dx * dx + dy * dy), al = l - ah;
+            return {
+                sourceIntersection: si,
+                targetIntersection: ti,
+                arrowStart: { x: si.x + al * dx / l, y: si.y + al * dy / l }
+            };
         }
         vpsc.makeEdgeBetween = makeEdgeBetween;
         function makeEdgeTo(s, target, ah) {
@@ -3859,10 +3855,10 @@ var cola;
             if (typeof draw !== 'undefined') {
                 draw(vg2);
             }
-            var sourceInd = function (e) { return e.source.index; }, targetInd = function (e) { return e.target.index; }, length = function (e) { return e.length(); }, spCalc = new cola.shortestpaths.Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length), shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
+            var sourceInd = function (e) { return e.source.id; }, targetInd = function (e) { return e.target.id; }, length = function (e) { return e.length(); }, spCalc = new cola.shortestpaths.Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length), shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
             if (shortestPath.length === 1 || shortestPath.length === vg2.V.length) {
-                cola.vpsc.makeEdgeBetween(edge, edge.source.innerBounds, edge.target.innerBounds, 5);
-                lineData = [{ x: edge.sourceIntersection.x, y: edge.sourceIntersection.y }, { x: edge.arrowStart.x, y: edge.arrowStart.y }];
+                var route = cola.vpsc.makeEdgeBetween(edge.source.innerBounds, edge.target.innerBounds, 5);
+                lineData = [route.sourceIntersection, route.arrowStart];
             }
             else {
                 var n = shortestPath.length - 2, p = vg2.V[shortestPath[n]].p, q = vg2.V[shortestPath[0]].p, lineData = [edge.source.innerBounds.rayIntersection(p.x, p.y)];
