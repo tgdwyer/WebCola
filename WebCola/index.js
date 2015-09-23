@@ -3490,6 +3490,7 @@ var cola;
             if (!v) {
                 if (this._nodes.length === 0 && this._links.length > 0) {
                     // if we have links but no nodes, create the nodes array now with empty objects for the links to point at.
+                    // in this case the links are expected to be numeric indices for nodes in the range 0..n-1 where n is the number of nodes
                     var n = 0;
                     this._links.forEach(function (l) {
                         n = Math.max(n, l.source, l.target);
@@ -3723,7 +3724,7 @@ var cola;
                 });
                 this._links.forEach(function (e) {
                     var u = Layout.getSourceIndex(e), v = Layout.getTargetIndex(e);
-                    G[u][v] = G[v][u] = 1;
+                    G[u][v] = G[v][u] = e.weight || 1;
                 });
             }
             var D = cola.Descent.createSquareMatrix(N, function (i, j) {

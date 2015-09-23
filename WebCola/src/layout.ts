@@ -42,7 +42,13 @@ module cola {
     export interface Link<NodeType> {
         source: NodeType;
         target: NodeType;
+
+        // ideal length the layout engine should try to achieve for this link
         length?: number;
+
+        // how hard we should try to satisfy this link's ideal length
+        // 0 < weight <= 1
+        weight?: number;
     }
     
     /**
@@ -63,7 +69,7 @@ module cola {
         private _nodes = [];
         private _groups = [];
         private _rootGroup = null;
-        private _links = [];
+        private _links: Link<Node | number>[] = [];
         private _constraints = [];
         private _distanceMatrix = null;
         private _descent: Descent = null;
@@ -168,9 +174,10 @@ module cola {
             if (!v) {
                 if (this._nodes.length === 0 && this._links.length > 0) {
                     // if we have links but no nodes, create the nodes array now with empty objects for the links to point at.
+                    // in this case the links are expected to be numeric indices for nodes in the range 0..n-1 where n is the number of nodes
                     var n = 0;
                     this._links.forEach(function (l) {
-                        n = Math.max(n, l.source, l.target);
+                        n = Math.max(n, <number>l.source, <number>l.target);
                     });
                     this._nodes = new Array(++n);
                     for (var i = 0; i < n; ++i) {
@@ -493,12 +500,12 @@ module cola {
                 // otherwise 2. (
                 G = cola.Descent.createSquareMatrix(N, () => 2);
                 this._links.forEach(l => {
-                    if (typeof l.source == "number") l.source = this._nodes[l.source];
-                    if (typeof l.target == "number") l.target = this._nodes[l.target];
+                    if (typeof l.source == "number") l.source = this._nodes[<number>l.source];
+                    if (typeof l.target == "number") l.target = this._nodes[<number>l.target];
                 });
                 this._links.forEach(e => {
                     var u = Layout.getSourceIndex(e), v = Layout.getTargetIndex(e);
-                    G[u][v] = G[v][u] = 1;
+                    G[u][v] = G[v][u] = e.weight || 1;
                 });
             }
 
