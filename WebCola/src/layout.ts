@@ -23,6 +23,10 @@ module cola {
     }
     export interface Node {
         /**
+         * index in nodes array, this is initialized by Layout.start()
+         */
+        index?: number;
+        /**
          * x and y will be computed by layout as the Node's centroid
          */
         x: number;
@@ -39,9 +43,10 @@ module cola {
          */
         height?; number;
     }
-    export interface Link<NodeType> {
-        source: NodeType;
-        target: NodeType;
+    
+    export interface Link<NodeRefType> {
+        source: NodeRefType;
+        target: NodeRefType;
 
         // ideal length the layout should try to achieve for this link
         length?: number;
@@ -52,13 +57,18 @@ module cola {
         weight?: number;
     }
     
+    type LinkNumericPropertyAccessor = (t: Link<Node | number>) => number;
+
+    interface LinkLengthTypeAccessor extends LinkLengthAccessor<Link<Node | number>> {
+        getType: LinkNumericPropertyAccessor;
+    }
     /**
      * Main interface to cola layout.  
      * @class Layout
      */
     export class Layout {
         private _canvasSize = [1, 1];
-        private _linkDistance: number | ((t: any) => number) = 20;
+        private _linkDistance: number | LinkNumericPropertyAccessor = 20;
         private _defaultNodeSize: number = 10;
         private _linkLengthCalculator = null;
         private _linkType = null;
@@ -353,9 +363,9 @@ module cola {
          * links have an ideal distance, The automatic layout will compute layout that tries to keep links (AKA edges) as close as possible to this length.
          */
         linkDistance(): number
-        linkDistance(): (t: any) => number
+        linkDistance(): LinkNumericPropertyAccessor
         linkDistance(x: number): Layout
-        linkDistance(x: (t: any) => number): Layout
+        linkDistance(x: LinkNumericPropertyAccessor): Layout
         linkDistance(x?: any): any {
             if (!x) {
                 return this._linkDistance;
@@ -398,21 +408,23 @@ module cola {
             }
         }
 
-        getLinkLength(link: any): number {
-            return typeof this._linkDistance === "function" ? +<number>((<any>this._linkDistance)(link)) : <number>this._linkDistance;
+        getLinkLength(link: Link<Node | number>): number {
+            return typeof this._linkDistance === "function" ? +((<LinkNumericPropertyAccessor>this._linkDistance)(link)) : <number>this._linkDistance;
         }
 
-        static setLinkLength(link: any, length: number) {
+        static setLinkLength(link: Link<Node|number>, length: number) {
             link.length = length;
         }
 
-        getLinkType(link: any): number {
+        getLinkType(link: Link<Node | number>): number {
             return typeof this._linkType === "function" ? this._linkType(link) : 0;
         }
 
-        linkAccessor = {
-            getSourceIndex: Layout.getSourceIndex, getTargetIndex: Layout.getTargetIndex, setLength: Layout.setLinkLength,
-            getType: (l) => typeof this._linkType === "function" ? this._linkType(l) : 0
+        linkAccessor: LinkLengthTypeAccessor = {
+            getSourceIndex: Layout.getSourceIndex,
+            getTargetIndex: Layout.getTargetIndex,
+            setLength: Layout.setLinkLength,
+            getType: l => typeof this._linkType === "function" ? this._linkType(l) : 0
         };
 
         /**
@@ -505,7 +517,7 @@ module cola {
                     if (typeof l.target == "number") l.target = this._nodes[<number>l.target];
                 });
                 this._links.forEach(e => {
-                    var u = Layout.getSourceIndex(e), v = Layout.getTargetIndex(e);
+                    const u = Layout.getSourceIndex(e), v = Layout.getTargetIndex(e);
                     G[u][v] = G[v][u] = e.weight || 1;
                 });
             }
@@ -688,16 +700,17 @@ module cola {
         }
 
         //The link source and target may be just a node index, or they may be references to nodes themselves.
-        static getSourceIndex(e) {
-            return typeof e.source === 'number' ? e.source : e.source.index;
+        static getSourceIndex(e: Link<Node | number>): number {
+            return typeof e.source === 'number' ? <number>e.source : (<Node>e.source).index;
         }
 
         //The link source and target may be just a node index, or they may be references to nodes themselves.
-        static getTargetIndex(e) {
-            return typeof e.target === 'number' ? e.target : e.target.index;
+        static getTargetIndex(e: Link<Node | number>): number {
+            return typeof e.target === 'number' ? <number>e.target : (<Node>e.target).index;
         }
+
         // Get a string ID for a given link.
-        static linkId(e) {
+        static linkId(e: Link<Node | number>): string {
             return Layout.getSourceIndex(e) + "-" + Layout.getTargetIndex(e);
         }
 
