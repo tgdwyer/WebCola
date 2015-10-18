@@ -104,7 +104,7 @@ module cola.geom {
     }
 
     // apply f to the points in P in clockwise order around the point p
-    export function clockwiseRadialSweep(p: Point, P: Point[], f: (Point) => void) {
+    export function clockwiseRadialSweep(p: Point, P: Point[], f: (p: Point) => void) {
         P.slice(0).sort(
             (a, b) => Math.atan2(a.y - p.y, a.x - p.x) - Math.atan2(b.y - p.y, b.x - p.x)
             ).forEach(f);
@@ -247,7 +247,7 @@ module cola.geom {
     //            W = array of vertices for convex polygon 2 with W[n]=W[0]
     //    Output: *t1 = index of tangent point V[t1] for polygon 1
     //            *t2 = index of tangent point W[t2] for polygon 2
-    export function tangent_PolyPolyC(V: Point[], W: Point[], t1: (a, b) => number, t2: (a, b) => number, cmp1: (a, b, c) => boolean, cmp2: (a, b, c) => boolean): { t1: number; t2: number } {
+    export function tangent_PolyPolyC(V: Point[], W: Point[], t1: (a: Point, b: Point[]) => number, t2: (a: Point, b: Point[]) => number, cmp1: (a: Point, b: Point, c: Point) => boolean, cmp2: (a: Point, b: Point, c: Point) => boolean): { t1: number; t2: number } {
         var ix1: number, ix2: number;      // search indices for polygons 1 and 2
 
         // first get the initial vertex on each polygon
