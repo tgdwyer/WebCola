@@ -31,7 +31,7 @@ module cola.shortestpaths {
     export class Calculator<Link> {
         private neighbours: Node[];
 
-        constructor(public n: number, public es: Link[], getSourceIndex: (Link) => number, getTargetIndex: (Link) => number, getLength: (Link) => number) {
+        constructor(public n: number, public es: Link[], getSourceIndex: (link: Link) => number, getTargetIndex: (link: Link) => number, getLength: (link: Link) => number) {
             this.neighbours = new Array(this.n);
             var i = this.n; while (i--) this.neighbours[i] = new Node(i);
 
