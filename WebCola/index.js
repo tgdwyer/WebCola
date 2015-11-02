@@ -3408,7 +3408,9 @@ var cola;
             // sub-class and override this property to replace with a more sophisticated eventing mechanism
             this.event = null;
             this.linkAccessor = {
-                getSourceIndex: Layout.getSourceIndex, getTargetIndex: Layout.getTargetIndex, setLength: Layout.setLinkLength,
+                getSourceIndex: Layout.getSourceIndex,
+                getTargetIndex: Layout.getTargetIndex,
+                setLength: Layout.setLinkLength,
                 getType: function (l) { return typeof _this._linkType === "function" ? _this._linkType(l) : 0; }
             };
         }
