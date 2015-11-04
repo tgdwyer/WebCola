@@ -32,7 +32,6 @@ Building
 
  - from the WebCola directory:
 
-        npm install grunt
         npm install
 
  - build, minify and test:
