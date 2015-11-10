@@ -202,6 +202,10 @@ module cola.vpsc {
             // open must come before close
             return -1;
         }
+        if (b.isOpen) {
+            // open must come before close
+            return 1;
+        }
         return 0;
     }
 
