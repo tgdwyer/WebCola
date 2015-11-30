@@ -1,0 +1,124 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Simple Groups Example</title>
+<style>
+@import url(../style.css);
+
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .8;
+}
+
+.group {
+  stroke: #fff;
+  stroke-width: 1.5px;
+  opacity: 0.2;
+}
+
+</style>
+</head>
+<body>
+    <a href="../index.html">cola.js home</a>
+    <h1>Simple Groups Example</h1>
+<script src="../extern/d3.v3.js"></script>
+<script src="../cola.min.js"></script>
+<script>
+    var width = 960,
+        height = 500;
+
+    var color = d3.scale.category20();
+
+    var cola = cola.d3adaptor()
+        .size([width, height]);
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    d3.json("graphdata/miserables.json", function (error, graph) {
+        var groupMap = {};
+        graph.nodes.forEach(function (v, i) {
+            var g = v.group;
+            if (typeof groupMap[g] == 'undefined') {
+                groupMap[g] = [];
+            }
+            groupMap[g].push(i);
+
+            v.width = v.height = 10;
+        });
+
+        var groups = [];
+        for (var g in groupMap) {
+            groups.push({ id: g, leaves: groupMap[g] });
+        }
+        cola
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .groups(groups)
+            .jaccardLinkLengths(40, 0.7)
+            .avoidOverlaps(true)
+            .start(20, 10, 10);
+
+        var group = svg.selectAll('.group')
+            .data(groups)
+            .enter().append('rect')
+            .attr('class', 'group')
+            .attr('rx', 5)
+            .attr('ry', 5)
+            .style("fill", function (d) { return color(d.id); });
+
+        var link = svg.selectAll(".link")
+            .data(graph.links)
+          .enter().append("line")
+            .attr("class", "link")
+            .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+
+        var node = svg.selectAll(".node")
+            .data(graph.nodes)
+          .enter().append("circle")
+            .attr("class", "node")
+            .attr("r", 5)
+            .style("fill", function (d) { return color(d.group); })
+            .call(cola.drag);
+
+        node.append("title")
+            .text(function (d) { return d.name; });
+
+        cola.on("tick", function () {
+            link.attr("x1", function (d) { return d.source.x; })
+                .attr("y1", function (d) { return d.source.y; })
+                .attr("x2", function (d) { return d.target.x; })
+                .attr("y2", function (d) { return d.target.y; });
+
+            node.attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; });
+
+            group.attr("x", function (d) { return d.bounds.x; })
+                 .attr("y", function (d) { return d.bounds.y; })
+                .attr("width", function (d) { return d.bounds.width(); })
+                .attr("height", function (d) { return d.bounds.height(); });
+        });
+    });
+
+</script>
+A very simple use of groups, with no nesting.
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-63535113-1', 'auto');
+  ga('send', 'pageview');
+
+    </script>
+</body>
+</html>
