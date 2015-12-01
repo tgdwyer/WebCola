@@ -546,6 +546,7 @@ module cola.vpsc {
             this.nodes.forEach(updateNodeBounds);
             if (this.rootGroup && this.avoidOverlaps) {
                 this.groups.forEach(updateGroupBounds);
+                computeGroupBounds(this.rootGroup);
             }
         }
 

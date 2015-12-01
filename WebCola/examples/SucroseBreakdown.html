@@ -201,14 +201,14 @@
                 d.innerBounds = d.bounds.inflate(- margin);
             });
             link.each(function (d) {
-                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE())  this.parentNode.insertBefore(this, this);
             });
             
-            link.attr("x1", function (d) { return d.sourceIntersection.x; })
-                .attr("y1", function (d) { return d.sourceIntersection.y; })
-                .attr("x2", function (d) { return d.arrowStart.x; })
-                .attr("y2", function (d) { return d.arrowStart.y; });
+            link.attr("x1", function (d) { return d.route.sourceIntersection.x; })
+                .attr("y1", function (d) { return d.route.sourceIntersection.y; })
+                .attr("x2", function (d) { return d.route.arrowStart.x; })
+                .attr("y2", function (d) { return d.route.arrowStart.y; });
 
             label.each(function (d) {
                 var b = this.getBBox();

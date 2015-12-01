@@ -41,7 +41,21 @@ module cola {
         /**
          * specify a width and height of the node's bounding box if you turn on avoidOverlaps
          */
-        height?; number;
+        height?: number;
+        /**
+         * selective bit mask.  !=0 means layout will not move.
+         */
+        fixed: number;
+    }
+    
+    export interface Group {
+        bounds: vpsc.Rectangle;
+        leaves: Node[];
+        groups: Group[];
+    }
+
+    function isGroup(g: any): g is Group {
+        return typeof g.leaves !== 'undefined' || typeof g.groups !== 'undefined';
     }
     
     export interface Link<NodeRefType> {
@@ -206,9 +220,9 @@ module cola {
          * @property groups {Array}
          * @default empty list
          */
-        groups(): Array<any>
-        groups(x: Array<any>): Layout
-        groups(x?: Array<any>): any {
+        groups(): Array<Group>
+        groups(x: Array<Group>): Layout
+        groups(x?: Array<Group>): any {
             if (!x) return this._groups;
             this._groups = x;
             this._rootGroup = {};
@@ -718,23 +732,98 @@ module cola {
         // Bit 1 can be set externally (e.g., d.fixed = true) and show persist.
         // Bit 2 stores the dragging state, from mousedown to mouseup.
         // Bit 3 stores the hover state, from mouseover to mouseout.
-        // Dragend is a special case: it also clears the hover state.
-
-        static dragStart(d) {
-            d.fixed |= 2; // set bit 2
-            d.px = d.x, d.py = d.y; // set velocity to zero
+        static dragStart(d: Node | Group) {
+            if (isGroup(d)) {
+                Layout.storeOffset(d, Layout.dragOrigin(d));
+            } else {
+                Layout.stopNode(d);
+                d.fixed |= 2; // set bit 2
+            }
         }
 
+        // we clobber any existing desired positions for nodes
+        // in case another tick event occurs before the drag
+        private static stopNode(v: Node) {
+            (<any>v).px = v.x;
+            (<any>v).py = v.y;
+        }
+
+        // we store offsets for each node relative to the centre of the ancestor group 
+        // being dragged in a pair of properties on the node
+        private static storeOffset(d: Group, origin: { x: number, y: number }) {
+            if (typeof d.leaves !== 'undefined') {
+                d.leaves.forEach(v => {
+                    v.fixed |= 2;
+                    Layout.stopNode(v);
+                    (<any>v)._dragGroupOffsetX = v.x - origin.x;
+                    (<any>v)._dragGroupOffsetY = v.y - origin.y;
+                });
+            }
+            if (typeof d.groups !== 'undefined') {
+                d.groups.forEach(g => Layout.storeOffset(g, origin));
+            }
+        }
+
+        // the drag origin is taken as the centre of the node or group
+        static dragOrigin(d: Node | Group): { x: number, y: number } {
+            if (isGroup(d)) {
+                return {
+                    x: d.bounds.cx(),
+                    y: d.bounds.cy()
+                };
+            } else {
+                return d;
+            }
+        }
+
+        // for groups, the drag translation is propagated down to all of the children of
+        // the group.
+        static drag(d: Node | Group, position: { x: number, y: number }) {
+            if (isGroup(d)) {
+                if (typeof d.leaves !== 'undefined') {
+                    d.leaves.forEach(v => {
+                        d.bounds.setXCentre(position.x);
+                        d.bounds.setYCentre(position.y);
+                        (<any>v).px = (<any>v)._dragGroupOffsetX + position.x;
+                        (<any>v).py = (<any>v)._dragGroupOffsetY + position.y;
+                    });
+                }
+                if (typeof d.groups !== 'undefined') {
+                    d.groups.forEach(g => Layout.drag(g, position));
+                }
+            } else {
+                (<any>d).px = position.x;
+                (<any>d).py = position.y;
+            }
+        }
+
+        // we unset only bits 2 and 3 so that the user can fix nodes with another a different
+        // bit such that the lock persists between drags 
         static dragEnd(d) {
-            d.fixed &= ~6; // unset bits 2 and 3
-            //d.fixed = 0;
+            if (isGroup(d)) {
+                if (typeof d.leaves !== 'undefined') {
+                    d.leaves.forEach(v => {
+                        Layout.dragEnd(v);
+                        delete (<any>v)._dragGroupOffsetX;
+                        delete (<any>v)._dragGroupOffsetY;
+                    });
+                }
+                if (typeof d.groups !== 'undefined') {
+                    d.groups.forEach(Layout.dragEnd);
+                }
+            } else {
+                d.fixed &= ~6; // unset bits 2 and 3
+                //d.fixed = 0;
+            }
         }
 
+        // in d3 hover temporarily locks nodes, currently not used in cola
         static mouseOver(d) {
             d.fixed |= 4; // set bit 3
             d.px = d.x, d.py = d.y; // set velocity to zero
         }
-
+        
+        // in d3 hover temporarily locks nodes, currently not used in cola
         static mouseOut(d) {
             d.fixed &= ~4; // unset bit 3
         }

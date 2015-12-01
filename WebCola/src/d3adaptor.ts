@@ -22,16 +22,16 @@ module cola {
             super();
             // bit of trickyness remapping 'this' so we can reference it in the function body.
             var d3layout = this;
-        var drag;
+            var drag;
             this.drag = function () {
                 if (!drag) {
                     var drag = d3.behavior.drag<any>()
-                        .origin(function (d) { return d; })
+                        .origin(Layout.dragOrigin)
                         .on("dragstart.d3adaptor", Layout.dragStart)
-                        .on("drag.d3adaptor",(d) => {
-                        d.px = d3.event.x, d.py = d3.event.y;
-                        d3layout.resume(); // restart annealing
-                    })
+                        .on("drag.d3adaptor", d => {
+                            Layout.drag(d, d3.event);
+                            d3layout.resume(); // restart annealing
+                        })
                         .on("dragend.d3adaptor", Layout.dragEnd);
                 }
 

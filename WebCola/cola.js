@@ -715,8 +715,7 @@ var cola;
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var cola;
 (function (cola) {
@@ -1619,6 +1618,7 @@ var cola;
                 this.nodes.forEach(updateNodeBounds);
                 if (this.rootGroup && this.avoidOverlaps) {
                     this.groups.forEach(updateGroupBounds);
+                    computeGroupBounds(this.rootGroup);
                 }
             };
             Projection.prototype.solve = function (vs, cs, starting, desired) {
@@ -3383,6 +3383,9 @@ var cola;
     })(cola.EventType || (cola.EventType = {}));
     var EventType = cola.EventType;
     ;
+    function isGroup(g) {
+        return typeof g.leaves !== 'undefined' || typeof g.groups !== 'undefined';
+    }
     /**
      * Main interface to cola layout.
      * @class Layout
@@ -3903,19 +3906,94 @@ var cola;
         // Bit 1 can be set externally (e.g., d.fixed = true) and show persist.
         // Bit 2 stores the dragging state, from mousedown to mouseup.
         // Bit 3 stores the hover state, from mouseover to mouseout.
-        // Dragend is a special case: it also clears the hover state.
         Layout.dragStart = function (d) {
-            d.fixed |= 2; // set bit 2
-            d.px = d.x, d.py = d.y; // set velocity to zero
+            if (isGroup(d)) {
+                Layout.storeOffset(d, Layout.dragOrigin(d));
+            }
+            else {
+                Layout.stopNode(d);
+                d.fixed |= 2; // set bit 2
+            }
         };
+        // we clobber any existing desired positions for nodes
+        // in case another tick event occurs before the drag
+        Layout.stopNode = function (v) {
+            v.px = v.x;
+            v.py = v.y;
+        };
+        // we store offsets for each node relative to the centre of the ancestor group 
+        // being dragged in a pair of properties on the node
+        Layout.storeOffset = function (d, origin) {
+            if (typeof d.leaves !== 'undefined') {
+                d.leaves.forEach(function (v) {
+                    v.fixed |= 2;
+                    Layout.stopNode(v);
+                    v._dragGroupOffsetX = v.x - origin.x;
+                    v._dragGroupOffsetY = v.y - origin.y;
+                });
+            }
+            if (typeof d.groups !== 'undefined') {
+                d.groups.forEach(function (g) { return Layout.storeOffset(g, origin); });
+            }
+        };
+        // the drag origin is taken as the centre of the node or group
+        Layout.dragOrigin = function (d) {
+            if (isGroup(d)) {
+                return {
+                    x: d.bounds.cx(),
+                    y: d.bounds.cy()
+                };
+            }
+            else {
+                return d;
+            }
+        };
+        // for groups, the drag translation is propagated down to all of the children of
+        // the group.
+        Layout.drag = function (d, position) {
+            if (isGroup(d)) {
+                if (typeof d.leaves !== 'undefined') {
+                    d.leaves.forEach(function (v) {
+                        d.bounds.setXCentre(position.x);
+                        d.bounds.setYCentre(position.y);
+                        v.px = v._dragGroupOffsetX + position.x;
+                        v.py = v._dragGroupOffsetY + position.y;
+                    });
+                }
+                if (typeof d.groups !== 'undefined') {
+                    d.groups.forEach(function (g) { return Layout.drag(g, position); });
+                }
+            }
+            else {
+                d.px = position.x;
+                d.py = position.y;
+            }
+        };
+        // we unset only bits 2 and 3 so that the user can fix nodes with another a different
+        // bit such that the lock persists between drags 
         Layout.dragEnd = function (d) {
-            d.fixed &= ~6; // unset bits 2 and 3
-            //d.fixed = 0;
+            if (isGroup(d)) {
+                if (typeof d.leaves !== 'undefined') {
+                    d.leaves.forEach(function (v) {
+                        Layout.dragEnd(v);
+                        delete v._dragGroupOffsetX;
+                        delete v._dragGroupOffsetY;
+                    });
+                }
+                if (typeof d.groups !== 'undefined') {
+                    d.groups.forEach(Layout.dragEnd);
+                }
+            }
+            else {
+                d.fixed &= ~6; // unset bits 2 and 3
+            }
         };
+        // in d3 hover temporarily locks nodes, currently not used in cola
         Layout.mouseOver = function (d) {
             d.fixed |= 4; // set bit 3
             d.px = d.x, d.py = d.y; // set velocity to zero
         };
+        // in d3 hover temporarily locks nodes, currently not used in cola
         Layout.mouseOut = function (d) {
             d.fixed &= ~4; // unset bit 3
         };
@@ -4077,10 +4155,10 @@ var cola;
             this.drag = function () {
                 if (!drag) {
                     var drag = d3.behavior.drag()
-                        .origin(function (d) { return d; })
+                        .origin(cola.Layout.dragOrigin)
                         .on("dragstart.d3adaptor", cola.Layout.dragStart)
                         .on("drag.d3adaptor", function (d) {
-                        d.px = d3.event.x, d.py = d3.event.y;
+                        cola.Layout.drag(d, d3.event);
                         d3layout.resume(); // restart annealing
                     })
                         .on("dragend.d3adaptor", cola.Layout.dragEnd);

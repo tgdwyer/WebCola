@@ -41,7 +41,6 @@
     <h1>Layout with hierarchical grouping</h1>
 <script src="../extern/d3.v3.js"></script>
     <script src="../cola.min.js"></script>
-    <script src="../src/d3adaptor.js"></script>
 <script>
     var width = 960,
         height = 500;
@@ -70,7 +69,8 @@
           .enter().append("rect")
             .attr("rx", 8).attr("ry", 8)
             .attr("class", "group")
-            .style("fill", function (d, i) { return color(i); });
+            .style("fill", function (d, i) { return color(i); })
+            .call(cola.drag);
 
         var link = svg.selectAll(".link")
             .data(graph.links)
@@ -123,7 +123,7 @@
 </script>
     <p>This graph has a hierarchical grouping defined over the nodes.  We generate constraints to keep the bounding boxes of
         disjoint groups from overlapping and to keep nested groups fully contained within their parents' bounding boxes.
-    Try dragging the nodes so that they bump into other nodes and groups.
+    Try dragging the nodes and groups so that they bump into other nodes and groups.
     </p>
     <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
