@@ -3786,7 +3786,9 @@ var cola;
             }
             this._descent.threshold = this._threshold;
             // apply initialIterations without user constraints or nonoverlap constraints
-            this._descent.run(initialUnconstrainedIterations);
+            // if groups are specified, dummy nodes and edges will be added to untangle
+            // with respect to group connectivity
+            this.initialLayout(initialUnconstrainedIterations, x, y);
             // apply initialIterations with user constraints but no nonoverlap constraints
             if (curConstraints.length > 0)
                 this._descent.project = new cola.vpsc.Projection(this._nodes, this._groups, this._rootGroup, curConstraints).projectFunctions();
@@ -3818,6 +3820,41 @@ var cola;
             this.updateNodePositions();
             this.separateOverlappingComponents(w, h);
             return keepRunning ? this.resume() : this;
+        };
+        Layout.prototype.initialLayout = function (iterations, x, y) {
+            if (this._groups.length > 0 && iterations > 0) {
+                // construct a flat graph with dummy nodes for the groups and edges connecting group dummy nodes to their children
+                // todo: edges attached to groups are replaced with edges connected to the corresponding group dummy node
+                var n = this._nodes.length;
+                var edges = this._links.map(function (e) { return { source: e.source.index, target: e.target.index }; });
+                var vs = this._nodes.map(function (v) { return { index: v.index }; });
+                this._groups.forEach(function (g, i) {
+                    vs.push({ index: g.index = n + i });
+                });
+                this._groups.forEach(function (g, i) {
+                    if (typeof g.leaves !== 'undefined')
+                        g.leaves.forEach(function (v) { return edges.push({ source: g.index, target: v.index }); });
+                    if (typeof g.groups !== 'undefined')
+                        g.groups.forEach(function (gg) { return edges.push({ source: g.index, target: gg.index }); });
+                });
+                // layout the flat graph with dummy nodes and edges
+                new cola.Layout()
+                    .size(this.size())
+                    .nodes(vs)
+                    .links(edges)
+                    .avoidOverlaps(false)
+                    .linkDistance(this.linkDistance())
+                    .symmetricDiffLinkLengths(5)
+                    .convergenceThreshold(1e-4)
+                    .start(iterations, 0, 0, 0, false);
+                this._nodes.forEach(function (v) {
+                    x[v.index] = vs[v.index].x;
+                    y[v.index] = vs[v.index].y;
+                });
+            }
+            else {
+                this._descent.run(iterations);
+            }
         };
         // recalculate nodes position for disconnected graphs
         Layout.prototype.separateOverlappingComponents = function (width, height) {

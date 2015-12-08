@@ -4,27 +4,25 @@
 <head>
     <meta charset="utf-8" />
     <title>Simple Groups Example</title>
-<style>
-@import url(../style.css);
+    <style>
+        @import url(../style.css);
 
-.node {
-  stroke: #fff;
-  stroke-width: 1.5px;
-}
+        .node {
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
 
-.link {
-  stroke: darkgray;
-  stroke-width: 0.7px;
-  stroke-opacity: .4;
-}
+        .link {
+            stroke: #999;
+            stroke-opacity: .8;
+        }
 
-.group {
-  stroke: white;
-  stroke-width: 1.5px;
-  opacity: 0.4;
-}
-
-</style>
+        .group {
+            stroke: #fff;
+            stroke-width: 1.5px;
+            opacity: 0.2;
+        }
+    </style>
 </head>
 <body>
     <a href="../index.html">cola.js home</a>
@@ -33,6 +31,18 @@
     <script src="../cola.min.js"></script>
     <link rel="stylesheet" href="../extern/hljs/styles/github.css">
     <script src="../extern/hljs/highlight.pack.js"></script>
+    <!--<script src="../src/rbtree.js"></script>
+    <script src="../src/pqueue.js"></script>
+    <script src="../src/vpsc.js"></script>
+    <script src="../src/rectangle.js"></script>
+    <script src="../src/descent.js"></script>
+    <script src="../src/pqueue.js"></script>
+    <script src="../src/shortestpaths.js"></script>
+    <script src="../src/linklengths.js"></script>
+    <script src="../src/handledisconnected.js"></script>
+    <script src="../src/layout.js"></script>
+    <script src="../src/rbtree.js"></script>
+    <script src="../src/d3adaptor.js"></script>-->
     <script>
         hljs.initHighlightingOnLoad();
         var width = 960,
@@ -47,7 +57,7 @@
             .attr("width", width)
             .attr("height", height);
 
-        d3.json("graphdata/braingraph.json", function (error, graph) {
+        d3.json("graphdata/miserables.json", function (error, graph) {
             var groupMap = {};
             graph.nodes.forEach(function (v, i) {
                 var g = v.group;
@@ -67,9 +77,9 @@
                 .nodes(graph.nodes)
                 .links(graph.links)
                 .groups(groups)
-                .jaccardLinkLengths(60, 0.7)
+                .jaccardLinkLengths(40, 0.7)
                 .avoidOverlaps(true)
-                .start(80, 0, 80);
+                .start(50, 0, 50);
 
             var group = svg.selectAll('.group')
                 .data(groups)
@@ -82,7 +92,8 @@
             var link = svg.selectAll(".link")
                 .data(graph.links)
               .enter().append("line")
-                .attr("class", "link");
+                .attr("class", "link")
+                .style("stroke-width", function (d) { return Math.sqrt(d.value); });
 
             var node = svg.selectAll(".node")
                 .data(graph.nodes)
@@ -122,17 +133,17 @@
     .groups(groups)
     .jaccardLinkLengths(40, 0.7)
     .avoidOverlaps(true)
-    .start(40, 0, 40);
+    .start(20, 0, 10);
 </code></pre>
-In the above, <code>groups</code> is an array where each group object contains a single property 
+    In the above, <code>groups</code> is an array where each group object contains a single property
     <code>leaves</code> which is an array of indices to the <code>graph.nodes</code> array.  We turn on <code>avoidOverlaps</code> to get cola to
-    keep the nodes and groups separated.  The <code>start</code> method is called with three parameters 20, 0 and 10.  These are, respectively: 
+    keep the nodes and groups separated.  The <code>start</code> method is called with three parameters 20, 0 and 10.  These are, respectively:
     <ul>
         <li>20 initial graph layout iterations without constraints to get the graph to untangle.</li>
         <li>0 iterations for structural constraints (none are specified so any iterations here would be the same as the previous step)</li>
         <li>10 iterations with non-overlap constraints</li>
     </ul>
-Setup for the group visuals is a typical D3 pattern:
+    Setup for the group visuals is a typical D3 pattern:
 <pre><code>var group = svg.selectAll('.group')
     .data(groups)
     .enter().append('rect')
@@ -140,7 +151,7 @@ Setup for the group visuals is a typical D3 pattern:
     .attr({ rx: 5, ry: 5 })
     .style('fill', function (d) { return color(d.id) })
     .call(cola.drag);</code></pre>
-In the tick event handler we need to resize groups as well as moving them.  Cola puts this information into the <code>bounds</code> property on each group:
+    In the tick event handler we need to resize groups as well as moving them.  Cola puts this information into the <code>bounds</code> property on each group:
 
 <pre><code>cola.on('tick', function () {
     ...

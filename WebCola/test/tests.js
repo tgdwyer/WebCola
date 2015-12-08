@@ -143,12 +143,14 @@ test("group", function () {
         .handleDisconnected(false)
         .nodes([u,v])
         .groups([g]);
-    d3cola.start(10, 10, 10);
+
+    // just do overlap removal:
+    d3cola.start(0, 0, 10);
 
     ok(approxEquals(g.bounds.width(), 30, 0.1));
     ok(approxEquals(g.bounds.height(), 40, 0.1));
 
-    ok(approxEquals(Math.abs(u.x - v.x), 20, 0.1));
+    ok(approxEquals(Math.abs(u.x - v.x), 20, 0.1), "u.x: "+u.x+" v.x: "+v.x);
 });
 
 asyncTest("equality constraints", function () {
