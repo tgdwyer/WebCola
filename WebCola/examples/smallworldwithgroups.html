@@ -13,14 +13,15 @@
 }
 
 .link {
-  stroke: #999;
-  stroke-opacity: .8;
+  stroke: darkgray;
+  stroke-width: 0.7px;
+  stroke-opacity: .4;
 }
 
 .group {
-  stroke: #fff;
+  stroke: white;
   stroke-width: 1.5px;
-  opacity: 0.2;
+  opacity: 0.4;
 }
 
 </style>
@@ -46,7 +47,7 @@
             .attr("width", width)
             .attr("height", height);
 
-        d3.json("graphdata/miserables.json", function (error, graph) {
+        d3.json("graphdata/braingraph.json", function (error, graph) {
             var groupMap = {};
             graph.nodes.forEach(function (v, i) {
                 var g = v.group;
@@ -66,9 +67,9 @@
                 .nodes(graph.nodes)
                 .links(graph.links)
                 .groups(groups)
-                .jaccardLinkLengths(40, 0.7)
+                .jaccardLinkLengths(60, 0.7)
                 .avoidOverlaps(true)
-                .start(20, 10, 10);
+                .start(80, 0, 80);
 
             var group = svg.selectAll('.group')
                 .data(groups)
@@ -81,8 +82,7 @@
             var link = svg.selectAll(".link")
                 .data(graph.links)
               .enter().append("line")
-                .attr("class", "link")
-                .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+                .attr("class", "link");
 
             var node = svg.selectAll(".node")
                 .data(graph.nodes)
@@ -122,7 +122,7 @@
     .groups(groups)
     .jaccardLinkLengths(40, 0.7)
     .avoidOverlaps(true)
-    .start(20, 0, 10);
+    .start(40, 0, 40);
 </code></pre>
 In the above, <code>groups</code> is an array where each group object contains a single property 
     <code>leaves</code> which is an array of indices to the <code>graph.nodes</code> array.  We turn on <code>avoidOverlaps</code> to get cola to
