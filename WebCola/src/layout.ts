@@ -497,8 +497,6 @@ module cola {
                 w = this._canvasSize[0],
                 h = this._canvasSize[1];
 
-            if (this._linkLengthCalculator) this._linkLengthCalculator();
-
             var x = new Array(N), y = new Array(N);
 
             var G = null;
@@ -512,6 +510,9 @@ module cola {
                 }
                 x[i] = v.x, y[i] = v.y;
             });
+
+            if (this._linkLengthCalculator) this._linkLengthCalculator();
+
             //should we do this to clearly label groups?
             //this._groups.forEach((g, i) => g.groupIndex = i);
 
