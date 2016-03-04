@@ -3700,8 +3700,6 @@ var cola;
             if (gridSnapIterations === void 0) { gridSnapIterations = 0; }
             if (keepRunning === void 0) { keepRunning = true; }
             var i, j, n = this.nodes().length, N = n + 2 * this._groups.length, m = this._links.length, w = this._canvasSize[0], h = this._canvasSize[1];
-            if (this._linkLengthCalculator)
-                this._linkLengthCalculator();
             var x = new Array(N), y = new Array(N);
             var G = null;
             var ao = this._avoidOverlaps;
@@ -3712,6 +3710,8 @@ var cola;
                 }
                 x[i] = v.x, y[i] = v.y;
             });
+            if (this._linkLengthCalculator)
+                this._linkLengthCalculator();
             //should we do this to clearly label groups?
             //this._groups.forEach((g, i) => g.groupIndex = i);
             var distances;
@@ -4106,6 +4106,51 @@ var cola;
         return new D3StyleLayoutAdaptor();
     }
     cola.d3adaptor = d3adaptor;
+})(cola || (cola = {}));
+///<reference path="layout.ts"/>
+var cola;
+(function (cola) {
+    var LayoutAdaptor = (function (_super) {
+        __extends(LayoutAdaptor, _super);
+        function LayoutAdaptor(options) {
+            _super.call(this);
+            // take in implementation as defined by client
+            var self = this;
+            var o = options;
+            if (o.trigger) {
+                this.trigger = o.trigger;
+            }
+            if (o.kick) {
+                this.kick = o.kick;
+            }
+            if (o.drag) {
+                this.drag = o.drag;
+            }
+            if (o.on) {
+                this.on = o.on;
+            }
+            this.dragstart = this.dragStart = cola.Layout.dragStart;
+            this.dragend = this.dragEnd = cola.Layout.dragEnd;
+        }
+        // dummy functions in case not defined by client
+        LayoutAdaptor.prototype.trigger = function (e) { };
+        ;
+        LayoutAdaptor.prototype.kick = function () { };
+        ;
+        LayoutAdaptor.prototype.drag = function () { };
+        ;
+        LayoutAdaptor.prototype.on = function (eventType, listener) { return this; };
+        ;
+        return LayoutAdaptor;
+    })(cola.Layout);
+    cola.LayoutAdaptor = LayoutAdaptor;
+    /**
+     * provides an interface for use with any external graph system (e.g. Cytoscape.js):
+     */
+    function adaptor(options) {
+        return new LayoutAdaptor(options);
+    }
+    cola.adaptor = adaptor;
 })(cola || (cola = {}));
 /// <reference path="rectangle.ts"/>
 /// <reference path="shortestpaths.ts"/>
@@ -4878,6 +4923,7 @@ var cola;
  * modules.
  */
 ///<reference path="./src/d3adaptor.ts"/>
+///<reference path='./src/adaptor.ts'/>
 ///<reference path="./src/descent.ts"/>
 ///<reference path="./src/geom.ts"/>
 ///<reference path="./src/gridrouter.ts"/>
