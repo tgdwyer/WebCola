@@ -3700,8 +3700,6 @@ var cola;
             if (gridSnapIterations === void 0) { gridSnapIterations = 0; }
             if (keepRunning === void 0) { keepRunning = true; }
             var i, j, n = this.nodes().length, N = n + 2 * this._groups.length, m = this._links.length, w = this._canvasSize[0], h = this._canvasSize[1];
-            if (this._linkLengthCalculator)
-                this._linkLengthCalculator();
             var x = new Array(N), y = new Array(N);
             var G = null;
             var ao = this._avoidOverlaps;
@@ -3712,6 +3710,8 @@ var cola;
                 }
                 x[i] = v.x, y[i] = v.y;
             });
+            if (this._linkLengthCalculator)
+                this._linkLengthCalculator();
             //should we do this to clearly label groups?
             //this._groups.forEach((g, i) => g.groupIndex = i);
             var distances;
