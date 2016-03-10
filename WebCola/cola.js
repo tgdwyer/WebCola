@@ -1384,7 +1384,9 @@ var cola;
         function generateConstraints(rs, vars, rect, minSep) {
             var i, n = rs.length;
             var N = 2 * n;
-            console.assert(vars.length >= n);
+            /* DEBUG
+                console.assert(vars.length >= n);
+            DEBUG */
             var events = new Array(N);
             for (i = 0; i < n; ++i) {
                 var r = rs[i];
@@ -1420,7 +1422,9 @@ var cola;
                     visitNeighbours("next", "prev", function (u, v) { return makeConstraint(v, u); });
                 }
             }
-            console.assert(scanline.size === 0);
+            /* DEBUG
+                console.assert(scanline.size === 0);
+            DEBUG */
             return cs;
         }
         function findXNeighbours(v, scanline) {
