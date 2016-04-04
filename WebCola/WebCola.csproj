@@ -9,7 +9,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
-    <TypeScriptToolsVersion>1.6</TypeScriptToolsVersion>
+    <TypeScriptToolsVersion>1.8</TypeScriptToolsVersion>
     <UseIISExpress>true</UseIISExpress>
     <IISExpressSSLPort />
     <IISExpressAnonymousAuthentication />
@@ -31,6 +31,7 @@
     <Content Include="examples\friendnetworks.html" />
     <Content Include="examples\egonetwork.html" />
     <Content Include="examples\graphdata\SucroseBreakdownDicots-flowlayout.svg" />
+    <Content Include="examples\HtmlPage1.html" />
     <Content Include="examples\movies.html" />
     <Content Include="examples\browsemovies.html" />
     <Content Include="examples\gridifiedSmallGroups.html">

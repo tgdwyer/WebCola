@@ -16,7 +16,7 @@
     "load-grunt-tasks": "~0.4.0",
     "qunitjs": "^1.18.0",
     "typedoc": "^0.3.12",
-    "typescript": "^1.7.3",
+    "typescript": "^1.8.9",
     "uglify-js": "^2.4.16"
   },
   "description": "WebCola =======",
