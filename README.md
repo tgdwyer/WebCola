@@ -10,13 +10,20 @@ Installation
 
 A version suitable for browsers can be found [here](WebCola/cola.js) ([minified](WebCola/cola.min.js)).
 
+#### Npm:
+	
+	npm install cola --save
+
 You can also install it through npm by first adding it to `package.json`:
 
     "dependencies": {
       "cola": "tgdwyer/WebCola#master"
     }
-
 Then by running `npm install`.
+
+####Bower : 
+
+	bower install webcola --save
 
 If you use TypeScript, you can get complete TypeScript definitions by installing [tsd 0.6](https://github.com/DefinitelyTyped/tsd) and running `tsd link`.
 
