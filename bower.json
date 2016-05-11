@@ -34,6 +34,8 @@
     "*.ts",
     "*.csproj*",
     "Gruntfile.js",
-    "WebCola/*/"
+    "WebCola/*/",
+    "!WebCola/index.d.ts",
+    "!WebCola/cola.d.ts"
   ]
 }
