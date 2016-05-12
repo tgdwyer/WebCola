@@ -275,8 +275,8 @@ declare module cola.geom {
      * @return the convex hull as an array of points
      */
     function ConvexHull(S: Point[]): Point[];
-    function clockwiseRadialSweep(p: Point, P: Point[], f: (Point) => void): void;
-    function tangent_PolyPolyC(V: Point[], W: Point[], t1: (a, b) => number, t2: (a, b) => number, cmp1: (a, b, c) => boolean, cmp2: (a, b, c) => boolean): {
+    function clockwiseRadialSweep(p: Point, P: Point[], f: (point: Point) => void): void;
+    function tangent_PolyPolyC(V: Point[], W: Point[], t1: (a: Point, b: Point[]) => number, t2: (a: Point, b: Point[]) => number, cmp1: (a: Point, b: Point, c: Point) => boolean, cmp2: (a: Point, b: Point, c: Point) => boolean): {
         t1: number;
         t2: number;
     };
@@ -653,7 +653,7 @@ declare module cola.shortestpaths {
         n: number;
         es: Link[];
         private neighbours;
-        constructor(n: number, es: Link[], getSourceIndex: (Link) => number, getTargetIndex: (Link) => number, getLength: (Link) => number);
+        constructor(n: number, es: Link[], getSourceIndex: (link: Link) => number, getTargetIndex: (link: Link) => number, getLength: (link: Link) => number);
         /**
          * compute shortest paths for graph over n nodes with edges an array of source/target pairs
          * edges may optionally have a length attribute.  1 is the default.

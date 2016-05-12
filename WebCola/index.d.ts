@@ -1,5 +1,3 @@
-/// <reference path="extern/d3.d.ts" />
-
 declare module 'webcola' {
     function applyPacking(graphs: Array<any>, w: any, h: any, node_size: any, desired_ratio?: number): void;
     function separateGraphs(nodes: any, links: any): any[];
@@ -846,7 +844,7 @@ export module shortestpaths{
     }
 
     class D3StyleLayoutAdaptor extends Layout {
-        event: D3.Dispatch;
+        event: d3.Dispatch;
         trigger(e: Event): void;
         kick(): void;
         drag: () => any;
