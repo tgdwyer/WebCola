@@ -229,10 +229,18 @@ module cola {
             this._groups.forEach(g => {
                 if (typeof g.padding === "undefined")
                     g.padding = 1;
-                if (typeof g.leaves !== "undefined")
-                    g.leaves.forEach((v, i) => { (g.leaves[i] = this._nodes[v]).parent = g });
-                if (typeof g.groups !== "undefined")
-                    g.groups.forEach((gi, i) => { (g.groups[i] = this._groups[gi]).parent = g });
+                if (typeof g.leaves !== "undefined") {
+                    g.leaves.forEach((v, i) => {
+                        if (typeof v === 'number')
+                            (g.leaves[i] = this._nodes[v]).parent = g
+                    });
+                }
+                if (typeof g.groups !== "undefined") {
+                    g.groups.forEach((gi, i) => {
+                        if (typeof gi === 'number')
+                            (g.groups[i] = this._groups[gi]).parent = g
+                    });
+                }
             });
             this._rootGroup.leaves = this._nodes.filter(v => typeof v.parent === 'undefined');
             this._rootGroup.groups = this._groups.filter(g => typeof g.parent === 'undefined');
