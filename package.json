@@ -21,9 +21,7 @@
   },
   "description": "WebCola =======",
   "main": "WebCola/index.js",
-  "typescript": {
-    "definition": "WebCola/index.d.ts"
-  },
+  "typings": "WebCola/index.d.ts",
   "scripts": {
     "test": "grunt full"
   },
