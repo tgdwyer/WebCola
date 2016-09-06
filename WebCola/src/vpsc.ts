@@ -513,4 +513,44 @@ DEBUG */
             return cost;
         }
     }
+    /**
+      * Remove overlap between spans while keeping their centers as close as possible to the specified desiredCenters.
+      * Lower and upper bounds will be respected if the spans physically fit between them
+      * (otherwise they'll be moved and their new position returned).
+      * If no upper/lower bound is specified then the bounds of the moved spans will be returned.
+      * returns a new center for each span.
+      */
+    export function removeOverlapInOneDimension(spans: { size: number, desiredCenter: number }[], lowerBound?: number, upperBound?: number)
+        : { newCenters: number[], lowerBound: number, upperBound: number }
+    {
+        const vs: Variable[] = spans.map(s => new Variable(s.desiredCenter));
+        const cs: Constraint[] = [];
+        const n = spans.length;
+        for (var i = 0; i < n - 1; i++) {
+            const left = spans[i], right = spans[i + 1];
+            cs.push(new Constraint(vs[i], vs[i + 1], (left.size + right.size) / 2));
+        }
+        const leftMost = vs[0],
+            rightMost = vs[n - 1],
+            leftMostSize = spans[0].size / 2,
+            rightMostSize = spans[n - 1].size / 2;
+        let vLower: Variable = null, vUpper: Variable = null;
+        if (lowerBound) {
+            vLower = new Variable(lowerBound, leftMost.weight * 1000);
+            vs.push(vLower);
+            cs.push(new Constraint(vLower, leftMost, leftMostSize));
+        }
+        if (upperBound) {
+            vUpper = new Variable(upperBound, rightMost.weight * 1000);
+            vs.push(vUpper);
+            cs.push(new Constraint(rightMost, vUpper, rightMostSize));
+        }
+        var solver = new Solver(vs, cs);
+        solver.solve();
+        return {
+            newCenters: vs.slice(0, spans.length).map(v => v.position()),
+            lowerBound: vLower ? vLower.position() : leftMost.position() - leftMostSize,
+            upperBound: vUpper ? vUpper.position() : rightMost.position() + rightMostSize
+        };
+    }
 }   

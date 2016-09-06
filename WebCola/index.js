@@ -3523,10 +3523,18 @@ var cola;
             this._groups.forEach(function (g) {
                 if (typeof g.padding === "undefined")
                     g.padding = 1;
-                if (typeof g.leaves !== "undefined")
-                    g.leaves.forEach(function (v, i) { (g.leaves[i] = _this._nodes[v]).parent = g; });
-                if (typeof g.groups !== "undefined")
-                    g.groups.forEach(function (gi, i) { (g.groups[i] = _this._groups[gi]).parent = g; });
+                if (typeof g.leaves !== "undefined") {
+                    g.leaves.forEach(function (v, i) {
+                        if (typeof v === 'number')
+                            (g.leaves[i] = _this._nodes[v]).parent = g;
+                    });
+                }
+                if (typeof g.groups !== "undefined") {
+                    g.groups.forEach(function (gi, i) {
+                        if (typeof gi === 'number')
+                            (g.groups[i] = _this._groups[gi]).parent = g;
+                    });
+                }
             });
             this._rootGroup.leaves = this._nodes.filter(function (v) { return typeof v.parent === 'undefined'; });
             this._rootGroup.groups = this._groups.filter(function (g) { return typeof g.parent === 'undefined'; });
@@ -3700,8 +3708,6 @@ var cola;
             if (gridSnapIterations === void 0) { gridSnapIterations = 0; }
             if (keepRunning === void 0) { keepRunning = true; }
             var i, j, n = this.nodes().length, N = n + 2 * this._groups.length, m = this._links.length, w = this._canvasSize[0], h = this._canvasSize[1];
-            if (this._linkLengthCalculator)
-                this._linkLengthCalculator();
             var x = new Array(N), y = new Array(N);
             var G = null;
             var ao = this._avoidOverlaps;
@@ -3712,6 +3718,8 @@ var cola;
                 }
                 x[i] = v.x, y[i] = v.y;
             });
+            if (this._linkLengthCalculator)
+                this._linkLengthCalculator();
             //should we do this to clearly label groups?
             //this._groups.forEach((g, i) => g.groupIndex = i);
             var distances;

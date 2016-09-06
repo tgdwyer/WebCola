@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Brain network</title>
+    <title>Brain network MDS</title>
     <style>
 @import url(../style.css);
 
@@ -23,6 +23,7 @@
     <a href="../index.html">cola.js home</a>
 <script src="../extern/d3.v3.js"></script>
     <script src="../cola.min.js"></script>
+    <h1>Multidimensional Scaling (MDS)</h1>
 <script>
     var width = 1000,
         height = 500;
@@ -135,6 +136,7 @@
         gc1.cola.on("tick", function () {
             updatePositions(node, linkSelection);
         });
+        sliderChange(10);
     }
     var previousThreshold = 0;
     var linkid = 0;
@@ -288,17 +290,17 @@
             gc2.svg.style("visibility", "hidden");
             movex(gc2.svg, "0.01s", dx);
     }
-</script>
-<script>
     function sliderChange(v) {
         var l = document.getElementById("sliderLabel");
         l.textContent = v;
         setEdgeThreshold(v);
     }
 </script>
-<p>Showing <label id="sliderLabel">0</label>th percentile</p>
+<p>We can use cola.js for <a href="https://en.wikipedia.org/wiki/Multidimensional_scaling">Metric Multidimensional Scaling</a> by specifying a complete distance matrix between all pairs of nodes.  Instead of specifying edges, use the 
+    <a href="https://github.com/tgdwyer/WebCola/blob/master/WebCola/src/layout.ts#L336"><code>Layout.distanceMatrix()</code></a> function to specify the matrix.
+<p>Currently, the drawn links show the strongest <label id="sliderLabel">0</label>th percentile of correllations, change this threshold with the slider below.  Press the button above to show the graph of thresholded links.</p>
 <p>No Links
-<input id="edgeThresholdSlider" type="range" min="0" max="100" value="0" onchange="sliderChange(this.value)"/>
+<input id="edgeThresholdSlider" type="range" min="0" max="100" value="10" onchange="sliderChange(this.value)"/>
 All Links</p>
 <p>
 a single subject resting-state connectivity matrix that is +/- signed and weighted ('signed_weighted.txt') along with an affiliation vector ('signed_weighted_affil.txt') from a single run of a Q* modularity analysis (Rubinov & Sporns).
