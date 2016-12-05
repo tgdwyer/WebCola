@@ -13,6 +13,7 @@
  */
 
 // In the current context, build the "cola" object we want to export.
+///<reference path="./src/adaptor.ts"/>
 ///<reference path="./src/d3adaptor.ts"/>
 ///<reference path="./src/descent.ts"/>
 ///<reference path="./src/geom.ts"/>
