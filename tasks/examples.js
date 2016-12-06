@@ -1,6 +1,6 @@
 var async = require('async'),
   PhantomJS = require(
-    '../node_modules/grunt-contrib-qunit/node_modules/grunt-lib-phantomjs'
+    'phantomjs-prebuilt'
   );
 module.exports = function(grunt){
   grunt.registerMultiTask('examples', 'Run all the examples.', function(){
@@ -8,17 +8,17 @@ module.exports = function(grunt){
       errors = [],
       // This task is async.
       done = this.async(),
-      
+
       urls = grunt.file.expand(this.data);
 
     phantomjs.on('error.onError', function(msg, stack, foo) {
       grunt.log.write('X'.red);
       errors.push(msg + "\n" + stack.map(function(frame){
-        return "- "+ frame.file.split("/").slice(-2).join("/") +  
+        return "- "+ frame.file.split("/").slice(-2).join("/") +
           ":" + frame.line;
       }).join("\n"));
     });
-    
+
     phantomjs.on('onResourceReceived', function(res){
       if(res.stage === 'end' && res.status && res.status >= 400){
         errors.push(res.status + " " + res.status_text + " " +
@@ -34,7 +34,7 @@ module.exports = function(grunt){
     phantomjs.on('fail.timeout', function() {
       phantomjs.halt();
     });
-    
+
     phantomjs.on('onLoadFinished', function() {
       grunt.log.write('.');
       phantomjs.halt();
