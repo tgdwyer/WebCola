@@ -1,8 +1,3 @@
-/**
- * @module cola
- */
-module cola {
-
     export interface LinkAccessor<Link> {
         getSourceIndex(l: Link): number;
         getTargetIndex(l: Link): number;
@@ -165,5 +160,3 @@ module cola {
         for (var v of nodes) if (typeof v.index === 'undefined') strongConnect(v);
         return components;
     }
-
-}

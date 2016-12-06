@@ -1,5 +1,5 @@
 
-class PairingHeap<T> {
+export class PairingHeap<T> {
     private subheaps : PairingHeap<T>[];
     // from: https://gist.github.com/nervoussystem
     //{elem:object, subheaps:[array of heaps]}
@@ -109,7 +109,7 @@ class PairingHeap<T> {
 /**
  * @class PriorityQueue a min priority queue backed by a pairing heap
  */
-class PriorityQueue<T> {
+export class PriorityQueue<T> {
     private root : PairingHeap<T>;
     constructor(private lessThan: (a: T, b: T) => boolean) { }
     /**

@@ -3,6 +3,7 @@
 /// <reference path="../src/linklengths.ts"/>
 /// <reference path="../src/descent.ts"/>
 /// <reference path="../src/layout3d.ts"/>
+import * as cola from '../index'
 module tree3d {
     export class Graph {
         parentObject;
@@ -82,7 +83,7 @@ module tree3d {
             var targetVec = new THREE.Vector3();
             targetVec.subVectors(b,a);
             var l = targetVec.length();
-            this.shape.scale.set(1,1,l);  
+            this.shape.scale.set(1,1,l);
             targetVec.normalize();
 
             var angle = Math.acos(origVec.dot(targetVec));

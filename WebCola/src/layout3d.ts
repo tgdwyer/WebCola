@@ -1,9 +1,10 @@
-﻿/**
- * Use cola to do a layout in 3D!! Yay.
- * Pretty simple for the moment.
- */
-module cola {
-    export class Link3D {
+import {Calculator} from './shortestpaths'
+import {Descent} from './descent'
+import {Projection, GraphNode, Rectangle} from './rectangle'
+import {Variable} from './vpsc'
+import {jaccardLinkLengths, LinkLengthAccessor} from './linklengths'
+
+export class Link3D {
         length: number;
         constructor(public source: number, public target: number) { }
         actualLength(x: number[][]) {
@@ -14,15 +15,15 @@ module cola {
                 }, 0));
         }
     }
-    export class Node3D implements vpsc.GraphNode {
+    export class Node3D implements GraphNode {
         // if fixed, layout will not move the node from its specified starting position
         fixed: boolean;
         width: number;
         height: number;
         px: number;
         py: number;
-        bounds: vpsc.Rectangle;
-        variable: vpsc.Variable;
+        bounds: Rectangle;
+        variable: Variable;
         constructor(
             public x: number = 0,
             public y: number = 0,
@@ -55,36 +56,36 @@ module cola {
 
         useJaccardLinkLengths: boolean = true;
 
-        descent: cola.Descent;
+        descent: Descent;
         start(iterations: number = 100): Layout3D {
             const n = this.nodes.length;
 
             var linkAccessor = new LinkAccessor();
 
             if (this.useJaccardLinkLengths)
-                cola.jaccardLinkLengths(this.links, linkAccessor, 1.5);
+                jaccardLinkLengths(this.links, linkAccessor, 1.5);
 
             this.links.forEach(e => e.length *= this.idealLinkLength);
 
             // Create the distance matrix that Cola needs
-            const distanceMatrix = (new cola.shortestpaths.Calculator(n, this.links,
+            const distanceMatrix = (new Calculator(n, this.links,
                 e=> e.source, e=> e.target, e => e.length)).DistanceMatrix();
 
-            const D = cola.Descent.createSquareMatrix(n, (i, j) => distanceMatrix[i][j]);
+            const D = Descent.createSquareMatrix(n, (i, j) => distanceMatrix[i][j]);
 
             // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
             // otherwise 2.
-            var G = cola.Descent.createSquareMatrix(n, function () { return 2 });
+            var G = Descent.createSquareMatrix(n, function () { return 2 });
             this.links.forEach(({ source, target }) => G[source][target] = G[target][source] = 1);
 
-            this.descent = new cola.Descent(this.result, D);
+            this.descent = new Descent(this.result, D);
             this.descent.threshold = 1e-3;
             this.descent.G = G;
             //let constraints = this.links.map(e=> <any>{
             //    axis: 'y', left: e.source, right: e.target, gap: e.length*1.5
             //});
-            if (this.constraints) 
-                this.descent.project = new cola.vpsc.Projection(<vpsc.GraphNode[]>this.nodes, null, null, this.constraints).projectFunctions();
+            if (this.constraints)
+                this.descent.project = new Projection(<GraphNode[]>this.nodes, null, null, this.constraints).projectFunctions();
 
             for (var i = 0; i < this.nodes.length; i++) {
                 var v = this.nodes[i];
@@ -109,10 +110,9 @@ module cola {
         }
     }
 
-    class LinkAccessor implements cola.LinkLengthAccessor<any> {
+    class LinkAccessor implements LinkLengthAccessor<any> {
         getSourceIndex(e: any): number { return e.source; }
         getTargetIndex(e: any): number { return e.target; }
         getLength(e: any): number { return e.length; }
         setLength(e: any, l: number) { e.length = l; }
     }
-}

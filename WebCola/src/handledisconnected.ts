@@ -1,4 +1,3 @@
-﻿module cola {
     var packingOptions = {
         PADDING: 10,
         GOLDEN_SECTION: (1 + Math.sqrt(5)) / 2,
@@ -212,7 +211,7 @@
             return Math.abs(get_real_ratio() - desired_ratio);
         }
 
-        // looking for a position to one box 
+        // looking for a position to one box
         function put_rect(rect, max_width) {
 
 
@@ -257,7 +256,7 @@
         }
     }
 
-    /** 
+    /**
      * connected components of graph
      * returns an array of {}
      */
@@ -306,4 +305,3 @@
 
         return graphs;
     }
-}

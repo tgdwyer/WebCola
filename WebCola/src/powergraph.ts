@@ -1,8 +1,6 @@
-module cola.powergraph {
-    export interface LinkAccessor<Link> {
-        getSourceIndex(l: Link): number;
-        getTargetIndex(l: Link): number;
+import {LinkAccessor} from './linklengths'
 
+export interface LinkTypeAccessor<Link> extends LinkAccessor<Link> {
         // return a unique identifier for the type of the link
         getType(l: Link): number;
     }
@@ -15,7 +13,7 @@ module cola.powergraph {
     }
 
     export class Configuration<Link> {
-        // canonical list of modules.  
+        // canonical list of modules.
         // Initialized to a module for each leaf node, such that the ids and indexes of the module in the array match the indexes of the nodes in links
         // Modules created through merges are appended to the end of this.
         modules: Module[];
@@ -23,7 +21,7 @@ module cola.powergraph {
         roots: ModuleSet[];
         // remaining edge count
         R: number;
-        constructor(n: number, edges: Link[], private linkAccessor: LinkAccessor<Link>, rootGroup?: any[]) {
+        constructor(n: number, edges: Link[], private linkAccessor: LinkTypeAccessor<Link>, rootGroup?: any[]) {
             this.modules = new Array(n);
             this.roots = [];
             if (rootGroup) {
@@ -243,7 +241,7 @@ module cola.powergraph {
         }
         contains(id: number): boolean {
             return id in this.table;
-        } 
+        }
         add(m: Module): void {
             this.table[m.id] = m;
         }
@@ -321,9 +319,9 @@ module cola.powergraph {
         return Object.keys(intersection(m, n)).length
     }
 
-    export function getGroups<Link>(nodes: any[], links: Link[], la: LinkAccessor<Link>, rootGroup?: any[]): { groups: any[]; powerEdges: PowerEdge[] } {
+    export function getGroups<Link>(nodes: any[], links: Link[], la: LinkTypeAccessor<Link>, rootGroup?: any[]): { groups: any[]; powerEdges: PowerEdge[] } {
         var n = nodes.length,
-            c = new powergraph.Configuration(n, links, la, rootGroup);
+            c = new Configuration(n, links, la, rootGroup);
         while (c.greedyMerge());
         var powerEdges: PowerEdge[] = [];
         var g = c.getGroupHierarchy(powerEdges);
@@ -336,5 +334,4 @@ module cola.powergraph {
             f("target");
         });
         return { groups: g, powerEdges: powerEdges };
-    } 
-}
+    }

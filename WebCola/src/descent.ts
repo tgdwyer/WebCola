@@ -1,7 +1,3 @@
-/**
- * @module cola
- */
-module cola {
     /**
      * Descent respects a collection of locks over nodes that should not move
      * @class Locks
@@ -27,7 +23,7 @@ DEBUG */
             this.locks = {};
         }
         /**
-         * @isEmpty 
+         * @isEmpty
          * @returns false if no locks exist
          */
         isEmpty(): boolean {
@@ -52,7 +48,7 @@ DEBUG */
      * where: D is a square matrix of ideal separations between nodes, w is matrix of weights for those separations
      *        length[x1_, y1_, z1_, x2_, y2_, z2_] = Sqrt[(x1 - x2)^2 + (y1 - y2)^2 + (z1 - z2)^2]
      * below, we use wij = 1/(Dij^2)
-     * 
+     *
      * @class Descent
      */
     export class Descent {
@@ -112,7 +108,7 @@ DEBUG */
          * @method constructor
          * @param x {number[][]} initial coordinates for nodes
          * @param D {number[][]} matrix of desired distances between pairs of nodes
-         * @param G {number[][]} [default=null] if specified, G is a matrix of weights for goal terms between pairs of nodes.  
+         * @param G {number[][]} [default=null] if specified, G is a matrix of weights for goal terms between pairs of nodes.
          * If G[i][j] > 1 and the separation between nodes i and j is greater than their ideal distance, then there is no contribution for this pair to the goal
          * If G[i][j] <= 1 then it is used as a weighting on the contribution of the variance between ideal and actual separation between i and j to the goal function
          */
@@ -279,7 +275,7 @@ DEBUG */
             for (var u: number = 0; u < n; ++u)
                 for (i = 0; i < this.k; ++i) {
                     if (isNaN(this.g[i][u])) debugger;
-                    for (var v: number = 0; v < n; ++v) 
+                    for (var v: number = 0; v < n; ++v)
                         if (isNaN(this.H[i][u][v])) debugger;
                 }
 DEBUG */
@@ -343,7 +339,7 @@ DEBUG */
             if (this.project) this.project[1](r[0], x0[1], r[1]);
 
             // todo: allow projection against constraints in higher dimensions
-            for (var i = 2; i < this.k; i++) 
+            for (var i = 2; i < this.k; i++)
                 this.takeDescentStep(r[i], d[i], stepSize);
 
             // the following makes locks extra sticky... but hides the result of the projection from the consumer
@@ -461,4 +457,3 @@ DEBUG */
             return min + this.getNext() * (max - min);
         }
     }
-}

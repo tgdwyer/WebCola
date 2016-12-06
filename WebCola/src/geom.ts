@@ -1,6 +1,4 @@
-///<reference path="vpsc.ts"/>
-///<reference path="rectangle.ts"/>
-module cola.geom {
+import {Rectangle} from './rectangle'
     export class Point {
         x: number;
         y: number;
@@ -32,7 +30,7 @@ module cola.geom {
         return isLeft(p, vi, vj) < 0;
     }
 
-    
+
     /**
      * returns the convex hull of a set of points using Andrew's monotone chain algorithm
      * see: http://geomalgorithms.com/a10-_hull-1.html#Monotone%20Chain
@@ -149,10 +147,10 @@ module cola.geom {
             return 0;               // V[0] is the maximum tangent point
 
         for (a = 0, b = n; ;) {          // start chain = [0,n] with V[n]=V[0]
-            if (b - a === 1) 
+            if (b - a === 1)
                 if (above(P, V[a], V[b]))
                     return a;
-                else 
+                else
                     return b;
 
             c = Math.floor((a + b) / 2);        // midpoint of [a,b], and 0<c<n
@@ -346,7 +344,7 @@ module cola.geom {
                     var Pi = P[i];
                     for (var j = i + 1; j < n; j++) {
                         var Pj = P[j],
-                            t = geom.tangents(Pi, Pj);
+                            t = tangents(Pi, Pj);
                         for (var q in t) {
                             var c = t[q],
                                 source = Pi[c.t1], target = Pj[c.t2];
@@ -389,7 +387,7 @@ module cola.geom {
     function intersects(l: LineSegment, P: Point[]) {
         var ints = [];
         for (var i = 1, n = P.length; i < n; ++i) {
-            var int = cola.vpsc.Rectangle.lineIntersection(
+            var int = Rectangle.lineIntersection(
                 l.x1, l.y1,
                 l.x2, l.y2,
                 P[i - 1].x, P[i - 1].y,
@@ -437,7 +435,7 @@ module cola.geom {
     }
 
     function isPointInsidePoly(p: Point, poly: Point[]): boolean {
-        for (var i = 1, n = poly.length; i < n; ++i) 
+        for (var i = 1, n = poly.length; i < n; ++i)
             if (below(poly[i - 1], poly[i], p)) return false;
         return true;
     }
@@ -455,4 +453,3 @@ module cola.geom {
         }
         return false;
     }
-} 

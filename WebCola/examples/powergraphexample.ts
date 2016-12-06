@@ -3,6 +3,8 @@
 ///<reference path="../extern/d3.d.ts"/>
 ///<reference path="../extern/jquery.d.ts"/>
 
+import * as cola from '../index'
+
 var width = 700,
     height = 350;
 
@@ -35,14 +37,14 @@ function makeSVG() {
         .attr('height', "100%")
 
     var vis = <any>outer.append('g');
-    var redraw = (transition) => 
+    var redraw = (transition) =>
         (transition ? <any>vis.transition() : <any> vis)
             .attr("transform", "translate(" + zoom.translate() + ") scale(" + zoom.scale() + ")");
     vis.zoomToFit = ()=>{
-        var b = cola.vpsc.Rectangle.empty();
+        var b = cola.Rectangle.empty();
         vis.selectAll("rect").each(function (d) {
             var bb = this.getBBox();
-            b = b.union(new cola.vpsc.Rectangle(bb.x, bb.x + bb.width, bb.y, bb.y + bb.height));
+            b = b.union(new cola.Rectangle(bb.x, bb.x + bb.width, bb.y, bb.y + bb.height));
         });
         var w = b.width(), h = b.height();
         var cw = Number(outer.attr("width")), ch = Number(outer.attr("height"));
@@ -115,7 +117,7 @@ function flatGraph() {
                 d => d.innerBounds = d.bounds.inflate(-margin)
                 );
             link.each(function (d) {
-                d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                d.route = cola.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE()) this.parentNode.insertBefore(this, this);
             });
 
@@ -217,7 +219,7 @@ function powerGraph() {
                     });
                 group.each(d => d.innerBounds = d.bounds.inflate(-margin));
                 link.each(function (d) {
-                    d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                    d.route = cola.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                     if (isIE()) this.parentNode.insertBefore(this, this);
                 });
 
@@ -241,7 +243,7 @@ function powerGraph() {
                         var h = this.getBBox().height;
                         return d.y + h / 3.5;
                     });
-            }).on("end", () => 
+            }).on("end", () =>
                 svg.zoomToFit());
         }
         d3cola
@@ -348,7 +350,7 @@ function powerGraph2() {
             node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
             group.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
             link.each(function (d) {
-                d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                d.route = cola.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE()) this.parentNode.insertBefore(this, this);
 
             });

@@ -1,4 +1,4 @@
-﻿/// <reference path="qunit.js"/>
+/// <reference path="qunit.js"/>
 /// <reference path="qunit.d.ts"/>
 /// <reference path="../extern/d3.v3.min.js"/>
 /// <reference path="../src/layout.js"/>
@@ -29,7 +29,7 @@ asyncTest("small power-graph", function () {
             getType: function(e) { return 0 },
             makeLink: function (u, v) { return { source: u, target: v } }
         };
-        var c = new cola.powergraph.Configuration(n, graph.links, linkAccessor);
+        var c = new cola.Configuration(n, graph.links, linkAccessor);
         ok(c.modules.length == 7);
         var es;
         ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
@@ -46,7 +46,7 @@ asyncTest("small power-graph", function () {
         m = c.merge(c.modules[2], c.modules[3]);
         ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
 
-        c = new cola.powergraph.Configuration(n, graph.links, linkAccessor);
+        c = new cola.Configuration(n, graph.links, linkAccessor);
         var lastR = c.R;
         while (c.greedyMerge()) {
             ok(c.R < lastR);
@@ -81,7 +81,7 @@ asyncTest("all-pairs shortest paths", function () {
         var getLength = function (e) {
             return 1;
         }
-        var D = (new cola.shortestpaths.Calculator(n, d3cola.links(), getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
+        var D = (new cola.Calculator(n, d3cola.links(), getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
         deepEqual(D, [
             [0, 1, 1, 2],
             [1, 0, 1, 2],
@@ -191,7 +191,7 @@ test("convex hulls", function () {
             P.push(p = { x: nextInt(width), y: nextInt(height) });
             if (draw) svg.append("circle").attr("cx", p.x).attr("cy", p.y).attr('fill', 'green').attr("r", 5);
         }
-        var h = cola.geom.ConvexHull(P);
+        var h = cola.ConvexHull(P);
         if (draw) {
             var lineFunction = d3.svg.line().x(function (d) { return d.x; }).y(function (d) { return d.y; }).interpolate("linear");
             svg.append("path").attr("d", lineFunction(h))
@@ -202,9 +202,9 @@ test("convex hulls", function () {
 
         for (var i = 2; i < h.length; ++i) {
             var p = h[i - 2], q = h[i - 1], r = h[i];
-            ok(cola.geom.isLeft(p, q, r) >= 0, "clockwise hull " + i);
+            ok(cola.isLeft(p, q, r) >= 0, "clockwise hull " + i);
             for (var j = 0; j < P.length; ++j) {
-                ok(cola.geom.isLeft(p, q, P[j]) >= 0, "" + j);
+                ok(cola.isLeft(p, q, P[j]) >= 0, "" + j);
             }
         }
         ok(h[0] !== h[h.length - 1], "first and last point of hull are different" + k);
@@ -231,9 +231,9 @@ test("radial sort", function () {
     var q = { x: x / n, y: y / n };
     //console.log(q);
     var p0 = null;
-    cola.geom.clockwiseRadialSweep(q, P, function (p, i) {
+    cola.clockwiseRadialSweep(q, P, function (p, i) {
         if (p0) {
-            var il = cola.geom.isLeft(q, p0, p);
+            var il = cola.isLeft(q, p0, p);
             ok(il >= 0);
         }
         p0 = p;
@@ -259,10 +259,10 @@ function makePoly(rand) {
         var ctr = 0;
         while (i > 0 && length(P[i - 1], p) < 1 // min segment length is 1
             || i > 1 && ( // new point must keep poly convex
-                    cola.geom.isLeft(P[i - 2], P[i - 1], p) <= 0
-                || cola.geom.isLeft(P[i - 1], p, P[0]) <= 0
-                || cola.geom.isLeft(p, P[0], P[1]) <= 0)) {
-            if (ctr++ > 10) break loop; // give up after ten tries (maybe not enough space left for another convex point) 
+                    cola.isLeft(P[i - 2], P[i - 1], p) <= 0
+                || cola.isLeft(P[i - 1], p, P[0]) <= 0
+                || cola.isLeft(p, P[0], P[1]) <= 0)) {
+            if (ctr++ > 10) break loop; // give up after ten tries (maybe not enough space left for another convex point)
             p = { x: nextInt(width), y: nextInt(height) };
         }
         P.push(p);
@@ -280,7 +280,7 @@ function makeNonoverlappingPolys(rand, n) {
     var overlaps = function (p) {
         for (var i = 0; i < P.length; i++) {
             var q = P[i];
-            if (cola.geom.polysOverlap(p, q)) return true;
+            if (cola.polysOverlap(p, q)) return true;
         }
         return false;
     }
@@ -364,7 +364,7 @@ test('metro crossing min', function () {
                 var r1 = routes[i], r2 = routes[j];
                 r1.forEach(function (s1) {
                     r2.forEach(function (s2) {
-                        var int = cola.vpsc.Rectangle.lineIntersection(s1[0].x, s1[0].y, s1[1].x, s1[1].y, s2[0].x, s2[0].y, s2[1].x, s2[1].y);
+                        var int = cola.Rectangle.lineIntersection(s1[0].x, s1[0].y, s1[1].x, s1[1].y, s2[0].x, s2[0].y, s2[1].x, s2[1].y);
                         if (int) ints.push(int);
                     })
                 })
@@ -548,7 +548,7 @@ test('metro crossing min', function () {
     equal(countRouteIntersections(routes), 0);
 });
 
-// next steps: 
+// next steps:
 //  o label node and group centre and boundary vertices
 //  - non-traversable regions (obstacles) are determined by finding the highest common ancestors of the source and target nodes
 //  - to route each edge the weights of the edges are adjusted such that those inside obstacles
@@ -562,8 +562,8 @@ asyncTest('grid router', function() {
                 return v.children;
             },
             getBounds: function(v) {
-                return typeof v.bounds !== 'undefined' 
-                    ? new cola.vpsc.Rectangle(v.bounds.x, v.bounds.X, v.bounds.y, v.bounds.Y)
+                return typeof v.bounds !== 'undefined'
+                    ? new cola.Rectangle(v.bounds.x, v.bounds.X, v.bounds.y, v.bounds.Y)
                     : undefined;
             }
         });
@@ -599,7 +599,7 @@ asyncTest('grid router', function() {
 
         if (draw) {
             var svg = d3.select("body").append("svg").attr({width: 800, height: 400}).append('g').attr('transform', 'scale(0.5,0.8)')
-            var color = d3.scale.category10();
+            // var color = d3.scale.category10();
             function color(d) { return 'grey' }
             var nodegroups = svg.selectAll('.gridNodes')
                 .data(gridrouter.backToFront)
@@ -677,13 +677,13 @@ test("shortest path with bends", function() {
     function source(e) { return e[0]};
     function target(e) { return e[1]};
     function length(e) { return e[2]};
-    var sp = new cola.shortestpaths.Calculator(nodes.length, edges, source, target, length);
+    var sp = new cola.Calculator(nodes.length, edges, source, target, length);
     var path = sp.PathFromNodeToNodeWithPrevCost(0, 4,
-    function (u,v,w){ 
+    function (u,v,w){
         var a = nodes[u], b = nodes[v], c = nodes[w];
         var dx = Math.abs(c[0] - a[0]), dy = Math.abs(c[1] - a[1]);
         return dx > 0.01 && dy > 0.01
-            ? 1000 
+            ? 1000
             : 0;
     });
     ok(true);
@@ -698,12 +698,12 @@ test("tangent visibility graph", function () {
             P = makeNonoverlappingPolys(rand, n),
             port1 = midPoint(P[8]),
             port2 = midPoint(P[9]),
-            g = new cola.geom.TangentVisibilityGraph(P),
+            g = new cola.TangentVisibilityGraph(P),
             start = g.addPoint(port1, 8),
             end = g.addPoint(port2, 9);
         g.addEdgeIfVisible(port1, port2, 8, 9);
         var getSource = function (e) { return e.source.id }, getTarget = function(e) { return e.target.id}, getLength = function(e) { return e.length() }
-        shortestPath = (new cola.shortestpaths.Calculator(g.V.length, g.E, getSource, getTarget, getLength)).PathFromNodeToNode(start.id, end.id);
+        shortestPath = (new cola.Calculator(g.V.length, g.E, getSource, getTarget, getLength)).PathFromNodeToNode(start.id, end.id);
         ok(shortestPath.length > 0);
         if (draw) {
             d3.select("body").append("p").html(tt);
@@ -731,12 +731,12 @@ test("tangents", function () {
     var rand = new cola.PseudoRandom();
     var rect = [{ x: 10, y: 10 }, { x: 20, y: 10 }, { x: 10, y: 20 }, { x: 20, y: 20 }];
     var pnt = [{ x: 0, y: 0 }];
-    var t1 = cola.geom.tangents(pnt, rect);
+    var t1 = cola.tangents(pnt, rect);
     for (var j = 0; j < 100; j++) {
         var A = makePoly(rand), B = makePoly(rand);
         B.forEach(function (p) { p.x += 11 });
         //if (j !== 207) continue;
-        var t = cola.geom.tangents(A, B);
+        var t = cola.tangents(A, B);
         // ok(t.length === 4, t.length + " tangents found at j="+j);
         if (draw) {
             var getLine = function (tp) {
@@ -760,7 +760,7 @@ test("tangents", function () {
 function intersects(l, P) {
     var ints = [];
     for (var i = 1; i < P.length; ++i) {
-        var int = cola.vpsc.Rectangle.lineIntersection(
+        var int = cola.Rectangle.lineIntersection(
             l.x1, l.y1,
             l.x2, l.y2,
             P[i-1].x, P[i-1].y,
@@ -788,7 +788,7 @@ test("pseudo random number test", function () {
 });
 
 test("rectangle intersections", function () {
-    var r = new cola.vpsc.Rectangle(2, 4, 0, 2);
+    var r = new cola.Rectangle(2, 4, 0, 2);
     var p = r.rayIntersection(0, 1);
     ok(p.x == 2);
     ok(p.y == 1);
@@ -880,7 +880,7 @@ test("matrix perf test", function () {
 
 /// <reference path="pqueue.js"/>
 test("priority queue test", function () {
-    var q = new PriorityQueue(function (a, b) { return a <= b; });
+    var q = new cola.PriorityQueue(function (a, b) { return a <= b; });
     q.push(42, 5, 23, 5, Math.PI);
     var u = Math.PI, v;
     strictEqual(u, q.top());
@@ -914,7 +914,7 @@ test("dijkstra", function () {
     var n = 5;
     var links = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 1]],
         getSource = function (l) { return l[0] }, getTarget = function (l) { return l[1] }, getLength = function(l) { return 1 }
-    var calc = new cola.shortestpaths.Calculator(n, links, getSource, getTarget, getLength);
+    var calc = new cola.Calculator(n, links, getSource, getTarget, getLength);
     var d = calc.DistancesFromNode(0);
     deepEqual(d, [0, 1, 2, 3, 2]);
     var D = calc.DistanceMatrix();
@@ -946,17 +946,17 @@ test("vpsc", function () {
         var vs = t.variables.map(function (u, i) {
             var v;
             if (typeof u === "number") {
-                v = new cola.vpsc.Variable(u);
+                v = new cola.Variable(u);
             } else {
-                v = new cola.vpsc.Variable(u.desiredPosition, u.weight, u.scale);
+                v = new cola.Variable(u.desiredPosition, u.weight, u.scale);
             }
             v.id = i;
             return v;
         });
         var cs = t.constraints.map(function (c) {
-            return new cola.vpsc.Constraint(vs[c.left], vs[c.right], c.gap);
+            return new cola.Constraint(vs[c.left], vs[c.right], c.gap);
         });
-        var solver = new cola.vpsc.Solver(vs, cs);
+        var solver = new cola.Solver(vs, cs);
         solver.solve();
         if (typeof t.expected !== "undefined") {
             deepEqual(rnd(t.expected, t.precision), res(vs, t.precision), t.description);
@@ -966,7 +966,7 @@ test("vpsc", function () {
 
 /// <reference path="rbtree.js"/>
 test("rbtree", function () {
-    var tree = new cola.vpsc.RBTree(function (a, b) { return a - b });
+    var tree = new cola.RBTree(function (a, b) { return a - b });
     var data = [5, 8, 3, 1, 7, 6, 2];
     data.forEach(function (d) { tree.insert(d); });
     var it = tree.iterator(), item;
@@ -984,17 +984,17 @@ test("rbtree", function () {
 /// <reference path="rectangle.js"/>
 test("overlap removal", function () {
     var rs = [
-        new cola.vpsc.Rectangle(0, 2, 0, 1),
-        new cola.vpsc.Rectangle(1, 3, 0, 1)
+        new cola.Rectangle(0, 2, 0, 1),
+        new cola.Rectangle(1, 3, 0, 1)
     ];
     equal(rs[0].overlapX(rs[1]), 1);
     equal(rs[0].overlapY(rs[1]), 1);
     var vs = rs.map(function (r) {
-        return new cola.vpsc.Variable(r.cx());
+        return new cola.Variable(r.cx());
     });
-    var cs = cola.vpsc.generateXConstraints(rs, vs);
+    var cs = cola.generateXConstraints(rs, vs);
     equal(cs.length, 1);
-    var solver = new cola.vpsc.Solver(vs, cs);
+    var solver = new cola.Solver(vs, cs);
     solver.solve();
     vs.forEach(function(v, i) {
         rs[i].setXCentre(v.position());
@@ -1003,9 +1003,9 @@ test("overlap removal", function () {
     equal(rs[0].overlapY(rs[1]), 1);
 
     vs = rs.map(function (r) {
-        return new cola.vpsc.Variable(r.cy());
+        return new cola.Variable(r.cy());
     });
-    cs = cola.vpsc.generateYConstraints(rs, vs);
+    cs = cola.generateYConstraints(rs, vs);
     equal(cs.length, 0);
 });
 
@@ -1024,24 +1024,24 @@ test("cola.vpsc.removeOverlaps", function () {
         return cnt;
     };
     var rs = [
-        new cola.vpsc.Rectangle(0, 4, 0, 4),
-        new cola.vpsc.Rectangle(3, 5, 1, 2),
-        new cola.vpsc.Rectangle(1, 3, 3, 5)
+        new cola.Rectangle(0, 4, 0, 4),
+        new cola.Rectangle(3, 5, 1, 2),
+        new cola.Rectangle(1, 3, 3, 5)
     ];
     equal(overlaps(rs), 2);
-    cola.vpsc.removeOverlaps(rs);
+    cola.removeOverlaps(rs);
     equal(overlaps(rs), 0);
     equal(rs[1].y, 1);
     equal(rs[1].Y, 2);
 
     rs = [
-        new cola.vpsc.Rectangle(148.314,303.923,94.4755,161.84969999999998),
-        new cola.vpsc.Rectangle(251.725,326.6396,20.0193,69.68379999999999),
-        new cola.vpsc.Rectangle(201.235,263.6349,117.221,236.923),
-        new cola.vpsc.Rectangle(127.445,193.7047,46.5891,186.5991),
-        new cola.vpsc.Rectangle(194.259,285.7201,204.182,259.13239999999996)
+        new cola.Rectangle(148.314,303.923,94.4755,161.84969999999998),
+        new cola.Rectangle(251.725,326.6396,20.0193,69.68379999999999),
+        new cola.Rectangle(201.235,263.6349,117.221,236.923),
+        new cola.Rectangle(127.445,193.7047,46.5891,186.5991),
+        new cola.Rectangle(194.259,285.7201,204.182,259.13239999999996)
     ];
-    cola.vpsc.removeOverlaps(rs);
+    cola.removeOverlaps(rs);
     equal(overlaps(rs), 0);
 });
 

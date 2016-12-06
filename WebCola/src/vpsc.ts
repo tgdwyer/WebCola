@@ -1,4 +1,3 @@
-module cola.vpsc {
     export class PositionStats {
         AB: number = 0;
         AD: number = 0;
@@ -105,7 +104,7 @@ module cola.vpsc {
             });
             return dfdv / v.scale;
         }
-        
+
         private populateSplitBlock(v: Variable, prev: Variable): void {
             v.visitNeighbours(prev, (c, next) => {
                 next.offset = v.offset + (next === c.right ? c.gap : -c.gap);
@@ -124,7 +123,7 @@ module cola.vpsc {
 
         // calculate lagrangian multipliers on constraints and
         // find the active constraint in this block with the smallest lagrangian.
-        // if the lagrangian is negative, then the constraint is a split candidate.  
+        // if the lagrangian is negative, then the constraint is a split candidate.
         findMinLM(): Constraint {
             var m: Constraint = null;
             this.compute_lm(this.vars[0], null, c=> {
@@ -153,7 +152,7 @@ module cola.vpsc {
             });
             return endFound;
         }
-        
+
         // Search active constraint tree from u to see if there is a directed path to v.
         // Returns true if path is found.
         isActiveDirectedPathBetween(u: Variable, v: Variable) : boolean {
@@ -299,13 +298,13 @@ DEBUG */
         forEach(f: (b: Block, i: number) => void ) {
             this.list.forEach(f);
         }
-        
+
         // useful, for example, after variable desired positions change.
         updateBlockPositions(): void {
             this.list.forEach(b=> b.updateWeightedPosition());
         }
 
-        // split each block across its constraint with the minimum lagrangian 
+        // split each block across its constraint with the minimum lagrangian
         split(inactive: Constraint[]): void {
             this.updateBlockPositions();
             this.list.forEach(b=> {
@@ -322,7 +321,7 @@ DEBUG */
                 }
             });
         }
-        
+
 /* DEBUG
         // checks b is in the block, and does a sanity check over list index integrity
         contains(b: Block): boolean {
@@ -553,4 +552,3 @@ DEBUG */
             upperBound: vUpper ? vUpper.position() : rightMost.position() + rightMostSize
         };
     }
-}   

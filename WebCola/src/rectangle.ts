@@ -1,7 +1,7 @@
-///<reference path="vpsc.ts"/>
-///<reference path="rbtree.ts"/>
-module cola.vpsc {
-    export interface Point {
+import {Constraint, Variable, Solver} from './vpsc'
+import {RBTree} from './rbtree'
+
+    interface Point {
         x: number;
         y: number
     }
@@ -103,7 +103,7 @@ module cola.vpsc {
             }
             return intersections;
         }
-        
+
         /**
          * return any intersection points between a line extending from the centre of this rectangle to the given point,
          *  and the sides of this rectangle
@@ -178,7 +178,7 @@ module cola.vpsc {
     }
 
     class Node {
-        prev: cola.vpsc.RBTree<Node>;
+        prev: RBTree<Node>;
         next: RBTree<Node>;
 
         constructor(public v: Variable, public r: Rectangle, public pos: number) {
@@ -373,14 +373,14 @@ module cola.vpsc {
     }
 
     export function removeOverlaps(rs: Rectangle[]): void {
-        var vs = rs.map(r => new vpsc.Variable(r.cx()));
-        var cs = vpsc.generateXConstraints(rs, vs);
-        var solver = new vpsc.Solver(vs, cs);
+        var vs = rs.map(r => new Variable(r.cx()));
+        var cs = generateXConstraints(rs, vs);
+        var solver = new Solver(vs, cs);
         solver.solve();
         vs.forEach((v, i) => rs[i].setXCentre(v.position()));
-        vs = rs.map(r=> new vpsc.Variable(r.cy()));
-        cs = vpsc.generateYConstraints(rs, vs);
-        solver = new vpsc.Solver(vs, cs);
+        vs = rs.map(r=> new Variable(r.cy()));
+        cs = generateYConstraints(rs, vs);
+        solver = new Solver(vs, cs);
         solver.solve();
         vs.forEach((v, i) => rs[i].setYCentre(v.position()));
     }
@@ -424,11 +424,11 @@ module cola.vpsc {
 					if (!v.width || !v.height)
 					{
 						//If undefined, default to nothing
-						v.bounds = new vpsc.Rectangle(v.x, v.x, v.y, v.y);
+						v.bounds = new Rectangle(v.x, v.x, v.y, v.y);
 						return;
 					}
                     var w2 = v.width / 2, h2 = v.height / 2;
-                    v.bounds = new vpsc.Rectangle(v.x - w2, v.x + w2, v.y - h2, v.y + h2);
+                    v.bounds = new Rectangle(v.x - w2, v.x + w2, v.y - h2, v.y + h2);
                 });
                 computeGroupBounds(rootGroup);
                 var i = nodes.length;
@@ -530,10 +530,10 @@ module cola.vpsc {
             ];
         }
 
-        private project(x0: number[], y0: number[], start: number[], desired: number[], 
+        private project(x0: number[], y0: number[], start: number[], desired: number[],
             getDesired: (v: GraphNode) => number,
-            cs: Constraint[], 
-            generateConstraints: (g: Group) => Constraint[], 
+            cs: Constraint[],
+            generateConstraints: (g: Group) => Constraint[],
             updateNodeBounds: (v: GraphNode) => any,
             updateGroupBounds: (g: Group) => any)
         {
@@ -551,10 +551,9 @@ module cola.vpsc {
         }
 
         private solve(vs: Variable[], cs: Constraint[], starting: number[], desired: number[]) {
-            var solver = new vpsc.Solver(vs, cs);
+            var solver = new Solver(vs, cs);
             solver.setStartingPositions(starting);
             solver.setDesiredPositions(desired);
             solver.solve();
         }
     }
-}

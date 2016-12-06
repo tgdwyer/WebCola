@@ -1,10 +1,13 @@
-﻿///<reference path="../extern/d3.d.ts"/>
+///<reference path="../extern/d3.d.ts"/>
 ///<reference path="../src/layout.ts"/>
 ///<reference path="../src/vpsc.ts"/>
 ///<reference path="../src/rectangle.ts"/>
 ///<reference path="../src/gridrouter.ts"/>
 ///<reference path="../src/geom.ts"/>
 ///<reference path="../extern/jquery.d.ts"/>
+
+
+import * as cola from '../index'
 
 module vhybridize{
 var color = d3.scale.category10();
@@ -95,7 +98,7 @@ function flatGraph() {
         d3cola.on("tick", function () {
             node.each(function (d) { return d.innerBounds = d.bounds.inflate(-margin); });
             link.each(function (d) {
-                d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                d.route = cola.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE())
                     this.parentNode.insertBefore(this, this);
             })
@@ -312,7 +315,7 @@ function powerGraph2(callback) {
                     nodes: pgLayout.cola.nodes().map(d=> <any>{
                         id: _id(d),
                         name: d.name,
-                        bounds: new cola.vpsc.Rectangle(d.innerBounds.x, d.innerBounds.X, d.innerBounds.y, d.innerBounds.Y)
+                        bounds: new cola.Rectangle(d.innerBounds.x, d.innerBounds.X, d.innerBounds.y, d.innerBounds.Y)
                     }).concat(
                         pgLayout.powerGraph.groups.map(d=> <any>{
                             id: _id(d),
@@ -476,7 +479,7 @@ function powerGraph2(callback) {
                     if ((npv.bounds.Y <= np.bounds.y) && (((npv.bounds.x <= np.bounds.x) && (npv.bounds.X >= np.bounds.x)) || ((np.bounds.x <= npv.bounds.x) && (np.bounds.X >= npv.bounds.x))) ) {
                         above.push({ source: getId(npv, N), target: getId(np, N) });
                     }
-                   
+
                 }
             });
         });
@@ -490,7 +493,7 @@ function powerGraph2(callback) {
                     if ((npp.bounds.Y - 20 <= np.bounds.y + 20) && (((npp.bounds.x + 20 <= np.bounds.x) && (npp.bounds.X -20 >= np.bounds.x)) || ((np.bounds.x <= npp.bounds.x  + 20) && (np.bounds.X >= npp.bounds.x + 20)))) {
                         above.push({ source: getId(npp, N), target: getId(np, N) });
                     }
-                   
+
                 }
             });
             noparentnodes.forEach(npv => {
@@ -506,7 +509,7 @@ function powerGraph2(callback) {
                 else if ((np.bounds.Y - 20 <= npv.bounds.y) && (((npv.bounds.x <= np.bounds.x+20) && (npv.bounds.X >= np.bounds.x+20)) || ((np.bounds.x+20 <= npv.bounds.x) && (np.bounds.X-20 >= npv.bounds.x)))) {
                     above.push({ source: getId(np, N), target: getId(npv, N) });
                 }
-                
+
             });
         });
 
@@ -519,7 +522,7 @@ function powerGraph2(callback) {
                     if ((npv.bounds.Y <= np.bounds.y) && (((npv.bounds.x <= np.bounds.x) && (npv.bounds.X >= np.bounds.x)) || ((np.bounds.x <= npv.bounds.x) && (np.bounds.X >= npv.bounds.x)))) {
                         above.push({ source: getId(npv, N), target: getId(np, N) });
                     }
-                   
+
                 }
             });
         });
@@ -533,7 +536,7 @@ function powerGraph2(callback) {
                     if ((npp.bounds.Y - 20 <= np.bounds.y + 20) && (((npp.bounds.x+20 <= np.bounds.x+20) && (npp.bounds.X -20 >= np.bounds.x+20)) || ((np.bounds.x+20 <= npp.bounds.x+20) && (np.bounds.X-20 >= npp.bounds.x+20)))) {
                         above.push({ source: getId(npp, N), target: getId(np, N) });
                     }
-                    
+
                 }
             });
             parentnodes.forEach(npv => {
@@ -550,13 +553,13 @@ function powerGraph2(callback) {
                     else if ((np.bounds.Y - 20 <= npv.bounds.y) && (((npv.bounds.x <= np.bounds.x+20) && (npv.bounds.X >= np.bounds.x+20)) || ((np.bounds.x+20 <= npv.bounds.x) && (np.bounds.X-20 >= npv.bounds.x)))) {
                         above.push({ source: getId(np, N), target: getId(npv, N) });
                     }
-                   
+
                 }
             });
 
         });
 
-       
+
         var modules = { N: N, ms: [], edges: [], maxwidth: maxwidth.toString(), maxheight: maxheight.toString(), left: left, above: above, xoverlap: xoverlap, yoverlap: yoverlap };
         pgLayout.powerGraph.groups.forEach(g => {
             var m = [];
@@ -617,7 +620,7 @@ function powerGraph2(callback) {
             node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin) });
             group.each(function (d) { d.innerBounds = d.bounds.inflate(-20) });
             link.each(function (d) {
-                d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                d.route = cola.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE()) this.parentNode.insertBefore(this, this);
 
             });

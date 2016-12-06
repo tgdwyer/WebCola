@@ -2,6 +2,7 @@
 ///<reference path="../extern/jquery.d.ts"/>
 ///<reference path="../extern/d3.d.ts"/>
 
+import * as cola from '../index'
 module tetrisbug {
     var width = 1280,
         height = 500;
@@ -79,7 +80,7 @@ module tetrisbug {
                     d => d.innerBounds = d.bounds.inflate(-margin)
                     );
                 link.each(function (d) {
-                    d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                    d.route = cola.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                     if (isIE()) this.parentNode.insertBefore(this, this);
                 });
 
@@ -198,7 +199,7 @@ module tetrisbug {
                         });
                     group.each(d => d.innerBounds = d.bounds.inflate(-margin));
                     link.each(function (d) {
-                        d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                        d.route = cola.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                         if (isIE()) this.parentNode.insertBefore(this, this);
                     });
 

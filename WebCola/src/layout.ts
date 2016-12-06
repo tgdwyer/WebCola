@@ -1,13 +1,10 @@
-﻿///<reference path="handledisconnected.ts"/>
-///<reference path="geom.ts"/>
-///<reference path="descent.ts"/>
-///<reference path="powergraph.ts"/>
-///<reference path="linklengths.ts"/>
-///<reference path="shortestpaths.ts"/>
-/**
- * @module cola
- */
-module cola {
+import * as powergraph from './powergraph'
+import {LinkLengthAccessor, symmetricDiffLinkLengths, jaccardLinkLengths, generateDirectedEdgeConstraints} from './linklengths'
+import {Descent} from './descent'
+import {Rectangle, Projection, makeEdgeTo, makeEdgeBetween} from './rectangle'
+import {Calculator} from './shortestpaths'
+import {TangentVisibilityGraph, TVGPoint} from './geom'
+import {separateGraphs, applyPacking} from './handledisconnected'
     /**
      * The layout process fires three events:
      *  - start: layout iterations started
@@ -47,9 +44,9 @@ module cola {
          */
         fixed: number;
     }
-    
-    export interface Group {
-        bounds: vpsc.Rectangle;
+
+    interface Group {
+        bounds: Rectangle;
         leaves: Node[];
         groups: Group[];
     }
@@ -57,7 +54,7 @@ module cola {
     function isGroup(g: any): g is Group {
         return typeof g.leaves !== 'undefined' || typeof g.groups !== 'undefined';
     }
-    
+
     export interface Link<NodeRefType> {
         source: NodeRefType;
         target: NodeRefType;
@@ -70,14 +67,14 @@ module cola {
         // if unspecified 1 is the default
         weight?: number;
     }
-    
-    type LinkNumericPropertyAccessor = (t: Link<Node | number>) => number;
 
-    interface LinkLengthTypeAccessor extends LinkLengthAccessor<Link<Node | number>> {
+    export type LinkNumericPropertyAccessor = (t: Link<Node | number>) => number;
+
+    export interface LinkLengthTypeAccessor extends LinkLengthAccessor<Link<Node | number>> {
         getType: LinkNumericPropertyAccessor;
     }
     /**
-     * Main interface to cola layout.  
+     * Main interface to cola layout.
      * @class Layout
      */
     export class Layout {
@@ -102,7 +99,7 @@ module cola {
         private _threshold = 0.01;
         private _visibilityGraph = null;
         private _groupCompactness = 1e-6;
-        
+
         // sub-class and override this property to replace with a more sophisticated eventing mechanism
         protected event = null;
 
@@ -121,7 +118,7 @@ module cola {
 
         // a function that is notified of events like "tick"
         // sub-class and override this method to replace with a more sophisticated eventing mechanism
-        protected trigger(e: Event) { 
+        protected trigger(e: Event) {
             if (this.event && typeof this.event[e.type] !== 'undefined') {
                 this.event[e.type](e);
             }
@@ -248,7 +245,7 @@ module cola {
         }
 
         powerGraphGroups(f: Function): Layout {
-            var g = cola.powergraph.getGroups(this._nodes, this._links, this.linkAccessor, this._rootGroup);
+            var g = powergraph.getGroups(this._nodes, this._links, this.linkAccessor, this._rootGroup);
             this.groups(g.groups);
             f(g);
             return this;
@@ -270,14 +267,14 @@ module cola {
 
         /**
          * if true, the final step of the start method will be to nicely pack connected components of the graph.
-         * works best if start() is called with a reasonable number of iterations specified and 
+         * works best if start() is called with a reasonable number of iterations specified and
          * each node has a bounding box (defined by the width and height properties on nodes).
          * @property handleDisconnected
          * @type bool
          * @default true
          */
         handleDisconnected(): boolean
-        handleDisconnected(v: boolean): Layout 
+        handleDisconnected(v: boolean): Layout
         handleDisconnected(v?: boolean): any {
             if (!arguments.length) return this._handleDisconnected;
             this._handleDisconnected = v;
@@ -315,7 +312,7 @@ module cola {
         /**
          * list of constraints of various types
          * @property constraints
-         * @type {array} 
+         * @type {array}
          * @default empty list
          */
         constraints(): Array<any>
@@ -403,7 +400,7 @@ module cola {
         }
 
         convergenceThreshold(): number
-        convergenceThreshold(x: number): Layout 
+        convergenceThreshold(x: number): Layout
         convergenceThreshold(x?: number): any {
             if (!x) return this._threshold;
             this._threshold = typeof x === "function" ? x : +x;
@@ -461,7 +458,7 @@ module cola {
          */
         symmetricDiffLinkLengths(idealLength: number, w: number = 1): Layout {
             this.linkDistance(l => idealLength * l.length);
-            this._linkLengthCalculator = () => cola.symmetricDiffLinkLengths(this._links, this.linkAccessor, w);
+            this._linkLengthCalculator = () => symmetricDiffLinkLengths(this._links, this.linkAccessor, w);
             return this;
         }
 
@@ -477,14 +474,14 @@ module cola {
          */
         jaccardLinkLengths(idealLength: number, w: number = 1): Layout {
             this.linkDistance(l => idealLength * l.length);
-            this._linkLengthCalculator = () => cola.jaccardLinkLengths(this._links, this.linkAccessor, w);
+            this._linkLengthCalculator = () => jaccardLinkLengths(this._links, this.linkAccessor, w);
             return this;
         }
 
         /**
          * start the layout process
          * @method start
-         * @param {number} [initialUnconstrainedIterations=0] unconstrained initial layout iterations 
+         * @param {number} [initialUnconstrainedIterations=0] unconstrained initial layout iterations
          * @param {number} [initialUserConstraintIterations=0] initial layout iterations with user-specified constraints
          * @param {number} [initialAllConstraintsIterations=0] initial layout iterations with all constraints including non-overlap
          * @param {number} [gridSnapIterations=0] iterations of "grid snap", which pulls nodes towards grid cell centers - grid of size node[0].width - only really makes sense if all nodes have the same width and height
@@ -530,11 +527,11 @@ module cola {
                 distances = this._distanceMatrix;
             } else {
                 // construct an n X n distance matrix based on shortest paths through graph (with respect to edge.length).
-                distances = (new cola.shortestpaths.Calculator(N, this._links, Layout.getSourceIndex, Layout.getTargetIndex, l=> this.getLinkLength(l))).DistanceMatrix();
+                distances = (new Calculator(N, this._links, Layout.getSourceIndex, Layout.getTargetIndex, l=> this.getLinkLength(l))).DistanceMatrix();
 
                 // G is a square matrix with G[i][j] = 1 iff there exists an edge between node i and node j
                 // otherwise 2. (
-                G = cola.Descent.createSquareMatrix(N, () => 2);
+                G = Descent.createSquareMatrix(N, () => 2);
                 this._links.forEach(l => {
                     if (typeof l.source == "number") l.source = this._nodes[<number>l.source];
                     if (typeof l.target == "number") l.target = this._nodes[<number>l.target];
@@ -545,7 +542,7 @@ module cola {
                 });
             }
 
-            var D = cola.Descent.createSquareMatrix(N, function (i, j) {
+            var D = Descent.createSquareMatrix(N, function (i, j) {
                 return distances[i][j];
             });
 
@@ -572,7 +569,7 @@ module cola {
                     //        addAttraction(gid, i + 1, 0.1, 0.1);
                     //        addAttraction(gid + 1, i + 1, 0.1, 0.1);
                     //    });
-                    
+
                     x[i] = 0, y[i++] = 0;
                     x[i] = 0, y[i++] = 0;
                 });
@@ -581,13 +578,13 @@ module cola {
             var curConstraints = this._constraints || [];
             if (this._directedLinkConstraints) {
                 (<any>this.linkAccessor).getMinSeparation = this._directedLinkConstraints.getMinSeparation;
-                curConstraints = curConstraints.concat(cola.generateDirectedEdgeConstraints(n, this._links, this._directedLinkConstraints.axis, <any>(this.linkAccessor)));
-                
+                curConstraints = curConstraints.concat(generateDirectedEdgeConstraints(n, this._links, this._directedLinkConstraints.axis, <any>(this.linkAccessor)));
+
                 // todo: add containment constraints between group dummy nodes and their children
             }
 
             this.avoidOverlaps(false);
-            this._descent = new cola.Descent([x, y], D);
+            this._descent = new Descent([x, y], D);
 
             this._descent.locks.clear();
             for (var i = 0; i < n; ++i) {
@@ -607,7 +604,7 @@ module cola {
             this.initialLayout(initialUnconstrainedIterations, x, y);
 
             // apply initialIterations with user constraints but no nonoverlap constraints
-            if (curConstraints.length > 0) this._descent.project = new cola.vpsc.Projection(this._nodes, this._groups, this._rootGroup, curConstraints).projectFunctions();
+            if (curConstraints.length > 0) this._descent.project = new Projection(this._nodes, this._groups, this._rootGroup, curConstraints).projectFunctions();
             this._descent.run(initialUserConstraintIterations);
             this.separateOverlappingComponents(w, h);
 
@@ -615,7 +612,7 @@ module cola {
             this.avoidOverlaps(ao);
             if (ao) {
                 this._nodes.forEach(function (v, i) { v.x = x[i], v.y = y[i]; });
-                this._descent.project = new cola.vpsc.Projection(this._nodes, this._groups, this._rootGroup, curConstraints, true).projectFunctions();
+                this._descent.project = new Projection(this._nodes, this._groups, this._rootGroup, curConstraints, true).projectFunctions();
                 this._nodes.forEach(function (v, i) { x[i] = v.x, y[i] = v.y; });
             }
 
@@ -628,7 +625,7 @@ module cola {
                 this._descent.snapGridSize = this._nodes[0].width;
                 this._descent.numGridSnapNodes = n;
                 this._descent.scaleSnapByMaxH = n != N; // if we have groups then need to scale hessian so grid forces still apply
-                var G0 = cola.Descent.createSquareMatrix(N,(i, j) => {
+                var G0 = Descent.createSquareMatrix(N,(i, j) => {
                     if (i >= n || j >= n) return G[i][j];
                     return 0
                 });
@@ -642,7 +639,7 @@ module cola {
         }
 
         private initialLayout(iterations: number, x: number[], y: number[]) {
-            if (this._groups.length > 0 && iterations > 0) {        
+            if (this._groups.length > 0 && iterations > 0) {
                 // construct a flat graph with dummy nodes for the groups and edges connecting group dummy nodes to their children
                 // todo: edges attached to groups are replaced with edges connected to the corresponding group dummy node
                 var n = this._nodes.length;
@@ -659,7 +656,7 @@ module cola {
                 });
 
                 // layout the flat graph with dummy nodes and edges
-                new cola.Layout()
+                new Layout()
                     .size(this.size())
                     .nodes(vs)
                     .links(edges)
@@ -677,15 +674,15 @@ module cola {
                 this._descent.run(iterations);
             }
         }
-        
+
         // recalculate nodes position for disconnected graphs
         private separateOverlappingComponents(width: number, height: number): void {
             // recalculate nodes position for disconnected graphs
             if (!this._distanceMatrix && this._handleDisconnected) {
                 let x = this._descent.x[0], y = this._descent.x[1];
                 this._nodes.forEach(function (v, i) { v.x = x[i], v.y = y[i]; });
-                var graphs = cola.separateGraphs(this._nodes, this._links);
-                cola.applyPacking(graphs, width, height, this._defaultNodeSize);
+                var graphs = separateGraphs(this._nodes, this._links);
+                applyPacking(graphs, width, height, this._defaultNodeSize);
                 this._nodes.forEach((v, i) => {
                     this._descent.x[0][i] = v.x, this._descent.x[1][i] = v.y;
                     if (v.bounds) {
@@ -707,7 +704,7 @@ module cola {
         /// find a visibility graph over the set of nodes.  assumes all nodes have a
         /// bounds property (a rectangle) and that no pair of bounds overlaps.
         prepareEdgeRouting(nodeMargin: number = 0) {
-            this._visibilityGraph = new cola.geom.TangentVisibilityGraph(
+            this._visibilityGraph = new TangentVisibilityGraph(
                 this._nodes.map(function (v) {
                     return v.bounds.inflate(-nodeMargin).vertices();
                 }));
@@ -722,9 +719,9 @@ module cola {
             //if (d.source.id === 10 && d.target.id === 11) {
             //    debugger;
             //}
-            var vg2 = new cola.geom.TangentVisibilityGraph(this._visibilityGraph.P, { V: this._visibilityGraph.V, E: this._visibilityGraph.E }),
-                port1 = <geom.TVGPoint>{ x: edge.source.x, y: edge.source.y },
-                port2 = <geom.TVGPoint>{ x: edge.target.x, y: edge.target.y },
+            var vg2 = new TangentVisibilityGraph(this._visibilityGraph.P, { V: this._visibilityGraph.V, E: this._visibilityGraph.E }),
+                port1 = <TVGPoint>{ x: edge.source.x, y: edge.source.y },
+                port2 = <TVGPoint>{ x: edge.target.x, y: edge.target.y },
                 start = vg2.addPoint(port1, edge.source.index),
                 end = vg2.addPoint(port2, edge.target.index);
             vg2.addEdgeIfVisible(port1, port2, edge.source.index, edge.target.index);
@@ -732,10 +729,10 @@ module cola {
                 draw(vg2);
             }
             var sourceInd = e => e.source.id, targetInd = e => e.target.id, length = e => e.length(),
-                spCalc = new cola.shortestpaths.Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length),
+                spCalc = new Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length),
                 shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
             if (shortestPath.length === 1 || shortestPath.length === vg2.V.length) {
-                let route = cola.vpsc.makeEdgeBetween(edge.source.innerBounds, edge.target.innerBounds, 5);
+                let route = makeEdgeBetween(edge.source.innerBounds, edge.target.innerBounds, 5);
                 lineData = [route.sourceIntersection, route.arrowStart];
             } else {
                 var n = shortestPath.length - 2,
@@ -744,7 +741,7 @@ module cola {
                     lineData = [edge.source.innerBounds.rayIntersection(p.x, p.y)];
                 for (var i = n; i >= 0; --i)
                     lineData.push(vg2.V[shortestPath[i]].p);
-                lineData.push(cola.vpsc.makeEdgeTo(q, edge.target.innerBounds, 5));
+                lineData.push(makeEdgeTo(q, edge.target.innerBounds, 5));
             }
             //lineData.forEach((v, i) => {
             //    if (i > 0) {
@@ -796,7 +793,7 @@ module cola {
             (<any>v).py = v.y;
         }
 
-        // we store offsets for each node relative to the centre of the ancestor group 
+        // we store offsets for each node relative to the centre of the ancestor group
         // being dragged in a pair of properties on the node
         private static storeOffset(d: Group, origin: { x: number, y: number }) {
             if (typeof d.leaves !== 'undefined') {
@@ -846,7 +843,7 @@ module cola {
         }
 
         // we unset only bits 2 and 3 so that the user can fix nodes with another a different
-        // bit such that the lock persists between drags 
+        // bit such that the lock persists between drags
         static dragEnd(d) {
             if (isGroup(d)) {
                 if (typeof d.leaves !== 'undefined') {
@@ -870,10 +867,9 @@ module cola {
             d.fixed |= 4; // set bit 3
             d.px = d.x, d.py = d.y; // set velocity to zero
         }
-        
+
         // in d3 hover temporarily locks nodes, currently not used in cola
         static mouseOut(d) {
             d.fixed &= ~4; // unset bit 3
         }
     }
-}

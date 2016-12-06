@@ -1,4 +1,3 @@
-module cola.vpsc {
     //Based on js_es:
     //
     //https://github.com/vadimg/js_bintrees
@@ -483,4 +482,3 @@ module cola.vpsc {
             return RBTree.single_rotate(root, dir);
         }
     }
-}

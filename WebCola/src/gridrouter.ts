@@ -1,22 +1,21 @@
-/// <reference path="rectangle.ts"/>
-/// <reference path="shortestpaths.ts"/>
-/// <reference path="geom.ts"/>
-/// <reference path="vpsc.ts"/>
-module cola {
-	export interface NodeAccessor<Node>{
-		getChildren(v:Node) : number[];
-		getBounds(v:Node) : cola.vpsc.Rectangle;
-	}
-	export class NodeWrapper {
-		leaf: boolean;
-		parent: NodeWrapper;
-		ports: Vert[];
-		constructor(public id: number, public rect: cola.vpsc.Rectangle, public children: number[]) {
-			this.leaf = typeof children === 'undefined' || children.length === 0;
-		}
-	}
-	export class Vert {
-		constructor(public id: number, public x:number, public y: number, public node: NodeWrapper = null, public line = null) {}
+import {Point} from './geom'
+import {Rectangle} from './rectangle'
+import {Constraint, Solver, Variable} from './vpsc'
+import {Calculator} from './shortestpaths'
+    export interface NodeAccessor<Node>{
+        getChildren(v:Node) : number[];
+        getBounds(v:Node) : Rectangle;
+    }
+    export class NodeWrapper {
+        leaf: boolean;
+        parent: NodeWrapper;
+        ports: Vert[];
+        constructor(public id: number, public rect: Rectangle, public children: number[]) {
+            this.leaf = typeof children === 'undefined' || children.length === 0;
+        }
+    }
+    export class Vert {
+        constructor(public id: number, public x:number, public y: number, public node: NodeWrapper = null, public line = null) {}
     }
 
     export class LongestCommonSubsequence<T> {
@@ -129,7 +128,7 @@ module cola {
             this.cols = this.getGridLines('x');
             this.rows = this.getGridLines('y');
 
-            // create parents for each node or group that is a member of another's children 
+            // create parents for each node or group that is a member of another's children
             this.groups.forEach(v=>
                 v.children.forEach(c=> this.nodes[<number>c].parent = v));
 
@@ -151,14 +150,14 @@ module cola {
 
             // nodes ordered by their position in the group hierarchy
             this.backToFront = this.nodes.slice(0);
-            this.backToFront.sort((x, y) => this.getDepth(x) - this.getDepth(y)); 
+            this.backToFront.sort((x, y) => this.getDepth(x) - this.getDepth(y));
 
             // compute boundary rectangles for each group
             // has to be done from front to back, i.e. inside groups to outside groups
             // such that each can be made large enough to enclose its interior
             var frontToBackGroups = this.backToFront.slice(0).reverse().filter(g=> !g.leaf);
             frontToBackGroups.forEach(v=> {
-                var r = cola.vpsc.Rectangle.empty();
+                var r = Rectangle.empty();
                 v.children.forEach(c=> r = r.union(this.nodes[c].rect));
                 v.rect = r.inflate(this.groupPadding);
             });
@@ -303,9 +302,9 @@ module cola {
             }
             return vsegmentsets;
         }
-        
+
         // for all segments in this bundle create a vpsc problem such that
-        // each segment's x position is a variable and separation constraints 
+        // each segment's x position is a variable and separation constraints
         // are given by the partial order over the edges to which the segments belong
         // for each pair s1,s2 of segments in the open set:
         //   e1 = edge of s1, e2 = edge of s2
@@ -314,7 +313,7 @@ module cola {
         static nudgeSegs(x: string, y: string, routes, segments, leftOf, gap: number) {
             var n = segments.length;
             if (n <= 1) return;
-            var vs = segments.map(s => new vpsc.Variable(s[0][x]));
+            var vs = segments.map(s => new Variable(s[0][x]));
             var cs = [];
             for (var i = 0; i < n; i++) {
                 for (var j = 0; j < n; j++) {
@@ -350,11 +349,11 @@ module cola {
                     }
                     if (lind >= 0) {
                         //console.log(x+' constraint: ' + lind + '<' + rind);
-                        cs.push(new cola.vpsc.Constraint(vs[lind], vs[rind], gap));
+                        cs.push(new Constraint(vs[lind], vs[rind], gap));
                     }
                 }
             }
-            var solver = new vpsc.Solver(vs, cs);
+            var solver = new Solver(vs, cs);
             solver.solve();
             vs.forEach((v, i) => {
                 var s = segments[i];
@@ -402,16 +401,16 @@ module cola {
         // @param source function to retrieve the index of the source node for a given edge
         // @param target function to retrieve the index of the target node for a given edge
         // @returns an array giving, for each edge, an array of segments, each segment a pair of points in an array
-        routeEdges<Edge>(edges: Edge[], nudgeGap: number, source: (e: Edge) => number, target: (e: Edge) => number): geom.Point[][][] {
+        routeEdges<Edge>(edges: Edge[], nudgeGap: number, source: (e: Edge) => number, target: (e: Edge) => number): Point[][][] {
             var routePaths = edges.map(e=> this.route(source(e), target(e)));
-            var order = cola.GridRouter.orderEdges(routePaths);
-            var routes = routePaths.map(function (e) { return cola.GridRouter.makeSegments(e); });
-            cola.GridRouter.nudgeSegments(routes, 'x', 'y', order, nudgeGap);
-            cola.GridRouter.nudgeSegments(routes, 'y', 'x', order, nudgeGap);
-            cola.GridRouter.unreverseEdges(routes, routePaths);
+            var order = GridRouter.orderEdges(routePaths);
+            var routes = routePaths.map(function (e) { return GridRouter.makeSegments(e); });
+            GridRouter.nudgeSegments(routes, 'x', 'y', order, nudgeGap);
+            GridRouter.nudgeSegments(routes, 'y', 'x', order, nudgeGap);
+            GridRouter.unreverseEdges(routes, routePaths);
             return routes;
         }
-        
+
         // path may have been reversed by the subsequence processing in orderEdges
         // so now we need to restore the original order
         static unreverseEdges(routes, routePaths) {
@@ -426,7 +425,7 @@ module cola {
             });
         }
 
-        static angleBetween2Lines(line1: geom.Point[], line2: geom.Point[]): number {
+        static angleBetween2Lines(line1: Point[], line2: Point[]): number {
             var angle1 = Math.atan2(line1[0].y - line1[1].y,
                 line1[0].x - line1[1].x);
             var angle2 = Math.atan2(line2[0].y - line2[1].y,
@@ -463,16 +462,16 @@ module cola {
                 for (var j = i + 1; j < edges.length; j++) {
                     var e = edges[i],
                         f = edges[j],
-                        lcs = new cola.LongestCommonSubsequence(e, f);
+                        lcs = new LongestCommonSubsequence(e, f);
                     var u, vi, vj;
                     if (lcs.length === 0)
                         continue; // no common subpath
                     if (lcs.reversed) {
-                        // if we found a common subpath but one of the edges runs the wrong way, 
+                        // if we found a common subpath but one of the edges runs the wrong way,
                         // then reverse f.
                         f.reverse();
                         f.reversed = true;
-                        lcs = new cola.LongestCommonSubsequence(e, f);
+                        lcs = new LongestCommonSubsequence(e, f);
                     }
                     if ((lcs.si <= 0 || lcs.ti <= 0) &&
                         (lcs.si + lcs.length >= e.length || lcs.ti + lcs.length >= f.length)) {
@@ -483,7 +482,7 @@ module cola {
                     if (lcs.si + lcs.length >= e.length || lcs.ti + lcs.length >= f.length) {
                         // if the common subsequence of the
                         // two edges being considered goes all the way to the
-                        // end of one (or both) of the lines then we have to 
+                        // end of one (or both) of the lines then we have to
                         // base our ordering decision on the other end of the
                         // common subsequence
                         u = e[lcs.si + 1];
@@ -502,15 +501,15 @@ module cola {
                 }
             }
             //edgeOrder.forEach(function (e) { console.log('l:' + e.l + ',r:' + e.r) });
-            return cola.GridRouter.getOrder(edgeOrder);
+            return GridRouter.getOrder(edgeOrder);
         }
 
         // for an orthogonal path described by a sequence of points, create a list of segments
         // if consecutive segments would make a straight line they are merged into a single segment
         // segments are over cloned points, not the original vertices
-        static makeSegments(path: geom.Point[]): geom.Point[][] {
-            function copyPoint(p: geom.Point) {
-                return <geom.Point>{ x: p.x, y: p.y };
+        static makeSegments(path: Point[]): Point[][] {
+            function copyPoint(p: Point) {
+                return <Point>{ x: p.x, y: p.y };
             }
             var isStraight = (a, b, c) => Math.abs((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) < 0.001;
             var segments = [];
@@ -527,7 +526,7 @@ module cola {
 
         // find a route between node s and node t
         // returns an array of indices to verts
-        route(s: number, t: number): geom.Point[] {
+        route(s: number, t: number): Point[] {
             var source = this.nodes[<number>s], target = this.nodes[<number>t];
             this.obstacles = this.siblingObstacles(source, target);
 
@@ -564,7 +563,7 @@ module cola {
                 getTarget = e=> e.target,
                 getLength = e=> e.length;
 
-            var shortestPathCalculator = new cola.shortestpaths.Calculator(this.verts.length, this.passableEdges, getSource, getTarget, getLength);
+            var shortestPathCalculator = new Calculator(this.verts.length, this.passableEdges, getSource, getTarget, getLength);
             var bendPenalty = (u, v, w) => {
                 var a = this.verts[u], b = this.verts[v], c = this.verts[w];
                 var dx = Math.abs(c.x - a.x), dy = Math.abs(c.y - a.y);
@@ -578,7 +577,7 @@ module cola {
             var shortestPath = shortestPathCalculator.PathFromNodeToNodeWithPrevCost(
                 source.ports[0].id, target.ports[0].id,
                 bendPenalty);
-            
+
             // shortest path is reversed and does not include the target port
             var pathPoints = shortestPath.reverse().map(vi => this.verts[vi]);
             pathPoints.push(this.nodes[target.id].ports[0]);
@@ -589,7 +588,7 @@ module cola {
                     || i > 0 && v.node === target && pathPoints[i - 1].node === target));
         }
 
-        static getRoutePath(route: geom.Point[][], cornerradius: number, arrowwidth: number, arrowheight: number): { routepath: string; arrowpath: string } {
+        static getRoutePath(route: Point[][], cornerradius: number, arrowwidth: number, arrowheight: number): { routepath: string; arrowpath: string } {
             var result = {
                 routepath: 'M ' + route[0][0].x + ' ' + route[0][0].y + ' ',
                 arrowpath: ''
@@ -670,4 +669,3 @@ module cola {
             return result;
         }
     }
-}

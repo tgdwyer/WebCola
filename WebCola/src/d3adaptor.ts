@@ -1,7 +1,7 @@
-﻿///<reference path="../extern/d3.d.ts"/>
+///<reference path="../extern/d3.d.ts"/>
 ///<reference path="layout.ts"/>
+import {Layout, EventType, Event} from './layout'
 
-module cola {
     export class D3StyleLayoutAdaptor extends Layout {
         event = d3.dispatch(EventType[EventType.start], EventType[EventType.tick], EventType[EventType.end]);
 
@@ -14,10 +14,10 @@ module cola {
         kick() {
             d3.timer(() => super.tick());
         }
-        
+
         // a function to allow for dragging of nodes
         drag: () => any;
-        
+
         constructor() {
             super();
             // bit of trickyness remapping 'this' so we can reference it in the function body.
@@ -57,9 +57,9 @@ module cola {
 
     /**
      * provides an interface for use with d3:
-     * - uses the d3 event system to dispatch layout events such as: 
+     * - uses the d3 event system to dispatch layout events such as:
      *   o "start" (start layout process)
-     *   o "tick" (after each layout iteration) 
+     *   o "tick" (after each layout iteration)
      *   o "end" (layout converged and complete).
      * - uses the d3 timer to queue layout iterations.
      * - sets up d3.behavior.drag to drag nodes
@@ -70,4 +70,3 @@ module cola {
     export function d3adaptor(): D3StyleLayoutAdaptor {
         return new D3StyleLayoutAdaptor();
     }
-}

@@ -4,6 +4,8 @@
 ///<reference path="../extern/jquery.d.ts"/>
 ///<reference path="../extern/d3.d.ts"/>
 
+import * as cola from '../index'
+
 module tetrisbug {
     var width = 1280,
         height = 800;
@@ -81,7 +83,7 @@ module tetrisbug {
                     d => d.innerBounds = d.bounds.inflate(-margin)
                     );
                 link.each(function (d) {
-                    d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                    d.route = cola.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                     if (isIE()) this.parentNode.insertBefore(this, this);
                 });
 
@@ -160,11 +162,11 @@ module tetrisbug {
                 });
                 var n = graph.nodes.length,
                     _id = v => getId(v,n)-1,
-                    g = { 
+                    g = {
                         nodes: graph.nodes.map(d=> <any>{
                             id: _id(d),
-                            name: d.name, 
-                            bounds: new cola.vpsc.Rectangle(d.x, d.x+d.width, d.y, d.y+d.height)
+                            name: d.name,
+                            bounds: new cola.Rectangle(d.x, d.x+d.width, d.y, d.y+d.height)
                             }).concat(
                                 powerGraph.groups.map(d=> <any>{
                                 id: _id(d),
@@ -369,11 +371,11 @@ module tetrisbug {
                 // }).on('end', function () {
                 //     var n = graph.nodes.length,
                 //         _id = v => getId(v,n)-1,
-                //         g = { 
+                //         g = {
                 //             nodes: graph.nodes.map(d=> <any>{
                 //                 id: _id(d),
-                //                 name: d.name, 
-                //                 bounds: d.innerBounds 
+                //                 name: d.name,
+                //                 bounds: d.innerBounds
                 //                 }).concat(
                 //                     powerGraph.groups.map(d=> <any>{
                 //                     id: _id(d),

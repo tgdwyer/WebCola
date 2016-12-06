@@ -1,6 +1,6 @@
-﻿///<reference path="qunit.d.ts"/>
-///<reference path="../src/layout.ts"/>
-///<reference path="../src/layout3d.ts"/>
+///<reference path="qunit.d.ts"/>
+
+import * as cola from '../index'
 
 QUnit.module("Headless API");
 test('strongly connected components', () => {
@@ -139,7 +139,7 @@ test("Pyramid", () => {
     for (let i = 0; i < 10; i++) {
         let [s2, alpha] = reduceStress();
         ok(s2 <= s, `s'=${s2}, s=${s}, alpha=${alpha}`);
-        s = s2; 
+        s = s2;
     }
 
     layout = new cola.Layout3D(nodes, links, 10).start();
@@ -152,8 +152,8 @@ test("Fixed nodes", () => {
     let lock = (i, x) => {
         nodes[i].fixed = true;
         nodes[i].x = x;
-    } 
-    
+    }
+
     let closeEnough = (a, b, t) => Math.abs(a - b) < t;
     const layout = new cola.Layout3D(nodes, links, 10);
 

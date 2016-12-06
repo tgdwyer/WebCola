@@ -25,36 +25,44 @@ module.exports = function (grunt) {
         tasks: ["qunit"]
       }
     },
-    typescript: {
-      base: {
-        src: ['WebCola/src/*.ts'],
-        dest: 'WebCola/cola.js',
+    browserify: {
+      dist: {
         options: {
-          module: 'amd',
-          target: 'es5',
-          sourceMap: true
+          browserifyOptions: {
+            standalone: 'cola'
+          }
+        },
+        files: {
+          'WebCola/cola.js': ['WebCola/index.js']
         }
       },
       test: {
-        src: ['WebCola/test/*.ts'],
+        files: {
+          'WebCola/test/bundle.js': ['WebCola/test/vpsctests.js', 'WebCola/test/apitests.js', 'WebCola/test/tests.js', '!WebCola/test/bundle.js']
+        }
+      }
+    },
+    ts: {
+      commonjs: {
+        src: 'WebCola/index.ts',
         options: {
-          module: 'amd',
+          failOnTypeErrors: false,
+          sourceMap: true,
+          target: 'es5'
+        }
+      },
+      test: {
+        src: ['WebCola/test/*.ts', '!WebCola/index.ts', '!WebCola/src/batch.ts'],
+        options: {
+          failOnTypeErrors: false,
           target: 'es5',
           sourceMap: true
         }
       },
-      commonjs: {
-        src: ['WebCola/index.ts'],
-        dest: 'WebCola/index.js',
-        options: {
-          module: 'commonjs',
-          target: 'es5'
-        }
-      },
       examples: {
-        src: ['WebCola/examples/*.ts'],
+        src: ['WebCola/examples/*.ts', '!WebCola/index.ts', '!WebCola/src/batch.ts'],
         options: {
-          module: 'amd',
+          failOnTypeErrors: false,
           target: 'es5',
           sourceMap: true
         }
@@ -63,12 +71,12 @@ module.exports = function (grunt) {
     dtsGenerator: {
         options: {
             name: 'cola',
-            baseDir: 'WebCola',
+            baseDir: 'WebCola/src',
             out: 'WebCola/cola.d.ts',
-	    excludes: ['extern/d3.d.ts']
+            excludes: ['extern/d3.d.ts']
         },
         default: {
-            src: [ 'WebCola/src/*.ts' ]
+          src: ['WebCola/src/*.ts', '!WebCola/src/batch.ts', '!WebCola/src/cola.ts'],
         }
     },
     umd: {
@@ -81,20 +89,23 @@ module.exports = function (grunt) {
         }
       }
     },
-    uglify: {    
+    uglify: {
       options: {
         sourceMap: true
       },
       dist: {
         files: {
           'WebCola/cola.min.js': [
-            '<%= typescript.base.dest %>'
+            'WebCola/cola.js'
           ]
         }
       }
     },
     qunit: {
-      all: ['WebCola/test/*.html']
+      all: ['WebCola/test/*.html'],
+      options: {
+        force: true
+      }
     },
     examples: {
       all: ["WebCola/examples/*.html"]
@@ -107,14 +118,23 @@ module.exports = function (grunt) {
           name: 'WebCoLa AKA cola.js',
           theme: 'minimal'
       },
-      src: ["<%= typescript.base.src %>"]
+      src: ["<%= ts.base.src %>"]
+    },
+    connect: {
+      server: {
+        options: {
+          port: 1337,
+          base: './WebCola',
+          keepalive: true
+        }
+      }
     }
   });
- 
-  grunt.registerTask('default', ['copy', 'typescript', 'uglify', 'qunit']);
-  grunt.registerTask('nougly', ['typescript', 'qunit']);
-  grunt.registerTask('nougly-notest', ['typescript']);
-  grunt.registerTask('docs', ['typedoc', 'typescript:examples']);
-  grunt.registerTask('examples', ['typescript:examples']);
-  grunt.registerTask('full', ['default', 'typescript:examples', 'examples']);
+
+  grunt.registerTask('default', ['copy', 'ts', 'browserify', 'uglify', 'qunit']);
+  grunt.registerTask('nougly', ['ts', 'browserify', 'qunit']);
+  grunt.registerTask('nougly-notest', ['ts']);
+  grunt.registerTask('docs', ['typedoc', 'ts:examples']);
+  grunt.registerTask('examples', ['ts:examples']);
+  grunt.registerTask('full', ['default', 'ts:examples', 'examples']);
 };
