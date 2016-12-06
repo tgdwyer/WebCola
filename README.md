@@ -12,7 +12,7 @@ A version suitable for browsers can be found [here](WebCola/cola.js) ([minified]
 
 #### Npm:
 	
-	npm install cola --save
+	npm install webcola --save
 
 You can also install it through npm by first adding it to `package.json`:
 
