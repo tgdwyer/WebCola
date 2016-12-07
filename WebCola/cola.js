@@ -468,18 +468,7 @@ exports.PseudoRandom = PseudoRandom;
 
 },{}],5:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
 var rectangle_1 = require('./rectangle');
-var Point = (function () {
-    function Point() {
-    }
-    return Point;
-}());
-exports.Point = Point;
 var LineSegment = (function () {
     function LineSegment(x1, y1, x2, y2) {
         this.x1 = x1;
@@ -490,14 +479,6 @@ var LineSegment = (function () {
     return LineSegment;
 }());
 exports.LineSegment = LineSegment;
-var PolyPoint = (function (_super) {
-    __extends(PolyPoint, _super);
-    function PolyPoint() {
-        _super.apply(this, arguments);
-    }
-    return PolyPoint;
-}(Point));
-exports.PolyPoint = PolyPoint;
 function isLeft(P0, P1, P2) {
     return (P1.x - P0.x) * (P2.y - P0.y) - (P2.x - P0.x) * (P1.y - P0.y);
 }
@@ -716,14 +697,6 @@ var BiTangents = (function () {
     return BiTangents;
 }());
 exports.BiTangents = BiTangents;
-var TVGPoint = (function (_super) {
-    __extends(TVGPoint, _super);
-    function TVGPoint() {
-        _super.apply(this, arguments);
-    }
-    return TVGPoint;
-}(Point));
-exports.TVGPoint = TVGPoint;
 var VisibilityVertex = (function () {
     function VisibilityVertex(id, polyid, polyvertid, p) {
         this.id = id;

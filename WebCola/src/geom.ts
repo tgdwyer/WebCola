@@ -1,15 +1,13 @@
-import {Rectangle} from './rectangle'
-    export class Point {
-        x: number;
-        y: number;
-    }
+import {Rectangle, Point} from './rectangle'
 
     export class LineSegment {
         constructor(public x1: number, public y1: number, public x2: number, public y2: number) { }
     }
 
-    export class PolyPoint extends Point {
+    export interface PolyPoint extends Point {
         polyIndex: number;
+        x: number;
+        y: number;
     }
 
     /** tests if a point is Left|On|Right of an infinite line.
@@ -299,7 +297,7 @@ import {Rectangle} from './rectangle'
         rr: BiTangent;
     }
 
-    export class TVGPoint extends Point {
+    export interface TVGPoint extends Point {
         vv: VisibilityVertex;
     }
 

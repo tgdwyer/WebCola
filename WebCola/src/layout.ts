@@ -45,7 +45,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         fixed: number;
     }
 
-    interface Group {
+    export interface Group {
         bounds: Rectangle;
         leaves: Node[];
         groups: Group[];

@@ -1,5 +1,4 @@
-import {Point} from './geom'
-import {Rectangle} from './rectangle'
+import {Rectangle, Point} from './rectangle'
 import {Constraint, Solver, Variable} from './vpsc'
 import {Calculator} from './shortestpaths'
     export interface NodeAccessor<Node>{
