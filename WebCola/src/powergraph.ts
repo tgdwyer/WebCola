@@ -293,7 +293,7 @@ export interface LinkTypeAccessor<Link> extends LinkAccessor<Link> {
         }
         forAll(f: (ms: ModuleSet, linktype: number) => void) {
             for (var linktype in this.sets) {
-                f(<ModuleSet>this.sets[linktype], linktype);
+                f(<ModuleSet>this.sets[linktype], Number(linktype));
             }
         }
         forAllModules(f: (m: Module) => void) {

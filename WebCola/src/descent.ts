@@ -3,7 +3,7 @@
      * @class Locks
      */
     export class Locks {
-        locks: any = {};
+        locks: { [key:number]:number[]} = {};
         /**
          * add a lock on the node at index id
          * @method add
@@ -36,7 +36,7 @@ DEBUG */
          */
         apply(f: (id: number, x: number[]) => void) {
             for (var l in this.locks) {
-                f(l, this.locks[l]);
+                f(Number(l), this.locks[l]);
             }
         }
     }

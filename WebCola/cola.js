@@ -140,7 +140,7 @@ var Locks = (function () {
     };
     Locks.prototype.apply = function (f) {
         for (var l in this.locks) {
-            f(l, this.locks[l]);
+            f(Number(l), this.locks[l]);
         }
     };
     return Locks;
@@ -2690,7 +2690,7 @@ var LinkSets = (function () {
     };
     LinkSets.prototype.forAll = function (f) {
         for (var linktype in this.sets) {
-            f(this.sets[linktype], linktype);
+            f(this.sets[linktype], Number(linktype));
         }
     };
     LinkSets.prototype.forAllModules = function (f) {
