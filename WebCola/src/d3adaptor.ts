@@ -1,5 +1,4 @@
-///<reference path="../extern/d3.d.ts"/>
-///<reference path="layout.ts"/>
+import * as d3 from 'd3'
 import {Layout, EventType, Event} from './layout'
 
     export class D3StyleLayoutAdaptor extends Layout {
@@ -25,11 +24,11 @@ import {Layout, EventType, Event} from './layout'
             var drag;
             this.drag = function () {
                 if (!drag) {
-                    var drag = d3.behavior.drag<any>()
-                        .origin(Layout.dragOrigin)
+                    var drag = d3.drag()
+                        .subject(Layout.dragOrigin)
                         .on("dragstart.d3adaptor", Layout.dragStart)
                         .on("drag.d3adaptor", d => {
-                            Layout.drag(d, d3.event);
+                            Layout.drag(<any>d, d3.event);
                             d3layout.resume(); // restart annealing
                         })
                         .on("dragend.d3adaptor", Layout.dragEnd);

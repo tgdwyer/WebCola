@@ -1,14 +1,14 @@
 ///<reference path="../src/vpsc.ts"/>
 ///<reference path="../src/rectangle.ts"/>
-///<reference path="../extern/d3.d.ts"/>
 ///<reference path="../extern/jquery.d.ts"/>
 
 import * as cola from '../index'
+import * as d3 from 'd3'
 
 var width = 700,
     height = 350;
 
-var color = d3.scale.category20();
+var color = d3.scaleOrdinal(d3.schemeCategory20);
 var graphfile = "graphdata/n7e23.json";
 
 
@@ -39,7 +39,7 @@ function makeSVG() {
     var vis = <any>outer.append('g');
     var redraw = (transition) =>
         (transition ? <any>vis.transition() : <any> vis)
-            .attr("transform", "translate(" + zoom.translate() + ") scale(" + zoom.scale() + ")");
+            .attr("transform", d3.zoomTransform(vis));
     vis.zoomToFit = ()=>{
         var b = cola.Rectangle.empty();
         vis.selectAll("rect").each(function (d) {
@@ -50,11 +50,11 @@ function makeSVG() {
         var cw = Number(outer.attr("width")), ch = Number(outer.attr("height"));
         var s = Math.min(cw / w, ch / h);
         var tx = (-b.x * s + (cw / s - w) * s / 2), ty = (-b.y * s + (ch / s - h) * s / 2);
-        zoom.translate([tx, ty]).scale(s);
+        d3.zoom().translateBy(vis, tx, ty);
+        d3.zoom().scaleBy(vis, s);
         redraw(true);
     }
-    var zoom = d3.behavior.zoom();
-    zoomBox.call(zoom.on("zoom", redraw))
+    zoomBox.call(d3.zoom().on("zoom", redraw))
         .on("dblclick.zoom", vis.zoomToFit);
 
     return vis;
@@ -89,7 +89,7 @@ function flatGraph() {
 
     var svg = makeSVG();
 
-    d3.json(graphfile, function (error, graph) {
+    d3.json(graphfile, function (error, graph: {nodes, links}) {
 
         var link = svg.selectAll(".link")
             .data(graph.links)
@@ -170,7 +170,7 @@ function powerGraph() {
 
     var svg = makeSVG();
 
-    d3.json(graphfile, function (error, graph) {
+    d3.json(graphfile, function (error, graph: {nodes, links}) {
         graph.nodes.forEach((v, i) => {
             v.index = i;
         });
@@ -291,7 +291,7 @@ flatGraph();
 d3.select("#GridButton").on("click", powerGraph);
 d3.select("#filemenu").on("change", function () {
     d3.selectAll("svg").remove();
-    graphfile = this.value;
+    graphfile = (<any>this).value;
     flatGraph();
 });
 
@@ -304,7 +304,7 @@ function powerGraph2() {
 
     var svg = makeSVG();
 
-    d3.json("graphdata/n7e23.json", function (error, graph) {
+    d3.json("graphdata/n7e23.json", function (error, graph: {nodes, links}) {
 
         var powerGraph;
         d3cola

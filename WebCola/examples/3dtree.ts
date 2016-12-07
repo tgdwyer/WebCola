@@ -3,6 +3,7 @@
 /// <reference path="../src/linklengths.ts"/>
 /// <reference path="../src/descent.ts"/>
 /// <reference path="../src/layout3d.ts"/>
+import * as d3 from 'd3'
 import * as cola from '../index'
 module tree3d {
     export class Graph {
@@ -115,23 +116,26 @@ d3.json("graphdata/chris.json", function (error, graph) {
     var directionalLight = new THREE.DirectionalLight(0xffeedd);
     directionalLight.position.set(0, 0, 1);
     scene.add(directionalLight);
-    var n = graph.nodes.length;
+    let nodes = (<any>graph).nodes,
+        links = (<any>graph).links,
+        constraints = (<any>graph).constraints;
+    var n = nodes.length;
 
-    var color = d3.scale.category20();
-    var nodeColourings = graph.nodes.map(v => {
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
+    var nodeColourings = nodes.map(v => {
         var str = color(v.group).replace("#", "0x");
         return parseInt(str);
     });
-    var colaGraph = new tree3d.Graph(colaObject, n, graph.links, nodeColourings);
+    var colaGraph = new tree3d.Graph(colaObject, n, links, nodeColourings);
 
-    let layout = new cola.Layout3D(graph.nodes, graph.links, 4);
-    graph.constraints.forEach(c=> {
+    let layout = new cola.Layout3D(nodes, links, 4);
+    constraints.forEach(c=> {
         let r = c.right;
         c.right = c.left;
         c.left = r;
         c.gap *= 0.2;
     });
-    layout.constraints = graph.constraints;
+    layout.constraints = constraints;
     layout.start(10);
 
     camera.position.z = 150;

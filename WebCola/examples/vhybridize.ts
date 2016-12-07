@@ -1,4 +1,3 @@
-///<reference path="../extern/d3.d.ts"/>
 ///<reference path="../src/layout.ts"/>
 ///<reference path="../src/vpsc.ts"/>
 ///<reference path="../src/rectangle.ts"/>
@@ -7,10 +6,11 @@
 ///<reference path="../extern/jquery.d.ts"/>
 
 
+import * as d3 from 'd3'
 import * as cola from '../index'
 
 module vhybridize{
-var color = d3.scale.category10();
+var color = d3.scaleOrdinal(d3.schemeCategory10);
 
 var makeEdgeBetween;
 var colans = <any>cola;

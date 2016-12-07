@@ -4,6 +4,7 @@
 /// <reference path="../src/descent.ts"/>
 /// <reference path="../src/layout3d.ts"/>
 import * as cola from '../index'
+import * as d3 from 'd3'
 module cola3 {
     export class Graph {
         parentObject;
@@ -115,16 +116,18 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     var directionalLight = new THREE.DirectionalLight(0xffeedd);
     directionalLight.position.set(0, 0, 1);
     scene.add(directionalLight);
-    var n = graph.nodes.length;
+    let nodes = (<any>graph).nodes;
+    let links = (<any>graph).links;
+    var n = nodes.length;
 
-    var color = d3.scale.category20();
-    var nodeColourings = graph.nodes.map(v => {
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
+    var nodeColourings = nodes.map(v => {
         var str = color(v.group).replace("#", "0x");
         return parseInt(str);
     });
-    var colaGraph = new cola3.Graph(colaObject, n, graph.links, nodeColourings);
+    var colaGraph = new cola3.Graph(colaObject, n, links, nodeColourings);
 
-    let layout = new cola.Layout3D(graph.nodes, graph.links, 6);
+    let layout = new cola.Layout3D(nodes, links, 6);
     layout.start(10);
 
     camera.position.z = 50;

@@ -6,10 +6,10 @@ module.exports = function (grunt) {
   grunt.initConfig({
       pkg: grunt.file.readJSON('package.json'),
       copy: {
-          d3: {
-              src: 'node_modules/d3/d3.min.js',
-              dest: 'WebCola/extern/d3.min.js'
-          },
+          // d3: {
+          //     src: 'node_modules/d3/d3.min.js',
+          //     dest: 'WebCola/extern/d3.min.js'
+          // },
           qunit: {
               src: 'node_modules/qunitjs/qunit/*',
               dest: 'WebCola/test/'
