@@ -2,7 +2,7 @@ module.exports = function (grunt) {
   require('load-grunt-tasks')(grunt);
   require('./tasks/examples')(grunt);
   grunt.loadNpmTasks('typedoc');
-  grunt.loadNpmTasks('dts-generator');
+  grunt.loadNpmTasks('dtsgenerator');
   grunt.initConfig({
       pkg: grunt.file.readJSON('package.json'),
       copy: {

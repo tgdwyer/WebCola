@@ -4,8 +4,8 @@
   "devDependencies": {
     "async": "~0.6.2",
     "d3": "^3.5.5",
-    "typescript": "^1.8.10",
-    "dts-generator": "^1.5.0",
+    "dts-generator": "^2.0.0",
+    "typescript": "^2.0.10",
     "grunt": "^1.0.1",
     "grunt-browserify": "^5.0.0",
     "grunt-contrib-connect": "^1.0.2",
@@ -42,10 +42,5 @@
   "bugs": {
     "url": "https://github.com/tgdwyer/WebCola/issues"
   },
-  "homepage": "https://github.com/tgdwyer/WebCola",
-  "dependencies": {
-    "grunt-typescript": "^0.8.0",
-    "typescript": "^1.8.10",
-    "typescript": "^2.0.10"
-  }
+  "homepage": "https://github.com/tgdwyer/WebCola"
 }
