@@ -45,6 +45,7 @@
   },
   "homepage": "https://github.com/tgdwyer/WebCola",
   "dependencies": {
+    "@types/d3": "^4.4.0",
     "@types/d3-dispatch": "^1.0.4",
     "@types/d3-selection": "^1.0.6",
     "grunt-typescript": "^0.8.0",

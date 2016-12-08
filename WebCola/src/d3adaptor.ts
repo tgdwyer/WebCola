@@ -1,18 +1,22 @@
-import * as d3 from 'd3'
+import {dispatch} from 'd3-dispatch'
+import {timer} from 'd3-timer'
+import {drag} from 'd3-drag'
+import {event} from 'd3-selection'
 import {Layout, EventType, Event} from './layout'
 
     export class D3StyleLayoutAdaptor extends Layout {
-        event = d3.dispatch(EventType[EventType.start], EventType[EventType.tick], EventType[EventType.end]);
+        event = dispatch(EventType[EventType.start], EventType[EventType.tick], EventType[EventType.end]);
 
         trigger(e: Event) {
             var d3event = { type: EventType[e.type], alpha: e.alpha, stress: e.stress };
-
-            this.event.call(d3event.type, d3event); // via d3 dispatcher, e.g. event.start(e);
+            // the dispatcher is actually expecting something of type EventTarget as the second argument
+            // so passing the thing above is totally abusing the pattern... not sure what to do about this yet
+            this.event.call(d3event.type, <any>d3event); // via d3 dispatcher, e.g. event.start(e);
         }
 
         // iterate layout using a d3.timer, which queues calls to tick repeatedly until tick returns true
         kick() {
-            d3.timer(() => super.tick());
+            timer(() => super.tick());
         }
 
         // a function to allow for dragging of nodes
@@ -25,11 +29,11 @@ import {Layout, EventType, Event} from './layout'
             var drag;
             this.drag = function () {
                 if (!drag) {
-                    var drag = d3.drag()
+                    var drag = drag()
                         .subject(Layout.dragOrigin)
                         .on("dragstart.d3adaptor", Layout.dragStart)
                         .on("drag.d3adaptor", d => {
-                            Layout.drag(<any>d, d3.event);
+                            Layout.drag(<any>d, event);
                             d3layout.resume(); // restart annealing
                         })
                         .on("dragend.d3adaptor", Layout.dragEnd);
