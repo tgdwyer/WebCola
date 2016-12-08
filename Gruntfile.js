@@ -29,8 +29,15 @@ module.exports = function (grunt) {
       dist: {
         options: {
           browserifyOptions: {
-            standalone: 'cola'
-          }
+            // plugin: [
+            //   [
+            //     'tsify', { target: 'es6' },
+            //   ]
+            // ],
+            standalone: 'cola', 
+            //debug: true
+          },
+          //transform: [["babelify", { "presets": ["es2015"] }]]
         },
         files: {
           'WebCola/cola.js': ['WebCola/index.js']
@@ -41,7 +48,7 @@ module.exports = function (grunt) {
           'WebCola/test/bundle.js': ['WebCola/test/vpsctests.js', 'WebCola/test/apitests.js', 'WebCola/test/tests.js', '!WebCola/test/bundle.js']
         },
         options: {
-          browserifyOptions: { debug: true },
+          //browserifyOptions: { debug: true },
           transform: [["babelify", { "presets": ["es2015"] }]]
         }
       }
@@ -127,7 +134,7 @@ module.exports = function (grunt) {
     connect: {
       server: {
         options: {
-          port: 1337,
+          port: 8080,
           base: './WebCola',
           keepalive: true
         }

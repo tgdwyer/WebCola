@@ -1,12 +1,10 @@
 import {dispatch} from 'd3-dispatch'
 import {timer} from 'd3-timer'
-import {drag} from 'd3-drag'
-import {event} from 'd3-selection'
+import {drag as d3drag} from 'd3-drag'
 import {Layout, EventType, Event} from './layout'
 
     export class D3StyleLayoutAdaptor extends Layout {
-        event = dispatch(EventType[EventType.start], EventType[EventType.tick], EventType[EventType.end]);
-
+        event:any;
         trigger(e: Event) {
             var d3event = { type: EventType[e.type], alpha: e.alpha, stress: e.stress };
             // the dispatcher is actually expecting something of type EventTarget as the second argument
@@ -16,35 +14,37 @@ import {Layout, EventType, Event} from './layout'
 
         // iterate layout using a d3.timer, which queues calls to tick repeatedly until tick returns true
         kick() {
-            timer(() => super.tick());
+            this.d3Context.timer(() => super.tick());
         }
 
         // a function to allow for dragging of nodes
         drag: () => any;
 
-        constructor() {
+        constructor(private d3Context: any) {
             super();
+            this.event = this.d3Context.dispatch(EventType[EventType.start], EventType[EventType.tick], EventType[EventType.end]);
+
             // bit of trickyness remapping 'this' so we can reference it in the function body.
             var d3layout = this;
             var drag;
             this.drag = function () {
                 if (!drag) {
-                    var drag = drag()
+                    var drag = d3Context.drag()
                         .subject(Layout.dragOrigin)
-                        .on("dragstart.d3adaptor", Layout.dragStart)
+                        .on("start.d3adaptor", Layout.dragStart)
                         .on("drag.d3adaptor", d => {
-                            Layout.drag(<any>d, event);
+                            Layout.drag(<any>d, d3Context.event);
                             d3layout.resume(); // restart annealing
                         })
-                        .on("dragend.d3adaptor", Layout.dragEnd);
+                        .on("end.d3adaptor", Layout.dragEnd);
                 }
 
                 if (!arguments.length) return drag;
 
                 // this is the context of the function, i.e. the d3 selection
-                this//.on("mouseover.adaptor", colaMouseover)
+                //this//.on("mouseover.adaptor", colaMouseover)
                 //.on("mouseout.adaptor", colaMouseout)
-                    .call(drag);
+                arguments[0].call(drag);
             }
         }
 
@@ -71,6 +71,6 @@ import {Layout, EventType, Event} from './layout'
      * returns an instance of the cola.Layout itself with which the user
      * can interact directly.
      */
-    export function d3adaptor(): D3StyleLayoutAdaptor {
-        return new D3StyleLayoutAdaptor();
+    export function d3adaptor(d3Context: any): D3StyleLayoutAdaptor {
+        return new D3StyleLayoutAdaptor(d3Context);
     }

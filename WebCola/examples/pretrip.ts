@@ -31,7 +31,7 @@ module tetrisbug {
         return svg;
     }
     function flatGraph() {
-        var d3cola = colans.d3adaptor()
+        var d3cola = colans.d3adaptor(d3)
             .linkDistance(150)
             .avoidOverlaps(true)
             .size([width, height]);
@@ -131,7 +131,7 @@ module tetrisbug {
     }
 
     function powerGraph() {
-        var d3cola = colans.d3adaptor()
+        var d3cola = colans.d3adaptor(d3)
             .linkDistance(80)
             .handleDisconnected(false)
             .avoidOverlaps(true)

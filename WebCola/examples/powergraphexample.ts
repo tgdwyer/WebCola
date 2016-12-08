@@ -82,7 +82,7 @@ function createLabels(svg, graph, node, d3cola, margin) {
     return labels;
 }
 function flatGraph() {
-    var d3cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor(d3)
         .linkDistance(80)
         .avoidOverlaps(true)
         .size([width, height]);
@@ -161,7 +161,7 @@ function getId(v, n) {
 }
 
 function powerGraph() {
-    var d3cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor(d3)
         .convergenceThreshold(0.01)
         .linkDistance(80)
         .handleDisconnected(false)
@@ -296,7 +296,7 @@ d3.select("#filemenu").on("change", function () {
 });
 
 function powerGraph2() {
-    var d3cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor(d3)
         //.linkDistance(100)
         .jaccardLinkLengths(10, 0.5)
         .avoidOverlaps(true)

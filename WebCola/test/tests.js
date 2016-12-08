@@ -1,6 +1,6 @@
 /// <reference path="qunit.js"/>
 /// <reference path="qunit.d.ts"/>
-/// <reference path="../extern/d3.v3.min.js"/>
+/// <reference path="../extern/d3v4.js"/>
 /// <reference path="../src/layout.js"/>
 /// <reference path="../src/d3adaptor.js"/>
 /// <reference path="../src/shortestpaths.js"/>
@@ -9,7 +9,7 @@
 /// <reference path="../src/geom.js"/>
 /// <reference path="../src/powergraph.js"/>
 /// <reference path="../src/gridrouter.js"/>
-import * as d3 from 'd3'
+//import * as d3 from 'd3'
 
 window.onload = function () {
   function nodeDistance(u, v) {
@@ -64,7 +64,7 @@ window.onload = function () {
   });
 
   asyncTest("all-pairs shortest paths", function () {
-      var d3cola = cola.d3adaptor();
+      var d3cola = cola.d3adaptor(d3);
 
       d3.json("../examples/graphdata/triangle.json", function (error, graph) {
           d3cola
@@ -111,7 +111,7 @@ window.onload = function () {
   });
 
   asyncTest("edge lengths", function () {
-      var d3cola = cola.d3adaptor();
+      var d3cola = cola.d3adaptor(d3);
 
       d3.json("../examples/graphdata/triangle.json", function (error, graph) {
           var length = function (l) {
@@ -133,7 +133,7 @@ window.onload = function () {
   });
 
   test("group", function () {
-      var d3cola = cola.d3adaptor();
+      var d3cola = cola.d3adaptor(d3);
       var nodes = [];
       var u = { x: -5, y: 0, width: 10, height: 20 };
       var v = { x: 5, y: 0, width: 10, height: 20 };
@@ -155,7 +155,7 @@ window.onload = function () {
   });
 
   asyncTest("equality constraints", function () {
-      var d3cola = cola.d3adaptor();
+      var d3cola = cola.d3adaptor(d3);
 
       d3.json("../examples/graphdata/triangle.json", function (error, graph) {
           d3cola
@@ -1056,7 +1056,7 @@ window.onload = function () {
           }
       }
       for (var i = 0; i < 9; i++) { nodes.push({width: 10, height: 10}) }
-      cola.d3adaptor().nodes(nodes).start();
+      cola.d3adaptor(d3).nodes(nodes).start();
       drawNodes();
       var check = function (aspectRatioThreshold) {
           var dim = nodes.reduce(function (p, v) {
@@ -1074,14 +1074,14 @@ window.onload = function () {
 
       // regression test, used to cause infinite loop
       nodes = [{ width: 24, height: 35 }, { width: 24, height: 35 }, { width: 32, height: 35 }];
-      cola.d3adaptor().nodes(nodes).start();
+      cola.d3adaptor(d3).nodes(nodes).start();
       drawNodes();
       check(0.3);
 
       // for some reason the first rectangle is offset by the following - no assertion for this yet.
       var rand = new cola.PseudoRandom(51);
       for (var i = 0; i < 19; i++) { nodes.push({ width: rand.getNextBetween(5, 30), height: rand.getNextBetween(5, 30) }) }
-      cola.d3adaptor().nodes(nodes).avoidOverlaps(false).start();
+      cola.d3adaptor(d3).nodes(nodes).avoidOverlaps(false).start();
       drawNodes();
       check(0.1);
   });
