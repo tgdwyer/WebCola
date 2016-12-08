@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -31,15 +31,15 @@
 <body>
     <a href="../index.html">cola.js home</a>
     <h1>Disconnected graph with non-overlap constraints</h1>
-<script src="../extern/d3.v3.js"></script>
+<script src="../extern/d3v4.js"></script>
 <script src="../cola.min.js"></script>
 <script>
     var width = 960,
         height = 500;
 
-    var color = d3.scale.category20();
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-    var cola = cola.d3adaptor()
+    var cola = cola.d3adaptor(d3)
         .linkDistance(120)
         .avoidOverlaps(true)
         .size([width, height]);

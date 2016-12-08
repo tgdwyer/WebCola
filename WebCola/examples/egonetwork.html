@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <title>Egocentric Network</title>
     <style>
-        
+
 @import url(../style.css);
 .node {
   stroke: #fff;
@@ -74,13 +74,13 @@
     <!--<h1>Egocentric Network</h1>-->
     <div class="leftheading">Jonica’s network</div>
     <div class="rightheading">Alex’s network</div>
-<script src="../extern/d3.v3.js"></script>
+<script src="../extern/d3v4.js"></script>
     <script src="../cola.min.js"></script>
 <script>
     var width = 280,
         height = 280;
 
-    var color = d3.scale.category20();
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
     var connected = true;
     var button;
     document.onkeyup = keyhandler;
@@ -108,14 +108,14 @@
     }
 
     var body = d3.select("body");
-  
+
     var getLinkId = function (d) {
         return d.source.index + "-" + d.target.index;
     };
 
     var egosvg = (function () {
         function egosvg(file) {
-            this.d3cola = cola.d3adaptor().convergenceThreshold(1e-4)
+            this.d3cola = cola.d3adaptor(d3).convergenceThreshold(1e-4)
                 .size([width, height]);
 
             this.svg = d3.select("body").append("svg")
@@ -187,7 +187,7 @@
             this.d3cola.links(this.edges)
                 .symmetricDiffLinkLengths(8).start(0, 0, 30);
         };
-            
+
         egosvg.prototype.restart = function () {
             var _this = this;
             _this.link.transition().duration(3000).attr("x1", function (d) { return d.source.x; })

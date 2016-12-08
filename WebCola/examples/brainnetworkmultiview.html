@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -21,19 +21,19 @@
 </head>
 <body>
     <h1>Brain network MDS</h1>
-<script src="../extern/d3.v3.js"></script>
-<script src="../cola.v2.min.js"></script>
+<script src="../extern/d3v4.js"></script>
+<script src="../cola.min.js"></script>
 <script>
     var width = 480,
         height = 500;
 
-    var color = d3.scale.category20();
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-    var cola1 = cola.d3adaptor()
+    var cola1 = cola.d3adaptor(d3)
         .linkDistance(10)
         .size([width, height]);
 
-    var cola2 = cola.d3adaptor()
+    var cola2 = cola.d3adaptor(d3)
         .linkDistance(10)
         .size([width, height]);
 
@@ -179,7 +179,7 @@
                 .data(graph.links, function (d) { return d.id });
 
                 linkSelection.exit().remove();
-                
+
                 linkSelection.enter().append("line")
                     .attr("x1", function (d) { return d.source.x; })
                     .attr("y1", function (d) { return d.source.y; })
@@ -199,6 +199,6 @@
     }
 </script>
 <input type="range" min="0" max="500" value="500" onchange="setThreshold(this.value)"/>
-    CCsum matrix (CCsum.txt) and community affiliation vector (affil.txt). 
+    CCsum matrix (CCsum.txt) and community affiliation vector (affil.txt).
 </body>
 </html>

@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <title>Unconstrained Layout</title>
     <style>
-        
+
 @import url(../style.css);
 .node {
   stroke: #fff;
@@ -26,15 +26,15 @@
 <body>
     <a href="../index.html">cola.js home</a>
     <h1>Graph with variable link lengths</h1>
-<script src="../extern/d3.v3.js"></script>
+<script src="../extern/d3v4.js"></script>
     <script src="../cola.min.js"></script>
 <script>
     var width = 600,
         height = 500;
 
-    var color = d3.scale.category20();
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-    var d3cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor(d3)
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")
@@ -172,7 +172,7 @@
             max = Math.max(max, l.delta);
             l.length = (50 + Math.abs(l.flows[v]));
         });
-        var color = d3.scale.linear().domain([min, 0, max]).range(["green", "gray", "red"]);
+        var color = d3.scaleLinear().domain([min, 0, max]).range(["green", "gray", "red"]);
         svg.selectAll(".link")
                     .attr("class", "link")
                     .style("stroke-width", function (d) { return d.value; })

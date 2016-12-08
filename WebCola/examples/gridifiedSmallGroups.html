@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -39,15 +39,15 @@
 <body>
     <a href="../index.html">cola.js home</a>
     <h1>Layout with hierarchical grouping</h1>
-    <script src="../extern/d3.v3.js"></script>
+    <script src="../extern/d3v4.js"></script>
     <script src="../cola.min.js"></script>
 <script>
     var width = 960,
         height = 500;
 
-    var color = d3.scale.category20();
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-    var cola = cola.d3adaptor()
+    var cola = cola.d3adaptor(d3)
         .linkDistance(80)
         .avoidOverlaps(true)
         .handleDisconnected(false)
@@ -114,7 +114,7 @@
 
             node.attr("x", function (d) { return d.x - d.width / 2 + pad; })
                 .attr("y", function (d) { return d.y - d.height / 2 + pad; });
-            
+
             group.attr("x", function (d) { return d.bounds.x; })
                  .attr("y", function (d) { return d.bounds.y; })
                 .attr("width", function (d) { return d.bounds.width(); })

@@ -1,7 +1,7 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>Unix Family Tree</title>    
+    <title>Unix Family Tree</title>
     <style>
         @import url(../style.css);
     .background {
@@ -32,22 +32,20 @@
         text-anchor: middle;
         cursor: move;
     }
-    </style > 
-    </head > 
-<body > 
+    </style >
+    </head >
+<body >
     <a href="../index.html">cola.js home</a>
     <h1>Unix Family Tree</h1>
     <h2>Directed graph flow layout and shortest-path edge routing</h2>
-    <script src="../extern/graphlib-dot.min.js"> </script> 
-    <script src="../extern/d3.v3.js"></script>
+    <script src="../extern/graphlib-dot.min.js"> </script>
+    <script src="../extern/d3v4.js"></script>
     <script src="../cola.js"></script>
-    <script src="../src/layout.js"></script>
-    <script src="../src/shortestpaths.js"></script>
     <link rel="stylesheet" href="../extern/hljs/styles/github.css">
     <script src="../extern/hljs/highlight.pack.js"></script>
     <script>
         hljs.initHighlightingOnLoad();
-        var d3cola = cola.d3adaptor().convergenceThreshold(0.1);
+        var d3cola = cola.d3adaptor(d3).convergenceThreshold(0.1);
 
         var width = 960, height = 700;
 
@@ -166,7 +164,7 @@
                     .attr("height", function (d) { return d.innerBounds.height(); });
 
                 link.attr("d", function (d) {
-                    var route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                    var route = cola.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                     return lineFunction([route.sourceIntersection, route.arrowStart]);
                 });
                 if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
@@ -186,30 +184,30 @@
     .flowLayout('x', 150)
     .size([width, height])
     .nodes(nodes)
-    .links(edges)             
+    .links(edges)
     .jaccardLinkLengths(150);
 </code></pre>
-    In particular, the call to <code>flowLayout</code> causes all edges not involved in a cycle (strongly connected component) to have a separation constraint generated between their source and sink, 
+    In particular, the call to <code>flowLayout</code> causes all edges not involved in a cycle (strongly connected component) to have a separation constraint generated between their source and sink,
     with a minimum spacing set to 150.  Specifying the <code>'x'</code> axis achieves a left-to-right flow layout.  The default is top-to-bottom flow layout (i.e. <code>'y'</code>).
     You can also specify a function as the second argument to <code>flowLayout</code> that returns different separations for each edge.  Specify a different minimum as a second parameter to <code>flowLayout</code>.
     <p>
     Another feature of this example is <i>shortest-path edge routing</i>.  That is, after layout stops, the edge paths are routed to avoid passing through node boundaries.
     To do this, we call the following function on the layout "end" event:
     </p>
-<pre><code>var routeEdges = function () {         
+<pre><code>var routeEdges = function () {
     d3cola.prepareEdgeRouting(margin / 3);
     link.attr("d", function (d) { return lineFunction(d3cola.routeEdge(d)); });
     if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
 }</code></pre>
     <p>
-        The function <code>prepareEdgeRouting(padding)</code> creates a <i>tangent visibility graph</i> over the polygonal boundaries of the nodes.  
-        The <code>padding</code> parameter controls how close edges can come to the node boundaries. 
+        The function <code>prepareEdgeRouting(padding)</code> creates a <i>tangent visibility graph</i> over the polygonal boundaries of the nodes.
+        The <code>padding</code> parameter controls how close edges can come to the node boundaries.
         Here we set it to be a third of the minimum spacing that layout allows between nodes.
         This visibility graph looks like this:
     </p>
 <img src="unixVisibilityGraph.png" width="400px"/>
 <p>
-    The call to <code>d3adaptor.routeEdge</code> for each edge, uses the Dijkstra algorithm to find a shortest path through the visibility graph from the 
+    The call to <code>d3adaptor.routeEdge</code> for each edge, uses the Dijkstra algorithm to find a shortest path through the visibility graph from the
     centre of the source node to the centre of the target node.
     </p><p>
     The last bit: <code>if (isIE()) link.each(...</code> is an IE10/11 specific hack to force it to redraw the edges.  This is necessary because

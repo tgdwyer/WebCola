@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <meta charset="utf-8">
 <style>
 @import url(../style.css);
@@ -22,19 +22,19 @@
 <body>
     <a href="../index.html">cola.js home</a>
     <h1>Continuous layout while graph is changing</h1>
-<script src="../extern/d3.v3.js"></script>
+<script src="../extern/d3v4.js"></script>
 <script src="../cola.min.js"></script>
 <script>
 
     var width = 960,
         height = 500;
 
-    var color = d3.scale.category10();
+    var color = d3.scaleOrdinal(d3.schemeCategory10);
 
     var nodes = [],
         links = [];
 
-    var force = cola.d3adaptor()
+    var force = cola.d3adaptor(d3)
         .nodes(nodes)
         .links(links)
         .linkDistance(120)
@@ -112,7 +112,7 @@ that I felt it was useful to add some transitions on node positions so you can s
     </p>
     to:
     <p>
-    var force = cola.d3adaptor()
+    var force = cola.d3adaptor(d3)
     </p>
 </p>
 <p>See <a href="onlinebrowse.html">this example</a> for more impressive dynamic graph layout.</p>

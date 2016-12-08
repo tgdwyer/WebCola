@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <title>Friend Networks</title>
     <style>
-        
+
 @import url(../style.css);
 .node {
   stroke: #fff;
@@ -63,13 +63,13 @@
         <div class="leftheading">Acquaintances</div>
         <div class="rightheading">Close Friends</div>
     <p />
-<script src="../extern/d3.v3.js"></script>
+<script src="../extern/d3v4.js"></script>
     <script src="../cola.min.js"></script>
 <script>
     var width = 280,
         height = 280;
 
-    var color = d3.scale.category20();
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
     var leftvisible = true;
     document.onkeyup = keyhandler;
     var visible = false;
@@ -118,7 +118,7 @@
         function egosvg(file, edgelength, gender) {
             this.edgelength = edgelength;
             this.gender = gender;
-            this.d3cola = cola.d3adaptor().convergenceThreshold(1e-4)
+            this.d3cola = cola.d3adaptor(d3).convergenceThreshold(1e-4)
                 .size([width, height]);
 
             this.svg = d3.select("body").append("svg")
@@ -195,7 +195,7 @@
         return egosvg;
     })();
     var egosvg1, egosvg2;
-    
+
     function go() {
         d3.text("graphdata/alex/Full_Network_Sym/gender.txt",
             function (error, text) {

@@ -34,13 +34,37 @@ module.exports = function (grunt) {
             //     'tsify', { target: 'es6' },
             //   ]
             // ],
-            standalone: 'cola', 
+            standalone: 'cola',
             //debug: true
           },
           //transform: [["babelify", { "presets": ["es2015"] }]]
         },
         files: {
           'WebCola/cola.js': ['WebCola/index.js']
+        }
+      },
+      examples: {
+        options: {
+          browserifyOptions: {
+            plugin: [
+              [
+                'tsify', { target: 'es6' },
+              ]
+            ],
+            debug: true
+          },
+          transform: [["babelify", { "presets": ["es2015"] }]]
+        },
+        files: {
+          'WebCola/examples/3dlayout.js': ['WebCola/examples/3dlayout.ts'],
+          'WebCola/examples/3dtree.js': ['WebCola/examples/3dtree.ts'],
+          'WebCola/examples/dotpowergraph.js': ['WebCola/examples/dotpowergraph.ts'],
+          'WebCola/examples/powergraphexample.js': ['WebCola/examples/powergraphexample.ts'],
+          'WebCola/examples/pretrip.js': ['WebCola/examples/pretrip.ts'],
+          'WebCola/examples/statemachinepowergraph.js': ['WebCola/examples/statemachinepowergraph.ts'],
+          'WebCola/examples/tetrisbug.js': ['WebCola/examples/tetrisbug.ts'],
+          'WebCola/examples/tmdbgraph.js': ['WebCola/examples/tmdbgraph.ts'],
+          'WebCola/examples/vhybridize.js': ['WebCola/examples/vhybridize.ts']
         }
       },
       test: {
@@ -64,14 +88,6 @@ module.exports = function (grunt) {
       },
       test: {
         src: ['WebCola/test/*.ts', '!WebCola/index.ts', '!WebCola/src/batch.ts'],
-        options: {
-          failOnTypeErrors: false,
-          target: 'es5',
-          sourceMap: true
-        }
-      },
-      examples: {
-        src: ['WebCola/examples/*.ts', '!WebCola/index.ts', '!WebCola/src/batch.ts'],
         options: {
           failOnTypeErrors: false,
           target: 'es5',
@@ -145,7 +161,7 @@ module.exports = function (grunt) {
   grunt.registerTask('default', ['copy', 'ts', 'browserify', 'uglify', 'qunit']);
   grunt.registerTask('nougly', ['ts', 'browserify', 'qunit']);
   grunt.registerTask('nougly-notest', ['ts']);
-  grunt.registerTask('docs', ['typedoc', 'ts:examples']);
-  grunt.registerTask('examples', ['ts:examples']);
-  grunt.registerTask('full', ['default', 'ts:examples', 'examples']);
+  grunt.registerTask('docs', ['typedoc', 'browserify:examples']);
+  grunt.registerTask('examples', ['browserify:examples']);
+  grunt.registerTask('full', ['default', 'browserify:examples', 'examples']);
 };
