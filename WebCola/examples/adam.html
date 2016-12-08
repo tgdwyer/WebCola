@@ -1,6 +1,6 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
-<head>  
+<head>
     <style>
         @import url(../style.css);
     .background {
@@ -30,19 +30,16 @@
         text-anchor: middle;
         cursor: move;
     }
-    </style > 
-    </head > 
-<body > 
+    </style >
+    </head >
+<body >
     <a href="../index.html">cola.js home</a>
-    <script src="../extern/graphlib-dot.min.js"> </script> 
-    <script src="../extern/d3.v3.js"></script>
+    <script src="../extern/graphlib-dot.min.js"> </script>
+    <script src="../extern/d3v4.js"></script>
     <script src="../cola.min.js"></script>
-    <script src="../src/descent.js"></script>
-    <script src="../src/layout.js"></script>
-    <script src="../src/rectangle.js"></script>
     <script>
         function graph(edgeType) {
-            var d3cola = cola.d3adaptor().convergenceThreshold(0.1);
+            var d3cola = cola.d3adaptor(d3).convergenceThreshold(0.1);
 
             var width = 1600, height = 800;
             var heading = d3.select("body").append("h1");
@@ -150,7 +147,7 @@
                         .attr("height", function (d) { return d.innerBounds.height(); });
 
                     link.attr("d", function (d) {
-                        var route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                        var route = cola.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                         return lineFunction([route.sourceIntersection, route.arrowStart]);
                     });
                     if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });

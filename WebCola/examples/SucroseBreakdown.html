@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -46,13 +46,13 @@
 <body onload="parseDunnart()">
     <a href="../index.html">cola.js home</a>
     <h1>Metabolic Pathway: Sucrose Breakdown</h1>
-<script src="../extern/d3.v3.js"></script>
+<script src="../extern/d3v4.js"></script>
 <script src="../cola.min.js"></script>
 <script>
     var width = 800,
         height = 520;
 
-    var d3cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor(d3)
         .linkDistance(60)
         .avoidOverlaps(true)
         .size([width, height]);
@@ -201,10 +201,10 @@
                 d.innerBounds = d.bounds.inflate(- margin);
             });
             link.each(function (d) {
-                d.route = cola.vpsc.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
+                d.route = cola.makeEdgeBetween(d.source.innerBounds, d.target.innerBounds, 5);
                 if (isIE())  this.parentNode.insertBefore(this, this);
             });
-            
+
             link.attr("x1", function (d) { return d.route.sourceIntersection.x; })
                 .attr("y1", function (d) { return d.route.sourceIntersection.y; })
                 .attr("x2", function (d) { return d.route.arrowStart.x; })

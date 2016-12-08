@@ -82,7 +82,7 @@ function makeSVG(addGridLines, mywidth, myheight):any {
 }
 
 function flatGraph() {
-    var d3cola = colans.d3adaptor().linkDistance(80).avoidOverlaps(true).size([2000, 2000]);
+    var d3cola = colans.d3adaptor(d3).linkDistance(80).avoidOverlaps(true).size([2000, 2000]);
     var svg = makeSVG(false, 2000, 2000);
     inputjson.nodes.forEach(function (v) {
             v.width = 50;
@@ -161,7 +161,7 @@ function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') |
 function heuristicPowerGraphLayout(graph, size) {
     // compute power graph
     var powerGraph;
-    var d3cola = colans.d3adaptor()
+    var d3cola = colans.d3adaptor(d3)
         .avoidOverlaps(false)
         .nodes(graph.nodes)
         .links(graph.links)
@@ -189,7 +189,7 @@ function heuristicPowerGraphLayout(graph, size) {
     });
 
     // layout the flat graph with dummy nodes and edges
-    d3cola = colans.d3adaptor()
+    d3cola = colans.d3adaptor(d3)
         .size(size)
         .nodes(vs)
         .links(edges)
@@ -199,7 +199,7 @@ function heuristicPowerGraphLayout(graph, size) {
 
     // final layout taking node positions from above as starting positions
     // subject to group containment constraints
-    d3cola = colans.d3adaptor()
+    d3cola = colans.d3adaptor(d3)
         .size(size)
         .avoidOverlaps(true)
         .nodes(graph.nodes)

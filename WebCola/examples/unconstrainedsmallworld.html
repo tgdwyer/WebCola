@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -22,15 +22,15 @@
 <body>
     <a href="../index.html">cola.js home</a>
     <h1>Unconstrained graph layout</h1>
-<script src="../extern/d3.v3.js"></script>
+<script src="../extern/d3v4.js"></script>
 <script src="../cola.min.js"></script>
 <script>
     var width = 960,
         height = 500;
 
-    var color = d3.scale.category20();
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-    var cola = cola.d3adaptor()
+    var cola = cola.d3adaptor(d3)
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")
@@ -76,7 +76,7 @@
     <p>There are no constraints in this graph.  This is what happens if you use CoLa as a drop-in replacement for D3 Force layout.
         You should notice that compared to <a href="http://bl.ocks.org/mbostock/4062045">D3 Force layout</a>, CoLa has much nicer convergence properties.  That is, it glides smoothly
         to a local minimum in the layout objective function with no "jitter". </p>
-    <p>To be precise, it monotonically reduces the "stress" of the layout.  
+    <p>To be precise, it monotonically reduces the "stress" of the layout.
         The improved stability is also noticable
         when you drag nodes around interactively.
     </p>

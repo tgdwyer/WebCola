@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -33,15 +33,15 @@ body {
     <h1>Layout kept inside bounding box</h1>
     <link rel="stylesheet" href="../extern/hljs/styles/github.css">
     <script src="../extern/hljs/highlight.pack.js"></script>
-    <script src="../extern/d3.v3.js"></script>
+    <script src="../extern/d3v4.js"></script>
     <script src="../cola.js"></script>
 <script>
     var width = 960,
         height = 500;
 
-    var color = d3.scale.category20();
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-    var cola = cola.d3adaptor()
+    var cola = cola.d3adaptor(d3)
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")
@@ -124,7 +124,7 @@ body {
 </script>
     <a href="https://github.com/tgdwyer/WebCola/blob/master/WebCola/examples/pageBoundsConstraints.html">Source</a>
     <p>Example showing how we can setup constraints to keep the graph nodes inside a given bounding box
-     (as per <a href="http://www.researchgate.net/publication/221557356_Dunnart_A_Constraint-Based_Network_Diagram_Authoring_Tool">this paper</a>).  
+     (as per <a href="http://www.researchgate.net/publication/221557356_Dunnart_A_Constraint-Based_Network_Diagram_Authoring_Tool">this paper</a>).
     Try dragging a node outside the box: you'll see the bounding box stretch to enclose it, and then snap back on release.  Toggle the 'boundary unlocked' button to stop nodes stretching the boundary.
     </p>
     <p>
@@ -141,12 +141,12 @@ body {
     bottomRight = { x: pageBounds.x + pageBounds.width, y: pageBounds.y + pageBounds.height, fixed: true },
     brIndex = graph.nodes.push(bottomRight) - 1,
     constraints = [];
-    for (var i = 0; i < realGraphNodes.length; i++) {             
+    for (var i = 0; i < realGraphNodes.length; i++) {
         constraints.push({ axis: 'x', type: 'separation', left: tlIndex, right: i, gap: nodeRadius });
         constraints.push({ axis: 'y', type: 'separation', left: tlIndex, right: i, gap: nodeRadius });
         constraints.push({ axis: 'x', type: 'separation', left: i, right: brIndex, gap: nodeRadius });
         constraints.push({ axis: 'y', type: 'separation', left: i, right: brIndex, gap: nodeRadius });
-    }             
+    }
     cola
         .nodes(graph.nodes)
         .links(graph.links)

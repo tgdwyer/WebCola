@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -38,15 +38,14 @@
 <body>
     <a href="../index.html">cola.js home</a>
     <h1>Alignment constraints with guidelines</h1>
-<script src="../extern/d3.v3.js"></script>
+<script src="../extern/d3v4.js"></script>
 <script src="../cola.min.js"></script>
 <script>
     var width = 800,
         height = 400;
 
-    var color = d3.scale.category20();
 
-    var d3cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor(d3)
         .linkDistance(120)
         .avoidOverlaps(true)
         .size([width, height]);
@@ -74,6 +73,7 @@
             .attr("class", "guideline")
             .attr("stroke-dasharray", "5,5");
 
+        var color = d3.scaleOrdinal(d3.schemeCategory20)
         var node = svg.selectAll(".node")
             .data(graph.nodes)
           .enter().append("rect")
@@ -125,12 +125,12 @@
         var os = c.offsets;
         if (c.axis === 'x') {
             var x = vs[os[0].node].x;
-            c.bounds = new cola.vpsc.Rectangle(x, x, 
+            c.bounds = new cola.Rectangle(x, x,
                 Math.min.apply(Math, os.map(function (o) { return vs[o.node].bounds.y - 20; })),
                 Math.max.apply(Math, os.map(function (o) { return vs[o.node].bounds.Y + 20; })));
         } else {
             var y = vs[os[0].node].y;
-            c.bounds = new cola.vpsc.Rectangle(
+            c.bounds = new cola.Rectangle(
                 Math.min.apply(Math, os.map(function (o) { return vs[o.node].bounds.x - 20; })),
                 Math.max.apply(Math, os.map(function (o) { return vs[o.node].bounds.X + 20; })),
                 y, y);
