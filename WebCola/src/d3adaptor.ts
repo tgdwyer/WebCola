@@ -6,7 +6,8 @@ import {Layout, EventType, Event} from './layout'
 
         trigger(e: Event) {
             var d3event = { type: EventType[e.type], alpha: e.alpha, stress: e.stress };
-            this.event[d3event.type](d3event); // via d3 dispatcher, e.g. event.start(e);
+
+            this.event.call(d3event.type, d3event); // via d3 dispatcher, e.g. event.start(e);
         }
 
         // iterate layout using a d3.timer, which queues calls to tick repeatedly until tick returns true

@@ -3,21 +3,21 @@
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
-__export(require('./src/adaptor'));
-__export(require('./src/d3adaptor'));
-__export(require('./src/descent'));
-__export(require('./src/geom'));
-__export(require('./src/gridrouter'));
-__export(require('./src/handledisconnected'));
-__export(require('./src/layout'));
-__export(require('./src/layout3d'));
-__export(require('./src/linklengths'));
-__export(require('./src/powergraph'));
-__export(require('./src/pqueue'));
-__export(require('./src/rbtree'));
-__export(require('./src/rectangle'));
-__export(require('./src/shortestpaths'));
-__export(require('./src/vpsc'));
+__export(require("./src/adaptor"));
+__export(require("./src/d3adaptor"));
+__export(require("./src/descent"));
+__export(require("./src/geom"));
+__export(require("./src/gridrouter"));
+__export(require("./src/handledisconnected"));
+__export(require("./src/layout"));
+__export(require("./src/layout3d"));
+__export(require("./src/linklengths"));
+__export(require("./src/powergraph"));
+__export(require("./src/pqueue"));
+__export(require("./src/rbtree"));
+__export(require("./src/rectangle"));
+__export(require("./src/shortestpaths"));
+__export(require("./src/vpsc"));
 
 },{"./src/adaptor":2,"./src/d3adaptor":3,"./src/descent":4,"./src/geom":5,"./src/gridrouter":6,"./src/handledisconnected":7,"./src/layout":8,"./src/layout3d":9,"./src/linklengths":10,"./src/powergraph":11,"./src/pqueue":12,"./src/rbtree":13,"./src/rectangle":14,"./src/shortestpaths":15,"./src/vpsc":16}],2:[function(require,module,exports){
 "use strict";
@@ -26,27 +26,28 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var layout_1 = require('./layout');
+var layout_1 = require("./layout");
 var LayoutAdaptor = (function (_super) {
     __extends(LayoutAdaptor, _super);
     function LayoutAdaptor(options) {
-        _super.call(this);
-        var self = this;
+        var _this = _super.call(this) || this;
+        var self = _this;
         var o = options;
         if (o.trigger) {
-            this.trigger = o.trigger;
+            _this.trigger = o.trigger;
         }
         if (o.kick) {
-            this.kick = o.kick;
+            _this.kick = o.kick;
         }
         if (o.drag) {
-            this.drag = o.drag;
+            _this.drag = o.drag;
         }
         if (o.on) {
-            this.on = o.on;
+            _this.on = o.on;
         }
-        this.dragstart = this.dragStart = layout_1.Layout.dragStart;
-        this.dragend = this.dragEnd = layout_1.Layout.dragEnd;
+        _this.dragstart = _this.dragStart = layout_1.Layout.dragStart;
+        _this.dragend = _this.dragEnd = layout_1.Layout.dragEnd;
+        return _this;
     }
     LayoutAdaptor.prototype.trigger = function (e) { };
     ;
@@ -71,16 +72,16 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var d3 = require('d3');
-var layout_1 = require('./layout');
+var d3 = require("d3");
+var layout_1 = require("./layout");
 var D3StyleLayoutAdaptor = (function (_super) {
     __extends(D3StyleLayoutAdaptor, _super);
     function D3StyleLayoutAdaptor() {
-        _super.call(this);
-        this.event = d3.dispatch(layout_1.EventType[layout_1.EventType.start], layout_1.EventType[layout_1.EventType.tick], layout_1.EventType[layout_1.EventType.end]);
-        var d3layout = this;
+        var _this = _super.call(this) || this;
+        _this.event = d3.dispatch(layout_1.EventType[layout_1.EventType.start], layout_1.EventType[layout_1.EventType.tick], layout_1.EventType[layout_1.EventType.end]);
+        var d3layout = _this;
         var drag;
-        this.drag = function () {
+        _this.drag = function () {
             if (!drag) {
                 var drag = d3.drag()
                     .subject(layout_1.Layout.dragOrigin)
@@ -96,10 +97,11 @@ var D3StyleLayoutAdaptor = (function (_super) {
             this
                 .call(drag);
         };
+        return _this;
     }
     D3StyleLayoutAdaptor.prototype.trigger = function (e) {
         var d3event = { type: layout_1.EventType[e.type], alpha: e.alpha, stress: e.stress };
-        this.event[d3event.type](d3event);
+        this.event.call(d3event.type, d3event);
     };
     D3StyleLayoutAdaptor.prototype.kick = function () {
         var _this = this;
@@ -443,9 +445,9 @@ var Descent = (function () {
         }
         return stress;
     };
-    Descent.zeroDistance = 1e-10;
     return Descent;
 }());
+Descent.zeroDistance = 1e-10;
 exports.Descent = Descent;
 var PseudoRandom = (function () {
     function PseudoRandom(seed) {
@@ -474,7 +476,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var rectangle_1 = require('./rectangle');
+var rectangle_1 = require("./rectangle");
 var Point = (function () {
     function Point() {
     }
@@ -494,7 +496,7 @@ exports.LineSegment = LineSegment;
 var PolyPoint = (function (_super) {
     __extends(PolyPoint, _super);
     function PolyPoint() {
-        _super.apply(this, arguments);
+        return _super.apply(this, arguments) || this;
     }
     return PolyPoint;
 }(Point));
@@ -720,7 +722,7 @@ exports.BiTangents = BiTangents;
 var TVGPoint = (function (_super) {
     __extends(TVGPoint, _super);
     function TVGPoint() {
-        _super.apply(this, arguments);
+        return _super.apply(this, arguments) || this;
     }
     return TVGPoint;
 }(Point));
@@ -881,9 +883,9 @@ exports.polysOverlap = polysOverlap;
 
 },{"./rectangle":14}],6:[function(require,module,exports){
 "use strict";
-var rectangle_1 = require('./rectangle');
-var vpsc_1 = require('./vpsc');
-var shortestpaths_1 = require('./shortestpaths');
+var rectangle_1 = require("./rectangle");
+var vpsc_1 = require("./vpsc");
+var shortestpaths_1 = require("./shortestpaths");
 var NodeWrapper = (function () {
     function NodeWrapper(id, rect, children) {
         this.id = id;
@@ -957,8 +959,8 @@ var LongestCommonSubsequence = (function () {
 exports.LongestCommonSubsequence = LongestCommonSubsequence;
 var GridRouter = (function () {
     function GridRouter(originalnodes, accessor, groupPadding) {
-        var _this = this;
         if (groupPadding === void 0) { groupPadding = 12; }
+        var _this = this;
         this.originalnodes = originalnodes;
         this.groupPadding = groupPadding;
         this.leaves = null;
@@ -990,10 +992,10 @@ var GridRouter = (function () {
         var rowMids = this.midPoints(this.rows.map(function (r) { return r.pos; }));
         var rowx = colMids[0], rowX = colMids[colMids.length - 1];
         var coly = rowMids[0], colY = rowMids[rowMids.length - 1];
-        var hlines = this.rows.map(function (r) { return { x1: rowx, x2: rowX, y1: r.pos, y2: r.pos }; })
-            .concat(rowMids.map(function (m) { return { x1: rowx, x2: rowX, y1: m, y2: m }; }));
-        var vlines = this.cols.map(function (c) { return { x1: c.pos, x2: c.pos, y1: coly, y2: colY }; })
-            .concat(colMids.map(function (m) { return { x1: m, x2: m, y1: coly, y2: colY }; }));
+        var hlines = this.rows.map(function (r) { return ({ x1: rowx, x2: rowX, y1: r.pos, y2: r.pos }); })
+            .concat(rowMids.map(function (m) { return ({ x1: rowx, x2: rowX, y1: m, y2: m }); }));
+        var vlines = this.cols.map(function (c) { return ({ x1: c.pos, x2: c.pos, y1: coly, y2: colY }); })
+            .concat(colMids.map(function (m) { return ({ x1: m, x2: m, y1: coly, y2: colY }); }));
         var lines = hlines.concat(vlines);
         lines.forEach(function (l) { return l.verts = []; });
         this.verts = [];
@@ -1631,19 +1633,19 @@ exports.separateGraphs = separateGraphs;
 
 },{}],8:[function(require,module,exports){
 "use strict";
-var powergraph = require('./powergraph');
-var linklengths_1 = require('./linklengths');
-var descent_1 = require('./descent');
-var rectangle_1 = require('./rectangle');
-var shortestpaths_1 = require('./shortestpaths');
-var geom_1 = require('./geom');
-var handledisconnected_1 = require('./handledisconnected');
+var powergraph = require("./powergraph");
+var linklengths_1 = require("./linklengths");
+var descent_1 = require("./descent");
+var rectangle_1 = require("./rectangle");
+var shortestpaths_1 = require("./shortestpaths");
+var geom_1 = require("./geom");
+var handledisconnected_1 = require("./handledisconnected");
+var EventType;
 (function (EventType) {
     EventType[EventType["start"] = 0] = "start";
     EventType[EventType["tick"] = 1] = "tick";
     EventType[EventType["end"] = 2] = "end";
-})(exports.EventType || (exports.EventType = {}));
-var EventType = exports.EventType;
+})(EventType = exports.EventType || (exports.EventType = {}));
 ;
 function isGroup(g) {
     return typeof g.leaves !== 'undefined' || typeof g.groups !== 'undefined';
@@ -2013,8 +2015,8 @@ var Layout = (function () {
     Layout.prototype.initialLayout = function (iterations, x, y) {
         if (this._groups.length > 0 && iterations > 0) {
             var n = this._nodes.length;
-            var edges = this._links.map(function (e) { return { source: e.source.index, target: e.target.index }; });
-            var vs = this._nodes.map(function (v) { return { index: v.index }; });
+            var edges = this._links.map(function (e) { return ({ source: e.source.index, target: e.target.index }); });
+            var vs = this._nodes.map(function (v) { return ({ index: v.index }); });
             this._groups.forEach(function (g, i) {
                 vs.push({ index: g.index = n + i });
             });
@@ -2185,10 +2187,10 @@ exports.Layout = Layout;
 
 },{"./descent":4,"./geom":5,"./handledisconnected":7,"./linklengths":10,"./powergraph":11,"./rectangle":14,"./shortestpaths":15}],9:[function(require,module,exports){
 "use strict";
-var shortestpaths_1 = require('./shortestpaths');
-var descent_1 = require('./descent');
-var rectangle_1 = require('./rectangle');
-var linklengths_1 = require('./linklengths');
+var shortestpaths_1 = require("./shortestpaths");
+var descent_1 = require("./descent");
+var rectangle_1 = require("./rectangle");
+var linklengths_1 = require("./linklengths");
 var Link3D = (function () {
     function Link3D(source, target) {
         this.source = source;
@@ -2218,8 +2220,8 @@ var Node3D = (function () {
 exports.Node3D = Node3D;
 var Layout3D = (function () {
     function Layout3D(nodes, links, idealLinkLength) {
-        var _this = this;
         if (idealLinkLength === void 0) { idealLinkLength = 1; }
+        var _this = this;
         this.nodes = nodes;
         this.links = links;
         this.idealLinkLength = idealLinkLength;
@@ -2283,10 +2285,10 @@ var Layout3D = (function () {
         }
         return this.descent.rungeKutta();
     };
-    Layout3D.dims = ['x', 'y', 'z'];
-    Layout3D.k = Layout3D.dims.length;
     return Layout3D;
 }());
+Layout3D.dims = ['x', 'y', 'z'];
+Layout3D.k = Layout3D.dims.length;
 exports.Layout3D = Layout3D;
 var LinkAccessor = (function () {
     function LinkAccessor() {
@@ -2855,7 +2857,7 @@ var PriorityQueue = (function () {
     PriorityQueue.prototype.push = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i - 0] = arguments[_i];
+            args[_i] = arguments[_i];
         }
         var pairingNode;
         for (var i = 0, arg; arg = args[i]; ++i) {
@@ -3132,10 +3134,11 @@ var Node = (function () {
 var RBTree = (function (_super) {
     __extends(RBTree, _super);
     function RBTree(comparator) {
-        _super.call(this);
-        this._root = null;
-        this._comparator = comparator;
-        this.size = 0;
+        var _this = _super.call(this) || this;
+        _this._root = null;
+        _this._comparator = comparator;
+        _this.size = 0;
+        return _this;
     }
     RBTree.prototype.insert = function (data) {
         var ret = false;
@@ -3284,8 +3287,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var vpsc_1 = require('./vpsc');
-var rbtree_1 = require('./rbtree');
+var vpsc_1 = require("./vpsc");
+var rbtree_1 = require("./rbtree");
 function computeGroupBounds(g) {
     g.bounds = typeof g.leaves !== "undefined" ?
         g.leaves.reduce(function (r, c) { return c.bounds.union(r); }, Rectangle.empty()) :
@@ -3364,7 +3367,8 @@ var Rectangle = (function () {
             { x: this.X, y: this.y },
             { x: this.X, y: this.Y },
             { x: this.x, y: this.Y },
-            { x: this.x, y: this.y }];
+            { x: this.x, y: this.y }
+        ];
     };
     Rectangle.lineIntersection = function (x1, y1, x2, y2, x3, y3, x4, y4) {
         var dx12 = x2 - x1, dx34 = x4 - x3, dy12 = y2 - y1, dy34 = y4 - y3, denominator = dy34 * dx12 - dx34 * dy12;
@@ -3586,18 +3590,19 @@ exports.removeOverlaps = removeOverlaps;
 var IndexedVariable = (function (_super) {
     __extends(IndexedVariable, _super);
     function IndexedVariable(index, w) {
-        _super.call(this, 0, w);
-        this.index = index;
+        var _this = _super.call(this, 0, w) || this;
+        _this.index = index;
+        return _this;
     }
     return IndexedVariable;
 }(vpsc_1.Variable));
 exports.IndexedVariable = IndexedVariable;
 var Projection = (function () {
     function Projection(nodes, groups, rootGroup, constraints, avoidOverlaps) {
-        var _this = this;
         if (rootGroup === void 0) { rootGroup = null; }
         if (constraints === void 0) { constraints = null; }
         if (avoidOverlaps === void 0) { avoidOverlaps = false; }
+        var _this = this;
         this.nodes = nodes;
         this.groups = groups;
         this.rootGroup = rootGroup;
@@ -3734,7 +3739,7 @@ exports.Projection = Projection;
 
 },{"./rbtree":13,"./vpsc":16}],15:[function(require,module,exports){
 "use strict";
-var pqueue_1 = require('./pqueue');
+var pqueue_1 = require("./pqueue");
 var Neighbour = (function () {
     function Neighbour(id, distance) {
         this.id = id;
@@ -4210,10 +4215,10 @@ var Solver = (function () {
         }
         return cost;
     };
-    Solver.LAGRANGIAN_TOLERANCE = -1e-4;
-    Solver.ZERO_UPPERBOUND = -1e-10;
     return Solver;
 }());
+Solver.LAGRANGIAN_TOLERANCE = -1e-4;
+Solver.ZERO_UPPERBOUND = -1e-10;
 exports.Solver = Solver;
 function removeOverlapInOneDimension(spans, lowerBound, upperBound) {
     var vs = spans.map(function (s) { return new Variable(s.desiredCenter); });
