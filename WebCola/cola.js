@@ -78,7 +78,7 @@ var D3StyleLayoutAdaptor = (function (_super) {
     function D3StyleLayoutAdaptor(d3Context) {
         var _this = _super.call(this) || this;
         _this.d3Context = d3Context;
-        _this.event = _this.d3Context.dispatch(layout_1.EventType[layout_1.EventType.start], layout_1.EventType[layout_1.EventType.tick], layout_1.EventType[layout_1.EventType.end]);
+        _this.event = d3Context.dispatch(layout_1.EventType[layout_1.EventType.start], layout_1.EventType[layout_1.EventType.tick], layout_1.EventType[layout_1.EventType.end]);
         var d3layout = _this;
         var drag;
         _this.drag = function () {
