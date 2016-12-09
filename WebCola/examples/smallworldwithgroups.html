@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -27,7 +27,7 @@
 <body>
     <a href="../index.html">cola.js home</a>
     <h1>Simple Groups Example</h1>
-    <script src="../extern/d3.v3.js"></script>
+    <script src="../extern/d3v4.js"></script>
     <script src="../cola.min.js"></script>
     <link rel="stylesheet" href="../extern/hljs/styles/github.css">
     <script src="../extern/hljs/highlight.pack.js"></script>
@@ -48,9 +48,9 @@
         var width = 960,
             height = 500;
 
-        var color = d3.scale.category20();
+        var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-        var cola = cola.d3adaptor()
+        var cola = cola.d3adaptor(d3)
             .size([width, height]);
 
         var svg = d3.select("body").append("svg")
@@ -85,7 +85,8 @@
                 .data(groups)
                 .enter().append('rect')
                 .classed('group', true)
-                .attr({ rx: 5, ry: 5 })
+                .attr('rx',5)
+                .attr('ry',5)
                 .style("fill", function (d) { return color(d.id); })
                 .call(cola.drag);
 
@@ -115,12 +116,11 @@
                 node.attr("cx", function (d) { return d.x; })
                     .attr("cy", function (d) { return d.y; });
 
-                group.attr({
-                    x: function (d) { return d.bounds.x },
-                    y: function (d) { return d.bounds.y },
-                    width: function (d) { return d.bounds.width() },
-                    height: function(d) { return d.bounds.height() }
-                });
+                group
+                    .attr('x', function (d) { return d.bounds.x })
+                    .attr('y', function (d) { return d.bounds.y })
+                    .attr('width', function (d) { return d.bounds.width() })
+                    .attr('height', function(d) { return d.bounds.height() });
             });
         });
 

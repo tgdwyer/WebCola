@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -34,7 +34,7 @@
     GraphCanvas = function () {
         var gc = {};
         gc.init = function (id, width, height, linkDistance) {
-            gc.cola = cola.d3adaptor()
+            gc.cola = cola.d3adaptor(d3)
                     .linkDistance(linkDistance)
                     .size([width, height]);
 
@@ -247,7 +247,7 @@
 
         var nodeQuery = gc2.nodeLayer.selectAll(".node")
             .data(relaxedGraph.nodes, function (d) { return d.id });
-            
+
         nodeQuery.enter().append("circle")
             .attr("class", "node")
             .attr("r", 5)
@@ -296,7 +296,7 @@
         setEdgeThreshold(v);
     }
 </script>
-<p>We can use cola.js for <a href="https://en.wikipedia.org/wiki/Multidimensional_scaling">Metric Multidimensional Scaling</a> by specifying a complete distance matrix between all pairs of nodes.  Instead of specifying edges, use the 
+<p>We can use cola.js for <a href="https://en.wikipedia.org/wiki/Multidimensional_scaling">Metric Multidimensional Scaling</a> by specifying a complete distance matrix between all pairs of nodes.  Instead of specifying edges, use the
     <a href="https://github.com/tgdwyer/WebCola/blob/master/WebCola/src/layout.ts#L336"><code>Layout.distanceMatrix()</code></a> function to specify the matrix.
 <p>Currently, the drawn links show the strongest <label id="sliderLabel">0</label>th percentile of correllations, change this threshold with the slider below.  Press the button above to show the graph of thresholded links.</p>
 <p>No Links

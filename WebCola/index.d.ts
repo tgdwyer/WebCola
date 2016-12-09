@@ -1,5 +1,3 @@
-/// <reference path="extern/d3.d.ts" />
-
 declare module 'webcola' {
     function applyPacking(graphs: Array<any>, w: any, h: any, node_size: any, desired_ratio?: number): void;
     function separateGraphs(nodes: any, links: any): any[];

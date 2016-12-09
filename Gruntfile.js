@@ -6,10 +6,10 @@ module.exports = function (grunt) {
   grunt.initConfig({
       pkg: grunt.file.readJSON('package.json'),
       copy: {
-          d3: {
-              src: 'node_modules/d3/d3.min.js',
-              dest: 'WebCola/extern/d3.min.js'
-          },
+          // d3: {
+          //     src: 'node_modules/d3/d3.min.js',
+          //     dest: 'WebCola/extern/d3.min.js'
+          // },
           qunit: {
               src: 'node_modules/qunitjs/qunit/*',
               dest: 'WebCola/test/'
@@ -29,16 +29,53 @@ module.exports = function (grunt) {
       dist: {
         options: {
           browserifyOptions: {
-            standalone: 'cola'
-          }
+            // plugin: [
+            //   [
+            //     'tsify', { target: 'es6' },
+            //   ]
+            // ],
+            standalone: 'cola',
+            // debug: true
+          },
+          // transform: [["babelify", { "presets": ["es2015"] }]]
         },
         files: {
           'WebCola/cola.js': ['WebCola/index.js']
         }
       },
+      examples: {
+        options: {
+          browserifyOptions: {
+            plugin: [
+              [
+                'tsify', { 
+                  target: 'es6',
+                  allowJs: true 
+                },
+              ]
+            ],
+            debug: true
+          },
+          transform: [["babelify", { "presets": ["es2015"] }]]
+        },
+        files: {
+          'WebCola/examples/3dlayout.js': ['WebCola/examples/3dlayout.ts'],
+          'WebCola/examples/3dtree.js': ['WebCola/examples/3dtree.ts'],
+          'WebCola/examples/dotpowergraph.js': ['WebCola/examples/dotpowergraph.ts'],
+          'WebCola/examples/powergraphexample.js': ['WebCola/examples/powergraphexample.ts'],
+          'WebCola/examples/pretrip.js': ['WebCola/examples/pretrip.ts'],
+          'WebCola/examples/statemachinepowergraph.js': ['WebCola/examples/statemachinepowergraph.ts'],
+          'WebCola/examples/tetrisbug.js': ['WebCola/examples/tetrisbug.ts'],
+          'WebCola/examples/vhybridize.js': ['WebCola/examples/vhybridize.ts']
+        }
+      },
       test: {
         files: {
           'WebCola/test/bundle.js': ['WebCola/test/vpsctests.js', 'WebCola/test/apitests.js', 'WebCola/test/tests.js', '!WebCola/test/bundle.js']
+        },
+        options: {
+          //browserifyOptions: { debug: true },
+          transform: [["babelify", { "presets": ["es2015"] }]]
         }
       }
     },
@@ -60,12 +97,7 @@ module.exports = function (grunt) {
         }
       },
       examples: {
-        src: ['WebCola/examples/*.ts', '!WebCola/index.ts', '!WebCola/src/batch.ts'],
-        options: {
-          failOnTypeErrors: false,
-          target: 'es5',
-          sourceMap: true
-        }
+        src: 'WebCola/examples/tmdbgraph.ts'
       }
     },
     dtsGenerator: {
@@ -73,7 +105,7 @@ module.exports = function (grunt) {
             name: 'cola',
             baseDir: 'WebCola/src',
             out: 'WebCola/cola.d.ts',
-            excludes: ['extern/d3.d.ts']
+            excludes: ['extern/d3v3.d.ts']
         },
         default: {
           src: ['WebCola/src/*.ts', '!WebCola/src/batch.ts', '!WebCola/src/cola.ts'],
@@ -123,7 +155,7 @@ module.exports = function (grunt) {
     connect: {
       server: {
         options: {
-          port: 1337,
+          port: 8080,
           base: './WebCola',
           keepalive: true
         }
@@ -134,7 +166,7 @@ module.exports = function (grunt) {
   grunt.registerTask('default', ['copy', 'ts', 'browserify', 'uglify', 'qunit']);
   grunt.registerTask('nougly', ['ts', 'browserify', 'qunit']);
   grunt.registerTask('nougly-notest', ['ts']);
-  grunt.registerTask('docs', ['typedoc', 'ts:examples']);
-  grunt.registerTask('examples', ['ts:examples']);
-  grunt.registerTask('full', ['default', 'ts:examples', 'examples']);
+  grunt.registerTask('docs', ['typedoc', 'browserify:examples']);
+  grunt.registerTask('examples', ['browserify:examples']);
+  grunt.registerTask('full', ['default', 'browserify:examples', 'examples']);
 };

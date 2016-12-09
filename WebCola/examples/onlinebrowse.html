@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -29,7 +29,7 @@
     <a href="../index.html">cola.js home</a>
 <h1>Online Graph Exploration</h1>
 <p>Red nodes are incomplete.  Click on them to expand their neighbours.</p>
-<script src="../extern/d3.v3.js"></script>
+<script src="../extern/d3v4.js"></script>
 <script src="../extern/fullscreen.js"></script>
 <script src="../cola.min.js"></script>
 <script>
@@ -37,9 +37,9 @@
         height = 500,
         imageScale = 0.25;
 
-    var color = d3.scale.category20();
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-    var cola = cola.d3adaptor()
+    var cola = cola.d3adaptor(d3)
         .linkDistance(60)
         .size([width, height]);
 
@@ -178,7 +178,7 @@
             .on("mouseover", function () { imageZoom(this, 1/imageScale) })
             .on("touchend", function () { toggleImageZoom(this) })
             .on("mouseout", function () { imageZoom(this, 1) });
-        
+
         enter.append("circle")
             .attr("r", 7)
             .on("click", function (d) { click(d) })

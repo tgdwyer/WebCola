@@ -3,15 +3,15 @@
 ///<reference path="../src/gridrouter.ts"/>
 ///<reference path="../src/layout.ts"/>
 ///<reference path="../extern/jquery.d.ts"/>
-///<reference path="../extern/d3.d.ts"/>
 
 import * as cola from '../index'
+import * as d3 from '../../node_modules/d3'
 
 module statemachine {
     var width = 1280,
         height = 800;
 
-    var color = d3.scale.category10();
+    var color = d3.scaleOrdinal(d3.schemeCategory10);
 
     var makeEdgeBetween;
     var graphfile = "graphdata/state_machine.json";
@@ -34,14 +34,14 @@ module statemachine {
         return svg;
     }
     function flatGraph() {
-        var d3cola = cola.d3adaptor()
+        var d3cola = cola.d3adaptor(d3)
             .linkDistance(150)
             .avoidOverlaps(true)
             .size([width, height]);
 
         var svg = makeSVG();
 
-        d3.json(graphfile, function (error, graph) {
+        d3.json(graphfile, function (error, graph: {nodes, links}) {
             graph.nodes.forEach(v=> {
                 v.width = 200; v.height = 50;
             });
@@ -134,7 +134,7 @@ module statemachine {
     }
 
     function powerGraph() {
-        var d3cola = cola.d3adaptor()
+        var d3cola = cola.d3adaptor(d3)
             .linkDistance(80)
             .handleDisconnected(false)
             .avoidOverlaps(true)
@@ -142,7 +142,7 @@ module statemachine {
 
         var svg = makeSVG();
 
-        d3.json(graphfile, function (error, graph) {
+        d3.json(graphfile, function (error, graph: {nodes, links}) {
             graph.nodes.forEach((v, i) => {
                 v.index = i;
                 v.width = 170;

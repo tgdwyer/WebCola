@@ -1,4 +1,4 @@
-﻿
+
 <!DOCTYPE html>
 <html>
 <title>Sankey Diagram</title>
@@ -48,7 +48,7 @@
 
             var formatNumber = d3.format(",.0f"),
                 format = function (d) { return formatNumber(d) + " people"; },
-                color = d3.scale.category20();
+                color = d3.scaleOrdinal(d3.schemeCategory20);
 
             var svg = d3.select("#chart").append("svg")
                 .attr("width", width + margin.left + margin.right)

@@ -6,6 +6,5 @@ WebCola/doc
 WebCola/.baseDir.ts
 WebCola/src/*.js
 WebCola/examples/*.js
-WebCola/extern/*.js
 WebCola/test/bundle.js
 WebCola/test/apitests.js

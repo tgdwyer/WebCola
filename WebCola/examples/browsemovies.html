@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -19,7 +19,7 @@
 }
 
 .spike {
-    fill: url(#SpikeGradient); 
+    fill: url(#SpikeGradient);
     stroke-width: 0;
 }
 
@@ -41,7 +41,7 @@
 
     var red = "rgb(254, 137, 137)";
 
-    var d3cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor(d3)
         .linkDistance(60)
         .size([width, height]);
 
@@ -102,7 +102,7 @@
 
     var nodeWidth = 30, nodeHeight = 35;
 
-    // get first node 
+    // get first node
     var d = modelgraph.getNode(tmdb.Movie, 550, addViewNode);
     $.when(d).then(function (startNode) {
         addViewNode(startNode);
@@ -145,7 +145,7 @@
                 h = nodeHeight - 6,
                 x = w / 2 + 25 * Math.cos(r * i),
                 y = h / 2 + 30 * Math.sin(r * i),
-                rect = new cola.vpsc.Rectangle(0, w, 0, h),
+                rect = new cola.Rectangle(0, w, 0, h),
                 vi = rect.rayIntersection(x, y);
             var dview = d3.select("#"+v.name()+"_spikes");
 

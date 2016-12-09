@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <title>Unconstrained Layout</title>
     <style>
-        
+
 @import url(../style.css);
     .background {
         stroke: white;
@@ -39,10 +39,10 @@
 </head>
 <body>
     <a href="../index.html">cola.js home</a>
-<script src="../extern/d3.v3.js"></script>
+<script src="../extern/d3v4.js"></script>
     <script src="../cola.min.js"></script>
 <script>
-    var d3cola = cola.d3adaptor().convergenceThreshold(0.1);
+    var d3cola = cola.d3adaptor(d3).convergenceThreshold(0.1);
 
     var width = 960, height = 700;
 
@@ -128,7 +128,7 @@
                                 .attr("x2", e.target.p.x).attr("y2", e.target.p.y)
                                 .attr("stroke", "green");
                         });
-                }))}); 
+                }))});
             if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
         }
         d3cola.start(10, 30, 100).on("tick", function () {
@@ -139,7 +139,7 @@
                 .attr("height", function (d) { return d.innerBounds.height(); });
 
             link.attr("d", function (d) {
-                cola.vpsc.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                cola.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
                 var lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
                 return lineFunction(lineData);
             });
