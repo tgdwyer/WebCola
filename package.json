@@ -20,7 +20,12 @@
     "qunitjs": "^1.23.1",
     "tsify": "^2.0.3",
     "typedoc": "^0.3.12",
-    "uglify-js": "^2.4.16"
+    "uglify-js": "^2.4.16",
+    "@types/d3": "^4.4.0",
+    "@types/d3-dispatch": "^1.0.4",
+    "@types/d3-selection": "^1.0.6",
+    "grunt-typescript": "^0.8.0",
+    "typescript": "^2.1.4"
   },
   "description": "WebCola =======",
   "main": "WebCola/index.js",
@@ -43,12 +48,5 @@
   "bugs": {
     "url": "https://github.com/tgdwyer/WebCola/issues"
   },
-  "homepage": "https://github.com/tgdwyer/WebCola",
-  "dependencies": {
-    "@types/d3": "^4.4.0",
-    "@types/d3-dispatch": "^1.0.4",
-    "@types/d3-selection": "^1.0.6",
-    "grunt-typescript": "^0.8.0",
-    "typescript": "^2.0.10"
-  }
+  "homepage": "https://github.com/tgdwyer/WebCola"
 }

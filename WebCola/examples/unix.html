@@ -50,11 +50,15 @@
         var width = 960, height = 700;
 
         var outer = d3.select("body").append("svg")
-            .attr({ width: width, height: height, "pointer-events": "all" });
+            .attr('width',width)
+            .attr('height',height)
+            .attr('pointer-events',"all");
 
         outer.append('rect')
-            .attr({ class: 'background', width: "100%", height: "100%" })
-            .call(d3.behavior.zoom().on("zoom", redraw));
+            .attr('class','background')
+            .attr('width',"100%")
+            .attr('height',"100%")
+            .call(d3.zoom().on("zoom", redraw));
 
         var vis = outer
             .append('g')
@@ -65,19 +69,16 @@
         }
 
         outer.append('svg:defs').append('svg:marker')
-            .attr({
-                id: 'end-arrow',
-                viewBox: '0 -5 10 10',
-                refX: 8,
-                markerWidth: 6,
-                markerHeight: 6,
-                orient: 'auto'
-            })
+            .attr('id','end-arrow')
+            .attr('viewBox','0 -5 10 10')
+            .attr('refX',8)
+            .attr('markerWidth',6)
+            .attr('markerHeight',6)
+            .attr('orient','auto')
           .append('svg:path')
-            .attr({
-                d: 'M0,-5L10,0L0,5L2,0',
-                'stroke-width': '0px',
-                fill: '#000'});
+            .attr('d','M0,-5L10,0L0,5L2,0')
+            .attr('stroke-width','0px')
+            .attr('fill','#000');
 
         d3.text("graphdata/unix.dot", function (f) {
             var digraph = graphlibDot.parse(f);
@@ -115,7 +116,8 @@
                 .data(nodes)
                 .enter().append("rect")
                 .classed("node", true)
-                .attr({ rx: 5, ry: 5 })
+                .attr('rx',5)
+                .attr('ry',5)
                 .call(d3cola.drag);
 
             var label = vis.selectAll(".label")
@@ -131,10 +133,9 @@
                     d.height = b.height + extra;
                 });
 
-            var lineFunction = d3.svg.line()
+            var lineFunction = d3.line()
                 .x(function (d) { return d.x; })
-                .y(function (d) { return d.y; })
-                .interpolate("linear");
+                .y(function (d) { return d.y; });
 
             var routeEdges = function () {
                 d3cola.prepareEdgeRouting();
