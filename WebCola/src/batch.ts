@@ -1,6 +1,5 @@
-import {Link, Layout} from './layout'
+import {Node, Link, Layout} from './layout'
 import {GridRouter} from './gridrouter'
-import {Node} from './rectangle'
 
 export function gridify(pgLayout, nudgeGap, margin, groupMargin) {
     pgLayout.cola.start(0, 0, 0, 10, false);
