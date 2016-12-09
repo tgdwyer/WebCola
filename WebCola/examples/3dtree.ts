@@ -3,7 +3,7 @@
 /// <reference path="../src/linklengths.ts"/>
 /// <reference path="../src/descent.ts"/>
 /// <reference path="../src/layout3d.ts"/>
-import * as d3 from 'd3'
+import * as d3 from '../../node_modules/d3'
 import * as cola from '../index'
 module tree3d {
     export class Graph {

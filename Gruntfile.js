@@ -35,9 +35,9 @@ module.exports = function (grunt) {
             //   ]
             // ],
             standalone: 'cola',
-            //debug: true
+            // debug: true
           },
-          //transform: [["babelify", { "presets": ["es2015"] }]]
+          // transform: [["babelify", { "presets": ["es2015"] }]]
         },
         files: {
           'WebCola/cola.js': ['WebCola/index.js']
@@ -48,7 +48,10 @@ module.exports = function (grunt) {
           browserifyOptions: {
             plugin: [
               [
-                'tsify', { target: 'es6' },
+                'tsify', { 
+                  target: 'es6',
+                  allowJs: true 
+                },
               ]
             ],
             debug: true
@@ -63,7 +66,6 @@ module.exports = function (grunt) {
           'WebCola/examples/pretrip.js': ['WebCola/examples/pretrip.ts'],
           'WebCola/examples/statemachinepowergraph.js': ['WebCola/examples/statemachinepowergraph.ts'],
           'WebCola/examples/tetrisbug.js': ['WebCola/examples/tetrisbug.ts'],
-          'WebCola/examples/tmdbgraph.js': ['WebCola/examples/tmdbgraph.ts'],
           'WebCola/examples/vhybridize.js': ['WebCola/examples/vhybridize.ts']
         }
       },
@@ -93,6 +95,9 @@ module.exports = function (grunt) {
           target: 'es5',
           sourceMap: true
         }
+      },
+      examples: {
+        src: 'WebCola/examples/tmdbgraph.ts'
       }
     },
     dtsGenerator: {
@@ -100,7 +105,7 @@ module.exports = function (grunt) {
             name: 'cola',
             baseDir: 'WebCola/src',
             out: 'WebCola/cola.d.ts',
-            excludes: ['extern/d3.d.ts']
+            excludes: ['extern/d3v3.d.ts']
         },
         default: {
           src: ['WebCola/src/*.ts', '!WebCola/src/batch.ts', '!WebCola/src/cola.ts'],

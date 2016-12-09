@@ -48,7 +48,7 @@
         var width = 960,
             height = 500;
 
-        var color = d3.ordinalSchale(d3.schemeCategory20);
+        var color = d3.scaleOrdinal(d3.schemeCategory20);
 
         var cola = cola.d3adaptor(d3)
             .size([width, height]);
@@ -85,7 +85,8 @@
                 .data(groups)
                 .enter().append('rect')
                 .classed('group', true)
-                .attr({ rx: 5, ry: 5 })
+                .attr('rx',5)
+                .attr('ry',5)
                 .style("fill", function (d) { return color(d.id); })
                 .call(cola.drag);
 
@@ -115,12 +116,11 @@
                 node.attr("cx", function (d) { return d.x; })
                     .attr("cy", function (d) { return d.y; });
 
-                group.attr({
-                    x: function (d) { return d.bounds.x },
-                    y: function (d) { return d.bounds.y },
-                    width: function (d) { return d.bounds.width() },
-                    height: function(d) { return d.bounds.height() }
-                });
+                group
+                    .attr('x', function (d) { return d.bounds.x })
+                    .attr('y', function (d) { return d.bounds.y })
+                    .attr('width', function (d) { return d.bounds.width() })
+                    .attr('height', function(d) { return d.bounds.height() });
             });
         });
 

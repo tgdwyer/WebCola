@@ -3,7 +3,7 @@
 ///<reference path="../src/gridrouter.ts"/>
 ///<reference path="../extern/jquery.d.ts"/>
 import * as cola from '../index'
-import * as d3 from 'd3'
+import * as d3 from '../../node_modules/d3'
 
 module tetrisbug {
     var width = 1280,

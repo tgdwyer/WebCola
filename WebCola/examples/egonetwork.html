@@ -74,13 +74,13 @@
     <!--<h1>Egocentric Network</h1>-->
     <div class="leftheading">Jonica’s network</div>
     <div class="rightheading">Alex’s network</div>
-<script src="../extern/d3v4.js"></script>
+<script src="../extern/d3.v3.js"></script>
     <script src="../cola.min.js"></script>
 <script>
     var width = 280,
         height = 280;
 
-    var color = d3.scaleOrdinal(d3.schemeCategory20);
+    var color = d3.scale.category20();
     var connected = true;
     var button;
     document.onkeyup = keyhandler;

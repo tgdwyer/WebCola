@@ -22,14 +22,14 @@
 <body>
     <a href="../index.html">cola.js home</a>
     <h1>Continuous layout while graph is changing</h1>
-<script src="../extern/d3v4.js"></script>
+<script src="../extern/d3.v3.js"></script>
 <script src="../cola.min.js"></script>
 <script>
 
     var width = 960,
         height = 500;
 
-    var color = d3.scaleOrdinal(d3.schemeCategory10);
+    var color = d3.scale.category10();
 
     var nodes = [],
         links = [];

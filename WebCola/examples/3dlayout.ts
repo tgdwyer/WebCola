@@ -4,7 +4,7 @@
 /// <reference path="../src/descent.ts"/>
 /// <reference path="../src/layout3d.ts"/>
 import * as cola from '../index'
-import * as d3 from 'd3'
+import * as d3 from '../../node_modules/d3'
 module cola3 {
     export class Graph {
         parentObject;

@@ -33,15 +33,15 @@ body {
     <h1>Layout kept inside bounding box</h1>
     <link rel="stylesheet" href="../extern/hljs/styles/github.css">
     <script src="../extern/hljs/highlight.pack.js"></script>
-    <script src="../extern/d3v4.js"></script>
+    <script src="../extern/d3.v3.js"></script>
     <script src="../cola.js"></script>
 <script>
     var width = 960,
         height = 500;
 
-    var color = d3.scaleOrdinal(d3.schemeCategory20);
+    var color = d3.scale.category20();
 
-    var cola = cola.d3adaptor(d3)
+    var cola = cola.d3adaptor()
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")

@@ -19,7 +19,7 @@ __export(require("./src/rectangle"));
 __export(require("./src/shortestpaths"));
 __export(require("./src/vpsc"));
 
-},{"./src/adaptor":2,"./src/d3adaptor":3,"./src/descent":4,"./src/geom":5,"./src/gridrouter":6,"./src/handledisconnected":7,"./src/layout":8,"./src/layout3d":9,"./src/linklengths":10,"./src/powergraph":11,"./src/pqueue":12,"./src/rbtree":13,"./src/rectangle":14,"./src/shortestpaths":15,"./src/vpsc":16}],2:[function(require,module,exports){
+},{"./src/adaptor":2,"./src/d3adaptor":3,"./src/descent":6,"./src/geom":7,"./src/gridrouter":8,"./src/handledisconnected":9,"./src/layout":10,"./src/layout3d":11,"./src/linklengths":12,"./src/powergraph":13,"./src/pqueue":14,"./src/rbtree":15,"./src/rectangle":16,"./src/shortestpaths":17,"./src/vpsc":18}],2:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -65,7 +65,82 @@ function adaptor(options) {
 }
 exports.adaptor = adaptor;
 
-},{"./layout":8}],3:[function(require,module,exports){
+},{"./layout":10}],3:[function(require,module,exports){
+"use strict";
+var d3v3 = require("./d3v3adaptor");
+var d3v4 = require("./d3v4adaptor");
+;
+function d3adaptor(d3Context) {
+    if (!d3Context || isD3V3(d3Context)) {
+        return new d3v3.D3StyleLayoutAdaptor();
+    }
+    return new d3v4.D3StyleLayoutAdaptor(d3Context);
+}
+exports.d3adaptor = d3adaptor;
+function isD3V3(d3Context) {
+    var v3exp = /^3\./;
+    return d3Context.version && d3Context.version.match(v3exp) !== null;
+}
+
+},{"./d3v3adaptor":4,"./d3v4adaptor":5}],4:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var layout_1 = require("./layout");
+var D3StyleLayoutAdaptor = (function (_super) {
+    __extends(D3StyleLayoutAdaptor, _super);
+    function D3StyleLayoutAdaptor() {
+        var _this = _super.call(this) || this;
+        _this.event = d3.dispatch(layout_1.EventType[layout_1.EventType.start], layout_1.EventType[layout_1.EventType.tick], layout_1.EventType[layout_1.EventType.end]);
+        var d3layout = _this;
+        var drag;
+        _this.drag = function () {
+            if (!drag) {
+                var drag = d3.behavior.drag()
+                    .origin(layout_1.Layout.dragOrigin)
+                    .on("dragstart.d3adaptor", layout_1.Layout.dragStart)
+                    .on("drag.d3adaptor", function (d) {
+                    layout_1.Layout.drag(d, d3.event);
+                    d3layout.resume();
+                })
+                    .on("dragend.d3adaptor", layout_1.Layout.dragEnd);
+            }
+            if (!arguments.length)
+                return drag;
+            this
+                .call(drag);
+        };
+        return _this;
+    }
+    D3StyleLayoutAdaptor.prototype.trigger = function (e) {
+        var d3event = { type: layout_1.EventType[e.type], alpha: e.alpha, stress: e.stress };
+        this.event[d3event.type](d3event);
+    };
+    D3StyleLayoutAdaptor.prototype.kick = function () {
+        var _this = this;
+        d3.timer(function () { return _super.prototype.tick.call(_this); });
+    };
+    D3StyleLayoutAdaptor.prototype.on = function (eventType, listener) {
+        if (typeof eventType === 'string') {
+            this.event.on(eventType, listener);
+        }
+        else {
+            this.event.on(layout_1.EventType[eventType], listener);
+        }
+        return this;
+    };
+    return D3StyleLayoutAdaptor;
+}(layout_1.Layout));
+exports.D3StyleLayoutAdaptor = D3StyleLayoutAdaptor;
+function d3adaptor() {
+    return new D3StyleLayoutAdaptor();
+}
+exports.d3adaptor = d3adaptor;
+
+},{"./layout":10}],5:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -118,12 +193,8 @@ var D3StyleLayoutAdaptor = (function (_super) {
     return D3StyleLayoutAdaptor;
 }(layout_1.Layout));
 exports.D3StyleLayoutAdaptor = D3StyleLayoutAdaptor;
-function d3adaptor(d3Context) {
-    return new D3StyleLayoutAdaptor(d3Context);
-}
-exports.d3adaptor = d3adaptor;
 
-},{"./layout":8}],4:[function(require,module,exports){
+},{"./layout":10}],6:[function(require,module,exports){
 "use strict";
 var Locks = (function () {
     function Locks() {
@@ -468,7 +539,7 @@ var PseudoRandom = (function () {
 }());
 exports.PseudoRandom = PseudoRandom;
 
-},{}],5:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -880,7 +951,7 @@ function polysOverlap(p, q) {
 }
 exports.polysOverlap = polysOverlap;
 
-},{"./rectangle":14}],6:[function(require,module,exports){
+},{"./rectangle":16}],8:[function(require,module,exports){
 "use strict";
 var rectangle_1 = require("./rectangle");
 var vpsc_1 = require("./vpsc");
@@ -1430,7 +1501,7 @@ var GridRouter = (function () {
 }());
 exports.GridRouter = GridRouter;
 
-},{"./rectangle":14,"./shortestpaths":15,"./vpsc":16}],7:[function(require,module,exports){
+},{"./rectangle":16,"./shortestpaths":17,"./vpsc":18}],9:[function(require,module,exports){
 "use strict";
 var packingOptions = {
     PADDING: 10,
@@ -1630,7 +1701,7 @@ function separateGraphs(nodes, links) {
 }
 exports.separateGraphs = separateGraphs;
 
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 var powergraph = require("./powergraph");
 var linklengths_1 = require("./linklengths");
@@ -2184,7 +2255,7 @@ var Layout = (function () {
 }());
 exports.Layout = Layout;
 
-},{"./descent":4,"./geom":5,"./handledisconnected":7,"./linklengths":10,"./powergraph":11,"./rectangle":14,"./shortestpaths":15}],9:[function(require,module,exports){
+},{"./descent":6,"./geom":7,"./handledisconnected":9,"./linklengths":12,"./powergraph":13,"./rectangle":16,"./shortestpaths":17}],11:[function(require,module,exports){
 "use strict";
 var shortestpaths_1 = require("./shortestpaths");
 var descent_1 = require("./descent");
@@ -2299,7 +2370,7 @@ var LinkAccessor = (function () {
     return LinkAccessor;
 }());
 
-},{"./descent":4,"./linklengths":10,"./rectangle":14,"./shortestpaths":15}],10:[function(require,module,exports){
+},{"./descent":6,"./linklengths":12,"./rectangle":16,"./shortestpaths":17}],12:[function(require,module,exports){
 "use strict";
 function unionCount(a, b) {
     var u = {};
@@ -2419,7 +2490,7 @@ function stronglyConnectedComponents(numVertices, edges, la) {
 }
 exports.stronglyConnectedComponents = stronglyConnectedComponents;
 
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 "use strict";
 var PowerEdge = (function () {
     function PowerEdge(source, target, type) {
@@ -2736,7 +2807,7 @@ function getGroups(nodes, links, la, rootGroup) {
 }
 exports.getGroups = getGroups;
 
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 var PairingHeap = (function () {
     function PairingHeap(elem) {
@@ -2897,7 +2968,7 @@ var PriorityQueue = (function () {
 }());
 exports.PriorityQueue = PriorityQueue;
 
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -3279,7 +3350,7 @@ var RBTree = (function (_super) {
 }(TreeBase));
 exports.RBTree = RBTree;
 
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -3736,7 +3807,7 @@ var Projection = (function () {
 }());
 exports.Projection = Projection;
 
-},{"./rbtree":13,"./vpsc":16}],15:[function(require,module,exports){
+},{"./rbtree":15,"./vpsc":18}],17:[function(require,module,exports){
 "use strict";
 var pqueue_1 = require("./pqueue");
 var Neighbour = (function () {
@@ -3858,7 +3929,7 @@ var Calculator = (function () {
 }());
 exports.Calculator = Calculator;
 
-},{"./pqueue":12}],16:[function(require,module,exports){
+},{"./pqueue":14}],18:[function(require,module,exports){
 "use strict";
 var PositionStats = (function () {
     function PositionStats(scale) {
