@@ -4,7 +4,6 @@ WebCola/doc
 **/*.js.map
 .tscachea
 WebCola/.baseDir.ts
-WebCola/src/*.js
 WebCola/examples/*.js
 WebCola/test/bundle.js
 WebCola/test/apitests.js
