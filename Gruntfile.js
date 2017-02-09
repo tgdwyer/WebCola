@@ -59,14 +59,15 @@ module.exports = function (grunt) {
           transform: [["babelify", { "presets": ["es2015"] }]]
         },
         files: {
-          'WebCola/examples/3dlayout.js': ['WebCola/examples/3dlayout.ts'],
-          'WebCola/examples/3dtree.js': ['WebCola/examples/3dtree.ts'],
-          'WebCola/examples/dotpowergraph.js': ['WebCola/examples/dotpowergraph.ts'],
-          'WebCola/examples/powergraphexample.js': ['WebCola/examples/powergraphexample.ts'],
-          'WebCola/examples/pretrip.js': ['WebCola/examples/pretrip.ts'],
-          'WebCola/examples/statemachinepowergraph.js': ['WebCola/examples/statemachinepowergraph.ts'],
-          'WebCola/examples/tetrisbug.js': ['WebCola/examples/tetrisbug.ts'],
-          'WebCola/examples/vhybridize.js': ['WebCola/examples/vhybridize.ts']
+          'WebCola/examples/tmdbgraph.js': ['WebCola/examples/tmdbgraph.ts'],
+          // 'WebCola/examples/3dlayout.js': ['WebCola/examples/3dlayout.ts'],
+          // 'WebCola/examples/3dtree.js': ['WebCola/examples/3dtree.ts'],
+          // 'WebCola/examples/dotpowergraph.js': ['WebCola/examples/dotpowergraph.ts'],
+          // 'WebCola/examples/powergraphexample.js': ['WebCola/examples/powergraphexample.ts'],
+          // 'WebCola/examples/pretrip.js': ['WebCola/examples/pretrip.ts'],
+          // 'WebCola/examples/statemachinepowergraph.js': ['WebCola/examples/statemachinepowergraph.ts'],
+          // 'WebCola/examples/tetrisbug.js': ['WebCola/examples/tetrisbug.ts'],
+          // 'WebCola/examples/vhybridize.js': ['WebCola/examples/vhybridize.ts']
         }
       },
       test: {
@@ -95,9 +96,6 @@ module.exports = function (grunt) {
           target: 'es5',
           sourceMap: true
         }
-      },
-      examples: {
-        src: 'WebCola/examples/tmdbgraph.ts'
       }
     },
     dtsGenerator: {
