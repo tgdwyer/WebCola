@@ -105,7 +105,6 @@
     // get first node
     var d = modelgraph.getNode(tmdb.Movie, 550, addViewNode);
     $.when(d).then(function (startNode) {
-        addViewNode(startNode);
         refocus(startNode);
     });
 
