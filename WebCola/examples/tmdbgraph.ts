@@ -50,7 +50,7 @@ module tmdb {
             return this.source + '-' + this.target;
         }
     }
-    const delay = 100; // limit to 10 per second
+    const delay = 10000/40; // limit to 40 requests in 10 second span
     let last = 0;
     function request(type: NodeType, id: number, content: string = null, append: string = null): JQueryPromise<any> {
         var query = "https://api.themoviedb.org/3/" + type + "/" + id;
@@ -63,7 +63,7 @@ module tmdb {
         }
         var dfd = $.Deferred();
         function defer() {
-            if (last<20) {
+            if (last<1) {
                 last++;
                 setTimeout(()=>last--, delay);
                 dfd.resolve($.get(query));
