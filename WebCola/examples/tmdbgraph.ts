@@ -50,7 +50,7 @@ module tmdb {
             return this.source + '-' + this.target;
         }
     }
-    const delay = 1000/10; // limit to 10 per second
+    const delay = 100; // limit to 10 per second
     let last = 0;
     function request(type: NodeType, id: number, content: string = null, append: string = null): JQueryPromise<any> {
         var query = "https://api.themoviedb.org/3/" + type + "/" + id;
@@ -61,18 +61,18 @@ module tmdb {
         if (append) {
             query += "&append_to_response=" + append;
         }
-        // var dfd = $.Deferred();
-        // function defer() {
-        //     if (!last) {
-        //         last++;
-        //         setTimeout(()=>last--, delay);
-        //         dfd.resolve($.get(query));
-        //     } else 
-        //         setTimeout(defer, delay);
-        //     return dfd;
-        // }
-        // return defer();    
-        return $.get(query);
+        var dfd = $.Deferred();
+        function defer() {
+            if (last<20) {
+                last++;
+                setTimeout(()=>last--, delay);
+                dfd.resolve($.get(query));
+            } else 
+                setTimeout(defer, delay);
+            return dfd;
+        }
+        return defer();    
+        //return $.get(query);
     }
     export class Graph {
         nodes: any = {};
@@ -197,12 +197,6 @@ var modelgraph = new tmdb.Graph();
 var viewgraph = { nodes: [], links: [] };
 
 var nodeWidth = 30, nodeHeight = 35;
-
-// get first node
-var d = modelgraph.getNode(tmdb.Movie, 550, addViewNode);
-$.when(d).then(function (startNode) {
-    refocus(startNode);
-});
 
 function refocus(focus) {
     var neighboursExpanded = modelgraph.expandNeighbours(focus, function (v: ViewNode) {
@@ -384,3 +378,19 @@ function zoomToFit() {
     zoom.translate([tx, ty]).scale(s);
     redraw(true);
 }
+import * as fullscreen from 'fullscreen';
+$().ready(()=>{
+    $("#zoomToFitButton").click(zoomToFit);
+    $("#fullScreenButton").click(()=>{
+        let fs = fullscreen(outer[0][0]);
+        fs.request();
+        outer.attr('width',screen.width).attr('height',screen.height);
+        zoomToFit();
+        fs.on('release',fullScreenCancel);
+    });
+    // get first node
+    var d = modelgraph.getNode(tmdb.Movie, 550, addViewNode);
+    $.when(d).then(function (startNode) {
+        refocus(startNode);
+    });
+});

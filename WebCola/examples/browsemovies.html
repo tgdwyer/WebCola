@@ -30,11 +30,10 @@
 <h1>Online Graph Exploration</h1>
 <p>Pink nodes are incomplete.  Click on them to expand their neighbours.</p>
 <script src="../extern/d3.v3.js"></script>
-<script src="../extern/fullscreen.js"></script>
 <script src="../cola.min.js"></script>
 <script src="tmdbgraph.js"></script>
-    <button onclick="fullScreen(outer[0][0], fullScreenCancel);zoomToFit()">Full screen</button>
-    <button onclick="zoomToFit()">Zoom to fit (or double click)</button>
+    <button id="fullScreenButton">Full screen</button>
+    <button id="zoomToFitButton">Zoom to fit (or double click)</button>
 Mouse wheel zooms, left-mouse-button drag on the background to pan.
 <p>
     This example introduces the notion of a "model" graph and a "view" graph.  The model graph is too large to sensibly display in one go.
