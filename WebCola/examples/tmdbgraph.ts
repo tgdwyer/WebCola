@@ -50,6 +50,8 @@ module tmdb {
             return this.source + '-' + this.target;
         }
     }
+    const delay = 1000/10; // limit to 10 per second
+    let last = 0;
     function request(type: NodeType, id: number, content: string = null, append: string = null): JQueryPromise<any> {
         var query = "https://api.themoviedb.org/3/" + type + "/" + id;
         if (content) {
@@ -60,10 +62,16 @@ module tmdb {
             query += "&append_to_response=" + append;
         }
         // var dfd = $.Deferred();
-        // setTimeout(function() {
-        //     $.get(query).then((data)=>dfd.resolve(data));
-        // }, 1000);
-        // return dfd;
+        // function defer() {
+        //     if (!last) {
+        //         last++;
+        //         setTimeout(()=>last--, delay);
+        //         dfd.resolve($.get(query));
+        //     } else 
+        //         setTimeout(defer, delay);
+        //     return dfd;
+        // }
+        // return defer();    
         return $.get(query);
     }
     export class Graph {
@@ -264,6 +272,8 @@ function addViewNode(v: ViewNode, startpos?) {
     var d = v.getImage();
     $.when(d).then(function (node: ViewNode) {
         d3.select("#" + node.name()).append("image")
+            .attr("width",0)
+            .attr("height",0)
             .attr("transform", "translate(2,2)")
             .attr("xlink:href", function (v) {
                 var url = v.imgurl;
