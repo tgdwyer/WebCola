@@ -59,14 +59,11 @@ module tmdb {
         if (append) {
             query += "&append_to_response=" + append;
         }
-        // function defer() {
-        //     var dfd = $.Deferred();
-        //     setTimeout(function() {
-        //         dfd.resolve();
-        //     }, 1000);
-        //     return dfd.promise();
-        // }
-        // return defer().then(()=>$.get(query));
+        // var dfd = $.Deferred();
+        // setTimeout(function() {
+        //     $.get(query).then((data)=>dfd.resolve(data));
+        // }, 1000);
+        // return dfd;
         return $.get(query);
     }
     export class Graph {
