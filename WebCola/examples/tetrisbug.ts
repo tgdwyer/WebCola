@@ -1,7 +1,6 @@
 ///<reference path="../src/vpsc.ts"/>
 ///<reference path="../src/rectangle.ts"/>
 ///<reference path="../src/gridrouter.ts"/>
-///<reference path="../extern/jquery.d.ts"/>
 import * as cola from '../index'
 import * as d3scale from 'd3-scale'
 

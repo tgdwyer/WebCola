@@ -5,7 +5,6 @@
 ///<reference path="../src/gridrouter.ts"/>
 ///<reference path="../src/geom.ts"/>
 /*<reference path="../src/batch.ts"/>*/
-///<reference path="../extern/jquery.d.ts"/>
 import * as cola from '../index'
 var graphlibDot: any;
 // FIXME : (grant)  ../src/batch.ts must be fixed

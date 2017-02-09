@@ -3,7 +3,6 @@
 ///<reference path="../src/rectangle.ts"/>
 ///<reference path="../src/gridrouter.ts"/>
 ///<reference path="../src/geom.ts"/>
-///<reference path="../extern/jquery.d.ts"/>
 
 import * as d3scale from 'd3-scale'
 import * as cola from '../index'
