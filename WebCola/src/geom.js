@@ -24,7 +24,7 @@ exports.LineSegment = LineSegment;
 var PolyPoint = (function (_super) {
     __extends(PolyPoint, _super);
     function PolyPoint() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     return PolyPoint;
 }(Point));
@@ -250,7 +250,7 @@ exports.BiTangents = BiTangents;
 var TVGPoint = (function (_super) {
     __extends(TVGPoint, _super);
     function TVGPoint() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     return TVGPoint;
 }(Point));

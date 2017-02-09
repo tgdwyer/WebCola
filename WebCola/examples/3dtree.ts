@@ -3,7 +3,8 @@
 /// <reference path="../src/linklengths.ts"/>
 /// <reference path="../src/descent.ts"/>
 /// <reference path="../src/layout3d.ts"/>
-import * as d3 from '../../node_modules/d3'
+import * as d3scale from 'd3-scale'
+import * as d3request from 'd3-request'
 import * as cola from '../index'
 module tree3d {
     export class Graph {
@@ -121,7 +122,7 @@ d3.json("graphdata/chris.json", function (error, graph) {
         constraints = (<any>graph).constraints;
     var n = nodes.length;
 
-    var color = d3.scaleOrdinal(d3.schemeCategory20);
+    var color = d3scale.scaleOrdinal(d3scale.schemeCategory20);
     var nodeColourings = nodes.map(v => {
         var str = color(v.group).replace("#", "0x");
         return parseInt(str);

@@ -1,7 +1,7 @@
 module.exports = function (grunt) {
   require('load-grunt-tasks')(grunt);
   require('./tasks/examples')(grunt);
-  grunt.loadNpmTasks('typedoc');
+  grunt.loadNpmTasks('grunt-typedoc');
   grunt.loadNpmTasks('dts-generator');
   grunt.initConfig({
       pkg: grunt.file.readJSON('package.json'),
@@ -145,13 +145,13 @@ module.exports = function (grunt) {
     typedoc: {
         build: {
           options: {
-              module: 'amd',
+              module: 'commonjs',
               target: 'es5',
               out: 'doc/',
-              name: 'WebCoLa AKA cola.js',
+              name: 'WebCola',
               theme: 'minimal'
           },
-          src: ["<%= ts.base.src %>"]
+          src: ["./WebCola/src/**/*.ts"]
         }
     },
     connect: {
@@ -170,5 +170,5 @@ module.exports = function (grunt) {
   grunt.registerTask('nougly-notest', ['ts']);
   grunt.registerTask('docs', ['typedoc', 'browserify:examples']);
   grunt.registerTask('examples', ['browserify:examples']);
-  grunt.registerTask('full', ['default', 'browserify:examples', 'examples']);
+  grunt.registerTask('full', ['default', 'examples', 'typedoc']);
 };

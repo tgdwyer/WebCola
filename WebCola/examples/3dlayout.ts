@@ -4,7 +4,8 @@
 /// <reference path="../src/descent.ts"/>
 /// <reference path="../src/layout3d.ts"/>
 import * as cola from '../index'
-import * as d3 from '../../node_modules/d3'
+import * as d3scale from 'd3-scale'
+import * as d3request from 'd3-request'
 module cola3 {
     export class Graph {
         parentObject;
@@ -98,7 +99,7 @@ module cola3 {
         }
     }
 }
-d3.json("graphdata/miserables.json", function (error, graph) {
+d3request.json("graphdata/miserables.json", function (error, graph) {
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.1, 1000);
     var renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -120,7 +121,7 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     let links = (<any>graph).links;
     var n = nodes.length;
 
-    var color = d3.scaleOrdinal(d3.schemeCategory20);
+    var color = d3scale.scaleOrdinal(d3scale.schemeCategory20);
     var nodeColourings = nodes.map(v => {
         var str = color(v.group).replace("#", "0x");
         return parseInt(str);
