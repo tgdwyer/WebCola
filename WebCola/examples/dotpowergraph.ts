@@ -11,24 +11,10 @@ import * as cola from '../index'
 import * as graphlibDot from 'graphlib-dot'
 
 module dotpowergraph {
-    var color = d3.scale.category10<Number>();
-
     function makeSVG(addGridLines, mywidth, myheight) {
         var svg = d3.select("body").append("svg")
             .attr("width", mywidth)
             .attr("height", myheight);
-        // define arrow markers for graph links
-        svg.append('svg:defs').append('svg:marker')
-            .attr('id', 'end-arrow')
-            .attr('viewBox', '0 -5 10 10')
-            .attr('refX', 5)
-            .attr('markerWidth', 3)
-            .attr('markerHeight', 3)
-            .attr('orient', 'auto')
-            .append('svg:path')
-            .attr('d', 'M0,-5L10,0L0,5L2,0')
-            .attr('stroke-width', '0px')
-
         return svg;
     }
 
@@ -75,8 +61,7 @@ module dotpowergraph {
         svg.selectAll(".group").transition().attr('x', d => d.routerNode.bounds.x - groupPadding)
             .attr('y', d => d.routerNode.bounds.y + 2 * groupPadding)
             .attr('width', d => d.routerNode.bounds.width() - groupPadding)
-            .attr('height', d => d.routerNode.bounds.height() - groupPadding)
-            .style("fill", (d, i) => color(i));
+            .attr('height', d => d.routerNode.bounds.height() - groupPadding);
     }
 
     function createPowerGraph(inputjson) {
@@ -115,15 +100,12 @@ module dotpowergraph {
         var group = svg.selectAll(".group")
             .data(pgLayout.powerGraph.groups)
             .enter().append("rect")
-            .attr("rx", 8).attr("ry", 8)
-            .attr("class", "group")
-            .style("fill", function (d, i) { return color(i); });
+            .attr("class", "group");
 
         var node = svg.selectAll(".node")
             .data(inputjson.nodes)
             .enter().append("rect")
-            .attr("class", "node")
-            .attr("rx", 4).attr("ry", 4);
+            .attr("class", "node");
         node.append("title").text(d=> d.name);
 
         var label = svg.selectAll(".label")

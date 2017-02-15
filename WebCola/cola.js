@@ -99,7 +99,7 @@ function route(nodes, groups, margin, groupMargin) {
         getBounds: function (v) { return v.bounds; }
     }, margin - groupMargin);
 }
-function powerGraphGridLayout(graph, size, grouppadding, margin, groupMargin) {
+function powerGraphGridLayout(graph, size, grouppadding) {
     var powerGraph;
     graph.nodes.forEach(function (v, i) { return v.index = i; });
     new layout_1.Layout()
