@@ -42,28 +42,22 @@ module dotpowergraph {
             var arrowwidth = 3;
             var arrowheight = 7;
             var p = cola.GridRouter.getRoutePath(route, cornerradius, arrowwidth, arrowheight);
-            var c = color(0);
-            var linewidth = 2;
             if (arrowheight > 0) {
                 svg.append('path')
-                    .attr('d', p.arrowpath + ' Z')
-                    .attr('stroke', '#550000')
-                    .attr('stroke-width', 2);
+                    .attr('class', 'linkarrowoutline')
+                    .attr('d', p.arrowpath);
                 svg.append('path')
-                    .attr('d', p.arrowpath)
-                    .attr('stroke', 'none')
-                    .attr('fill', c);
+                    .attr('class', 'linkarrow')
+                    .attr('d', p.arrowpath);
             }
             svg.append('path')
+                .attr('class', 'linkoutline')
                 .attr('d', p.routepath)
-                .attr('fill', 'none')
-                .attr('stroke', '#550000')
-                .attr('stroke-width', linewidth + 2);
+                .attr('fill', 'none');
             svg.append('path')
+                .attr('class', 'link')
                 .attr('d', p.routepath)
-                .attr('fill', 'none')
-                .attr('stroke', c)
-                .attr('stroke-width', linewidth);
+                .attr('fill', 'none');
         });
 
         svg.selectAll(".label").transition().attr("x", d=> d.routerNode.bounds.cx())

@@ -10,21 +10,42 @@
 
         .node {
             cursor: move;
-            fill: #550000;
+            fill: #404040;
         }
 
         .group {
-            stroke: #AA6c39;
+            stroke: none;
             fill: #AA6c39;
             stroke-width: 3;
             fill-opacity: 0.4;
         }
 
         .link {
-            /*stroke: #661141;*/
-            stroke-width: 3px;
+            stroke: darkslategrey;
+            fill: none;
+            stroke-width: 2px;
             stroke-opacity: 1;
             marker-end: url(#end-arrow);
+        }
+
+        .linkarrow {
+            stroke: darkslategrey;
+            fill: darkslategrey;
+            stroke-width: 0px;
+            stroke-opacity: 1;
+            marker-end: url(#end-arrow);
+        }
+
+        .linkoutline {
+            stroke: white;
+            stroke-width: 4px;
+            fill: none;
+        }
+
+        .linkarrowoutline {
+            stroke: none;
+            stroke-width: 1px;
+            fill: white;
         }
 
         .label {
