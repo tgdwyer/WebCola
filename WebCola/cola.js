@@ -18,8 +18,9 @@ __export(require("./src/rbtree"));
 __export(require("./src/rectangle"));
 __export(require("./src/shortestpaths"));
 __export(require("./src/vpsc"));
+__export(require("./src/batch"));
 
-},{"./src/adaptor":2,"./src/d3adaptor":3,"./src/descent":6,"./src/geom":7,"./src/gridrouter":8,"./src/handledisconnected":9,"./src/layout":10,"./src/layout3d":11,"./src/linklengths":12,"./src/powergraph":13,"./src/pqueue":14,"./src/rbtree":15,"./src/rectangle":16,"./src/shortestpaths":17,"./src/vpsc":18}],2:[function(require,module,exports){
+},{"./src/adaptor":2,"./src/batch":3,"./src/d3adaptor":4,"./src/descent":7,"./src/geom":8,"./src/gridrouter":9,"./src/handledisconnected":10,"./src/layout":11,"./src/layout3d":12,"./src/linklengths":13,"./src/powergraph":14,"./src/pqueue":15,"./src/rbtree":16,"./src/rectangle":17,"./src/shortestpaths":18,"./src/vpsc":19}],2:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -65,7 +66,96 @@ function adaptor(options) {
 }
 exports.adaptor = adaptor;
 
-},{"./layout":10}],3:[function(require,module,exports){
+},{"./layout":11}],3:[function(require,module,exports){
+"use strict";
+var layout_1 = require("./layout");
+var gridrouter_1 = require("./gridrouter");
+function gridify(pgLayout, nudgeGap, margin, groupMargin) {
+    pgLayout.cola.start(0, 0, 0, 10, false);
+    var gridrouter = route(pgLayout.cola.nodes(), pgLayout.cola.groups(), margin, groupMargin);
+    return gridrouter.routeEdges(pgLayout.powerGraph.powerEdges, nudgeGap, function (e) { return e.source.routerNode.id; }, function (e) { return e.target.routerNode.id; });
+}
+exports.gridify = gridify;
+function route(nodes, groups, margin, groupMargin) {
+    nodes.forEach(function (d) {
+        d.routerNode = {
+            name: d.name,
+            bounds: d.bounds.inflate(-margin)
+        };
+    });
+    groups.forEach(function (d) {
+        d.routerNode = {
+            bounds: d.bounds.inflate(-groupMargin),
+            children: (typeof d.groups !== 'undefined' ? d.groups.map(function (c) { return nodes.length + c.id; }) : [])
+                .concat(typeof d.leaves !== 'undefined' ? d.leaves.map(function (c) { return c.index; }) : [])
+        };
+    });
+    var gridRouterNodes = nodes.concat(groups).map(function (d, i) {
+        d.routerNode.id = i;
+        return d.routerNode;
+    });
+    return new gridrouter_1.GridRouter(gridRouterNodes, {
+        getChildren: function (v) { return v.children; },
+        getBounds: function (v) { return v.bounds; }
+    }, margin - groupMargin);
+}
+function powerGraphGridLayout(graph, size, grouppadding, margin, groupMargin) {
+    var powerGraph;
+    graph.nodes.forEach(function (v, i) { return v.index = i; });
+    new layout_1.Layout()
+        .avoidOverlaps(false)
+        .nodes(graph.nodes)
+        .links(graph.links)
+        .powerGraphGroups(function (d) {
+        powerGraph = d;
+        powerGraph.groups.forEach(function (v) { return v.padding = grouppadding; });
+    });
+    var n = graph.nodes.length;
+    var edges = [];
+    var vs = graph.nodes.slice(0);
+    vs.forEach(function (v, i) { return v.index = i; });
+    powerGraph.groups.forEach(function (g) {
+        var sourceInd = g.index = g.id + n;
+        vs.push(g);
+        if (typeof g.leaves !== 'undefined')
+            g.leaves.forEach(function (v) { return edges.push({ source: sourceInd, target: v.index }); });
+        if (typeof g.groups !== 'undefined')
+            g.groups.forEach(function (gg) { return edges.push({ source: sourceInd, target: gg.id + n }); });
+    });
+    powerGraph.powerEdges.forEach(function (e) {
+        edges.push({ source: e.source.index, target: e.target.index });
+    });
+    new layout_1.Layout()
+        .size(size)
+        .nodes(vs)
+        .links(edges)
+        .avoidOverlaps(false)
+        .linkDistance(30)
+        .symmetricDiffLinkLengths(5)
+        .convergenceThreshold(1e-4)
+        .start(100, 0, 0, 0, false);
+    return {
+        cola: new layout_1.Layout()
+            .convergenceThreshold(1e-3)
+            .size(size)
+            .avoidOverlaps(true)
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .groupCompactness(1e-4)
+            .linkDistance(30)
+            .symmetricDiffLinkLengths(5)
+            .powerGraphGroups(function (d) {
+            powerGraph = d;
+            powerGraph.groups.forEach(function (v) {
+                v.padding = grouppadding;
+            });
+        }).start(50, 0, 100, 0, false),
+        powerGraph: powerGraph
+    };
+}
+exports.powerGraphGridLayout = powerGraphGridLayout;
+
+},{"./gridrouter":9,"./layout":11}],4:[function(require,module,exports){
 "use strict";
 var d3v3 = require("./d3v3adaptor");
 var d3v4 = require("./d3v4adaptor");
@@ -82,7 +172,7 @@ function isD3V3(d3Context) {
     return d3Context.version && d3Context.version.match(v3exp) !== null;
 }
 
-},{"./d3v3adaptor":4,"./d3v4adaptor":5}],4:[function(require,module,exports){
+},{"./d3v3adaptor":5,"./d3v4adaptor":6}],5:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -140,7 +230,7 @@ function d3adaptor() {
 }
 exports.d3adaptor = d3adaptor;
 
-},{"./layout":10}],5:[function(require,module,exports){
+},{"./layout":11}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -194,7 +284,7 @@ var D3StyleLayoutAdaptor = (function (_super) {
 }(layout_1.Layout));
 exports.D3StyleLayoutAdaptor = D3StyleLayoutAdaptor;
 
-},{"./layout":10}],6:[function(require,module,exports){
+},{"./layout":11}],7:[function(require,module,exports){
 "use strict";
 var Locks = (function () {
     function Locks() {
@@ -539,7 +629,7 @@ var PseudoRandom = (function () {
 }());
 exports.PseudoRandom = PseudoRandom;
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -951,7 +1041,7 @@ function polysOverlap(p, q) {
 }
 exports.polysOverlap = polysOverlap;
 
-},{"./rectangle":16}],8:[function(require,module,exports){
+},{"./rectangle":17}],9:[function(require,module,exports){
 "use strict";
 var rectangle_1 = require("./rectangle");
 var vpsc_1 = require("./vpsc");
@@ -1501,7 +1591,7 @@ var GridRouter = (function () {
 }());
 exports.GridRouter = GridRouter;
 
-},{"./rectangle":16,"./shortestpaths":17,"./vpsc":18}],9:[function(require,module,exports){
+},{"./rectangle":17,"./shortestpaths":18,"./vpsc":19}],10:[function(require,module,exports){
 "use strict";
 var packingOptions = {
     PADDING: 10,
@@ -1701,7 +1791,7 @@ function separateGraphs(nodes, links) {
 }
 exports.separateGraphs = separateGraphs;
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 "use strict";
 var powergraph = require("./powergraph");
 var linklengths_1 = require("./linklengths");
@@ -2255,7 +2345,7 @@ var Layout = (function () {
 }());
 exports.Layout = Layout;
 
-},{"./descent":6,"./geom":7,"./handledisconnected":9,"./linklengths":12,"./powergraph":13,"./rectangle":16,"./shortestpaths":17}],11:[function(require,module,exports){
+},{"./descent":7,"./geom":8,"./handledisconnected":10,"./linklengths":13,"./powergraph":14,"./rectangle":17,"./shortestpaths":18}],12:[function(require,module,exports){
 "use strict";
 var shortestpaths_1 = require("./shortestpaths");
 var descent_1 = require("./descent");
@@ -2370,7 +2460,7 @@ var LinkAccessor = (function () {
     return LinkAccessor;
 }());
 
-},{"./descent":6,"./linklengths":12,"./rectangle":16,"./shortestpaths":17}],12:[function(require,module,exports){
+},{"./descent":7,"./linklengths":13,"./rectangle":17,"./shortestpaths":18}],13:[function(require,module,exports){
 "use strict";
 function unionCount(a, b) {
     var u = {};
@@ -2490,7 +2580,7 @@ function stronglyConnectedComponents(numVertices, edges, la) {
 }
 exports.stronglyConnectedComponents = stronglyConnectedComponents;
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 var PowerEdge = (function () {
     function PowerEdge(source, target, type) {
@@ -2807,7 +2897,7 @@ function getGroups(nodes, links, la, rootGroup) {
 }
 exports.getGroups = getGroups;
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 "use strict";
 var PairingHeap = (function () {
     function PairingHeap(elem) {
@@ -2968,7 +3058,7 @@ var PriorityQueue = (function () {
 }());
 exports.PriorityQueue = PriorityQueue;
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -3350,7 +3440,7 @@ var RBTree = (function (_super) {
 }(TreeBase));
 exports.RBTree = RBTree;
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -3807,7 +3897,7 @@ var Projection = (function () {
 }());
 exports.Projection = Projection;
 
-},{"./rbtree":15,"./vpsc":18}],17:[function(require,module,exports){
+},{"./rbtree":16,"./vpsc":19}],18:[function(require,module,exports){
 "use strict";
 var pqueue_1 = require("./pqueue");
 var Neighbour = (function () {
@@ -3929,7 +4019,7 @@ var Calculator = (function () {
 }());
 exports.Calculator = Calculator;
 
-},{"./pqueue":14}],18:[function(require,module,exports){
+},{"./pqueue":15}],19:[function(require,module,exports){
 "use strict";
 var PositionStats = (function () {
     function PositionStats(scale) {

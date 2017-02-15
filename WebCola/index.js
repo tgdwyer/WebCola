@@ -17,4 +17,5 @@ __export(require("./src/rbtree"));
 __export(require("./src/rectangle"));
 __export(require("./src/shortestpaths"));
 __export(require("./src/vpsc"));
+__export(require("./src/batch"));
 //# sourceMappingURL=index.js.map

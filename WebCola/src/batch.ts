@@ -1,13 +1,18 @@
 import {Node, Link, Layout} from './layout'
 import {GridRouter} from './gridrouter'
 
-export function gridify(pgLayout, nudgeGap, margin, groupMargin) {
+/**
+ * @property nudgeGap spacing between parallel edge segments
+ * @property margin space around nodes
+ * @property groupMargin space around groups
+ */
+export function gridify(pgLayout, nudgeGap: number, margin: number, groupMargin: number) {
     pgLayout.cola.start(0, 0, 0, 10, false);
     let gridrouter = route(pgLayout.cola.nodes(), pgLayout.cola.groups(), margin, groupMargin);
     return gridrouter.routeEdges<any>(pgLayout.powerGraph.powerEdges, nudgeGap, e=> e.source.routerNode.id, e=> e.target.routerNode.id);
 }
 
-function route(nodes, groups, margin, groupMargin) {
+function route(nodes, groups, margin: number, groupMargin: number) {
     nodes.forEach(d => {
         d.routerNode = <any>{
             name: d.name,
@@ -34,9 +39,7 @@ function route(nodes, groups, margin, groupMargin) {
 export function powerGraphGridLayout(
     graph: { nodes: Node[], links: Link<Node>[] },
     size: number[],
-    grouppadding: number,
-    margin: number,
-    groupMargin: number)
+    grouppadding: number)
 {
     // compute power graph
     var powerGraph;

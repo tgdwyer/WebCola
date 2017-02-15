@@ -50,6 +50,7 @@
   "homepage": "https://github.com/tgdwyer/WebCola",
   "dependencies": {
     "fullscreen": "^1.1.0",
+    "graphlib-dot": "^0.6.2",
     "jquery": "^3.1.1"
   }
 }
