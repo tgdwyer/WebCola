@@ -1,6 +1,6 @@
 {
   "name": "webcola",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "devDependencies": {
     "@types/d3": "^4.5.0",
     "@types/jquery": "^2.0.40",
@@ -29,8 +29,10 @@
   "description": "WebCola =======",
   "main": "WebCola/index.js",
   "typings": "WebCola/index.d.ts",
+  "types": "WebCola/index.d.ts",
   "scripts": {
-    "test": "grunt full"
+    "test": "grunt full",
+    "prepublish": "grunt ts:commonjs browserify:dist"
   },
   "repository": {
     "type": "git",
