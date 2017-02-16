@@ -17,7 +17,7 @@ A version suitable for browsers can be found [here](WebCola/cola.js) ([minified]
 You can also install it through npm by first adding it to `package.json`:
 
     "dependencies": {
-      "webcola": "tgdwyer/WebCola#master"
+      "webcola": "latest"
     }
 Then by running `npm install`.
 
