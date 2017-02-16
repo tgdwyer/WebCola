@@ -5,5 +5,9 @@ WebCola/doc
 .tscachea
 WebCola/.baseDir.ts
 WebCola/examples/*.js
+WebCola/src/*.js
+WebCola/*.js
+.tscache
+WebCola/test/npm-debug.log
 WebCola/test/bundle.js
 WebCola/test/apitests.js
