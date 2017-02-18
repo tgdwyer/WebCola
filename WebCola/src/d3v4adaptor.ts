@@ -21,7 +21,7 @@ export class D3StyleLayoutAdaptor extends Layout {
 
     // iterate layout using a d3.timer, which queues calls to tick repeatedly until tick returns true
     kick() {
-        this.d3Context.timer(() => super.tick());
+        var t = this.d3Context.timer(() => super.tick() && t.stop());
     }
 
     // a function to allow for dragging of nodes

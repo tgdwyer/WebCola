@@ -117,7 +117,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         }
 
         // a function that is notified of events like "tick"
-        // sub-class and override this method to replace with a more sophisticated eventing mechanism
+        // sub-classes can override this method to replace with a more sophisticated eventing mechanism
         protected trigger(e: Event) {
             if (this.event && typeof this.event[e.type] !== 'undefined') {
                 this.event[e.type](e);
