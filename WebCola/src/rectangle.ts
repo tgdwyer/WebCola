@@ -448,14 +448,22 @@ import {RBTree} from './rbtree'
                 typeof c.equality !== "undefined" ? c.equality : false);
         }
 
+        // simple satisfaction of alignment constraints to ensure initial feasibility
         private makeFeasible(c: any) {
             if (!this.avoidOverlaps) return;
+            // sort nodes in constraint by position (along "guideline")
             var axis = 'x', dim = 'width';
             if (c.axis === 'x') axis = 'y', dim = 'height';
             var vs: GraphNode[] = c.offsets.map(o => this.nodes[o.node]).sort((a, b) => a[axis] - b[axis]);
             var p: GraphNode = null;
             vs.forEach(v => {
-                if (p) v[axis] = p[axis] + p[dim] + 1
+                // if two nodes overlap then shove the second one along
+                if (p) {
+                    let nextPos = p[axis] + p[dim] + 1;
+                    if (nextPos > v[axis]) {
+                        v[axis] = nextPos;
+                    }
+                } 
                 p = v;
             });
         }
