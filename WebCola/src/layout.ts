@@ -127,7 +127,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         // a function that kicks off the iteration tick loop
         // it calls tick() repeatedly until tick returns true (is converged)
         // subclass and override it with something fancier (e.g. dispatch tick on a timer)
-        protected kick() {
+        protected kick(): void {
             while (!this.tick());
         }
 

@@ -1,17 +1,10 @@
-/// <reference path="qunit.js"/>
-/// <reference path="qunit.d.ts"/>
-/// <reference path="../extern/d3v4.js"/>
-/// <reference path="../src/layout.js"/>
-/// <reference path="../src/d3adaptor.js"/>
-/// <reference path="../src/shortestpaths.js"/>
-/// <reference path="../src/descent.js"/>
-/// <reference path="../src/rectangle.js"/>
-/// <reference path="../src/geom.js"/>
-/// <reference path="../src/powergraph.js"/>
-/// <reference path="../src/gridrouter.js"/>
-//import * as d3 from 'd3'
 
+var d3 = require('d3');
+var QUnit = require('qunitjs');
+var vpsctestcases = require('./vpsctests.js');
+var cola = require('../index.js');
 window.onload = function () {
+  QUnit.module("dom tests");
   function nodeDistance(u, v) {
       var dx = u.x - v.x, dy = u.y - v.y;
       return Math.sqrt(dx * dx + dy * dy);

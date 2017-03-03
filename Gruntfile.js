@@ -3,6 +3,7 @@ module.exports = function (grunt) {
   require('./tasks/examples')(grunt);
   grunt.loadNpmTasks('grunt-typedoc');
   grunt.loadNpmTasks('dts-generator');
+  grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.initConfig({
       pkg: grunt.file.readJSON('package.json'),
       copy: {
@@ -16,13 +17,13 @@ module.exports = function (grunt) {
           },
       },
     watch: {
-      typescript: {
-        files: ["<%= typescript.base.src %>","<%= typescript.examples.src %>"],
-        tasks: ["typescript"]
+      scripts: {
+        files: ["WebCola/src/*.ts"],
+        tasks: ["browserify:dist"]
       },
-      test: {
-        files: ["WebCola/test/*.js"],
-        tasks: ["qunit"]
+      tests: {
+        files: ["WebCola/test/*.ts","WebCola/test/*.js"],
+        tasks: ["ts:test", "browserify:test", "qunit"]
       }
     },
     browserify: {
@@ -35,7 +36,7 @@ module.exports = function (grunt) {
             //   ]
             // ],
             standalone: 'cola',
-            // debug: true
+            debug: true
           },
           // transform: [["babelify", { "presets": ["es2015"] }]]
         },

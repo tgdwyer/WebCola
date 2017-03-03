@@ -459,7 +459,7 @@ import {RBTree} from './rbtree'
             vs.forEach(v => {
                 // if two nodes overlap then shove the second one along
                 if (p) {
-                    let nextPos = p[axis] + p[dim] + 1;
+                    let nextPos = p[axis] + p[dim];
                     if (nextPos > v[axis]) {
                         v[axis] = nextPos;
                     }

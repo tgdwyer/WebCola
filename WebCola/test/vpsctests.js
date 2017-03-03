@@ -1,4 +1,4 @@
-﻿var vpsctestcases = [{
+﻿module.exports = [{
     description: "no splits",
     variables: [
         { desiredPosition: 2 },

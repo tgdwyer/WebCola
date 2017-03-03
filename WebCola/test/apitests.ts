@@ -1,6 +1,7 @@
 ///<reference path="qunit.d.ts"/>
 
-import * as cola from '../index'
+import * as QUnit from 'qunitjs';
+import * as cola from '../index';
 
 QUnit.module("Headless API");
 test('strongly connected components', () => {
@@ -71,6 +72,43 @@ test("Layout events",() => {
     equal(starts, 1, 'started once');
     ok(ticks >= 1 && ticks < 50, `ticked ${ticks} times`);
     equal(ends, 1, 'ended once');
+});
+
+test("Stable alignment constraints",() => {
+    // layout a pair of connected nodes on a y alignment constraint
+    var starts = 0, ticks = 0, ends = 0;
+    var nodeSize = 20;
+    var layout = new cola.Layout()
+        .linkDistance(1)
+        .avoidOverlaps(true)
+        .links([
+        { source: 0, target: 1 }])
+        .constraints([{ type: "alignment", axis: "y",
+            offsets: [
+                { node: 0, offset: 0 },
+                { node: 1, offset: 0 },
+            ]
+        }])
+        .on(cola.EventType.start, e => starts++)
+        .on(cola.EventType.tick, e => ticks++)
+        .on(cola.EventType.end, e => ends++);
+    layout.nodes().forEach(v=>v.width = v.height = nodeSize)
+    layout.start();
+
+    ok(layout.alpha() <= layout.convergenceThreshold(), 'converged to alpha=' + layout.alpha());
+    equal(starts, 1, 'started once');
+    ok(ticks >= 1 && ticks < 50, `ticked ${ticks} times`);
+    equal(ends, 1, 'ended once');
+    const coords = layout.nodes().map(v => <any>{x:v.x, y:v.y});
+    const dx = Math.abs(Math.abs(coords[0].x - coords[1].x) - nodeSize);
+    ok(dx < 0.01, `node overlap = ${dx}`);
+    const dy = Math.abs(coords[0].y - coords[1].y);
+    ok(dy < 0.01, "y coords equal");
+    layout.start();
+    equal(starts, 2, 'started twice');
+    const coords2 = layout.nodes().map(v => <any>{x:v.x, y:v.y});
+    const xdrift = Math.abs(coords2[0].x - coords[0].x);
+    ok(xdrift < 0.01, "layout stable between calls to start");
 });
 
 QUnit.module("3D Layout");
