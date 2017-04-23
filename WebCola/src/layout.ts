@@ -217,9 +217,9 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @property groups {Array}
          * @default empty list
          */
-        groups(): Array<Group>
-        groups(x: Array<Group>): Layout
-        groups(x?: Array<Group>): any {
+        private groups(): Array<Group>
+        private groups(x: Array<Group>): Layout
+        private groups(x?: Array<Group>): any {
             if (!x) return this._groups;
             this._groups = x;
             this._rootGroup = {};
@@ -777,7 +777,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         // Bit 1 can be set externally (e.g., d.fixed = true) and show persist.
         // Bit 2 stores the dragging state, from mousedown to mouseup.
         // Bit 3 stores the hover state, from mouseover to mouseout.
-        static dragStart(d: Node | Group) {
+        static dragStart(d: Node | any /* Group*/) {
             if (isGroup(d)) {
                 Layout.storeOffset(d, Layout.dragOrigin(d));
             } else {
@@ -810,7 +810,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         }
 
         // the drag origin is taken as the centre of the node or group
-        static dragOrigin(d: Node | Group): { x: number, y: number } {
+        static dragOrigin(d: Node | any /* Group*/): { x: number, y: number } {
             if (isGroup(d)) {
                 return {
                     x: d.bounds.cx(),
@@ -823,7 +823,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
 
         // for groups, the drag translation is propagated down to all of the children of
         // the group.
-        static drag(d: Node | Group, position: { x: number, y: number }) {
+        static drag(d: Node | any /* Group*/, position: { x: number, y: number }) {
             if (isGroup(d)) {
                 if (typeof d.leaves !== 'undefined') {
                     d.leaves.forEach(v => {

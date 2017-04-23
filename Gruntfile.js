@@ -19,7 +19,7 @@ module.exports = function (grunt) {
     watch: {
       scripts: {
         files: ["WebCola/src/*.ts"],
-        tasks: ["browserify:dist"]
+        tasks: ["ts:dist"]
       },
       tests: {
         files: ["WebCola/test/*.ts","WebCola/test/*.js"],
@@ -27,23 +27,6 @@ module.exports = function (grunt) {
       }
     },
     browserify: {
-      dist: {
-        options: {
-          browserifyOptions: {
-            // plugin: [
-            //   [
-            //     'tsify', { target: 'es6' },
-            //   ]
-            // ],
-            standalone: 'cola',
-            debug: true
-          },
-          // transform: [["babelify", { "presets": ["es2015"] }]]
-        },
-        files: {
-          'WebCola/cola.js': ['WebCola/index.js']
-        }
-      },
       examples: {
         options: {
           browserifyOptions: {
@@ -84,11 +67,14 @@ module.exports = function (grunt) {
     ts: {
       commonjs: {
         src: 'WebCola/index.ts',
+        out: 'WebCola/cola.js',
         options: {
-          failOnTypeErrors: false,
-          sourceMap: true,
-          target: 'es5'
-        }
+          module: 'amd',
+          failOnTypeErrors: true,
+          sourceMap: false,
+          target: 'es5',
+          declaration: true
+        },
       },
       test: {
         src: ['WebCola/test/*.ts', '!WebCola/index.ts', '!WebCola/src/batch.ts'],

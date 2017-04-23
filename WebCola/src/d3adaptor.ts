@@ -1,7 +1,7 @@
 import * as d3v3 from './d3v3adaptor'
 import * as d3v4 from './d3v4adaptor'
 
-interface D3v3Context { version:string };
+export interface D3v3Context { version:string };
 
 /**
  * provides an interface for use with d3:

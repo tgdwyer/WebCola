@@ -1,5 +1,6 @@
 import {Node, Link, Layout} from './layout'
 import {GridRouter} from './gridrouter'
+import {Point} from './geom'
 
 /**
  * @property nudgeGap spacing between parallel edge segments
