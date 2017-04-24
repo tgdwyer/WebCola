@@ -87,7 +87,8 @@ module.exports = function (grunt) {
         options: {
           failOnTypeErrors: false,
           sourceMap: true,
-          target: 'es5'
+          target: 'es5',
+          declaration: true
         }
       },
       test: {
