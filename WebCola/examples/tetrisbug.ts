@@ -2,6 +2,7 @@
 ///<reference path="../src/rectangle.ts"/>
 ///<reference path="../src/gridrouter.ts"/>
 import * as cola from '../index'
+import * as d3 from 'd3'
 import * as d3scale from 'd3-scale'
 
 module tetrisbug {

@@ -1,3 +1,4 @@
+///<reference path="../extern/d3v3.d.ts"/>
 ///<reference path="../src/vpsc.ts"/>
 
 import * as cola from '../index'

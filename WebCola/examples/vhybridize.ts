@@ -4,6 +4,7 @@
 ///<reference path="../src/gridrouter.ts"/>
 ///<reference path="../src/geom.ts"/>
 
+import * as d3 from 'd3'
 import * as d3scale from 'd3-scale'
 import * as cola from '../index'
 
