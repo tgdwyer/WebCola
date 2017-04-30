@@ -5,8 +5,9 @@ declare const d3;
 
 
 import {Layout, EventType, Event} from './layout';
+import {ID3StyleLayoutAdaptor} from './d3adaptor'
 
-    export class D3StyleLayoutAdaptor extends Layout {
+    export class D3StyleLayoutAdaptor extends Layout implements ID3StyleLayoutAdaptor {
         event = d3.dispatch(EventType[EventType.start], EventType[EventType.tick], EventType[EventType.end]);
 
         trigger(e: Event) {
@@ -49,7 +50,7 @@ import {Layout, EventType, Event} from './layout';
         }
 
         // a function for binding to events on the adapter
-        on(eventType: EventType | string, listener: () => void): D3StyleLayoutAdaptor {
+        on(eventType: EventType | string, listener: () => void): this {
             if (typeof eventType === 'string') {
                 this.event.on(eventType, listener);
             } else {

@@ -51,6 +51,10 @@
   },
   "homepage": "https://github.com/tgdwyer/WebCola",
   "dependencies": {
+    "d3-dispatch": "^1.0.3",
+    "d3-drag": "^1.0.4",
+    "d3-timer": "^1.0.5",
+    "d3-zoom": "^1.1.4",
     "fullscreen": "^1.1.0",
     "graphlib-dot": "^0.6.2",
     "jquery": "^3.1.1"

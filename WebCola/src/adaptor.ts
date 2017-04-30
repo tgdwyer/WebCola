@@ -6,7 +6,7 @@ import {Layout, EventType, Event} from './layout'
         trigger(e: Event) {};
         kick() {};
         drag() {};
-        on(eventType: EventType | string, listener: () => void) : LayoutAdaptor { return this; };
+        on(eventType: EventType | string, listener: () => void) : this { return this; };
 
         dragstart: (d:any) => void;
         dragStart: (d:any) => void;

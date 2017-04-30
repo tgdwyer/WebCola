@@ -2,6 +2,7 @@ import {dispatch} from 'd3-dispatch'
 import {timer} from 'd3-timer'
 import {drag as d3drag} from 'd3-drag'
 import {Layout, EventType, Event} from './layout'
+import {ID3StyleLayoutAdaptor} from './d3adaptor'
 
 export interface D3Context {
     timer: typeof timer; 
@@ -10,7 +11,7 @@ export interface D3Context {
     event: any;
 }
 
-export class D3StyleLayoutAdaptor extends Layout {
+export class D3StyleLayoutAdaptor extends Layout implements ID3StyleLayoutAdaptor {
     event:any;
     trigger(e: Event) {
         var d3event = { type: EventType[e.type], alpha: e.alpha, stress: e.stress };
@@ -56,7 +57,7 @@ export class D3StyleLayoutAdaptor extends Layout {
     }
 
     // a function for binding to events on the adapter
-    on(eventType: EventType | string, listener: () => void): D3StyleLayoutAdaptor {
+    on(eventType: EventType | string, listener: () => void): this {
         if (typeof eventType === 'string') {
             this.event.on(eventType, listener);
         } else {
