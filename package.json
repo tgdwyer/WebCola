@@ -27,12 +27,12 @@
     "uglify-js": "^2.4.16"
   },
   "description": "WebCola =======",
-  "main": "WebCola/index.js",
-  "typings": "WebCola/index.d.ts",
-  "types": "WebCola/index.d.ts",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "grunt full",
-    "prepublish": "grunt ts:commonjs browserify:dist"
+    "prepublish": "grunt ts:commonjs browserify:dist uglify"
   },
   "repository": {
     "type": "git",

@@ -41,7 +41,7 @@ module.exports = function (grunt) {
           // transform: [["babelify", { "presets": ["es2015"] }]]
         },
         files: {
-          'WebCola/cola.js': ['WebCola/index.js']
+          'WebCola/cola.js': ['dist/index.js']
         }
       },
       examples: {
@@ -83,13 +83,7 @@ module.exports = function (grunt) {
     },
     ts: {
       commonjs: {
-        src: 'WebCola/index.ts',
-        options: {
-          failOnTypeErrors: true,
-          sourceMap: true,
-          target: 'es5',
-          declaration: true
-        },
+        tsconfig: true,
       },
       test: {
         src: ['WebCola/test/*.ts', '!WebCola/index.ts', '!WebCola/src/batch.ts'],
