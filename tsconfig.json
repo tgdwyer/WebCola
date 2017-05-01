@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "sourceMap": true,
+    "declaration": true,
+    "compileOnSave": false,
+    "outDir": "dist"
+  },
+  "files": [
+    "WebCola/index.ts"
+  ]
+}

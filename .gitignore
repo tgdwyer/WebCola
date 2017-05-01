@@ -1,13 +1,12 @@
+dist/
 node_modules/
 WebCola/compiledtypescript.js
 WebCola/doc
-**/*.js.map
 .tscachea
 WebCola/.baseDir.ts
 WebCola/examples/*.js
-WebCola/src/*.js
-WebCola/*.js
+WebCola/*.js*
 .tscache
 WebCola/test/npm-debug.log
 WebCola/test/bundle.js
-WebCola/test/apitests.js
+WebCola/test/apitests.js*

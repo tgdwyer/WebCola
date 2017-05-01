@@ -45,7 +45,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         fixed: number;
     }
 
-    interface Group {
+    export interface Group {
         bounds: Rectangle;
         leaves: Node[];
         groups: Group[];
@@ -105,7 +105,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
 
         // subscribe a listener to an event
         // sub-class and override this method to replace with a more sophisticated eventing mechanism
-        public on(e: EventType | string, listener: (event: Event) => void): Layout {
+        public on(e: EventType | string, listener: (event: Event) => void): this {
             // override me!
             if (!this.event) this.event = {};
             if (typeof e === 'string') {
@@ -191,7 +191,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @default empty list
          */
         nodes(): Array<Node>
-        nodes(v: Array<Node>): Layout
+        nodes(v: Array<Node>): this
         nodes(v?: any): any {
             if (!v) {
                 if (this._nodes.length === 0 && this._links.length > 0) {
@@ -218,7 +218,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @default empty list
          */
         groups(): Array<Group>
-        groups(x: Array<Group>): Layout
+        groups(x: Array<Group>): this
         groups(x?: Array<Group>): any {
             if (!x) return this._groups;
             this._groups = x;
@@ -244,7 +244,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
             return this;
         }
 
-        powerGraphGroups(f: Function): Layout {
+        powerGraphGroups(f: Function): this {
             var g = powergraph.getGroups(this._nodes, this._links, this.linkAccessor, this._rootGroup);
             this.groups(g.groups);
             f(g);
@@ -258,7 +258,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @default false
          */
         avoidOverlaps(): boolean
-        avoidOverlaps(v: boolean): Layout
+        avoidOverlaps(v: boolean): this
         avoidOverlaps(v?: boolean): any {
             if (!arguments.length) return this._avoidOverlaps;
             this._avoidOverlaps = v;
@@ -274,7 +274,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @default true
          */
         handleDisconnected(): boolean
-        handleDisconnected(v: boolean): Layout
+        handleDisconnected(v: boolean): this
         handleDisconnected(v?: boolean): any {
             if (!arguments.length) return this._handleDisconnected;
             this._handleDisconnected = v;
@@ -287,7 +287,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @param axis {string} 'x' for left-to-right, 'y' for top-to-bottom
          * @param minSeparation {number|link=>number} either a number specifying a minimum spacing required across all links or a function to return the minimum spacing for each link
          */
-        flowLayout(axis: string, minSeparation: number|((t: any)=>number)): Layout {
+        flowLayout(axis: string, minSeparation: number|((t: any)=>number)): this {
             if (!arguments.length) axis = 'y';
             this._directedLinkConstraints = {
                 axis: axis,
@@ -302,7 +302,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @default empty list
          */
         links(): Array<Link<Node|number>>
-        links(x: Array<Link<Node|number>>): Layout
+        links(x: Array<Link<Node|number>>): this
         links(x?: Array<Link<Node|number>>): any {
             if (!arguments.length) return this._links;
             this._links = x;
@@ -316,7 +316,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @default empty list
          */
         constraints(): Array<any>
-        constraints(c: Array<any>): Layout
+        constraints(c: Array<any>): this
         constraints(c?: Array<any>): any {
             if (!arguments.length) return this._constraints;
             this._constraints = c;
@@ -331,7 +331,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @default null
          */
         distanceMatrix(): Array<Array<number>>
-        distanceMatrix(d: Array<Array<number>>): Layout
+        distanceMatrix(d: Array<Array<number>>): this
         distanceMatrix(d?: any): any {
             if (!arguments.length) return this._distanceMatrix;
             this._distanceMatrix = d;
@@ -345,7 +345,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @type {Array of Number}
          */
         size(): Array<number>
-        size(x: Array<number>): Layout
+        size(x: Array<number>): this
         size(x?: Array<number>): any {
             if (!x) return this._canvasSize;
             this._canvasSize = x;
@@ -358,7 +358,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @type {Number}
          */
         defaultNodeSize(): number
-        defaultNodeSize(x: number): Layout
+        defaultNodeSize(x: number): this
         defaultNodeSize(x?: any): any {
             if (!x) return this._defaultNodeSize;
             this._defaultNodeSize = x;
@@ -371,7 +371,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @type {Number}
          */
         groupCompactness(): number
-        groupCompactness(x: number): Layout
+        groupCompactness(x: number): this
         groupCompactness(x?: any): any {
             if (!x) return this._groupCompactness;
             this._groupCompactness = x;
@@ -383,8 +383,8 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          */
         linkDistance(): number
         linkDistance(): LinkNumericPropertyAccessor
-        linkDistance(x: number): Layout
-        linkDistance(x: LinkNumericPropertyAccessor): Layout
+        linkDistance(x: number): this
+        linkDistance(x: LinkNumericPropertyAccessor): this
         linkDistance(x?: any): any {
             if (!x) {
                 return this._linkDistance;
@@ -394,13 +394,13 @@ import {separateGraphs, applyPacking} from './handledisconnected'
             return this;
         }
 
-        linkType(f: Function | number): Layout {
+        linkType(f: Function | number): this {
             this._linkType = f;
             return this;
         }
 
         convergenceThreshold(): number
-        convergenceThreshold(x: number): Layout
+        convergenceThreshold(x: number): this
         convergenceThreshold(x?: number): any {
             if (!x) return this._threshold;
             this._threshold = typeof x === "function" ? x : +x;
@@ -408,7 +408,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         }
 
         alpha(): number
-        alpha(x: number): Layout
+        alpha(x: number): this
         alpha(x?: number): any {
             if (!arguments.length) return this._alpha;
             else {
@@ -456,7 +456,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
          * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
          */
-        symmetricDiffLinkLengths(idealLength: number, w: number = 1): Layout {
+        symmetricDiffLinkLengths(idealLength: number, w: number = 1): this {
             this.linkDistance(l => idealLength * l.length);
             this._linkLengthCalculator = () => symmetricDiffLinkLengths(this._links, this.linkAccessor, w);
             return this;
@@ -472,7 +472,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @param {number} [idealLength] the base length for an edge when its source and start have no other common neighbours (e.g. 40)
          * @param {number} [w] a multiplier for the effect of the length adjustment (e.g. 0.7)
          */
-        jaccardLinkLengths(idealLength: number, w: number = 1): Layout {
+        jaccardLinkLengths(idealLength: number, w: number = 1): this {
             this.linkDistance(l => idealLength * l.length);
             this._linkLengthCalculator = () => jaccardLinkLengths(this._links, this.linkAccessor, w);
             return this;
@@ -493,7 +493,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
             initialAllConstraintsIterations: number = 0,
             gridSnapIterations: number = 0,
             keepRunning = true
-        ): Layout {
+        ): this {
             var i: number,
                 j: number,
                 n = (<Array<any>>this.nodes()).length,
@@ -693,11 +693,11 @@ import {separateGraphs, applyPacking} from './handledisconnected'
             }
         }
 
-        resume(): Layout {
+        resume(): this {
             return this.alpha(0.1);
         }
 
-        stop(): Layout {
+        stop(): this {
             return this.alpha(0);
         }
 

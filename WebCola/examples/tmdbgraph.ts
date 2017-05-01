@@ -1,4 +1,6 @@
+///<reference path="../extern/d3v3.d.ts"/>
 import * as $ from 'jquery'
+
 module tmdb {
     class NodeType {
         constructor(

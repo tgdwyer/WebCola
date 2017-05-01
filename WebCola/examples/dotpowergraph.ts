@@ -1,3 +1,4 @@
+///<reference path="../extern/d3v3.d.ts"/>
 /*
 ///<reference path="../src/layout.ts"/>
 ///<reference path="../src/d3adaptor.ts"/>

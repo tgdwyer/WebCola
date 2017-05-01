@@ -1,3 +1,4 @@
+/// <reference path="../extern/d3v3.d.ts"/>
 /// <reference path="../extern/three.d.ts"/>
 /// <reference path="../src/shortestpaths.ts"/>
 /// <reference path="../src/linklengths.ts"/>

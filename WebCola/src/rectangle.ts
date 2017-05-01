@@ -1,27 +1,23 @@
 import {Constraint, Variable, Solver} from './vpsc'
 import {RBTree} from './rbtree'
-
-    interface Point {
-        x: number;
-        y: number
-    }
+import {Point} from './geom'
 
     export interface Leaf {
         bounds: Rectangle;
         variable: Variable;
     }
 
-    export interface Group {
+    export interface ProjectionGroup {
         bounds: Rectangle;
         padding: number;
         stiffness: number;
         leaves: Leaf[];
-        groups: Group[];
+        groups: ProjectionGroup[];
         minVar: Variable;
         maxVar: Variable;
     }
 
-    export function computeGroupBounds(g: Group): Rectangle {
+    export function computeGroupBounds(g: ProjectionGroup): Rectangle {
         g.bounds = typeof g.leaves !== "undefined" ?
             g.leaves.reduce((r: Rectangle, c) => c.bounds.union(r), Rectangle.empty()) :
             Rectangle.empty();
@@ -240,7 +236,7 @@ import {RBTree} from './rbtree'
         findNeighbours: findYNeighbours
     };
 
-    function generateGroupConstraints(root: Group, f: RectAccessors, minSep: number, isContained: boolean = false): Constraint[]
+    function generateGroupConstraints(root: ProjectionGroup, f: RectAccessors, minSep: number, isContained: boolean = false): Constraint[]
     {
         var padding = root.padding,
             gn = typeof root.groups !== 'undefined' ? root.groups.length : 0,
@@ -364,11 +360,11 @@ import {RBTree} from './rbtree'
         return generateConstraints(rs, vars, yRect, 1e-6);
     }
 
-    export function generateXGroupConstraints(root: Group): Constraint[] {
+    export function generateXGroupConstraints(root: ProjectionGroup): Constraint[] {
         return generateGroupConstraints(root, xRect, 1e-6);
     }
 
-    export function generateYGroupConstraints(root: Group): Constraint[] {
+    export function generateYGroupConstraints(root: ProjectionGroup): Constraint[] {
         return generateGroupConstraints(root, yRect, 1e-6);
     }
 
@@ -408,8 +404,8 @@ import {RBTree} from './rbtree'
         private variables: Variable[];
 
         constructor(private nodes: GraphNode[],
-            private groups: Group[],
-            private rootGroup: Group = null,
+            private groups: ProjectionGroup[],
+            private rootGroup: ProjectionGroup = null,
             constraints: any[]= null,
             private avoidOverlaps: boolean = false)
         {
@@ -541,9 +537,9 @@ import {RBTree} from './rbtree'
         private project(x0: number[], y0: number[], start: number[], desired: number[],
             getDesired: (v: GraphNode) => number,
             cs: Constraint[],
-            generateConstraints: (g: Group) => Constraint[],
+            generateConstraints: (g: ProjectionGroup) => Constraint[],
             updateNodeBounds: (v: GraphNode) => any,
-            updateGroupBounds: (g: Group) => any)
+            updateGroupBounds: (g: ProjectionGroup) => any)
         {
             this.setupVariablesAndBounds(x0, y0, desired, getDesired);
             if (this.rootGroup && this.avoidOverlaps) {

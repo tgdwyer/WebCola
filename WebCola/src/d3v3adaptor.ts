@@ -1,7 +1,13 @@
-///<reference path="../extern/d3v3.d.ts"/>
-///<reference path="layout.ts"/>
-import {Layout, EventType, Event} from './layout'
-    export class D3StyleLayoutAdaptor extends Layout {
+////<reference path="../extern/d3v3.d.ts"/>
+////commented out the reference, because the path ended up in the typings, which
+////makes it impossible import in other projects.
+declare const d3;
+
+
+import {Layout, EventType, Event} from './layout';
+import {ID3StyleLayoutAdaptor} from './d3adaptor'
+
+    export class D3StyleLayoutAdaptor extends Layout implements ID3StyleLayoutAdaptor {
         event = d3.dispatch(EventType[EventType.start], EventType[EventType.tick], EventType[EventType.end]);
 
         trigger(e: Event) {
@@ -24,11 +30,11 @@ import {Layout, EventType, Event} from './layout'
             var drag;
             this.drag = function () {
                 if (!drag) {
-                    var drag = d3.behavior.drag<any>()
+                    var drag = d3.behavior.drag()
                         .origin(Layout.dragOrigin)
                         .on("dragstart.d3adaptor", Layout.dragStart)
                         .on("drag.d3adaptor", d => {
-                            Layout.drag(d, d3.event);
+                            Layout.drag(d, <any>d3.event);
                             d3layout.resume(); // restart annealing
                         })
                         .on("dragend.d3adaptor", Layout.dragEnd);
@@ -44,7 +50,7 @@ import {Layout, EventType, Event} from './layout'
         }
 
         // a function for binding to events on the adapter
-        on(eventType: EventType | string, listener: () => void): D3StyleLayoutAdaptor {
+        on(eventType: EventType | string, listener: () => void): this {
             if (typeof eventType === 'string') {
                 this.event.on(eventType, listener);
             } else {

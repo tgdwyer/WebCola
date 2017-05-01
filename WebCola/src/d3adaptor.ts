@@ -1,7 +1,17 @@
 import * as d3v3 from './d3v3adaptor'
 import * as d3v4 from './d3v4adaptor'
+import { Layout, EventType, Event } from './layout';
 
-interface D3v3Context { version:string };
+export interface D3v3Context { version:string };
+
+export interface ID3StyleLayoutAdaptor {
+    trigger(e: Event): void;
+    kick(): void;
+    drag: () => any;
+
+    on(eventType: EventType | string, listener: () => void): ID3StyleLayoutAdaptor;
+}
+
 
 /**
  * provides an interface for use with d3:
@@ -20,7 +30,7 @@ interface D3v3Context { version:string };
  * returns an instance of the cola.Layout itself with which the user
  * can interact directly.
  */
-export function d3adaptor(d3Context?: d3v4.D3Context | D3v3Context): d3v4.D3StyleLayoutAdaptor | d3v3.D3StyleLayoutAdaptor {
+export function d3adaptor(d3Context?: d3v4.D3Context | D3v3Context): Layout & ID3StyleLayoutAdaptor {
     if (!d3Context || isD3V3(d3Context)) {
         return new d3v3.D3StyleLayoutAdaptor();
     }

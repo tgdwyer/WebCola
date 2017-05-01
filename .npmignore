@@ -1,7 +1,7 @@
 node_modules/
 WebCola/compiledtypescript.js
 WebCola/doc
-**/*.js.map
+WebCola/*.js.map
 .tscachea
 WebCola/.baseDir.ts
 WebCola/examples/*.js
