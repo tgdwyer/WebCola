@@ -1,6 +1,6 @@
 {
   "name": "webcola",
-  "version": "3.3.3",
+  "version": "3.3.4",
   "devDependencies": {
     "@types/d3": "^4.5.0",
     "@types/jquery": "^2.0.40",
