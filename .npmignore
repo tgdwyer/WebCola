@@ -6,6 +6,4 @@ WebCola/*.js.map
 WebCola/.baseDir.ts
 WebCola/examples/*.js
 .tscache
-WebCola/test/npm-debug.log
-WebCola/test/bundle.js
-WebCola/test/apitests.js
+WebCola/test/
