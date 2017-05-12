@@ -1,6 +1,6 @@
 node_modules/
 WebCola/compiledtypescript.js
-WebCola/doc
+doc/
 WebCola/*.js.map
 .tscachea
 WebCola/.baseDir.ts
