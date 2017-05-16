@@ -206,7 +206,12 @@ import {Point} from './geom'
     }
 
     function makeRBTree(): RBTree<Node> {
-        return new RBTree<Node>((a, b) => a.pos - b.pos);
+        return new RBTree<Node>((a, b) => {
+            if (isNaN(a.pos) || isNaN(b.pos)){
+                return 0
+            }
+            return a.pos - b.pos
+        });
     }
 
     interface RectAccessors {
