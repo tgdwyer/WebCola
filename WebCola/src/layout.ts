@@ -18,7 +18,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         stress?: number;
         listener?: () => void;
     }
-    export interface Node {
+    export interface InputNode {
         /**
          * index in nodes array, this is initialized by Layout.start()
          */
@@ -26,11 +26,11 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         /**
          * x and y will be computed by layout as the Node's centroid
          */
-        x: number;
+        x?: number;
         /**
          * x and y will be computed by layout as the Node's centroid
          */
-        y: number;
+        y?: number;
         /**
          * specify a width and height of the node's bounding box if you turn on avoidOverlaps
          */
@@ -42,13 +42,20 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         /**
          * selective bit mask.  !=0 means layout will not move.
          */
-        fixed: number;
+        fixed?: number;
+    }
+    export interface Node extends InputNode {
+      // Client-passed node may be missing these properties, which will be set
+      // upon ingestion
+      x: number;
+      y: number;
     }
 
     export interface Group {
-        bounds: Rectangle;
-        leaves: Node[];
-        groups: Group[];
+        bounds?: Rectangle;
+        leaves?: Node[];
+        groups?: Group[];
+        padding: number;
     }
 
     function isGroup(g: any): g is Group {
@@ -191,7 +198,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
          * @default empty list
          */
         nodes(): Array<Node>
-        nodes(v: Array<Node>): this
+        nodes(v: Array<InputNode>): this
         nodes(v?: any): any {
             if (!v) {
                 if (this._nodes.length === 0 && this._links.length > 0) {
