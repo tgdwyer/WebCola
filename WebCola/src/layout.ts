@@ -112,7 +112,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
 
         // subscribe a listener to an event
         // sub-class and override this method to replace with a more sophisticated eventing mechanism
-        public on(e: EventType | string, listener: (event: Event) => void): this {
+        public on(e: EventType | string, listener: (event?: Event) => void): this {
             // override me!
             if (!this.event) this.event = {};
             if (typeof e === 'string') {

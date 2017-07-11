@@ -17,13 +17,14 @@
     "grunt-contrib-uglify": "^2.0.0",
     "grunt-contrib-watch": "^1.0.0",
     "grunt-ts": "^6.0.0-beta.3",
+    "grunt-tsc": "^1.0.12",
     "grunt-typedoc": "^0.2.4",
     "grunt-umd": "~1.7.3",
     "load-grunt-tasks": "~0.4.0",
     "qunitjs": "^1.23.1",
-    "tsify": "^2.0.3",
+    "tsify": "^2.0.8",
     "typedoc": "^0.5.5",
-    "typescript": "^2.1.4",
+    "typescript": "^2.4.1",
     "uglify-js": "^2.4.16"
   },
   "description": "WebCola =======",
@@ -57,6 +58,8 @@
     "d3-zoom": "^1.1.4",
     "fullscreen": "^1.1.0",
     "graphlib-dot": "^0.6.2",
+    "grunt": "^1.0.1",
+    "grunt-tsc": "^1.0.12",
     "jquery": "^3.1.1"
   }
 }
