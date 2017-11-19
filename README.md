@@ -15,7 +15,7 @@ using D3.js and other web-based graphics libraries.
 
 [Homepage with code and more examples](http://marvl.infotech.monash.edu/webcola)
 
-Note: While the D3 adaptor works for both v3 and v4, the code must be written as if it is D3 v3. Follow the setup in the homepage for more details.
+Note: While D3 adaptor supports both D3 v3 and D3 v4, WebCoLa's interface is styled like D3 v3. Follow the setup in our homepage for more details.
 
 Installation
 ------------
