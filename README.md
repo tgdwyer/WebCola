@@ -1,14 +1,33 @@
-WebCola
+WebCola [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 =======
 
 JavaScript constraint based layout for high-quality graph visualization and exploration 
-using D3.js and other web-based graphics libraries.  
-[Homepage with examples](http://marvl.infotech.monash.edu/webcola)
+using D3.js and other web-based graphics libraries.
+
+<p align="center">
+  <a href="http://marvl.infotech.monash.edu/webcola/examples/smallworldwithgroups.html">
+    <img width="400" alt="Graph with simple groups" src="WebCola/examples/smallworldwithgroups.png" />
+  </a>
+  <a href="http://marvl.infotech.monash.edu/webcola/examples/alignment.html">
+    <img width="400" alt="Graph with alignment constraints" src="WebCola/examples/alignment.png" />
+  </a>
+</p>
+
+[Homepage with code and more examples](http://marvl.infotech.monash.edu/webcola)
+
+Note: While D3 adaptor supports both D3 v3 and D3 v4, WebCoLa's interface is styled like D3 v3. Follow the setup in our homepage for more details.
 
 Installation
 ------------
 
-A version suitable for browsers can be found [here](WebCola/cola.js) ([minified](WebCola/cola.min.js)).
+#### Browser:
+
+    <!-- Minified version -->
+    <script src="http://marvl.infotech.monash.edu/webcola/cola.min.js"></script>
+    <!-- Full version -->
+    <script src="http://marvl.infotech.monash.edu/webcola/cola.js"></script>
+
+These files can also be accessed from [GitHub](WebCola/cola.js) ([minified](WebCola/cola.min.js)).
 
 #### Npm:
 	
@@ -21,7 +40,7 @@ You can also install it through npm by first adding it to `package.json`:
     }
 Then by running `npm install`.
 
-####Bower : 
+#### Bower:
 
 	bower install webcola --save
 
