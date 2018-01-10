@@ -721,7 +721,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         /// assumes the visibility graph has been created (by prepareEdgeRouting method)
         /// and also assumes that nodes have an index property giving their position in the
         /// node array.  This index property is created by the start() method.
-        routeEdge(edge, draw) {
+        routeEdge(edge, draw, ah: number = 5) {
             var lineData = [];
             //if (d.source.id === 10 && d.target.id === 11) {
             //    debugger;
@@ -739,7 +739,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
                 spCalc = new Calculator(vg2.V.length, vg2.E, sourceInd, targetInd, length),
                 shortestPath = spCalc.PathFromNodeToNode(start.id, end.id);
             if (shortestPath.length === 1 || shortestPath.length === vg2.V.length) {
-                let route = makeEdgeBetween(edge.source.innerBounds, edge.target.innerBounds, 5);
+                let route = makeEdgeBetween(edge.source.innerBounds, edge.target.innerBounds, ah);
                 lineData = [route.sourceIntersection, route.arrowStart];
             } else {
                 var n = shortestPath.length - 2,
@@ -748,7 +748,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
                     lineData = [edge.source.innerBounds.rayIntersection(p.x, p.y)];
                 for (var i = n; i >= 0; --i)
                     lineData.push(vg2.V[shortestPath[i]].p);
-                lineData.push(makeEdgeTo(q, edge.target.innerBounds, 5));
+                lineData.push(makeEdgeTo(q, edge.target.innerBounds, ah));
             }
             //lineData.forEach((v, i) => {
             //    if (i > 0) {
