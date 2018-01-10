@@ -164,5 +164,5 @@ module.exports = function (grunt) {
   grunt.registerTask('nougly-notest', ['ts']);
   grunt.registerTask('examples', ['browserify:examples']);
   grunt.registerTask('docs', ['typedoc']);
-  grunt.registerTask('full', ['default', 'examples', 'docs']);
+  grunt.registerTask('full', ['default']);
 };
