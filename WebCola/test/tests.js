@@ -304,7 +304,7 @@ window.onload = function () {
   function drawPoly(svg, P) {
       for (var i = 0; i < P.length; ++i) {
           var lineFunction = d3.line()
-            .curv(d3.curveLinear)
+            .curve(d3.curveLinear)
             .x(function (d) { return d.x * 10; })
             .y(function (d) { return d.y * 10; })
           svg.append("path")
@@ -702,10 +702,10 @@ window.onload = function () {
               var svg = d3.select("body").append("svg").attr("width", 800).attr("height", 250);
               P.forEach(function (p, i) { drawPoly(svg, p /*, i*/) });
 
-              // draw visibility graph:
-              //g.E.forEach(function (e) {
-              //    drawLine(svg, { x1: e.source.p.x, y1: e.source.p.y, x2: e.target.p.x, y2: e.target.p.y });
-              //});
+              //draw visibility graph:
+              g.E.forEach(function (e) {
+                 drawLine(svg, { x1: e.source.p.x, y1: e.source.p.y, x2: e.target.p.x, y2: e.target.p.y });
+              });
               for (var i = 0; i < shortestPath.length; i++) {
                   var u = i === 0 ? end : g.V[shortestPath[i - 1]];
                   var v = g.V[shortestPath[i]];
