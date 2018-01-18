@@ -118,8 +118,7 @@ import {Point} from './geom'
                 { x: this.x, y: this.y },
                 { x: this.X, y: this.y },
                 { x: this.X, y: this.Y },
-                { x: this.x, y: this.Y },
-                { x: this.x, y: this.y }];
+                { x: this.x, y: this.Y }];
         }
 
         static lineIntersection(
