@@ -150,6 +150,17 @@ import {Point} from './geom'
         }
     }
 
+    /**
+     * Returns the endpoints of a line that connects the centre of two rectangles.
+     * @param {Rectangle} [source] The source Rectangle.
+     * @param {Rectangle} [target] The target Rectangle.
+     * @param {number} [ah] The size of the arrow head, a distance to shorten the
+     *                      line by.
+     * @return An object with three point properties, the intersection with the
+     *         source rectangle (sourceIntersection), the intersection with then
+     *         target rectangle (targetIntersection), and the point an arrow
+     *         head of the specified size would need to start (arrowStart).
+     */
     export function makeEdgeBetween(source: Rectangle, target: Rectangle, ah: number)
         : { sourceIntersection: Point; targetIntersection: Point; arrowStart: Point } {
         const si = source.rayIntersection(target.cx(), target.cy()) || { x: source.cx(), y: source.cy() },
@@ -164,6 +175,15 @@ import {Point} from './geom'
         }
     }
 
+    /**
+     * Returns the intersection of a line from the given point to the centre
+     * of the target rectangle where it intersects the rectanngle.
+     * @param [source] The source point.
+     * @param {Rectangle} [target] The target Rectangle.
+     * @param {number} [ah] The size of the arrow head, a distance to shorten the
+     *                      line by.
+     * @return The point an arrow head of the specified size would need to start.
+     */
     export function makeEdgeTo(s: { x: number; y: number }, target: Rectangle, ah: number): Point {
         var ti = target.rayIntersection(s.x, s.y);
         if (!ti) ti = { x: target.cx(), y: target.cy() };
@@ -459,7 +479,7 @@ import {Point} from './geom'
                     if (nextPos > v[axis]) {
                         v[axis] = nextPos;
                     }
-                } 
+                }
                 p = v;
             });
         }

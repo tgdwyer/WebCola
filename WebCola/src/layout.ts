@@ -717,11 +717,16 @@ import {separateGraphs, applyPacking} from './handledisconnected'
                 }));
         }
 
-        /// find a route avoiding node bounds for the given edge.
-        /// assumes the visibility graph has been created (by prepareEdgeRouting method)
-        /// and also assumes that nodes have an index property giving their position in the
-        /// node array.  This index property is created by the start() method.
-        routeEdge(edge, draw, ah: number = 5) {
+        /**
+         * find a route avoiding node bounds for the given edge.
+         * assumes the visibility graph has been created (by prepareEdgeRouting method)
+         * and also assumes that nodes have an index property giving their position in the
+         * node array.  This index property is created by the start() method.
+         * @param [edge] The edge to generate a route for.
+         * @param {number} [ah] The size of the arrow head, a distance to shorten the end
+         *                      of the edge by.  Defaults to 5.
+         */
+        routeEdge(edge, ah: number = 5, draw) {
             var lineData = [];
             //if (d.source.id === 10 && d.target.id === 11) {
             //    debugger;
