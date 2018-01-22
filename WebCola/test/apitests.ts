@@ -1,6 +1,4 @@
-/*///<reference path="qunit.d.ts"/>*/
-
-import * as QUnit from 'qunitjs';
+import * as QUnit from 'qunit';
 import * as cola from '../index';
 
 QUnit.module("Headless API");

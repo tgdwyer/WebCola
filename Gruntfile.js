@@ -63,7 +63,7 @@ module.exports = function (grunt) {
       },
       test: {
         files: {
-          'WebCola/test/bundle.js': [/*'WebCola/test/vpsctests.js',*/ 'WebCola/test/apitests.js'/*, 'WebCola/test/tests.js'*/, '!WebCola/test/bundle.js']
+          'WebCola/test/bundle.js': [/*'WebCola/test/vpsctests.js',*/ 'WebCola/test/apitests.js', 'WebCola/test/tests.js', '!WebCola/test/bundle.js']
         },
         options: {
           //browserifyOptions: { debug: true },
@@ -152,6 +152,7 @@ module.exports = function (grunt) {
   grunt.registerTask('default', ['ts', 'browserify', 'uglify', 'qunit']);
   grunt.registerTask('nougly', ['ts', 'browserify', 'qunit']);
   grunt.registerTask('nougly-notest', ['ts']);
+  grunt.registerTask('test', ['ts:test','browserify:test','qunit']);
   grunt.registerTask('examples', ['browserify:examples']);
   grunt.registerTask('docs', ['typedoc']);
   grunt.registerTask('full', ['default']);
