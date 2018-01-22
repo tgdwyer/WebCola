@@ -6,16 +6,16 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.initConfig({
       pkg: grunt.file.readJSON('package.json'),
-      copy: {
-          // d3: {
-          //     src: 'node_modules/d3/d3.min.js',
-          //     dest: 'WebCola/extern/d3.min.js'
-          // },
-          qunit: {
-              src: 'node_modules/qunitjs/qunit/*',
-              dest: 'WebCola/test/'
-          },
-      },
+      // copy: {
+      //     // d3: {
+      //     //     src: 'node_modules/d3/d3.min.js',
+      //     //     dest: 'WebCola/extern/d3.min.js'
+      //     // },
+      //     qunit: {
+      //         src: 'node_modules/qunitjs/qunit/*',
+      //         dest: 'WebCola/test/'
+      //     },
+      // },
     watch: {
       scripts: {
         files: ["WebCola/src/*.ts"],
@@ -73,7 +73,7 @@ module.exports = function (grunt) {
       },
       test: {
         files: {
-          'WebCola/test/bundle.js': ['WebCola/test/vpsctests.js', 'WebCola/test/apitests.js', 'WebCola/test/tests.js', '!WebCola/test/bundle.js']
+          'WebCola/test/bundle.js': [/*'WebCola/test/vpsctests.js',*/ 'WebCola/test/apitests.js'/*, 'WebCola/test/tests.js'*/, '!WebCola/test/bundle.js']
         },
         options: {
           //browserifyOptions: { debug: true },
@@ -159,7 +159,7 @@ module.exports = function (grunt) {
     }
   });
 
-  grunt.registerTask('default', ['copy', 'ts', 'browserify', 'uglify', 'qunit']);
+  grunt.registerTask('default', ['ts', 'browserify', 'uglify', 'qunit']);
   grunt.registerTask('nougly', ['ts', 'browserify', 'qunit']);
   grunt.registerTask('nougly-notest', ['ts']);
   grunt.registerTask('examples', ['browserify:examples']);
