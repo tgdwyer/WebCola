@@ -121,18 +121,24 @@ import {Rectangle} from './rectangle'
     // tangent_PointPolyC(): fast binary search for tangents to a convex polygon
     //    Input:  P = a 2D point (exterior to the polygon)
     //            n = number of polygon vertices
-    //            V = array of vertices for a 2D convex polygon with V[n] = V[0]
+    //            V = array of vertices for a 2D convex polygon
     //    Output: rtan = index of rightmost tangent point V[rtan]
     //            ltan = index of leftmost tangent point V[ltan]
     function tangent_PointPolyC(P: Point, V: Point[]): { rtan: number; ltan: number } {
-        return { rtan: Rtangent_PointPolyC(P, V), ltan: Ltangent_PointPolyC(P, V) };
+        // Rtangent_PointPolyC and Ltangent_PointPolyC require polygon to be
+        // "closed" with the first vertex duplicated at end, so V[n-1] = V[0].
+        let Vclosed = V.slice(0);  // Copy V
+        Vclosed.push(V[0]);        // Add V[0] at end
+
+        return { rtan: Rtangent_PointPolyC(P, Vclosed), ltan: Ltangent_PointPolyC(P, Vclosed) };
     }
 
 
     // Rtangent_PointPolyC(): binary search for convex polygon right tangent
     //    Input:  P = a 2D point (exterior to the polygon)
     //            n = number of polygon vertices
-    //            V = array of vertices for a 2D convex polygon with V[n] = V[0]
+    //            V = array of vertices for a 2D convex polygon with first
+    //                vertex duplicated as last, so V[n-1] = V[0]
     //    Return: index "i" of rightmost tangent point V[i]
     function Rtangent_PointPolyC(P: Point, V: Point[]): number {
         var n = V.length - 1;
@@ -187,7 +193,8 @@ import {Rectangle} from './rectangle'
     // Ltangent_PointPolyC(): binary search for convex polygon left tangent
     //    Input:  P = a 2D point (exterior to the polygon)
     //            n = number of polygon vertices
-    //            V = array of vertices for a 2D convex polygon with V[n]=V[0]
+    //            V = array of vertices for a 2D convex polygon with first
+    //                vertex duplicated as last, so V[n-1] = V[0]
     //    Return: index "i" of leftmost tangent point V[i]
     function Ltangent_PointPolyC(P: Point, V: Point[]): number {
         var n = V.length - 1;
@@ -331,14 +338,21 @@ import {Rectangle} from './rectangle'
         constructor(public P: TVGPoint[][], g0?: { V: VisibilityVertex[]; E: VisibilityEdge[] }) {
             if (!g0) {
                 var n = P.length;
+                // For each node...
                 for (var i = 0; i < n; i++) {
                     var p = P[i];
+                    // For each node vertex.
                     for (var j = 0; j < p.length; ++j) {
                         var pj = p[j],
                             vv = new VisibilityVertex(this.V.length, i, j, pj);
                         this.V.push(vv);
+                        // For the every iteration but the first, generate an
+                        // edge from the previous visibility vertex to the
+                        // current one.
                         if (j > 0) this.E.push(new VisibilityEdge(p[j - 1].vv, vv));
                     }
+                    // Add a visibility edge from the first vertex to the last.
+                    if (p.length > 1) this.E.push(new VisibilityEdge(p[0].vv, p[p.length - 1].vv));
                 }
                 for (var i = 0; i < n - 1; i++) {
                     var Pi = P[i];
