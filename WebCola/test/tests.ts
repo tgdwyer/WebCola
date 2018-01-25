@@ -67,49 +67,6 @@ window.onload = function () {
     }
     
     QUnit.test("small power-graph", function (assert) {
-        var done = assert.async();
-        d3.json("n7e23.json", function (graph:any) {
-            var n = graph[0].nodes.length;
-            assert.ok(n == 7);
-            var linkAccessor = {
-                getSourceIndex: function (e) { return e.source },
-                getTargetIndex: function (e) { return e.target },
-                getType: function(e) { return 0 },
-                makeLink: function (u, v) { return { source: u, target: v } }
-            };
-            var c = new cola.Configuration(n, graph.links, linkAccessor);
-            assert.ok(c.modules.length == 7);
-            var es;
-            assert.ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
-            var m = c.merge(c.modules[0], c.modules[4]);
-            assert.ok(m.children.contains(0));
-            assert.ok(m.children.contains(4));
-            assert.ok(m.outgoing.contains(1));
-            assert.ok(m.outgoing.contains(3));
-            assert.ok(m.outgoing.contains(5));
-            assert.ok(m.outgoing.contains(6));
-            assert.ok(m.incoming.contains(2));
-            assert.ok(m.incoming.contains(5));
-            assert.ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
-            m = c.merge(c.modules[2], c.modules[3]);
-            assert.ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
-  
-            c = new cola.Configuration(n, graph.links, linkAccessor);
-            var lastR = c.R;
-            while (c.greedyMerge()) {
-                assert.ok(c.R < lastR);
-                lastR = c.R;
-            }
-            var finalEdges = [];
-            var powerEdges = c.allEdges();
-            assert.ok(powerEdges.length == 7);
-            var groups = c.getGroupHierarchy(finalEdges);
-            assert.ok(groups.length == 4);
-            done();
-        });
-    });
-
-    QUnit.test("small power-graph", function (assert) {
         var n = n7e23.nodes.length;
         assert.ok(n == 7);
         var linkAccessor = {
