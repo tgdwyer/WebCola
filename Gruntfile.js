@@ -63,7 +63,7 @@ module.exports = function (grunt) {
       },
       test: {
         files: {
-          'WebCola/test/bundle.js': [/*'WebCola/test/vpsctests.js',*/ 'WebCola/test/apitests.js', 'WebCola/test/tests.js', '!WebCola/test/bundle.js']
+          'WebCola/test/bundle.js': [/*'WebCola/test/vpsctests.js',*/ 'WebCola/test/apitests.js', 'WebCola/test/tests.js', 'WebCola/test/routingtests.js','WebCola/test/gridrouting.js','!WebCola/test/bundle.js']
         },
         options: {
           //browserifyOptions: { debug: true },
