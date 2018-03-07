@@ -54,6 +54,18 @@ const triangle = {
     ]
 };
 
+// We allow duplicate node names
+const duplicate_nodes = {
+      "nodes":[
+	{"name":"a","group":1},
+	{"name":"a","group":1},
+	{"name":"b","group":1}
+      ],
+      "links":[
+	{"source":0,"target":2,"value":1}
+      ]
+};
+
 window.onload = function () {
     QUnit.module("dom tests");
 
@@ -197,5 +209,16 @@ window.onload = function () {
         d3cola.start(20, 20, 20);
         assert.ok(Math.abs(nodes[0].x - nodes[1].x) < 0.001);
         assert.ok(Math.abs(nodes[0].y - nodes[2].y) < 0.001);
+    });
+
+    QUnit.test("Graph with duplicate node name", function(assert) {
+        var d3cola = cola.d3adaptor(d3);
+	let nodes = <any>duplicate_nodes.nodes;
+	d3cola
+	    .nodes(nodes)
+	    .links(duplicate_nodes.links)
+	    .start(30);
+
+	assert.equal(3, d3cola.nodes().length);
     });
 };
