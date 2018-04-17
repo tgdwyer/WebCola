@@ -471,16 +471,17 @@ import {Point} from './geom'
             if (c.axis === 'x') axis = 'y', dim = 'height';
             var vs: GraphNode[] = c.offsets.map(o => this.nodes[o.node]).sort((a, b) => a[axis] - b[axis]);
             var p: GraphNode = null;
-            vs.forEach(v => {
-                // if two nodes overlap then shove the second one along
-                if (p) {
-                    let nextPos = p[axis] + p[dim];
-                    if (nextPos > v[axis]) {
-                        v[axis] = nextPos;
-                    }
-                }
-                p = v;
-            });
+            removeOverlaps(vs.filter(v=>v.bounds).map(v=>v.bounds));
+            // vs.forEach(v => {
+            //     // if two nodes overlap then shove the second one along
+            //     if (p) {
+            //         let nextPos = p[axis] + p[dim];
+            //         if (nextPos > v[axis]) {
+            //             v[axis] = nextPos;
+            //         }
+            //     }
+            //     p = v;
+            // });
         }
 
         private createAlignment(c: any) {
