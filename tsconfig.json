@@ -4,9 +4,10 @@
     "sourceMap": true,
     "declaration": true,
     "compileOnSave": false,
-    "outDir": "dist"
+    "outDir": "dist",
+    "rootDir": "./WebCola"
   },
-  "files": [
-    "WebCola/index.ts"
+  "include": [
+    "WebCola/src/**/*.ts", "WebCola/*.ts"
   ]
 }
