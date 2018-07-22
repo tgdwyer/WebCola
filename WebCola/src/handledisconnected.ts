@@ -37,7 +37,6 @@
 
         calculate_bb(graphs);
         apply(graphs, desired_ratio);
-        // put_nodes_to_right_positions(graphs);
 
         // get bounding boxes for all separate graphs
         function calculate_bb(graphs) {
@@ -101,32 +100,6 @@
         //        .attr("r", 5).style('fill', "rgba(0,0,0,0.5)");
 
         //}
-
-        // actual assigning of position to nodes
-        // function put_nodes_to_right_positions(graphs) {
-        //     graphs.forEach(function (g) {
-        //         // calculate current graph center:
-        //         var center = { x: 0, y: 0 };
-        //
-        //         g.array.forEach(function (node) {
-        //             center.x += node.x;
-        //             center.y += node.y;
-        //         });
-        //
-        //         center.x /= g.array.length;
-        //         center.y /= g.array.length;
-        //
-        //         // calculate current top left corner:
-        //         var corner = { x: center.x - g.width / 2, y: center.y - g.height / 2 };
-        //         var offset = { x: g.x - corner.x + svg_width / 2 - real_width / 2, y: g.y - corner.y + svg_height / 2 - real_height / 2};
-        //
-        //         // put nodes:
-        //         g.array.forEach(function (node) {
-        //             node.x += offset.x;
-        //             node.y += offset.y;
-        //         });
-        //     });
-        // }
 
         // starts box packing algorithm
         // desired ratio is 1 by default
