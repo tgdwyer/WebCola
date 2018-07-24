@@ -74,6 +74,9 @@ module.exports = function (grunt) {
     ts: {
       commonjs: {
         tsconfig: true,
+        options: {
+          inlineSourceMap: true
+        }
       },
       test: {
         src: ['WebCola/test/*.ts', '!WebCola/index.ts', '!WebCola/src/batch.ts'],

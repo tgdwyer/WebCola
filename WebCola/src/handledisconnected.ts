@@ -6,7 +6,7 @@
     };
 
     // assign x, y to nodes while using box packing algorithm for disconnected graphs
-    export function applyPacking(graphs:Array<any>, w, h, node_size, desired_ratio = 1) {
+    export function applyPacking(graphs:Array<any>, w, h, node_size, desired_ratio = 1, centerGraph = true) {
 
         var init_x = 0,
             init_y = 0,
@@ -37,7 +37,9 @@
 
         calculate_bb(graphs);
         apply(graphs, desired_ratio);
-        put_nodes_to_right_positions(graphs);
+        if(centerGraph) {
+            put_nodes_to_right_positions(graphs);
+        }
 
         // get bounding boxes for all separate graphs
         function calculate_bb(graphs) {
