@@ -1,3 +1,4 @@
+/// <reference path="../extern/d3v3.d.ts"/>
 /// <reference path="../extern/three.d.ts"/>
 /// <reference path="../src/shortestpaths.ts"/>
 /// <reference path="../src/linklengths.ts"/>
@@ -99,7 +100,7 @@ module cola3 {
         }
     }
 }
-d3request.json("graphdata/miserables.json", function (error, graph) {
+d3.json("graphdata/miserables.json", function (error, graph) {
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.1, 1000);
     var renderer = new THREE.WebGLRenderer({ antialias: true });
