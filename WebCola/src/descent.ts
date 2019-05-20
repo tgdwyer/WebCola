@@ -223,25 +223,30 @@ DEBUG */
                     }
                     const distance = Math.sqrt(distanceSquared);
                     const idealDistance = this.D[u][v];
+                    // weights are passed via G matrix.
+                    // weight > 1 means not immediately connected
+                    // small weights (<<1) are used for group dummy nodes
                     let weight = this.G != null ? this.G[u][v] : 1;
 
-                    // ignore long range attractions for nodes not immediately connected
+                    // ignore long range attractions for nodes not immediately connected (P-stress)
                     if (weight > 1 && distance > idealDistance || !isFinite(idealDistance)) {
                         for (i = 0; i < this.k; ++i) this.H[i][u][v] = 0;
                         continue;
                     }
+                    // weight > 1 was just an indicator - this is an arcane interface,
+                    // but we are trying to be economical storing and passing node pair info
                     if (weight > 1) {
                         weight = 1;
                     }
-                    var D2: number = idealDistance * idealDistance;
-                    var gs: number = 2 * weight * (distance - idealDistance) / (D2 * distance);
-                    var distance3 = distance * distance * distance;
-                    var hs: number = 2 * -weight / (D2 * distance3);
+                    const idealDistSquared = idealDistance * idealDistance,
+                        gs = 2 * weight * (distance - idealDistance) / (idealDistSquared * distance),
+                        distanceCubed = distanceSquared * distance,
+                        hs = 2 * -weight / (idealDistSquared * distanceCubed);
                     if (!isFinite(gs))
                         console.log(gs);
                     for (i = 0; i < this.k; ++i) {
                         this.g[i][u] += d[i] * gs;
-                        Huu[i] -= this.H[i][u][v] = hs * (distance3 + idealDistance * (d2[i] - distanceSquared) + distance * distanceSquared);
+                        Huu[i] -= this.H[i][u][v] = hs * (2 * distanceCubed + idealDistance * (d2[i] - distanceSquared));
                     }
                 }
                 for (i = 0; i < this.k; ++i) maxH = Math.max(maxH, this.H[i][u][u] = Huu[i]);
