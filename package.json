@@ -33,6 +33,8 @@
   },
   "description": "WebCola =======",
   "main": "dist/index.js",
+  "unpkg": "WebCola/cola.min.js",
+  "jsdelivr": "WebCola/cola.min.js",
   "typings": "dist/index.d.ts",
   "types": "dist/index.d.ts",
   "scripts": {
