@@ -79,19 +79,33 @@ import {Calculator} from './shortestpaths'
         backToFront;
         obstacles;
         passableEdges;
-        private avg(a) { return a.reduce((x, y) => x + y) / a.length }
+
+        private max(arr: number[]) {
+          if (!(arr && arr.length)) return undefined;
+
+          let maximum = arr[0];
+          for (let i = 1; i < arr.length; i ++) {
+            if (maximum < arr[i]) maximum = arr[i];
+          }
+          return maximum;
+        }
 
         // in the given axis, find sets of leaves overlapping in that axis
-        // center of each GridLine is average of all nodes in column
+        // center of each GridLine is the mid point of overlap segment
         private getGridLines(axis): GridLine[] {
             var columns = [];
             var ls = this.leaves.slice(0, this.leaves.length);
             while (ls.length > 0) {
                 // find a column of all leaves overlapping in axis with the first leaf
                 let overlapping = ls.filter(v=> v.rect['overlap' + axis.toUpperCase()](ls[0].rect));
+
+                // lowerBound is max of xs/ys
+                const lowerBound = this.max(overlapping.map(v => v.rect[axis]));
+                // higherBound is min of Xs/Ys
+                const higherBound = -this.max(overlapping.map(v => -v.rect[axis.toUpperCase()]));
                 let col = {
                     nodes: overlapping,
-                    pos: this.avg(overlapping.map(v=> v.rect['c' + axis]()))
+                    pos: (lowerBound + higherBound) / 2,
                 };
                 columns.push(col);
                 col.nodes.forEach(v=> ls.splice(ls.indexOf(v), 1));
