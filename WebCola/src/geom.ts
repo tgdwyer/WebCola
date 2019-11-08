@@ -416,14 +416,14 @@ import {Rectangle} from './rectangle'
     {
         var m = V.length - 1, n = W.length - 1;
         var bt = new BiTangents();
-        for (var i = 0; i < m; ++i) {
-            for (var j = 0; j < n; ++j) {
-                var v1 = V[i == 0 ? m - 1 : i - 1];
+        for (var i = 0; i <= m; ++i) {
+            for (var j = 0; j <= n; ++j) {
+                var v1 = V[i == 0 ? m : i - 1];
                 var v2 = V[i];
-                var v3 = V[i + 1];
-                var w1 = W[j == 0 ? n - 1 : j - 1];
+                var v3 = V[i == m ? 0 : i + 1];
+                var w1 = W[j == 0 ? n : j - 1];
                 var w2 = W[j];
-                var w3 = W[j + 1];
+                var w3 = W[j == n ? 0 : j + 1];
                 var v1v2w2 = isLeft(v1, v2, w2);
                 var v2w1w2 = isLeft(v2, w1, w2);
                 var v2w2w3 = isLeft(v2, w2, w3);
