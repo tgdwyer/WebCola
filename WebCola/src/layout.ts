@@ -55,7 +55,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         bounds?: Rectangle;
         leaves?: Node[];
         groups?: Group[];
-        padding: number;
+        padding?: number;
     }
 
     function isGroup(g: any): g is Group {
