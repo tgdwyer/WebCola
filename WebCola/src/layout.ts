@@ -579,8 +579,13 @@ import {separateGraphs, applyPacking} from './handledisconnected'
                     //        addAttraction(gid + 1, i + 1, 0.1, 0.1);
                     //    });
 
-                    x[i] = 0, y[i++] = 0;
-                    x[i] = 0, y[i++] = 0;
+                    if (typeof g.bounds === 'undefined') {
+                        x[i] = w / 2, y[i++] = h / 2;
+                        x[i] = w / 2, y[i++] = h / 2;
+                    } else {
+                        x[i] = g.bounds.x, y[i++] = g.bounds.y;
+                        x[i] = g.bounds.X, y[i++] = g.bounds.Y;
+                    }
                 });
             } else this._rootGroup = { leaves: this._nodes, groups: [] };
 
