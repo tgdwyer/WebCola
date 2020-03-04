@@ -29,15 +29,14 @@
     <a href="../index.html">cola.js home</a>
 <h1>Online Graph Exploration</h1>
 <p>Red nodes are incomplete.  Click on them to expand their neighbours.</p>
-<script src="../extern/d3v4.js"></script>
-<script src="../extern/fullscreen.js"></script>
+<script src="../extern/d3.v3.js"></script>
 <script src="../cola.min.js"></script>
 <script>
     var width = 960,
         height = 500,
         imageScale = 0.25;
 
-    var color = d3.scaleOrdinal(d3.schemeCategory20);
+    var color = d3.scale.category20()
 
     var cola = cola.d3adaptor(d3)
         .linkDistance(60)
@@ -198,7 +197,6 @@
         });
     }
 </script>
-<button onclick="fullScreen(outer[0][0])">Full screen</button>
 Mouse wheel zooms, left-mouse-button drag on the background to pan.
 <p>
     This example introduces the notion of a "model" graph and a "view" graph.  The model graph is too large to sensibly display in one go.
