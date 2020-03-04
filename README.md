@@ -21,13 +21,14 @@ Installation
 ------------
 
 #### Browser:
+```html
+<!-- Minified version -->
+<script src="http://marvl.infotech.monash.edu/webcola/cola.min.js"></script>
+<!-- Full version -->
+<script src="http://marvl.infotech.monash.edu/webcola/cola.js"></script>
+```
 
-    <!-- Minified version -->
-    <script src="http://marvl.infotech.monash.edu/webcola/cola.min.js"></script>
-    <!-- Full version -->
-    <script src="http://marvl.infotech.monash.edu/webcola/cola.js"></script>
-
-These files can also be accessed from [GitHub](WebCola/cola.js) ([minified](WebCola/cola.min.js)).
+The minified version can also be accessed from [jsDelivr](https://cdn.jsdelivr.net/gh/tgdwyer/WebCola/WebCola/cola.min.js).
 
 #### Npm:
 	
