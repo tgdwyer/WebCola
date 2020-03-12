@@ -6,7 +6,7 @@ import * as cola from '../index'
 import * as d3scale from 'd3-scale'
 import * as d3zoom from 'd3-zoom'
 
-var width = 350,
+var width = 450,
     height = 350;
 
 var color = d3scale.scaleOrdinal(d3scale.schemeCategory20);
