@@ -6,7 +6,7 @@ import * as cola from '../index'
 import * as d3scale from 'd3-scale'
 import * as d3zoom from 'd3-zoom'
 
-var width = 700,
+var width = 350,
     height = 350;
 
 var color = d3scale.scaleOrdinal(d3scale.schemeCategory20);
@@ -32,10 +32,10 @@ function makeSVG() {
         .attr('stroke-width', '0px')
         .attr('fill', '#555');
 
-    var zoomBox = outer.append('rect')
-        .attr('class', 'background')
-        .attr('width', "100%")
-        .attr('height', "100%")
+    // var zoomBox = outer.append('rect')
+    //     .attr('class', 'background')
+    //     .attr('width', "100%")
+    //     .attr('height', "100%")
 
     var vis = <any>outer.append('g');
     var redraw = (transition) =>
@@ -55,10 +55,10 @@ function makeSVG() {
         d3zoom.zoom().scaleBy(vis, s);
         redraw(true);
     }
-    zoomBox.call(
-        <any>d3zoom.zoom()
-            .on("zoom", redraw)
-            .on("dblclick.zoom", vis.zoomToFit));
+    // zoomBox.call(
+    //     <any>d3zoom.zoom()
+    //         .on("zoom", redraw)
+    //         .on("dblclick.zoom", vis.zoomToFit));
 
     return vis;
 }
@@ -291,12 +291,12 @@ function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') |
 
 flatGraph();
 
-d3.select("#GridButton").on("click", powerGraph);
-d3.select("#filemenu").on("change", function () {
-    d3.selectAll("svg").remove();
-    graphfile = (<any>this).value;
-    flatGraph();
-});
+// d3.select("#GridButton").on("click", powerGraph);
+// d3.select("#filemenu").on("change", function () {
+//     d3.selectAll("svg").remove();
+//     graphfile = (<any>this).value;
+//     flatGraph();
+// });
 
 function powerGraph2() {
     var d3cola = cola.d3adaptor(d3)
