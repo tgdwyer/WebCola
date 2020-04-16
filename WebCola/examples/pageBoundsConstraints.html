@@ -55,9 +55,10 @@ body {
             page = svg.append('rect').attr('id', 'page').attr(pageBounds),
             nodeRadius = 10,
             realGraphNodes = graph.nodes.slice(0),
-            topLeft = { x: pageBounds.x, y: pageBounds.y, fixed: true },
+            fixedNode = {fixed: true, fixedWeight: 100},
+            topLeft = { ...fixedNode, x: pageBounds.x, y: pageBounds.y },
             tlIndex = graph.nodes.push(topLeft) - 1,
-            bottomRight = { x: pageBounds.x + pageBounds.width, y: pageBounds.y + pageBounds.height, fixed: true },
+            bottomRight = { ...fixedNode, x: pageBounds.x + pageBounds.width, y: pageBounds.y + pageBounds.height },
             brIndex = graph.nodes.push(bottomRight) - 1,
             constraints = [];
         for (var i = 0; i < realGraphNodes.length; i++) {
@@ -109,12 +110,12 @@ body {
         });
 
         lockButton.on('click', function () {
-            if (typeof topLeft.fixedWeight == 'undefined') {
+            if (topLeft.fixedWeight === fixedNode.fixedWeight) {
                 bottomRight.fixedWeight = topLeft.fixedWeight = 1e6;
                 d3.select(this).text('boundary locked');
             } else {
-                delete bottomRight.fixedWeight;
-                delete topLeft.fixedWeight;
+                bottomRight.fixedWeight = fixedNode.fixedWeight;
+                topLeft.fixedWeight = fixedNode.fixedWeight;
                 d3.select(this).text('boundary unlocked');
             }
         })
@@ -136,9 +137,10 @@ body {
     page = svg.append('rect').attr('id', 'page').attr(pageBounds),
     nodeRadius = 10,
     realGraphNodes = graph.nodes.slice(0),
-    topLeft = { x: pageBounds.x, y: pageBounds.y, fixed: true },
+    fixedNode = {fixed: true, fixedWeight: 100},
+    topLeft = { ...fixedNode, x: pageBounds.x, y: pageBounds.y },
     tlIndex = graph.nodes.push(topLeft) - 1,
-    bottomRight = { x: pageBounds.x + pageBounds.width, y: pageBounds.y + pageBounds.height, fixed: true },
+    bottomRight = { ...fixedNode, x: pageBounds.x + pageBounds.width, y: pageBounds.y + pageBounds.height },
     brIndex = graph.nodes.push(bottomRight) - 1,
     constraints = [];
     for (var i = 0; i < realGraphNodes.length; i++) {
