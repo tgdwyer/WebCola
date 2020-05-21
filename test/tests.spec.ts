@@ -1,6 +1,5 @@
 import * as d3 from 'd3';
-import * as QUnit from 'qunit';
-import * as cola from '../index';
+import { Configuration, d3adaptor, Calculator, Descent, Layout } from '..';
 
 const n7e23 = {
     "nodes":[
@@ -66,8 +65,7 @@ const duplicate_nodes = {
       ]
 };
 
-window.onload = function () {
-    QUnit.module("dom tests");
+describe("dom tests", () => {
 
     function nodeDistance(u, v) {
         var dx = u.x - v.x, dy = u.y - v.y;
@@ -78,86 +76,86 @@ window.onload = function () {
         return Math.abs(actual - expected) <= threshold;
     }
     
-    QUnit.test("small power-graph", function (assert) {
+    test("small power-graph", () => {
         var n = n7e23.nodes.length;
-        assert.ok(n == 7);
+        expect(n == 7).toBe(true);
         var linkAccessor = {
             getSourceIndex: function (e) { return e.source },
             getTargetIndex: function (e) { return e.target },
-            getType: function(e) { return 0 },
+            getType: function (e) { return 0 },
             makeLink: function (u, v) { return { source: u, target: v } }
         };
-        var c = new cola.Configuration(n, n7e23.links, linkAccessor);
-        assert.ok(c.modules.length == 7);
+        var c = new Configuration(n, n7e23.links, linkAccessor);
+        expect(c.modules.length == 7).toBe(true);
         var es;
-        assert.ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
+        expect(c.R == (es = c.allEdges()).length || "c.R=" + c.R + ", actual edges in c=" + es.length).toBe(true);
         var m = c.merge(c.modules[0], c.modules[4]);
-        assert.ok(m.children.contains(0));
-        assert.ok(m.children.contains(4));
-        assert.ok(m.outgoing.contains(1));
-        assert.ok(m.outgoing.contains(3));
-        assert.ok(m.outgoing.contains(5));
-        assert.ok(m.outgoing.contains(6));
-        assert.ok(m.incoming.contains(2));
-        assert.ok(m.incoming.contains(5));
-        assert.ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
+        expect(m.children.contains(0)).toBe(true);
+        expect(m.children.contains(4)).toBe(true);
+        expect(m.outgoing.contains(1)).toBe(true);
+        expect(m.outgoing.contains(3)).toBe(true);
+        expect(m.outgoing.contains(5)).toBe(true);
+        expect(m.outgoing.contains(6)).toBe(true);
+        expect(m.incoming.contains(2)).toBe(true);
+        expect(m.incoming.contains(5)).toBe(true);
+        expect(c.R == (es = c.allEdges()).length || "c.R=" + c.R + ", actual edges in c=" + es.length).toBe(true);
         m = c.merge(c.modules[2], c.modules[3]);
-        assert.ok(c.R == (es = c.allEdges()).length, "c.R=" + c.R + ", actual edges in c=" + es.length);
+        expect(c.R == (es = c.allEdges()).length || "c.R=" + c.R + ", actual edges in c=" + es.length).toBe(true);
 
-        c = new cola.Configuration(n, n7e23.links, linkAccessor);
+        c = new Configuration(n, n7e23.links, linkAccessor);
         var lastR = c.R;
         while (c.greedyMerge()) {
-            assert.ok(c.R < lastR);
+            expect(c.R < lastR).toBe(true);
             lastR = c.R;
         }
         var finalEdges = [];
         var powerEdges = c.allEdges();
-        assert.ok(powerEdges.length == 7);
+        expect(powerEdges.length == 7).toBe(true);
         var groups = c.getGroupHierarchy(finalEdges);
-        assert.ok(groups.length == 4);
+        expect(groups.length == 4).toBe(true);
     });
 
-    QUnit.test("all-pairs shortest paths", function (assert) {
-        let d3cola = cola.d3adaptor(d3);
+    test("all-pairs shortest paths", () => {
+        let d3cola = d3adaptor(d3);
   
         d3cola
             .nodes(<any>triangle.nodes)
             .links(triangle.links)
             .linkDistance(1);
         var n = d3cola.nodes().length;
-        assert.equal(n, 4);
-        var getSourceIndex = e=>e.source;
-        var getTargetIndex = e=>e.target;
-        var getLength = e=>1;
-        var D = (new cola.Calculator(n, d3cola.links(), getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
-        assert.deepEqual(D, [
+        expect(n).toBe(4);
+        var getSourceIndex = e => e.source;
+        var getTargetIndex = e => e.target;
+        var getLength = e => 1;
+        var D = (new Calculator(n, d3cola.links(), getSourceIndex, getTargetIndex, getLength)).DistanceMatrix();
+        expect(D).toEqual([
             [0, 1, 1, 2],
             [1, 0, 1, 2],
             [1, 1, 0, 1],
             [2, 2, 1, 0],
         ]);
         var x = [0, 0, 1, 1], y = [1, 0, 0, 1];
-        var descent = new cola.Descent([x, y], D);
+        var descent = new Descent([x, y], D);
         var s0 = descent.reduceStress();
         var s1 = descent.reduceStress();
-        assert.ok(s1 < s0);
+        expect(s1 < s0).toBe(true);
         var s2 = descent.reduceStress();
-        assert.ok(s2 < s1);
-        d3cola.start(0,0,10);
+        expect(s2 < s1).toBe(true);
+        d3cola.start(0, 0, 10);
         var lengths = triangle.links.map(function (l) {
             var u = <any>l.source, v = <any>l.target,
                 dx = u.x - v.x, dy = u.y - v.y;
-            return Math.sqrt(dx*dx + dy*dy);
+            return Math.sqrt(dx * dx + dy * dy);
         }), avg = function (a) { return a.reduce(function (u, v) { return u + v }) / a.length },
             mean = avg(lengths),
             variance = avg(lengths.map(function (l) { var d = mean - l; return d * d; }));
-            assert.ok(variance < 0.1);
+        expect(variance < 0.1).toBe(true);
     });
 
-    QUnit.test("edge lengths", function (assert) {
-        var d3cola = cola.d3adaptor(d3);
+    test("edge lengths", () => {
+        var d3cola = d3adaptor(d3);
         var length = function (l) {
-            return cola.Layout.linkId(l) == "2-3" ? 2 : 1;
+            return Layout.linkId(l) == "2-3" ? 2 : 1;
         }
         d3cola
             .linkDistance(length)
@@ -168,11 +166,11 @@ window.onload = function () {
             var l = nodeDistance(e.source, e.target);
             return Math.abs(l - length(e));
         }), max = Math.max.apply(this, errors);
-        assert.ok(max < 0.1, "max = "+max);
+        expect(max < 0.1 || "max = " + max).toBe(true);
     });
 
-    QUnit.test("group", function (assert) {
-        var d3cola = cola.d3adaptor(d3);
+    test("group", () => {
+        var d3cola = d3adaptor(d3);
         var nodes = [];
         var u = { x: -5, y: 0, width: 10, height: 20 };
         var v = { x: 5, y: 0, width: 10, height: 20 };
@@ -181,20 +179,20 @@ window.onload = function () {
         d3cola
             .avoidOverlaps(true)
             .handleDisconnected(false)
-            .nodes([u,v])
+            .nodes([u, v])
             .groups(<any>[g]);
   
         // just do overlap removal:
         d3cola.start(0, 0, 10);
   
-        assert.ok(approxEquals((<any>g).bounds.width(), 30, 0.1));
-        assert.ok(approxEquals((<any>g).bounds.height(), 40, 0.1));
+        expect(approxEquals((<any>g).bounds.width(), 30, 0.1)).toBe(true);
+        expect(approxEquals((<any>g).bounds.height(), 40, 0.1)).toBe(true);
   
-        assert.ok(approxEquals(Math.abs(u.x - v.x), 20, 0.1), "u.x: "+u.x+" v.x: "+v.x);
+        expect(approxEquals(Math.abs(u.x - v.x), 20, 0.1) || "u.x: " + u.x + " v.x: " + v.x).toBe(true);
     });
 
-    QUnit.test("equality constraints", function (assert) {
-        var d3cola = cola.d3adaptor(d3);
+    test("equality constraints", () => {
+        var d3cola = d3adaptor(d3);
         let nodes = <any>triangle.nodes;
         d3cola
             .nodes(nodes)
@@ -207,18 +205,18 @@ window.onload = function () {
                 left: 0, right: 2, gap: 0, equality: true
             }]);
         d3cola.start(20, 20, 20);
-        assert.ok(Math.abs(nodes[0].x - nodes[1].x) < 0.001);
-        assert.ok(Math.abs(nodes[0].y - nodes[2].y) < 0.001);
+        expect(Math.abs(nodes[0].x - nodes[1].x) < 0.001).toBe(true);
+        expect(Math.abs(nodes[0].y - nodes[2].y) < 0.001).toBe(true);
     });
 
-    QUnit.test("Graph with duplicate node name", function(assert) {
-        var d3cola = cola.d3adaptor(d3);
-	let nodes = <any>duplicate_nodes.nodes;
-	d3cola
-	    .nodes(nodes)
-	    .links(duplicate_nodes.links)
-	    .start(30);
+    test("Graph with duplicate node name", function () {
+        var d3cola = d3adaptor(d3);
+        let nodes = <any>duplicate_nodes.nodes;
+        d3cola
+            .nodes(nodes)
+            .links(duplicate_nodes.links)
+            .start(30);
 
-	assert.equal(3, d3cola.nodes().length);
+        expect(3).toBe(d3cola.nodes().length);
     });
-};
+});
