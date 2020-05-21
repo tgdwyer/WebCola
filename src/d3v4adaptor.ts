@@ -11,7 +11,10 @@ export interface D3Context {
     event: any;
 }
 
-export class D3StyleLayoutAdaptor extends Layout implements ID3StyleLayoutAdaptor {
+/**
+ * @internal
+ */
+export class D3v4StyleLayoutAdaptor extends Layout implements ID3StyleLayoutAdaptor {
     event:any;
     trigger(e: Event) {
         var d3event = { type: EventType[e.type], alpha: e.alpha, stress: e.stress };
@@ -28,8 +31,14 @@ export class D3StyleLayoutAdaptor extends Layout implements ID3StyleLayoutAdapto
     // a function to allow for dragging of nodes
     drag: () => any;
 
-    constructor(private d3Context: D3Context) {
+    /**
+     * @internal
+     */
+    private readonly d3Context: D3Context;
+
+    constructor(d3Context: D3Context) {
         super();
+        this.d3Context = d3Context;
         this.event = d3Context.dispatch(EventType[EventType.start], EventType[EventType.tick], EventType[EventType.end]);
 
         // bit of trickyness remapping 'this' so we can reference it in the function body.

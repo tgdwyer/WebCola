@@ -8,6 +8,7 @@
     "resolveJsonModule": true,
     "importsNotUsedAsValues": "remove",
     "declaration": true,
+    "stripInternal": true,
     "declarationMap": true,
     "sourceMap": true,
     "rootDir": "./src",

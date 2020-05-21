@@ -1,8 +1,10 @@
-import * as d3v3 from './d3v3adaptor'
-import * as d3v4 from './d3v4adaptor'
+import {D3StyleLayoutAdaptor} from './d3v3adaptor'
+import {D3Context, D3v4StyleLayoutAdaptor} from './d3v4adaptor'
 import { Layout, EventType, Event } from './layout';
 
-export interface D3v3Context { version:string };
+export { D3Context } from './d3v4adaptor';
+
+export interface D3v3Context { version: string };
 
 export interface ID3StyleLayoutAdaptor {
     trigger(e: Event): void;
@@ -30,14 +32,14 @@ export interface ID3StyleLayoutAdaptor {
  * returns an instance of the cola.Layout itself with which the user
  * can interact directly.
  */
-export function d3adaptor(d3Context?: d3v4.D3Context | D3v3Context): Layout & ID3StyleLayoutAdaptor {
+export function d3adaptor(d3Context?: D3Context | D3v3Context): Layout & ID3StyleLayoutAdaptor {
     if (!d3Context || isD3V3(d3Context)) {
-        return new d3v3.D3StyleLayoutAdaptor();
+        return new D3StyleLayoutAdaptor(d3Context);
     }
-    return new d3v4.D3StyleLayoutAdaptor(d3Context);
+    return new D3v4StyleLayoutAdaptor(d3Context);
 }
 
-function isD3V3(d3Context: d3v4.D3Context | D3v3Context): d3Context is D3v3Context {
+function isD3V3(d3Context: D3Context | D3v3Context): d3Context is D3v3Context {
     const v3exp = /^3\./;
     return (<any>d3Context).version && (<any>d3Context).version.match(v3exp) !== null;
 }

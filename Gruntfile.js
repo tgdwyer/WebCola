@@ -6,16 +6,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
-    watch: {
-      scripts: {
-        files: ["WebCola/src/*.ts"],
-        tasks: ["browserify:dist"]
-      },
-      tests: {
-        files: ["WebCola/test/*.ts","WebCola/test/*.js"],
-        tasks: ["ts:test", "browserify:test", "qunit"]
-      }
-    },
+
       examples: {
         options: {
           browserifyOptions: {
@@ -43,15 +34,6 @@ module.exports = function (grunt) {
           'WebCola/examples/vhybridize.js': ['WebCola/examples/vhybridize.ts']
         }
       },
-      test: {
-        files: {
-          'WebCola/test/bundle.js': ['WebCola/test/vpsctests.js', 'WebCola/test/apitests.js', 'WebCola/test/tests.js', 'WebCola/test/routingtests.js','WebCola/test/gridrouting.js','!WebCola/test/bundle.js'/*,'WebCola/test/matrixperftest.js'*/]
-        },
-        options: {
-          //browserifyOptions: { debug: true },
-          transform: [["babelify", { "presets": ["es2015"] }]]
-        }
-      }
     },
     ts: {
       commonjs: {
@@ -100,12 +82,6 @@ module.exports = function (grunt) {
             'WebCola/cola.js'
           ]
         }
-      }
-    },
-    qunit: {
-      all: ['WebCola/test/*.html'],
-      options: {
-        force: true
       }
     },
     examples: {

@@ -23,9 +23,9 @@ jobs:
       - run: npm test
         env:
           CI: true
-      - run: npm lint
-        env:
-          CI: true
+      # - run: npm lint
+      #   env:
+      #     CI: true
       - run: npm docs
         env:
           CI: true
