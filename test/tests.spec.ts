@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { Configuration, d3adaptor, Calculator, Descent, Layout } from '..';
+import { Configuration, d3adaptor, Calculator, Descent, Layout } from '../src';
 
 const n7e23 = {
     "nodes":[

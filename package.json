@@ -22,7 +22,7 @@
   "module": "dist/cola.esm.js",
   "unpkg": "dist/cola.umd.production.min.js",
   "jsdelivr": "dist/cola.umd.production.min.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/cola.d.ts",
   "files": [
     "dist",
     "src"
@@ -30,7 +30,8 @@
   "sideEffects": false,
   "scripts": {
     "watch": "tsdx watch --noClean --name cola --format esm,umd",
-    "build": "tsdx build --name cola --format esm,umd",
+    "build": "tsdx build --name cola --format esm,umd && npm run typings",
+    "typings": "dts-generator --project tsconfig.json --name cola --out dist/cola.d.ts",
     "test": "tsdx test --passWithNoTests",
     "test:watch": "tsdx test --passWithNoTests --watch",
     "test:coverage": "tsdx test --passWithNoTests --coverage",

@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { Rectangle, GridRouter, LongestCommonSubsequence } from '..';
+import { Rectangle, GridRouter, LongestCommonSubsequence } from '../src';
 
 describe('Grid Routing', () => {
     test('metro crossing min', () => {

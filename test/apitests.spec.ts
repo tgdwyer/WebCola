@@ -1,4 +1,4 @@
-import {stronglyConnectedComponents, LinkAccessor, Layout, Link, Node, EventType, Node3D, Link3D, Layout3D} from '..';
+import {stronglyConnectedComponents, LinkAccessor, Layout, Link, Node, EventType, Node3D, Link3D, Layout3D} from '../src';
 
 describe("Headless API", () => {
     test('strongly connected components', () => {

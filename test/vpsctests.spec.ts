@@ -1,4 +1,4 @@
-import { Variable, Constraint, Solver } from '..';
+import { Variable, Constraint, Solver } from '../src';
 import testcases from './vpsctestcases';
 
 test("vpsc", () =>  {
