@@ -1,6 +1,0 @@
-language: node_js
-node_js:
-  - "7.2.0"
-install:
-  - npm install
-  - npm install -g grunt-cli

@@ -3,11 +3,10 @@
     "target": "es5",
     "sourceMap": true,
     "declaration": true,
-    "compileOnSave": false,
-    "outDir": "dist",
-    "rootDir": "./WebCola"
+    "declarationDir": "dist",
+    "rootDir": "src"
   },
   "include": [
-    "WebCola/src/**/*.ts", "WebCola/*.ts"
+    "src/**/*.ts"
   ]
 }
