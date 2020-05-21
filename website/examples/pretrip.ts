@@ -1,7 +1,6 @@
 ///<reference path="../extern/d3v3.d.ts"/>
-///<reference path="../src/vpsc.ts"/>
-
-import * as cola from '../index'
+/// <reference path="../../src/index.ts"/>
+import * as cola from '../../src';
 import * as d3scale from 'd3-scale'
 module tetrisbug {
     var width = 1280,

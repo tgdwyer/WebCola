@@ -1,14 +1,6 @@
 ///<reference path="../extern/d3v3.d.ts"/>
-/*
-///<reference path="../src/layout.ts"/>
-///<reference path="../src/d3adaptor.ts"/>
-///<reference path="../src/vpsc.ts"/>
-///<reference path="../src/rectangle.ts"/>
-///<reference path="../src/gridrouter.ts"/>
-///<reference path="../src/geom.ts"/>
-///<reference path="../src/batch.ts"/>
-*/
-import * as cola from '../index'
+/// <reference path="../../src/index.ts"/>
+import * as cola from '../../src';
 import * as graphlibDot from 'graphlib-dot'
 
 module dotpowergraph {

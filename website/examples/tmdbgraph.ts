@@ -132,7 +132,9 @@ module tmdb {
     }
 }
 
-import * as cola from '../index'
+/// <reference path="../../src/index.ts"/>
+import * as cola from '../../src';
+
 var width = 960,
     height = 500,
     imageScale = 0.1;

@@ -1,11 +1,10 @@
 /// <reference path="../extern/three.d.ts"/>
-/// <reference path="../src/shortestpaths.ts"/>
-/// <reference path="../src/linklengths.ts"/>
-/// <reference path="../src/descent.ts"/>
-/// <reference path="../src/layout3d.ts"/>
-import * as cola from '../index'
-import * as d3scale from 'd3-scale'
-import * as d3request from 'd3-request'
+/// <reference path="../extern/d3v3.d.ts"/>
+/// <reference path="../../dist/cola.d.ts"/>
+// declare module cola;
+// import * as cola from '../cola.min';
+// import * as d3scale from 'd3-scale'
+// import * as d3request from 'd3-request'
 module cola3 {
     export class Graph {
         parentObject;
@@ -99,7 +98,7 @@ module cola3 {
         }
     }
 }
-d3request.json("graphdata/miserables.json", function (error, graph) {
+d3.json("graphdata/miserables.json", function (error, graph) {
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.1, 1000);
     var renderer = new THREE.WebGLRenderer({ antialias: true });

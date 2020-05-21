@@ -30,16 +30,19 @@
   "sideEffects": false,
   "scripts": {
     "watch": "tsdx watch --noClean --name cola --format esm,umd",
-    "build": "tsdx build --name cola --format esm,umd && npm run typings",
-    "typings": "dts-generator --project tsconfig.json --name cola --out dist/cola.d.ts",
+    "build": "tsdx build --name cola --format esm,umd",
+    "postbuild": "npm run typings",
+    "typings": "tsc -p tsconfig.dts.json && rollup -c rollup.dts.config.js",
     "test": "tsdx test --passWithNoTests",
     "test:watch": "tsdx test --passWithNoTests --watch",
     "test:coverage": "tsdx test --passWithNoTests --coverage",
     "lint": "tsdx lint src --ext .ts",
     "docs": "typedoc",
-    "prepare": "tsdx build --name cola --format esm,umd",
+    "prepare": "npm run build",
     "release": "release-it --disable-metrics --npm.skipChecks",
-    "release:pre": "release-it --disable-metrics --npm.skipChecks --preRelease=alpha --npm.tag=next"
+    "release:pre": "release-it --disable-metrics --npm.skipChecks --preRelease=alpha --npm.tag=next",
+    "compile-examples": "cd website/examples && tsc -p tsconfig.json",
+    "website": "npm run build && npm run docs && cp dist/cola.umd.production.min.js website/cola.min.js"
   },
   "devDependencies": {
     "@types/d3": "^4.5.0",
@@ -48,8 +51,8 @@
     "d3-drag": "^1.0.4",
     "d3-timer": "^1.0.5",
     "d3-zoom": "^1.1.4",
-    "dts-generator": "^2.0.0",
     "release-it": "^13.6.0",
+    "rollup-plugin-dts": "^1.4.6",
     "tsdx": "^0.13.2",
     "typedoc": "^0.17.7",
     "typescript": "^3.8.3"

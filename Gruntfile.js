@@ -35,55 +35,6 @@ module.exports = function (grunt) {
         }
       },
     },
-    ts: {
-      commonjs: {
-        tsconfig: true,
-        options: {
-          inlineSourceMap: true
-        }
-      },
-      test: {
-        src: ['WebCola/test/*.ts', '!WebCola/index.ts', '!WebCola/src/batch.ts'],
-        options: {
-          failOnTypeErrors: false,
-          target: 'es5',
-          sourceMap: true
-        }
-      }
-    },
-    dtsGenerator: {
-        options: {
-            name: 'cola',
-            baseDir: 'WebCola/src',
-            out: 'WebCola/cola.d.ts',
-            excludes: ['extern/d3v3.d.ts']
-        },
-        default: {
-          src: ['WebCola/src/*.ts', '!WebCola/src/batch.ts', '!WebCola/src/cola.ts'],
-        }
-    },
-    umd: {
-      all: {
-        src: '<%= dist.dest %>',
-        template: 'templates/umd.hbs',
-        objectToExport: 'cola',
-        deps: {
-          'default': ['d3']
-        }
-      }
-    },
-    uglify: {
-      options: {
-        sourceMap: true
-      },
-      dist: {
-        files: {
-          'WebCola/cola.min.js': [
-            'WebCola/cola.js'
-          ]
-        }
-      }
-    },
     examples: {
       all: ["WebCola/examples/*.html"]
     },

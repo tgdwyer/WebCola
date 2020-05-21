@@ -1,12 +1,9 @@
 /// <reference path="../extern/d3v3.d.ts"/>
 /// <reference path="../extern/three.d.ts"/>
-/// <reference path="../src/shortestpaths.ts"/>
-/// <reference path="../src/linklengths.ts"/>
-/// <reference path="../src/descent.ts"/>
-/// <reference path="../src/layout3d.ts"/>
+/// <reference path="../../src/index.ts"/>
+import * as cola from '../../src';
 import * as d3scale from 'd3-scale'
 import * as d3request from 'd3-request'
-import * as cola from '../index'
 module tree3d {
     export class Graph {
         parentObject;

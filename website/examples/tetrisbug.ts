@@ -1,7 +1,5 @@
-///<reference path="../src/vpsc.ts"/>
-///<reference path="../src/rectangle.ts"/>
-///<reference path="../src/gridrouter.ts"/>
-import * as cola from '../index'
+/// <reference path="../../src/index.ts"/>
+import * as cola from '../../src';
 import * as d3 from 'd3'
 import * as d3scale from 'd3-scale'
 

@@ -1,8 +1,6 @@
 ///<reference path="../extern/d3v3.d.ts"/>
-///<reference path="../src/vpsc.ts"/>
-///<reference path="../src/rectangle.ts"/>
-
-import * as cola from '../index'
+/// <reference path="../../src/index.ts"/>
+import * as cola from '../../src';
 import * as d3scale from 'd3-scale'
 import * as d3zoom from 'd3-zoom'
 
