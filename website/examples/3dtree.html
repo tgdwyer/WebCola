@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <style>
+        @import url(../style.css);
+        #graphdiv {
+            position: absolute;
+            left: 0px;
+        }
+    </style>
+    <title>3D Layout</title>
+    <script src="../extern/d3v4.js"></script>
+    <script src="../extern/three.js"></script>
+    <script src="../cola.min.js"></script>
+    <!-- <script src="../src/shortestpaths.js"></script> -->
+    <!-- <script src="../src/pqueue.js"></script> -->
+    <!-- <script src="../src/layout3d.js"></script> -->
+</head>
+<body>
+    <a href="../index.html">cola.js home</a>
+    <h1><a href="http://wilma.sf.net">WilmaScope</a> on the Web!</h1>
+     Not really, just <a href="http://marvl.infotech.monash.edu/webcola">cola.js</a> and <a href="http://threejs.org/">three.js</a>.
+    <p>
+        This is a 3D version of <a href="downwardedges.html">this graph</a>.  The constraints here are over the y-position variables while the xs and zs are unconstrained.
+
+        Pairs of nodes connected by an edge have a separation constraint, requiring that the source be a minimum distance above the target.
+
+        <div id="graphdiv">
+        </div>
+        <script src="3dtree.js"></script>
+        <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-63535113-1', 'auto');
+  ga('send', 'pageview');
+
+        </script>
+</body>
+</html>

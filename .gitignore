@@ -8,12 +8,8 @@ WebCola/examples/*.js
 WebCola/*.js*
 .tscache
 npm-debug.log
-WebCola/test/bundle.js
-WebCola/test/apitests.js
 .vscode
-WebCola/src/**/*.js
-WebCola/src/**/*.map
-WebCola/test/**/*.js
-!WebCola/test/vpcstestcases.js
-!WebCola/test/vpsctests.js
-WebCola/test/**/*.map
+src/**/*.js
+src/**/*.map
+test/**/*.js
+test/**/*.map

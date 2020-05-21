@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta charset="utf-8" />
+    <title>Power graph representation of a dense graph</title>
+    <style>
+        @import url(../style.css);
+
+.node {
+  cursor: move;
+  fill: #550000;
+}
+
+.group {
+  stroke: #550000;
+  fill: #AA6c39;
+  stroke-width: 1;
+  fill-opacity: 0.5;
+}
+
+.link {
+    /*stroke: #661141;*/
+    stroke-width: 3px;
+    stroke-opacity: 1;
+    marker-end: url(#end-arrow);
+}
+
+.label {
+    fill: white;
+    font-family: Verdana;
+    font-size: 15px;
+    text-anchor: start;
+    cursor: move;
+    font-weight: bold;
+}
+.detailLabel {
+    fill: white;
+    font-family: Verdana;
+    font-size: 12px;
+    font-style: italic;
+    text-anchor: start;
+    cursor: move;
+}
+
+.swatchlabel {
+    font-family: Verdana;
+    font-size: 15px;
+}
+
+</style>
+</head>
+<body>
+    <a href="../index.html">cola.js home</a>
+    <script src="../extern/d3v4.js"></script>
+    <!--<script src="../cola.min.js"></script>-->
+    <script src="../src/powergraph.js"></script>
+    <script src="../src/gridrouter.js"></script>
+    <script src="../src/layout.js"></script>
+    <script src="../src/descent.js"></script>
+    <script src="../src/vpsc.js"></script>
+    <script src="../src/rectangle.js"></script>
+    <script src="../src/d3adaptor.js"></script>
+    <script src="../src/geom.js"></script>
+    <script src="../src/handledisconnected.js"></script>
+    <script src="../src/shortestpaths.js"></script>
+    <script src="../src/linklengths.js"></script>
+    <script src="../src/rbtree.js"></script>
+    <script src="../src/pqueue.js"></script>
+    <script src="statemachinepowergraph.js"></script>
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-63535113-1', 'auto');
+  ga('send', 'pageview');
+
+    </script>
+</body>
+</html>

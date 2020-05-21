@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <style>
+        div {
+            background-color: lightgray;
+            width: 200px;
+            height: 300px;
+            float: left;
+        }
+        img {
+            width: 180px;
+        }
+    </style>
+</head>
+<body>
+<script src="../extern/jquery-1.10.2.min.js"></script>
+<script>
+    <a href="../index.html">cola.js home</a>
+    function tmdbrequest(type, id, content, callback) {
+        $.ajax("https://api.themoviedb.org/3/" + type + "/" + id + "/" + content + "?api_key=1bba0362f468d50d2ec27acff6d5e05a")
+         .done(callback);
+    }
+    function query(type, id) {
+        document.body.innerHTML = '';
+        var q = type == "movie"
+            ? { content: "credits", next: "person" }
+            : { content: "movie_credits", next: "movie" };
+        tmdbrequest(type, id, q.content, function (r) { getImages(r, q.next) });
+    }
+    function getImages(r, type) {
+        r.cast.forEach(function (p) {
+            var $div = $('<div>').html(type == 'person' ? p.name : p.title);
+            $(document.body).append($div);
+            tmdbrequest(type, p.id, "images", function (q) {
+                var paths = type == 'person' ? q.profiles : q.posters;
+                $div.append($('<img>')
+                    .attr("src", paths.length > 0
+                        ? 'http://image.tmdb.org/t/p/w185/' + paths[0].file_path
+                        : 'http://upload.wikimedia.org/wikipedia/commons/3/37/No_person.jpg')
+                    .click(function () { query(type, q.id) }));
+            });
+        });
+    }
+    query("movie", 550);
+</script>
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-63535113-1', 'auto');
+  ga('send', 'pageview');
+
+    </script>
+</body>
+</html>

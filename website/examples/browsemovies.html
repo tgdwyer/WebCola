@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Incremental exploration of a large graph</title>
+<style>
+@import url(../style.css);
+
+.background {
+    stroke: gray;
+    stroke-width: 1px;
+    fill: white;
+}
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.spike {
+    fill: url(#SpikeGradient);
+    stroke-width: 0;
+}
+
+</style>
+</head>
+<body>
+    <a href="../index.html">cola.js home</a>
+<h1>Online Graph Exploration</h1>
+<p>Pink nodes are incomplete.  Click on them to expand their neighbours.</p>
+<script src="../extern/d3.v3.js"></script>
+<script src="../cola.min.js"></script>
+<script src="tmdbgraph.js"></script>
+    <button id="fullScreenButton">Full screen</button>
+    <button id="zoomToFitButton">Zoom to fit (or double click)</button>
+Mouse wheel zooms, left-mouse-button drag on the background to pan.
+<p>
+    This example introduces the notion of a "model" graph and a "view" graph.  The model graph is too large to sensibly display in one go.
+    Instead we begin with just a small neighbourhood showing in the view graph which is bound to SVG visuals following the usual
+    D3 pattern.  The pink nodes have neighbours in the model graph
+    that are not shown in the view graph.  Clicking on a red node causes its invisible neighbours to be added to the view and
+    we use D3's enter/exit selections to update the display as usual.
+    </p><p>
+    The stability of WebCoLa layout makes this type of dynamic graph layout much less chaotic than is possible with the D3 force layout.
+    <p>
+    Data from <a href="http://www.themoviedb.org">tmdb</a>, unfortunately they limit us to 40 queries per 10 seconds so the responses come in a gradually.  
+    It's actually quite hypnotic watching the graph evolve at this lazy pace.
+    </p>
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-63535113-1', 'auto');
+  ga('send', 'pageview');
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <title>Grid Layout</title>
+    <meta charset="utf-8" />
+    <title>Power graph representation of a dense graph</title>
+    <style>
+        @import url(../style.css);
+
+        .node {
+            cursor: move;
+            fill: #404040;
+            rx: 3;
+            ry: 3;
+        }
+
+        .group {
+            stroke: none;
+            fill: #ffc0b0;
+            stroke-width: 6;
+            rx: 5;
+            ry: 5;
+            stroke: #ffc0b0;
+        }
+
+        .link {
+            stroke: darkslategrey;
+            fill: none;
+            stroke-width: 2px;
+            stroke-opacity: 1;
+            marker-end: url(#end-arrow);
+        }
+
+        .linkarrow {
+            stroke: darkslategrey;
+            fill: darkslategrey;
+            stroke-width: 0px;
+            stroke-opacity: 1;
+            marker-end: url(#end-arrow);
+        }
+
+        .linkoutline {
+            stroke: white;
+            stroke-width: 4px;
+            fill: none;
+        }
+
+        .linkarrowoutline {
+            stroke: none;
+            stroke-width: 1px;
+            fill: white;
+        }
+
+        .label {
+            fill: white;
+            font-family: Verdana;
+            font-size: 15px;
+            text-anchor: middle;
+            cursor: move;
+        }
+
+        .swatchlabel {
+            font-family: Verdana;
+            font-size: 15px;
+        }
+
+        .ghost {
+            fill: red;
+            fill-opacity: 0.5;
+            stroke: red;
+            stroke-width: 2;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html">cola.js home</a>
+    <h1>Gridified Layout</h1>
+    <script src="../extern/d3.v3.js"></script>
+    <script src="../cola.js"></script>
+    <script src="dotpowergraph.js"></script>
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-63535113-1', 'auto');
+  ga('send', 'pageview');
+
+    </script>
+</body>
+</html>

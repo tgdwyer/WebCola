@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Layout kept inside bounding box</title>
+<style>
+@import url(../style.css);
+
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .8;
+}
+
+body {
+    background: beige;
+}
+#page {
+    fill: white;
+    stroke: black;
+    stroke-width: 1px;
+}
+
+</style>
+</head>
+<body>
+    <a href="../index.html">cola.js home</a>
+    <h1>Layout kept inside bounding box</h1>
+    <link rel="stylesheet" href="../extern/hljs/styles/github.css">
+    <script src="../extern/hljs/highlight.pack.js"></script>
+    <script src="../extern/d3.v3.js"></script>
+    <script src="../cola.js"></script>
+<script>
+    var width = 960,
+        height = 500;
+
+    var color = d3.scale.category20();
+
+    var cola = cola.d3adaptor()
+        .size([width, height]);
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    var lockButton = d3.select('body').append('button').text('boundary unlocked').style('float', 'right');
+
+    d3.json("graphdata/miserables.json", function (error, graph) {
+        var pageBounds = { x: 100, y: 50, width: 700, height: 400 },
+            page = svg.append('rect').attr('id', 'page').attr(pageBounds),
+            nodeRadius = 10,
+            realGraphNodes = graph.nodes.slice(0),
+            fixedNode = {fixed: true, fixedWeight: 100},
+            topLeft = { ...fixedNode, x: pageBounds.x, y: pageBounds.y },
+            tlIndex = graph.nodes.push(topLeft) - 1,
+            bottomRight = { ...fixedNode, x: pageBounds.x + pageBounds.width, y: pageBounds.y + pageBounds.height },
+            brIndex = graph.nodes.push(bottomRight) - 1,
+            constraints = [];
+        for (var i = 0; i < realGraphNodes.length; i++) {
+            constraints.push({ axis: 'x', type: 'separation', left: tlIndex, right: i, gap: nodeRadius });
+            constraints.push({ axis: 'y', type: 'separation', left: tlIndex, right: i, gap: nodeRadius });
+            constraints.push({ axis: 'x', type: 'separation', left: i, right: brIndex, gap: nodeRadius });
+            constraints.push({ axis: 'y', type: 'separation', left: i, right: brIndex, gap: nodeRadius });
+        }
+        cola
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .constraints(constraints)
+            .jaccardLinkLengths(60, 0.7)
+            .handleDisconnected(false)
+            .start(30);
+
+        var link = svg.selectAll(".link")
+            .data(graph.links)
+          .enter().append("line")
+            .attr("class", "link")
+            .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+
+        var node = svg.selectAll(".node")
+            .data(realGraphNodes)
+          .enter().append("circle")
+            .attr("class", "node")
+            .attr("r", nodeRadius)
+            .style("fill", function (d) { return color(d.group); })
+            .call(cola.drag);
+
+        node.append("title")
+            .text(function (d) { return d.name; });
+
+        cola.on("tick", function () {
+            link.attr("x1", function (d) { return d.source.x; })
+                .attr("y1", function (d) { return d.source.y; })
+                .attr("x2", function (d) { return d.target.x; })
+                .attr("y2", function (d) { return d.target.y; });
+
+            node.attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; });
+
+            page.attr(pageBounds = {
+                x: topLeft.x,
+                y: topLeft.y,
+                width: bottomRight.x - topLeft.x,
+                height: bottomRight.y - topLeft.y
+            });
+        });
+
+        lockButton.on('click', function () {
+            if (topLeft.fixedWeight === fixedNode.fixedWeight) {
+                bottomRight.fixedWeight = topLeft.fixedWeight = 1e6;
+                d3.select(this).text('boundary locked');
+            } else {
+                bottomRight.fixedWeight = fixedNode.fixedWeight;
+                topLeft.fixedWeight = fixedNode.fixedWeight;
+                d3.select(this).text('boundary unlocked');
+            }
+        })
+    });
+
+    hljs.initHighlightingOnLoad();
+</script>
+    <a href="https://github.com/tgdwyer/WebCola/blob/master/WebCola/examples/pageBoundsConstraints.html">Source</a>
+    <p>Example showing how we can setup constraints to keep the graph nodes inside a given bounding box
+     (as per <a href="http://www.researchgate.net/publication/221557356_Dunnart_A_Constraint-Based_Network_Diagram_Authoring_Tool">this paper</a>).
+    Try dragging a node outside the box: you'll see the bounding box stretch to enclose it, and then snap back on release.  Toggle the 'boundary unlocked' button to stop nodes stretching the boundary.
+    </p>
+    <p>
+        The idea is, we create a pair of dummy nodes: one for the top left corner of the box, and one for the bottom right.
+        Then we create constraints to keep the real nodes below and to the right of the top-left, and above and to the left of the bottom right.
+        Here's the setup:
+    </p>
+    <pre><code>var pageBounds = { x: 100, y: 50, width: 700, height: 400 },
+    page = svg.append('rect').attr('id', 'page').attr(pageBounds),
+    nodeRadius = 10,
+    realGraphNodes = graph.nodes.slice(0),
+    fixedNode = {fixed: true, fixedWeight: 100},
+    topLeft = { ...fixedNode, x: pageBounds.x, y: pageBounds.y },
+    tlIndex = graph.nodes.push(topLeft) - 1,
+    bottomRight = { ...fixedNode, x: pageBounds.x + pageBounds.width, y: pageBounds.y + pageBounds.height },
+    brIndex = graph.nodes.push(bottomRight) - 1,
+    constraints = [];
+    for (var i = 0; i < realGraphNodes.length; i++) {
+        constraints.push({ axis: 'x', type: 'separation', left: tlIndex, right: i, gap: nodeRadius });
+        constraints.push({ axis: 'y', type: 'separation', left: tlIndex, right: i, gap: nodeRadius });
+        constraints.push({ axis: 'x', type: 'separation', left: i, right: brIndex, gap: nodeRadius });
+        constraints.push({ axis: 'y', type: 'separation', left: i, right: brIndex, gap: nodeRadius });
+    }
+    cola
+        .nodes(graph.nodes)
+        .links(graph.links)
+        .constraints(constraints)
+        .jaccardLinkLengths(60, 0.7)
+        .handleDisconnected(false)
+        .start(30);
+</code></pre>
+    Note that we disable <code>handleDisconnected</code>.  The layout of disconnected components is not very smart at the moment and isn't aware of constraints connecting separate graph components (TODO: fix this!).
+    <p>
+        Then, when we create the node visuals, we bind them only to the original (non-dummy) nodes:
+    </p>
+<pre><code>var node = svg.selectAll(".node")
+    .data(realGraphNodes)
+    .enter().append("circle")
+        .attr("class", "node")
+        .attr("r", nodeRadius)
+        .style("fill", function (d) { return color(d.group); })
+        .call(cola.drag);
+</code></pre>
+    <p>
+        To keep the visuals for the page bounds up-to-date, i.e. in case the user drags a node outside the bounds, inside the tick handler we do the following:
+    </p>
+<pre><code>page.attr(pageBounds = {
+    x: topLeft.x,
+    y: topLeft.y,
+    width: bottomRight.x - topLeft.x,
+    height: bottomRight.y - topLeft.y
+});
+</code></pre>
+    <p>
+        The page bounds are 'stretchy' by default because the dummy nodes for the page corners are assigned the same "weight" as a dragged node.  Thus, when the solver
+        satisfies violated separation constraints between dummy nodes and the dragged nodes it displaces them both equally.  The "boundary locked" button above simply sets
+        the <code>fixedWeight</code> property of the dummy nodes to a value several orders of magnitude larger than the default weight.
+    </p>
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-63535113-1', 'auto');
+  ga('send', 'pageview');
+
+    </script>
+</body>
+</html>

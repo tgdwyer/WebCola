@@ -1,6 +1,33 @@
 {
   "name": "webcola",
   "version": "3.4.0",
+  "description": "WebCola =======",
+  "author": "Tim Dwyer",
+  "license": "MIT",
+  "homepage": "https://github.com/tgdwyer/WebCola",
+  "bugs": {
+    "url": "https://github.com/tgdwyer/WebCola/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tgdwyer/WebCola.git"
+  },
+  "keywords": [
+    "Graph",
+    "Layout",
+    "Constraints",
+    "Optimization"
+  ],
+  "main": "dist/index.js",
+  "module": "dist/cols.esm.js",
+  "unpkg": "dist/cola.min.js",
+  "jsdelivr": "dist/cola.min.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "grunt full",
+    "build": "grunt build",
+    "prepublish": "grunt ts:commonjs browserify:dist uglify"
+  },
   "devDependencies": {
     "@types/d3": "^4.5.0",
     "@types/jquery": "^2.0.40",
@@ -31,32 +58,6 @@
     "typescript": "^3.4.5",
     "uglify-js": "^2.4.16"
   },
-  "description": "WebCola =======",
-  "main": "dist/index.js",
-  "unpkg": "WebCola/cola.min.js",
-  "jsdelivr": "WebCola/cola.min.js",
-  "typings": "dist/index.d.ts",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "test": "grunt full",
-    "prepublish": "grunt ts:commonjs browserify:dist uglify"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/tgdwyer/WebCola.git"
-  },
-  "keywords": [
-    "Graph",
-    "Layout",
-    "Constraints",
-    "Optimization"
-  ],
-  "author": "Tim Dwyer",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/tgdwyer/WebCola/issues"
-  },
-  "homepage": "https://github.com/tgdwyer/WebCola",
   "dependencies": {
     "d3-dispatch": "^1.0.3",
     "d3-drag": "^1.0.4",

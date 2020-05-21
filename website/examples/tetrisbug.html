@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Unconstrained Layout</title>
+    <style>
+
+@import url(../style.css);
+    .background {
+        stroke: white;
+        stroke-width: 1px;
+        fill: white;
+    }
+
+    .node {
+        stroke: black;
+        stroke-width: 1.5px;
+        cursor: move;
+        fill: lightcoral;
+    }
+
+    .link {
+        fill: none;
+        stroke: #000;
+        stroke-width: 3px;
+        opacity: 0.7;
+        marker-end: url(#end-arrow);
+    }
+
+    .label {
+        fill: black;
+        font-family: Verdana;
+        font-size: 25px;
+        text-anchor: middle;
+        cursor: move;
+    }
+</style>
+</head>
+<body>
+    <a href="../index.html">cola.js home</a>
+<script src="../extern/d3v4.js"></script>
+    <script src="../cola.min.js"></script>
+<script>
+    var d3cola = cola.d3adaptor(d3).convergenceThreshold(0.1);
+
+    var width = 960, height = 700;
+
+    var outer = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("pointer-events", "all");
+
+    outer.append('rect')
+        .attr('class', 'background')
+        .attr('width', "100%")
+        .attr('height', "100%")
+        .call(d3.behavior.zoom().on("zoom", redraw));
+
+    var vis = outer
+        .append('g')
+        .attr('transform', 'translate(250,250) scale(0.3)');
+
+    function redraw() {
+        vis.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+    }
+
+    outer.append('svg:defs').append('svg:marker')
+        .attr('id', 'end-arrow')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 8)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+      .append('svg:path')
+        .attr('d', 'M0,-5L10,0L0,5L2,0')
+        .attr('stroke-width', '0px')
+        .attr('fill', '#000');
+
+    d3.json("graphdata/tetriscodemap.json", function (error, graph) {
+        d3cola
+            .avoidOverlaps(true)
+            .flowLayout('x', 150)
+            .size([width, height])
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .jaccardLinkLengths(150);
+
+        var link = vis.selectAll(".link")
+            .data(graph.links)
+          .enter().append("path")
+            .attr("class", "link");
+
+        var margin = 10, pad = 12;
+        var node = vis.selectAll(".node")
+            .data(graph.nodes)
+            .enter().append("rect")
+            .attr("class", "node")
+            .attr("rx", 5).attr("ry", 5)
+            .call(d3cola.drag);
+
+        var label = vis.selectAll(".label")
+            .data(graph.nodes)
+            .enter().append("text")
+            .attr("class", "label")
+            .text(function (d) { return d.name; })
+            .call(d3cola.drag)
+            .each(function (d) {
+                var b = this.getBBox();
+                var extra = 2 * margin + 2 * pad;
+                d.width = b.width + extra;
+                d.height = b.height + extra;
+            });
+
+        var lineFunction = d3.svg.line()
+            .x(function (d) { return d.x; })
+            .y(function (d) { return d.y; })
+            .interpolate("linear");
+
+        var routeEdges = function () {
+            d3cola.prepareEdgeRouting(3);
+            link.attr("d", function (d) {
+                return lineFunction(d3cola.routeEdge(d
+                // // show visibility graph
+                , function (g) {
+                        g.E.forEach(function (e) {
+                            vis.append("line").attr("x1", e.source.p.x).attr("y1", e.source.p.y)
+                                .attr("x2", e.target.p.x).attr("y2", e.target.p.y)
+                                .attr("stroke", "green");
+                        });
+                }))});
+            if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
+        }
+        d3cola.start(10, 30, 100).on("tick", function () {
+            node.each(function (d) { d.innerBounds = d.bounds.inflate(-margin); })
+                .attr("x", function (d) { return d.innerBounds.x; })
+                .attr("y", function (d) { return d.innerBounds.y; })
+                .attr("width", function (d) { return d.innerBounds.width(); })
+                .attr("height", function (d) { return d.innerBounds.height(); });
+
+            link.attr("d", function (d) {
+                cola.makeEdgeBetween(d, d.source.innerBounds, d.target.innerBounds, 5);
+                var lineData = [{ x: d.sourceIntersection.x, y: d.sourceIntersection.y }, { x: d.arrowStart.x, y: d.arrowStart.y }];
+                return lineFunction(lineData);
+            });
+            if (isIE()) link.each(function (d) { this.parentNode.insertBefore(this, this) });
+
+            label
+                .attr("x", function (d) { return d.x })
+                .attr("y", function (d) { return d.y + (margin + pad) / 2 });
+
+        })//.on("end", routeEdges);
+    });
+    function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
+    </script>
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-63535113-1', 'auto');
+  ga('send', 'pageview');
+
+    </script>
+</body>
+</html>
