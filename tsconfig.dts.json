@@ -2,8 +2,8 @@
   "extends": "./tsconfig.json",
   "include": ["src", "types"],
   "compilerOptions": {
-    "module": "CommonJS",
     "declaration": true,
-    "declarationDir": "tmp",
+    "outDir": "tmp",
+    "noEmit": false,
   },
 }
