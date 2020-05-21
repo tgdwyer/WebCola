@@ -1,11 +1,11 @@
 dist/
 node_modules/
 WebCola/compiledtypescript.js
-WebCola/doc
+website/doc
 .tscachea
-WebCola/.baseDir.ts
-WebCola/examples/*.js
-WebCola/*.js*
+website/.baseDir.ts
+website/examples/*.js
+website/*.js*
 .tscache
 npm-debug.log
 .vscode

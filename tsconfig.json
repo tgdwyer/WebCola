@@ -18,5 +18,12 @@
     },
     "jsx": "react",
     "esModuleInterop": true
+  },
+  "typedocOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "out": "website/doc/",
+    "name": "WebCola",
+    "theme": "minimal"
   }
 }
