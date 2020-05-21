@@ -34,7 +34,7 @@
 
     var color = d3.scale.category20();
 
-    var d3cola = cola.d3adaptor()
+    var d3cola = cola.d3adaptor(d3)
         .size([width, height]);
 
     var svg = d3.select("body").append("svg")
