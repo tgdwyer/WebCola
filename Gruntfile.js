@@ -16,24 +16,6 @@ module.exports = function (grunt) {
         tasks: ["ts:test", "browserify:test", "qunit"]
       }
     },
-    browserify: {
-      dist: {
-        options: {
-          browserifyOptions: {
-            // plugin: [
-            //   [
-            //     'tsify', { target: 'es6' },
-            //   ]
-            // ],
-            standalone: 'cola',
-            debug: true
-          },
-          // transform: [["babelify", { "presets": ["es2015"] }]]
-        },
-        files: {
-          'WebCola/cola.js': ['dist/index.js']
-        }
-      },
       examples: {
         options: {
           browserifyOptions: {
@@ -129,27 +111,6 @@ module.exports = function (grunt) {
     examples: {
       all: ["WebCola/examples/*.html"]
     },
-    typedoc: {
-        build: {
-          options: {
-              module: 'commonjs',
-              target: 'es5',
-              out: 'doc/',
-              name: 'WebCola',
-              theme: 'minimal'
-          },
-          src: ["./WebCola/src/**/*.ts"]
-        }
-    },
-    connect: {
-      server: {
-        options: {
-          port: 8080,
-          base: './WebCola',
-          keepalive: true
-        }
-      }
-    }
   });
 
   grunt.registerTask('default', ['ts', 'browserify', 'uglify', 'qunit']);
