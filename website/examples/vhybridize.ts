@@ -1,10 +1,9 @@
-/// <reference path="../../src/index.ts"/>
-import * as cola from '../../src';
-import * as d3 from 'd3'
-import * as d3scale from 'd3-scale'
+/// <reference types="d3"/>
+/// <reference types="jquery"/>
+/// <reference types="../../"/>
 
 module vhybridize{
-var color = d3scale.scaleOrdinal(d3scale.schemeCategory10);
+var color = d3.scaleOrdinal(d3.schemeCategory10);
 
 var makeEdgeBetween;
 var colans = <any>cola;
@@ -765,7 +764,7 @@ function powerGraph2(callback) {
 
 d3.select("#HybridizeButton").on("click", function () {
     d3.select("#mysoloresults").html("");
-    inputjson = JSON.parse($('textarea[id=inputjsontext]').val());
+    inputjson = JSON.parse($('textarea[id=inputjsontext]').val() as string);
     d3.select("#mysoloresults").append("p").text(JSON.stringify(inputjson));
     powerGraph2(function () { });
 });

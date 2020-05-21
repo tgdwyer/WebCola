@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["website/examples/*.ts"],
+  "compilerOptions": {
+    "module": "none",
+    "noEmit": false,
+    "resolveJsonModule": false,
+    "sourceMap": false
+  },
+}

@@ -1,7 +1,6 @@
-///<reference path="../extern/d3v3.d.ts"/>
-/// <reference path="../../src/index.ts"/>
-import * as cola from '../../src';
-import * as graphlibDot from 'graphlib-dot'
+/// <reference types="d3"/>
+/// <reference types="../../"/>
+/// <reference types="graphlib-dot"/>
 
 module dotpowergraph {
     function makeSVG(addGridLines, mywidth, myheight) {
@@ -145,7 +144,7 @@ module dotpowergraph {
                 gridify(svg, pgLayout, margin, groupMargin);
             }
         }
-        let dragListener = d3.behavior.drag()
+        let dragListener = d3.drag()
             .on("dragstart", dragStart)
             .on("drag", drag)
             .on("dragend", dragEnd);
@@ -154,19 +153,19 @@ module dotpowergraph {
     }
 
     d3.text("graphdata/n26e35.dot", function (f) {
-        var digraph = graphlibDot.read(f);
+        var digraph = (graphlibDot as any).parse(f);
 
         var nodeNames = digraph.nodes();
         var nodes = new Array(nodeNames.length);
         nodeNames.forEach(function (name, i) {
-            var v = nodes[i] = digraph._nodes[nodeNames[i]];
+            var v = nodes[i] = digraph.node(name);
             v.id = i;
             v.name = name;
         });
-        const dedges = <any[]>(digraph.edges());
+        const dedges = <any[]>((digraph as any)._edges);
         let edges = [];
         for (let edge of dedges) {
-            edges.push({ source: digraph._nodes[edge.v].id, target: digraph._nodes[edge.w].id });
+            edges.push({ source: digraph.node(edge.v).id, target: digraph.node(edge.w).id });
         }
         createPowerGraph({ nodes: nodes, links: edges });
     });

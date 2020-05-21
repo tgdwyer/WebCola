@@ -41,11 +41,13 @@
     "prepare": "npm run build",
     "release": "release-it --disable-metrics --npm.skipChecks",
     "release:pre": "release-it --disable-metrics --npm.skipChecks --preRelease=alpha --npm.tag=next",
-    "compile-examples": "cd website/examples && tsc -p tsconfig.json",
-    "website": "npm run build && npm run docs && cp dist/cola.umd.production.min.js website/cola.min.js"
+    "compile-examples": "tsc -p tsconfig.example.json",
+    "website": "npm run build && npm run docs && cp dist/cola.umd.production.min.js website/cola.min.js && npm run compile-examples"
   },
   "devDependencies": {
     "@types/d3": "^4.5.0",
+    "@types/graphlib-dot": "^0.6.1",
+    "@types/jquery": "^3.3.38",
     "d3": "^4.5.0",
     "d3-dispatch": "^1.0.3",
     "d3-drag": "^1.0.4",
@@ -53,6 +55,7 @@
     "d3-zoom": "^1.1.4",
     "release-it": "^13.6.0",
     "rollup-plugin-dts": "^1.4.6",
+    "three": "^0.116.1",
     "tsdx": "^0.13.2",
     "typedoc": "^0.17.7",
     "typescript": "^3.8.3"

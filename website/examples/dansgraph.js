@@ -117,7 +117,7 @@ graph.nodes.forEach(function (el) {
 });
 
 
-var d3cola = cola.d3adaptor()
+var d3cola = cola.d3adaptor(d3)
     .linkDistance(linkDistance)
     .avoidOverlaps(true)
     .size([width, height]);

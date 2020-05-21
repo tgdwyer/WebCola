@@ -1,13 +1,10 @@
-///<reference path="../extern/d3v3.d.ts"/>
-/// <reference path="../../src/index.ts"/>
-import * as cola from '../../src';
-import * as d3scale from 'd3-scale'
-import * as d3zoom from 'd3-zoom'
+/// <reference types="d3"/>
+/// <reference types="../../"/>
 
 var width = 450,
     height = 350;
 
-var color = d3scale.scaleOrdinal(d3scale.schemeCategory20);
+var color = d3.scaleOrdinal(d3.schemeCategory20);
 var graphfile = "graphdata/n7e23.json";
 
 
@@ -38,7 +35,7 @@ function makeSVG() {
     var vis = <any>outer.append('g');
     var redraw = (transition) =>
         (transition ? <any>vis.transition() : <any> vis)
-            .attr("transform", d3zoom.zoomTransform(vis));
+            .attr("transform", d3.zoomTransform(vis));
     vis.zoomToFit = ()=>{
         var b = cola.Rectangle.empty();
         vis.selectAll("rect").each(function (d) {
@@ -49,8 +46,8 @@ function makeSVG() {
         var cw = Number(outer.attr("width")), ch = Number(outer.attr("height"));
         var s = Math.min(cw / w, ch / h);
         var tx = (-b.x * s + (cw / s - w) * s / 2), ty = (-b.y * s + (ch / s - h) * s / 2);
-        d3zoom.zoom().translateBy(vis, tx, ty);
-        d3zoom.zoom().scaleBy(vis, s);
+        d3.zoom().translateBy(vis, tx, ty);
+        d3.zoom().scaleBy(vis, s);
         redraw(true);
     }
     // zoomBox.call(

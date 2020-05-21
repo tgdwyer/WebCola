@@ -1,12 +1,11 @@
-///<reference path="../extern/d3v3.d.ts"/>
-/// <reference path="../../src/index.ts"/>
-import * as cola from '../../src';
-import * as d3scale from 'd3-scale'
+/// <reference types="d3"/>
+/// <reference types="../../"/>
+
 module tetrisbug {
     var width = 1280,
         height = 500;
 
-    var color = d3scale.scaleOrdinal(d3scale.schemeCategory10);
+    var color = d3.scaleOrdinal(d3.schemeCategory10);
 
     var makeEdgeBetween;
     var colans = <any>cola;

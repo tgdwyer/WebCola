@@ -39,7 +39,7 @@
 </head>
 <body>
     <a href="../index.html">cola.js home</a>
-<script src="../extern/d3v4.js"></script>
+<script src="../extern/d3.v3.js"></script>
     <script src="../cola.min.js"></script>
 <script>
     var d3cola = cola.d3adaptor(d3).convergenceThreshold(0.1);
@@ -77,7 +77,7 @@
         .attr('stroke-width', '0px')
         .attr('fill', '#000');
 
-    d3.json("graphdata/tetriscodemap.json", function (error, graph) {
+    d3.json("graphdata/tetrisbug.json", function (error, graph) {
         d3cola
             .avoidOverlaps(true)
             .flowLayout('x', 150)

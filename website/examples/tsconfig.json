@@ -1,9 +1,0 @@
-{
-    "compilerOptions": {
-        "module": "UMD",
-    },
-    "exclude": [
-        "node_modules"
-    ],
-    "include": ["3dlayout.ts"]
-}

@@ -1,10 +1,7 @@
-/// <reference path="../extern/three.d.ts"/>
-/// <reference path="../extern/d3v3.d.ts"/>
-/// <reference path="../../dist/cola.d.ts"/>
-// declare module cola;
-// import * as cola from '../cola.min';
-// import * as d3scale from 'd3-scale'
-// import * as d3request from 'd3-request'
+/// <reference types="three"/>
+/// <reference types="d3"/>
+/// <reference types="../../"/>
+
 module cola3 {
     export class Graph {
         parentObject;
@@ -108,7 +105,7 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     div.appendChild(renderer.domElement);
 
     var colaObject = new THREE.Object3D();
-    colaObject.position = new THREE.Vector3();
+    // colaObject.position = new THREE.Vector3();
     scene.add(colaObject);
     var ambient = new THREE.AmbientLight(0x1f1f1f);
     scene.add(ambient);
@@ -120,7 +117,7 @@ d3.json("graphdata/miserables.json", function (error, graph) {
     let links = (<any>graph).links;
     var n = nodes.length;
 
-    var color = d3scale.scaleOrdinal(d3scale.schemeCategory20);
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
     var nodeColourings = nodes.map(v => {
         var str = color(v.group).replace("#", "0x");
         return parseInt(str);
