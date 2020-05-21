@@ -34,9 +34,11 @@
     "test": "tsdx test --passWithNoTests",
     "test:watch": "tsdx test --passWithNoTests --watch",
     "test:coverage": "tsdx test --passWithNoTests --coverage",
-    "lint": "tsdx lint",
+    "lint": "tsdx lint src --ext .ts",
     "docs": "typedoc",
-    "prepare": "tsdx build --name cola --format esm,umd"
+    "prepare": "tsdx build --name cola --format esm,umd",
+    "release": "release-it --disable-metrics --npm.skipChecks",
+    "release:pre": "release-it --disable-metrics --npm.skipChecks --preRelease=alpha --npm.tag=next"
   },
   "devDependencies": {
     "@types/d3": "^4.5.0",
@@ -46,6 +48,7 @@
     "dts-generator": "^2.0.0",
     "tsdx": "^0.13.2",
     "typedoc": "^0.14.2",
+    "release-it": "^13.6.0",
     "typescript": "^3.8.3"
   },
   "dependencies": {

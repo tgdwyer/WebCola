@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "before:init": "npm test",
+    "before:release": "npm run build & npm pack",
+    "after:release": "echo Successfully released ${name} v${version} to ${repo.repository}."
+  },
+  "git": {
+    "tagName": "v${version}"
+  },
+  "npm": {
+    "publish": true
+  },
+  "github": {
+    "release": true,
+    "assets": ["dist/*.js", "*.tgz"]
+  }
+}

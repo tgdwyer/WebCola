@@ -1,12 +1,22 @@
 {
+  "include": ["src", "types"],
   "compilerOptions": {
     "target": "es5",
-    "sourceMap": true,
+    "module": "esnext",
+    "lib": ["dom", "esnext"],
+    "importHelpers": true,
+    "resolveJsonModule": true,
+    "importsNotUsedAsValues": "remove",
     "declaration": true,
-    "declarationDir": "dist",
-    "rootDir": "src"
-  },
-  "include": [
-    "src/**/*.ts"
-  ]
+    "declarationMap": true,
+    "sourceMap": true,
+    "rootDir": "./src",
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
+      "*": ["src/*", "node_modules/*"]
+    },
+    "jsx": "react",
+    "esModuleInterop": true
+  }
 }
