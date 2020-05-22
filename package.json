@@ -42,12 +42,16 @@
     "release": "release-it --disable-metrics --npm.skipChecks",
     "release:pre": "release-it --disable-metrics --npm.skipChecks --preRelease=alpha --npm.tag=next",
     "compile-examples": "tsc -p tsconfig.example.json",
-    "website": "npm run build && npm run docs && cp dist/cola.umd.production.min.js website/cola.min.js && npm run compile-examples"
+    "website": "npm run build && npm run docs && cp dist/cola.umd.production.min.js website/cola.min.js && npm run compile-examples",
+    "cy:run": "cypress run",
+    "cy:open": "cypress open",
+    "cy:junit": "cypress run --reporter junit --reporter-options 'mochaFile=junit-results/my-test-output.xml'"
   },
   "devDependencies": {
     "@types/d3": "^4.5.0",
     "@types/graphlib-dot": "^0.6.1",
     "@types/jquery": "^3.3.38",
+    "cypress": "^4.6.0",
     "d3": "^4.5.0",
     "d3-dispatch": "^1.0.3",
     "d3-drag": "^1.0.4",
