@@ -42,7 +42,7 @@
     "release": "release-it --disable-metrics --npm.skipChecks",
     "release:pre": "release-it --disable-metrics --npm.skipChecks --preRelease=alpha --npm.tag=next",
     "compile-examples": "tsc -p tsconfig.example.json",
-    "website": "npm run build && npm run docs && cp dist/cola.umd.production.min.js website/cola.min.js && npm run compile-examples",
+    "website": "npm run docs && cp dist/cola.umd.production.min.js website/cola.min.js && npm run compile-examples",
     "cy:run": "cypress run",
     "cy:open": "cypress open",
     "cy:junit": "cypress run --reporter junit --reporter-options 'mochaFile=junit-results/my-test-output.xml'"

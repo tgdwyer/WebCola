@@ -26,15 +26,10 @@ jobs:
       # - run: npm lint
       #   env:
       #     CI: true
-      - run: npm run docs
-        env:
-          CI: true
       - run: npm run website
         env:
           CI: true
       - uses: cypress-io/github-action@v1
-        with:
-          install: false
       # after the test run completes
       # store videos and any screenshots
       # NOTE: screenshots will be generated only if E2E test failed
