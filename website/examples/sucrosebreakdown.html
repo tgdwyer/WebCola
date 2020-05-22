@@ -43,9 +43,32 @@
 
 </style>
 </head>
-<body onload="parseDunnart()">
+<body>
     <a href="../index.html">cola.js home</a>
     <h1>Metabolic Pathway: Sucrose Breakdown</h1>
+    
+    <p>
+        The graph above demonstrates alignment constraints and non-overlapping group and node boundaries.  The groups
+        highlight and keep separate specific functional partitions in the pathway.  Four alignment constraints are used
+        to arrange nodes involved in the cycle around the edges of a rectangle.  To biologists, cycles in these types of
+        pathways are very important because they represent continuous processes.  Another alignment is used to straighten
+        one particular path inside the green group.
+    </p>
+    <p>
+The image below is drawn by hand by a biologist with data from the <a href="http://www.genome.jp/kegg/pathway.html">Kegg Pathway Database</a>.
+Constraints allow us to capture in a live, automatically adjusting layout, the same kinds of drawing conventions that biologists (and others) like to see in textbook drawings
+of their networks.
+    </p>
+    <img src="sucrosebreakdown-handdrawn.png" width="500px" />
+    <p>
+        The SVG diagram below is used as the source for the nodes, edges and constraints used in the CoLa layout above.
+        It was originally authored in the <a href="http://www.csse.monash.edu.au/~mwybrow/dunnart/">Dunnart constraint-based diagram editor</a>.
+        Dunnart is great for interactively authoring the constraints and creating a semi-supervised layout, but obviously web-based constraint
+        layout is easier to deploy!  Have a look at the source of this page to see how to extract the graph and constraints from the
+        Dunnart generated SVG.
+    </p>
+    <object id="embeddedsvg" data="graphdata/SucroseBreakdownDicots-flowlayout.svg" type="image/svg+xml" width="500ox" />
+
 <script src="../extern/d3.v3.js"></script>
 <script src="../cola.min.js"></script>
 <script>
@@ -81,8 +104,16 @@
     var linksLayer = vis.append("g");
 
     var graph = {}, nodeLookup = {};
+
+    
+    // @type {HTMLImageElement}
+    const img = document.getElementById("embeddedsvg");
+    img.addEventListener('load', () => { parseDunnart(); });
+
+
     function parseDunnart() {
-        var sbsvg = d3.select(document.getElementById("embeddedsvg").contentDocument).select('svg');
+        var sbsvg = d3.select(img.contentDocument).select('svg');
+        const svg = sbsvg.node();
         graph.nodes = [];
         sbsvg.selectAll('rect.shape').each(function (d, i) {
             graph.nodes.push(
@@ -99,10 +130,10 @@
                 }
             );
         });
-        graph.links = sbsvg.selectAll('.connector')[0].map(function (l) {
+        graph.links = Array.from(svg.querySelectorAll('.connector')).map(function (l) {
             return { source: nodeLookup[l.attributes['dunnart:srcID'].value].index, target: nodeLookup[l.attributes['dunnart:dstID'].value].index }
         });
-        graph.groups = sbsvg.selectAll('.cluster')[0].map(function (g) {
+        graph.groups = Array.from(svg.querySelectorAll('.cluster')).map(function (g) {
             return {
                 leaves: g.attributes['dunnart:contains'].value.split(' ').map(function (i) { return nodeLookup[i].index }),
                 style: g.attributes['style'].value,
@@ -233,27 +264,6 @@
     }
     function isIE() { return ((navigator.appName == 'Microsoft Internet Explorer') || ((navigator.appName == 'Netscape') && (new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})").exec(navigator.userAgent) != null))); }
 </script>
-    <p>
-        The graph above demonstrates alignment constraints and non-overlapping group and node boundaries.  The groups
-        highlight and keep separate specific functional partitions in the pathway.  Four alignment constraints are used
-        to arrange nodes involved in the cycle around the edges of a rectangle.  To biologists, cycles in these types of
-        pathways are very important because they represent continuous processes.  Another alignment is used to straighten
-        one particular path inside the green group.
-    </p>
-    <p>
-The image below is drawn by hand by a biologist with data from the <a href="http://www.genome.jp/kegg/pathway.html">Kegg Pathway Database</a>.
-Constraints allow us to capture in a live, automatically adjusting layout, the same kinds of drawing conventions that biologists (and others) like to see in textbook drawings
-of their networks.
-    </p>
-    <img src="sucrosebreakdown-handdrawn.png" width="500px" />
-    <p>
-        The SVG diagram below is used as the source for the nodes, edges and constraints used in the CoLa layout above.
-        It was originally authored in the <a href="http://www.csse.monash.edu.au/~mwybrow/dunnart/">Dunnart constraint-based diagram editor</a>.
-        Dunnart is great for interactively authoring the constraints and creating a semi-supervised layout, but obviously web-based constraint
-        layout is easier to deploy!  Have a look at the source of this page to see how to extract the graph and constraints from the
-        Dunnart generated SVG.
-    </p>
-    <object id="embeddedsvg" data="graphdata/SucroseBreakdownDicots-flowlayout.svg" type="image/svg+xml" width="500ox" />
     <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),

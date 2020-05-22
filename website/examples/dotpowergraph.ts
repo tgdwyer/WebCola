@@ -145,9 +145,9 @@ module dotpowergraph {
             }
         }
         let dragListener = d3.drag()
-            .on("dragstart", dragStart)
+            .on("start", dragStart)
             .on("drag", drag)
-            .on("dragend", dragEnd);
+            .on("end", dragEnd);
         node.call(dragListener);
         label.call(dragListener);
     }
