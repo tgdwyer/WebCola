@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+@import url(../style.css);
+
+.link {
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+.node {
+  fill: #000;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.node.a { fill: #1f77b4; }
+.node.b { fill: #ff7f0e; }
+.node.c { fill: #2ca02c; }
+
+</style>
+<body>
+    <a href="../index.html">cola.js home</a>
+    <h1>Continuous layout while graph is changing</h1>
+<script src="../extern/d3.v3.js"></script>
+<script src="../cola.min.js"></script>
+<script>
+
+    var width = 960,
+        height = 500;
+
+    var color = d3.scale.category10();
+
+    var nodes = [],
+        links = [];
+
+    var force = cola.d3adaptor(d3)
+        .nodes(nodes)
+        .links(links)
+        .linkDistance(120)
+        .size([width, height])
+        .on("tick", tick);
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    var node = svg.selectAll(".node"),
+        link = svg.selectAll(".link");
+
+    // 1. Add three nodes and three links.
+    setTimeout(function () {
+        var a = { id: "a" }, b = { id: "b" }, c = { id: "c" };
+        nodes.push(a, b, c);
+        links.push({ source: a, target: b }, { source: a, target: c }, { source: b, target: c });
+        start();
+    }, 0);
+
+    // 2. Remove node B and associated links.
+    setTimeout(function () {
+        nodes.splice(1, 1); // remove b
+        links.shift(); // remove a-b
+        links.pop(); // remove b-c
+        start();
+    }, 3000);
+
+    // Add node B back.
+    setTimeout(function () {
+        var a = nodes[0], b = { id: "b", x: 0, y: 0 }, c = nodes[1];
+        nodes.push(b);
+        links.push({ source: a, target: b }, { source: c, target: b });
+        start();
+    }, 6000);
+
+    function start() {
+        link = link.data(force.links(), function (d) { return d.source.id + "-" + d.target.id; });
+        // Initial end positions are at the source... that way when we add a new target node with transitions,
+        // the edges appear to grow out of the source
+        link.enter().insert("line", ".node").attr("class", "link")
+            .attr("x1", function (d) { return d.source.x; })
+            .attr("y1", function (d) { return d.source.y; })
+            .attr("x2", function (d) { return d.source.x; })
+            .attr("y2", function (d) { return d.source.y; });
+        link.exit().remove();
+
+        node = node.data(force.nodes(), function (d) { return d.id; });
+        node.enter().append("circle").attr("class", function (d) { return "node " + d.id; }).attr("r", 8);
+        node.exit().remove();
+
+        force.start();
+    }
+
+    function tick() {
+        node.transition().attr("cx", function (d) { return d.x; })
+            .attr("cy", function (d) { return d.y; })
+
+        link.transition().attr("x1", function (d) { return d.source.x; })
+            .attr("y1", function (d) { return d.source.y; })
+            .attr("x2", function (d) { return d.target.x; })
+            .attr("y2", function (d) { return d.target.y; });
+    }
+
+</script>
+Watch the orange node disappear and then come back again.
+This is <a href="http://bl.ocks.org/mbostock/1095795">one of Michael Bostock's examples</a> but with D3 Force layout replaced
+with CoLa.  Notice how stable it is compared to the force layout.  In fact cola converges so quickly on this small example
+that I felt it was useful to add some transitions on node positions so you can see what is happening.
+<p>
+    The one line that needs to be changed to replace d3 force with cola is:
+    <p>
+    var force = d3.layout.force()
+    </p>
+    to:
+    <p>
+    var force = cola.d3adaptor(d3)
+    </p>
+</p>
+<p>See <a href="onlinebrowse.html">this example</a> for more impressive dynamic graph layout.</p>
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-63535113-1', 'auto');
+  ga('send', 'pageview');
+
+    </script>
+</body>

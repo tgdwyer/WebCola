@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Egocentric Network</title>
+    <style>
+
+@import url(../style.css);
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .8;
+}
+
+        .leftheading {
+            position: absolute;
+            left: 60px;
+            width: 300px;
+            float: left;
+            font-size: 20px;
+        }
+
+        .rightheading {
+            position: absolute;
+            left: 360px;
+            width: 150px;
+            float: left;
+            font-size: 20px;
+        }
+        .leftsvg {
+            position: absolute;
+            left: 0px;
+            top: 50px;
+            width: 300px;
+        }
+
+        .rightsvg {
+            position: absolute;
+            left: 280px;
+            top: 50px;
+            width: 300px;
+        }
+
+        button {
+            position: absolute;
+            left: 250px;
+            top: 60px;
+            width: 80px;
+        }
+
+        .logo {
+            position: absolute;
+            left: 200px;
+            top: 310px;
+            font-size: 16px;
+            opacity: 0.5;
+        }
+
+        .info {
+            position: absolute;
+            top: 350px;
+            left: 30px;
+            width: 500px;
+        }
+</style>
+</head>
+<body>
+    <a href="../index.html">cola.js home</a>
+    <!--<h1>Egocentric Network</h1>-->
+    <div class="leftheading">Jonica’s network</div>
+    <div class="rightheading">Alex’s network</div>
+<script src="../extern/d3.v3.js"></script>
+    <script src="../cola.min.js"></script>
+<script>
+    var width = 280,
+        height = 280;
+
+    var color = d3.scale.category20();
+    var connected = true;
+    var button;
+    document.onkeyup = keyhandler;
+    function keyhandler(e) {
+        if (e.keyCode === 32) {
+            disconnectNode0();
+        }
+    }
+    function disconnectNode0() {
+        if (connected) {
+            egosvg1.disconnectNode0();
+            egosvg2.disconnectNode0();
+            egosvg1.restart();
+            egosvg2.restart();
+            connected = false;
+            button.text("Connect Self");
+        } else {
+            egosvg1.connectNode0();
+            egosvg2.connectNode0();
+            egosvg1.restart();
+            egosvg2.restart();
+            connected = true;
+            button.text("Disconnect Self");
+        }
+    }
+
+    var body = d3.select("body");
+
+    var getLinkId = function (d) {
+        return d.source.index + "-" + d.target.index;
+    };
+
+    var egosvg = (function () {
+        function egosvg(file) {
+            this.d3cola = cola.d3adaptor(d3).convergenceThreshold(1e-4)
+                .size([width, height]);
+
+            this.svg = d3.select("body").append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            this.edgegroup = this.svg.append("g");
+            this.nodegroup = this.svg.append("g");
+
+            this.edges = [];
+
+            var _this = this;
+
+            //d3.text("graphdata/alex/alex_network_sym.txt",
+            d3.text(file,
+                function (error, text) {
+                    var lines = text.split('\n').map(function (s) { return s.trim() });
+                    lines.forEach(function (l, i) {
+                        if (l.length > 0) {
+                            l.split(' ').forEach(function (d, j) {
+                                if (Number(d) > 0 && i > j) {
+                                    _this.edges.push({ source: i, target: j });
+                                }
+                            });
+                        }
+                    });
+                    _this.loaded();
+                });
+        }
+
+        egosvg.prototype.disconnectNode0 = function () {
+            this.edges = this.edges.filter(function (e) {
+                return e.source.index !== 0 && e.target.index !== 0;
+            });
+            this.d3cola.stop();
+            this.d3cola.on("tick", null);
+            this.d3cola.links(this.edges)
+                .symmetricDiffLinkLengths(8).start(0, 0, 10);
+            this.link.data(this.d3cola.links(), getLinkId).exit().remove();
+        };
+
+        egosvg.prototype.connectNode0 = function () {
+            this.d3cola.stop();
+            this.d3cola.on("tick", null);
+            var node0;
+            var node0edges = this.d3cola.nodes().filter(function (d, i) {
+                if (i == 0) {
+                    node0 = d;
+                    return false;
+                }
+                return true;
+            }).map(function (d, i) {
+                return { source: node0, target: d };
+            });
+            this.edges = this.edges.concat(node0edges);
+            this.edges.forEach(function (l) {
+                delete l.length;
+            });
+
+            var _this = this;
+            this.link = this.edgegroup.selectAll(".link")
+                .data(this.edges, getLinkId);
+            this.link.enter().append("line")
+                .attr("class", "link")
+                .style("stroke-width", function (d) { return Math.sqrt(d.value); }).attr("x1", function (d) { return d.source.x; })
+                .attr("y1", function (d) { return d.source.y; })
+                .attr("x2", function (d) { return d.target.x; })
+                .attr("y2", function (d) { return d.target.y; });
+            this.d3cola.links(this.edges)
+                .symmetricDiffLinkLengths(8).start(0, 0, 30);
+        };
+
+        egosvg.prototype.restart = function () {
+            var _this = this;
+            _this.link.transition().duration(3000).attr("x1", function (d) { return d.source.x; })
+                .attr("y1", function (d) { return d.source.y; })
+                .attr("x2", function (d) { return d.target.x; })
+                .attr("y2", function (d) { return d.target.y; });
+
+            _this.node.transition().duration(3000).attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; }).each("end", function () {
+                    _this.d3cola.on("tick", function () { regularTick(_this.link, _this.node) });
+                });
+        }
+
+        var regularTick = function (link, node) {
+            link.attr("x1", function (d) { return d.source.x; })
+                .attr("y1", function (d) { return d.source.y; })
+                .attr("x2", function (d) { return d.target.x; })
+                .attr("y2", function (d) { return d.target.y; });
+
+            node.attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; });
+        };
+
+        egosvg.prototype.loaded = function () {
+            var _this = this;
+            this.d3cola
+                .links(this.edges)
+                .symmetricDiffLinkLengths(8)
+                .start(30);
+
+            var nodes = this.d3cola.nodes();
+            nodes.forEach(function (v) { v.width = 20; v.height = 20; });
+
+            this.link = this.edgegroup.selectAll(".link")
+                .data(this.d3cola.links(), getLinkId);
+
+            this.link.enter().append("line")
+                .attr("class", "link")
+                .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+
+
+            this.node = this.nodegroup.selectAll(".node")
+                .data(nodes)
+              .enter().append("circle")
+                .attr("class", "node")
+                .attr("r", function (d, i) { return i === 0 ? 7 : 5 })
+                .style("fill", function (d, i) { return i === 0 ? "red" : "#8e8ec7" })
+                .call(this.d3cola.drag);
+
+            this.node.append("title")
+                .text(function (d) { return d.index; });
+
+            this.d3cola.on("tick", function () { regularTick(_this.link, _this.node) });
+            allDone();
+        };
+        return egosvg;
+    })();
+    var egosvg1 = new egosvg("graphdata/alex/no_partner_matrix.txt");
+    var egosvg2 = new egosvg("graphdata/alex/alex_network_sym.txt");
+    egosvg1.svg.attr("class", "leftsvg");
+    egosvg2.svg.attr("class", "rightsvg");
+    var counter = 0;
+    function allDone() {
+        if (++counter === 2) {
+            button = body.append("center").append("button").attr("id", "removeSelfButton").html("Disconnect Self").on("click", disconnectNode0);
+            body.append("p").html('<p class="logo">marvl.infotech.monash.edu</p>');
+        }
+        //body.append("p").html('<div class="logo"><img src="http://marvl.infotech.monash.edu.au/wp-content/themes/marvl/marvl.png" width="85px" alt="MArVL Logo" />  Monash Adaptive Visualization Lab</div>');
+    }
+
+</script>
+<p class="info">This is the friend network of a particular person (the red node).  Since by definition there is a link from the red node to all the blue nodes (their friends),
+    there's really no point showing all those links.  Therefore, pressing the button removes those links and rearranges the network to tidy it up.
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-63535113-1', 'auto');
+  ga('send', 'pageview');
+
+    </script>
+</body>
+</html>

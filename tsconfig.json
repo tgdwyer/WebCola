@@ -1,13 +1,30 @@
 {
+  "include": ["src", "types"],
   "compilerOptions": {
     "target": "es5",
+    "module": "esnext",
+    "lib": ["dom", "esnext"],
+    "importHelpers": true,
+    "resolveJsonModule": true,
+    "importsNotUsedAsValues": "remove",
+    "declaration": false,
+    "noEmit": true,
+    "stripInternal": true,
     "sourceMap": true,
-    "declaration": true,
-    "compileOnSave": false,
-    "outDir": "dist",
-    "rootDir": "./WebCola"
+    "rootDir": "./src",
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
+      "*": ["src/*", "node_modules/*"]
+    },
+    "jsx": "react",
+    "esModuleInterop": true
   },
-  "include": [
-    "WebCola/src/**/*.ts", "WebCola/*.ts"
-  ]
+  "typedocOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "out": "website/doc/",
+    "name": "WebCola",
+    "theme": "minimal"
+  }
 }

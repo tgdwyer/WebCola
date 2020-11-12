@@ -1,0 +1,148 @@
+﻿{
+  "nodes": [
+    {
+      "name": "draft_saved"
+    },
+    {
+      "name": "trip_cancelled"
+    },
+    {
+      "name": "pending_approval"
+    },
+    {
+      "name": "change_saved"
+    },
+    {
+      "name": "pre_trip_approved"
+    },
+    {
+      "name": "risk_approval_required"
+    },
+    {
+      "name": "request_declined"
+    },
+    {
+      "name": "starting_state"
+    },
+    {
+      "name": "request_forbidden"
+    }
+  ],
+  "links": [
+    {
+      "source": 0,
+      "target": 1,
+      "type": "cancel_trip"
+    },
+    {
+      "source": 0,
+      "target": 2,
+      "type": "complete"
+    },
+    {
+      "source": 2,
+      "target": 3,
+      "type": "save_draft"
+    },
+    {
+      "source": 2,
+      "target": 1,
+      "type": "cancel_trip"
+    },
+    {
+      "source": 2,
+      "target": 4,
+      "type": "approve_request"
+    },
+    {
+      "source": 2,
+      "target": 5,
+      "type": "approve_request"
+    },
+    {
+      "source": 2,
+      "target": 6,
+      "type": "decline_request"
+    },
+    {
+      "source": 7,
+      "target": 0,
+      "type": ""
+    },
+    {
+      "source": 3,
+      "target": 0,
+      "type": "save_draft"
+    },
+    {
+      "source": 3,
+      "target": 1,
+      "type": "cancel_trip"
+    },
+    {
+      "source": 3,
+      "target": 2,
+      "type": "complete"
+    },
+    {
+      "source": 4,
+      "target": 3,
+      "type": "save_draft"
+    },
+    {
+      "source": 4,
+      "target": 1,
+      "type": "cancel_trip"
+    },
+    {
+      "source": 5,
+      "target": 3,
+      "type": "save_draft"
+    },
+    {
+      "source": 5,
+      "target": 1,
+      "type": "cancel_trip"
+    },
+    {
+      "source": 5,
+      "target": 4,
+      "type": "authorise_request"
+    },
+    {
+      "source": 5,
+      "target": 8,
+      "type": "forbid_request"
+    },
+    {
+      "source": 6,
+      "target": 3,
+      "type": "save_draft"
+    },
+    {
+      "source": 6,
+      "target": 1,
+      "type": "cancel_trip"
+    },
+    {
+      "source": 6,
+      "target": 4,
+      "type": "approve_request"
+    },
+    {
+      "source": 6,
+      "target": 5,
+      "type": "approve_request"
+    },
+    {
+      "source": 8,
+      "target": 3,
+      "type": "save_draft"
+    },
+    {
+      "source": 8,
+      "target": 1,
+      "type": "cancel_trip"
+    }
+  ]
+}
