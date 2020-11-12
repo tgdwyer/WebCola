@@ -1,9 +1,0 @@
-node_modules/
-WebCola/compiledtypescript.js
-doc/
-WebCola/*.js.map
-.tscachea
-WebCola/.baseDir.ts
-WebCola/examples/*.js
-.tscache
-WebCola/test/
