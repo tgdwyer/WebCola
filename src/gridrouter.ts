@@ -112,6 +112,10 @@ import {Calculator} from './shortestpaths'
 
         // medial axes between node centres and also boundary lines for the grid
         private midPoints(a) {
+            if (a.length === 1) {
+                return [a[0]]
+            }
+
             var gap = a[1] - a[0];
             var mids = [a[0] - gap / 2];
             for (var i = 1; i < a.length; i++) {
