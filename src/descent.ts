@@ -103,6 +103,14 @@ DEBUG */
         private random = new PseudoRandom();
 
         public project: { (x0: number[], y0: number[], r: number[]): void }[] = null;
+        /** The dimension distance squared calculation (defaults to x*x)
+         * @property dimensionDistanceSquared {(number, number) => number}
+         * Can be replaced with a custom function.
+         * For example replacing with (i, x) => i==0? x*x/16 : x*x;
+         * has the effect of making horizontal distances larger than vertical
+         * distances.
+         */
+        public dimensionDistanceSquared: (i: number, x: number) => number = (i, x) => x * x;
 
         /**
          * @method constructor
@@ -215,7 +223,7 @@ DEBUG */
                         distanceSquared = 0;
                         for (i = 0; i < this.k; ++i) {
                             const dx = d[i] = x[i][u] - x[i][v];
-                            distanceSquared += d2[i] = dx * dx;
+                            distanceSquared += d2[i] = this.dimensionDistanceSquared(i,dx);
                         }
                         if (distanceSquared > 1e-9) break;
                         const rd = this.offsetDir();
