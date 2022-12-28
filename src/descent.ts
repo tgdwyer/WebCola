@@ -110,7 +110,9 @@ DEBUG */
          * has the effect of making horizontal distances larger than vertical
          * distances.
          */
-        public static dimensionDistance: (x: number[][], i: number, u: number, v: number) => number = (x, i, u, v) => x[i][u] - x[i][v];
+        public static dimensionDistance(x: number[][], i: number, u: number, v: number): number {
+          return x[i][u] - x[i][v];
+        }
 
         /** The dimension distance squared calculation (defaults to dx*dx)
          * @property dimensionDistanceSquared {(number, number) => number}
@@ -119,7 +121,9 @@ DEBUG */
          * has the effect of making horizontal distances larger than vertical
          * distances.
          */
-        public static dimensionDistanceSquared: (i: number, dx: number) => number = (i, dx) => dx * dx;
+        public static dimensionDistanceSquared(i: number, dx: number): number {
+          return dx * dx;
+        }
 
         /**
          * @method constructor
@@ -231,8 +235,8 @@ DEBUG */
                     while (maxDisplaces--) {
                         distanceSquared = 0;
                         for (i = 0; i < this.k; ++i) {
-                            const dx = d[i] = this.dimensionDistance(x, i, u, v);
-                            distanceSquared += d2[i] = this.dimensionDistanceSquared(i,dx);
+                            const dx = d[i] = Descent.dimensionDistance(x, i, u, v);
+                            distanceSquared += d2[i] = Descent.dimensionDistanceSquared(i,dx);
                         }
                         if (distanceSquared > 1e-9) break;
                         const rd = this.offsetDir();
