@@ -103,14 +103,23 @@ DEBUG */
         private random = new PseudoRandom();
 
         public project: { (x0: number[], y0: number[], r: number[]): void }[] = null;
-        /** The dimension distance squared calculation (defaults to x*x)
-         * @property dimensionDistanceSquared {(number, number) => number}
+        /** The dimension distance calculation (defaults to x[i][u]-x[i][v])
+         * @property dimensionDistance{(number[][], number, number, number) => number}
          * Can be replaced with a custom function.
-         * For example replacing with (i, x) => i==0? x*x/16 : x*x;
+         * For example replacing with (x, i, u, v) => i==0 ? (x[i][u]-x[i][v])/4 : x[i][u]-x[i][v];
          * has the effect of making horizontal distances larger than vertical
          * distances.
          */
-        public dimensionDistanceSquared: (i: number, x: number) => number = (i, x) => x * x;
+        public static dimensionDistance: (x: number[][], i: number, u: number, v: number) => number = (x, i, u, v) => x[i][u] - x[i][v];
+
+        /** The dimension distance squared calculation (defaults to dx*dx)
+         * @property dimensionDistanceSquared {(number, number) => number}
+         * Can be replaced with a custom function.
+         * For example replacing with (i, dx) => i==0? dx*dx/16 : dx*dx;
+         * has the effect of making horizontal distances larger than vertical
+         * distances.
+         */
+        public static dimensionDistanceSquared: (i: number, dx: number) => number = (i, dx) => dx * dx;
 
         /**
          * @method constructor
@@ -222,7 +231,7 @@ DEBUG */
                     while (maxDisplaces--) {
                         distanceSquared = 0;
                         for (i = 0; i < this.k; ++i) {
-                            const dx = d[i] = x[i][u] - x[i][v];
+                            const dx = d[i] = this.dimensionDistance(x, i, u, v);
                             distanceSquared += d2[i] = this.dimensionDistanceSquared(i,dx);
                         }
                         if (distanceSquared > 1e-9) break;
