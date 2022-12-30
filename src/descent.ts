@@ -114,17 +114,6 @@ DEBUG */
           return x[i][u] - x[i][v];
         }
 
-        /** The dimension distance squared calculation (defaults to dx*dx)
-         * @property dimensionDistanceSquared {(number, number) => number}
-         * Can be replaced with a custom function.
-         * For example replacing with (i, dx) => i==0? dx*dx/16 : dx*dx;
-         * has the effect of making horizontal distances larger than vertical
-         * distances.
-         */
-        public static dimensionDistanceSquared(i: number, dx: number): number {
-          return dx * dx;
-        }
-
         /**
          * @method constructor
          * @param x {number[][]} initial coordinates for nodes
@@ -236,7 +225,7 @@ DEBUG */
                         distanceSquared = 0;
                         for (i = 0; i < this.k; ++i) {
                             const dx = d[i] = Descent.dimensionDistance(x, i, u, v);
-                            distanceSquared += d2[i] = Descent.dimensionDistanceSquared(i,dx);
+                            distanceSquared += d2[i] = dx * dx;
                         }
                         if (distanceSquared > 1e-9) break;
                         const rd = this.offsetDir();
