@@ -53,9 +53,6 @@ Building
 *Linux/Mac/Windows Command Line:*
 
  - install [node.js](http://nodejs.org)
- - install grunt from the command line using npm (comes with node.js):
-
-        npm install -g grunt-cli
 
  - from the WebCola directory:
 
@@ -63,9 +60,10 @@ Building
 
  - build, minify and test:
 
-        grunt
+        npm run build
+        npm run test
 
-This creates the `cola.js` and `cola.min.js` files in the `WebCola` directory, generates `index.js` for npm, and runs tests.
+This creates the `cola.js` and `cola.min.js` files in the `dist` directory and runs tests.
 
 *Visual Studio:*
 
@@ -83,6 +81,7 @@ Install the Node.js http-server module:
 
 After installing http-server, we can serve out the example content in the WebCola directory.
 
-    http-server WebCola
+    npm run website
+    http-server website
 
 The default configuration of http-server will serve the exampes on [http://localhost:8080](http://localhost:8080).

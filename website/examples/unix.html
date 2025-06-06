@@ -65,7 +65,7 @@
             .attr('transform', 'translate(250,250) scale(0.3)');
 
         function redraw() {
-            vis.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+            vis.attr("transform", d3.event.transform);
         }
 
         outer.append('svg:defs').append('svg:marker')
