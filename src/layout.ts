@@ -1,5 +1,5 @@
 import * as powergraph from './powergraph'
-import {LinkLengthAccessor, symmetricDiffLinkLengths, jaccardLinkLengths, generateDirectedEdgeConstraints} from './linklengths'
+import {LinkLengthAccessor, symmetricDiffLinkLengths, jaccardLinkLengths, generateDirectedEdgeConstraints, SeparationConstraint, AlignmentConstraint} from './linklengths'
 import {Descent} from './descent'
 import {Rectangle, Projection, makeEdgeTo, makeEdgeBetween} from './rectangle'
 import {Calculator} from './shortestpaths'
@@ -99,7 +99,7 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         private _groups = [];
         private _rootGroup = null;
         private _links: Link<Node | number>[] = [];
-        private _constraints = [];
+        private _constraints: Array<SeparationConstraint | AlignmentConstraint> = [];
         private _distanceMatrix = null;
         private _descent: Descent = null;
         private _directedLinkConstraints = null;
@@ -319,12 +319,12 @@ import {separateGraphs, applyPacking} from './handledisconnected'
         /**
          * list of constraints of various types
          * @property constraints
-         * @type {array}
+         * @type {Array of SeparationConstraint or AlignmentConstraint}
          * @default empty list
          */
-        constraints(): Array<any>
-        constraints(c: Array<any>): this
-        constraints(c?: Array<any>): any {
+        constraints(): Array<SeparationConstraint | AlignmentConstraint>
+        constraints(c: Array<SeparationConstraint | AlignmentConstraint>): this
+        constraints(c?: Array<SeparationConstraint | AlignmentConstraint>): any {
             if (!arguments.length) return this._constraints;
             this._constraints = c;
             return this;

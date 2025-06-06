@@ -63,15 +63,69 @@
             , la);
     }
 
+    export type Axis = 'x'|'y'
     export interface IConstraint {
-        left: number;
-        right: number;
-        gap: number;
+        /**
+         * The type of this constraint. Optional for separation constraints, but mandatory for alignment constraints.
+         */
+        type?: string
+        /**
+         * The axis along which this constraint should be applied.
+         */
+        axis: Axis,
+        /**
+         * You may add additional data to the constraint definition.
+         */
+        [additionalProperyName: number]: unknown,
+        /**
+         * You may add additional data to the constraint definition.
+         */
+        [additionalPropertyName: string]: unknown
     }
-
-    export interface DirectedEdgeConstraints {
-        axis: string;
-        gap: number;
+    export interface SeparationConstraint extends IConstraint {
+        /**
+         * The type of this constraint. Optional for separation constraints, but mandatory for alignment constraints.
+         */
+        type?: 'separation',
+        /**
+         * Index of the node on the left-hand-side of the constraint equation.
+         * This node will be forced to be left of (if {@link axis} is set to 'x') / above (if {@link axis} is set to 'y') the other node.
+         */
+        left: number,
+        /**
+         * Index of the node on the right-hand-side of the constraint equation.
+         * This node will be forced to be right of (if {@link axis} is set to 'x') / below (if {@link axis} is set to 'y') the other node.
+         */
+        right: number,
+        /**
+         * Size of the gap between the nodes.
+         */
+        gap?: number,
+        /**
+         * Is this an equality separation constraint (does the distance between the nodes have to match exactly?)
+         * or an inequality constraint (is the set distance a minimum distance and may be bigger if necessary?)
+         * @default false
+         */
+        equality?: boolean
+    }
+    interface AlignmentSpecification{
+        /** Index of the target node in the nodes array. */
+        node: number,
+        /**
+         * Offset from the node's center.
+         * @default 0
+         */
+        offset?: number
+    }
+    export interface AlignmentConstraint extends IConstraint {
+        /**
+         * The type of this constraint. Optional for separation constraints, but mandatory for alignment constraints.
+         */
+        type: 'alignment',
+        /**
+         * List of nodes to be aligned along the specified {@link axis}.
+         */
+        offsets: Array<AlignmentSpecification>
     }
 
     export interface LinkSepAccessor<Link> extends LinkAccessor<Link> {
@@ -81,15 +135,15 @@
     /** generate separation constraints for all edges unless both their source and sink are in the same strongly connected component
      * @class generateDirectedEdgeConstraints
      */
-    export function generateDirectedEdgeConstraints<Link>(n: number, links: Link[], axis: string,
-        la: LinkSepAccessor<Link>): IConstraint[]
+    export function generateDirectedEdgeConstraints<Link>(n: number, links: Link[], axis: Axis,
+        la: LinkSepAccessor<Link>): SeparationConstraint[]
     {
         var components = stronglyConnectedComponents(n, links, la);
         var nodes = {};
         components.forEach((c,i) =>
             c.forEach(v => nodes[v] = i)
         );
-        var constraints: any[] = [];
+        var constraints: SeparationConstraint[] = [];
         links.forEach(l => {
             var ui = la.getSourceIndex(l), vi = la.getTargetIndex(l),
                 u = nodes[ui], v = nodes[vi];
