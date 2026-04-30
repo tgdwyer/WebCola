@@ -6,10 +6,10 @@ using D3.js and other web-based graphics libraries.
 
 <p align="center">
   <a href="https://ialab.it.monash.edu/webcola/examples/smallworldwithgroups.html">
-    <img width="400" alt="Graph with simple groups" src="WebCola/examples/smallworldwithgroups.png" />
+    <img width="400" alt="Graph with simple groups" src="https://ialab.it.monash.edu/webcola/examples/smallworldwithgroups.png" />
   </a>
   <a href="https://ialab.it.monash.edu/webcola/examples/alignment.html">
-    <img width="400" alt="Graph with alignment constraints" src="WebCola/examples/alignment.png" />
+    <img width="400" alt="Graph with alignment constraints" src="https://ialab.it.monash.edu/webcola/examples/alignment.png" />
   </a>
 </p>
 
