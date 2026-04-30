@@ -13,7 +13,7 @@ using D3.js and other web-based graphics libraries.
   </a>
 </p>
 
-[Homepage with code and more examples](http://marvl.infotech.monash.edu/webcola)
+[Homepage with code and more examples](https://ialab.it.monash.edu/webcola)
 
 Note: While D3 adaptor supports both D3 v3 and D3 v4, WebCoLa's interface is styled like D3 v3. Follow the setup in our homepage for more details.
 
@@ -23,9 +23,9 @@ Installation
 #### Browser:
 ```html
 <!-- Minified version -->
-<script src="http://marvl.infotech.monash.edu/webcola/cola.min.js"></script>
+<script src="https://ialab.it.monash.edu/webcola/cola.min.js"></script>
 <!-- Full version -->
-<script src="http://marvl.infotech.monash.edu/webcola/cola.js"></script>
+<script src="https://ialab.it.monash.edu/webcola/cola.js"></script>
 ```
 
 The minified version can also be accessed from [jsDelivr](https://cdn.jsdelivr.net/gh/tgdwyer/WebCola/WebCola/cola.min.js).
