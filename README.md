@@ -5,10 +5,10 @@ JavaScript constraint based layout for high-quality graph visualization and expl
 using D3.js and other web-based graphics libraries.
 
 <p align="center">
-  <a href="http://marvl.infotech.monash.edu/webcola/examples/smallworldwithgroups.html">
+  <a href="https://ialab.it.monash.edu/webcola/examples/smallworldwithgroups.html">
     <img width="400" alt="Graph with simple groups" src="WebCola/examples/smallworldwithgroups.png" />
   </a>
-  <a href="http://marvl.infotech.monash.edu/webcola/examples/alignment.html">
+  <a href="https://ialab.it.monash.edu/webcola/examples/alignment.html">
     <img width="400" alt="Graph with alignment constraints" src="WebCola/examples/alignment.png" />
   </a>
 </p>
