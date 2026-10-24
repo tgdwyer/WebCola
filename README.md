@@ -45,6 +45,20 @@ Then by running `npm install`.
 
 	bower install webcola --save
 
+WebCola is published as both an ES module and a UMD bundle, so it works with
+`import` in Node and in any modern bundler, as well as with `require` and a
+plain `<script>` tag:
+
+```js
+import { Layout, d3adaptor, Rectangle } from 'webcola';
+// or
+const { Layout } = require('webcola');
+```
+
+The package `exports` map resolves `import` to `dist/cola.esm.mjs` (a real ES
+module, also advertised through the `module` field so bundlers can tree-shake
+it) and `require` to `dist/cola.umd.development.js`.
+
 If you use TypeScript, you can get complete TypeScript definitions by installing [tsd 0.6](https://github.com/DefinitelyTyped/tsd) and running `tsd link`.
 
 Building

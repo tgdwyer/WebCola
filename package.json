@@ -19,10 +19,21 @@
     "Optimization"
   ],
   "main": "dist/cola.umd.development.js",
-  "module": "dist/cola.esm.js",
+  "module": "dist/cola.esm.mjs",
   "unpkg": "dist/cola.umd.production.min.js",
   "jsdelivr": "dist/cola.umd.production.min.js",
   "types": "dist/cola.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/cola.d.ts",
+      "import": "./dist/cola.esm.mjs",
+      "require": "./dist/cola.umd.development.js",
+      "default": "./dist/cola.umd.development.js"
+    },
+    "./dist/*": "./dist/*",
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist",
     "src"
@@ -31,9 +42,11 @@
   "scripts": {
     "watch": "tsdx watch --noClean --name cola --format esm,umd",
     "build": "tsdx build --name cola --format esm,umd",
-    "postbuild": "npm run typings",
+    "esm": "node tasks/esm.js cola",
+    "postbuild": "npm run esm && npm run typings",
     "typings": "tsc -p tsconfig.dts.json && rollup -c rollup.dts.config.js",
     "test": "tsdx test --passWithNoTests",
+    "test:esm": "node tasks/smoke-esm.mjs",
     "test:watch": "tsdx test --passWithNoTests --watch",
     "test:coverage": "tsdx test --passWithNoTests --coverage",
     "lint": "tsdx lint src --ext .ts",
